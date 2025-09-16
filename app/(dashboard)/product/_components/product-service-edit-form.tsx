@@ -50,7 +50,7 @@ export default function ProductServiceUpdatedForm({
     data: productServiceData,
   } = useQueryAction<{ id: string }, RequestResponse<ProductServiceType>>(
     unique,
-    () => {},
+    () => { },
     "product-service"
   );
 
@@ -72,7 +72,7 @@ export default function ProductServiceUpdatedForm({
         description: productServiceData.data.description,
         unitPrice: productServiceData.data.unitPrice,
         cost: productServiceData.data.cost,
-        quantity: productServiceData.data.quantity,
+        quantity: String(productServiceData.data.quantity),
         unitType: productServiceData.data.unitType,
       };
 
@@ -83,7 +83,7 @@ export default function ProductServiceUpdatedForm({
   const { mutate, isPending } = useQueryAction<
     EditProductServiceSchemaType,
     RequestResponse<ProductServiceType[]>
-  >(update, () => {}, "product-services");
+  >(update, () => { }, "product-services");
 
   async function submit(productServiceData: EditProductServiceSchemaType) {
     const { success, data } =
