@@ -12,7 +12,8 @@ import {
   Table,
 } from "@/components/ui/table";
 import useQueryAction from "@/hook/useQueryAction";
-import { getDateStatus } from "@/lib/date";
+import { paymentTerms } from "@/lib/data";
+import { addDays, getDateStatus } from "@/lib/date";
 import { cn, formatNumber } from "@/lib/utils";
 import useClientIdStore from "@/stores/client-id.store";
 import { useDataStore } from "@/stores/data.store";
@@ -21,10 +22,14 @@ import { RequestResponse } from "@/types/api.types";
 import { BillboardType } from "@/types/billboard.types";
 import { ClientType } from "@/types/client.types";
 import { ItemType } from "@/types/item.type";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function BillboardTab() {
+  // ** STATE ** //
+  const [locationEndDate, setLocationEndDate] = useState<Date | undefined>(undefined);
+
+
   // ** STORE ** //
   // # DATA STORE
   const companyId = useDataStore.use.currentCompany();
@@ -40,10 +45,12 @@ export default function BillboardTab() {
   const removeLocationBillboard = useItemStore.use.removeLocationBillboard();
   const removeItem = useItemStore.use.removeItem();
 
+
+
   const { mutate, isPending, data } = useQueryAction<
     { companyId: string },
     RequestResponse<BillboardType[]>
-  >(all, () => {}, "billboards");
+  >(all, () => { }, "billboards");
 
   const {
     mutate: mutateClient,
@@ -51,14 +58,14 @@ export default function BillboardTab() {
     data: clientData,
   } = useQueryAction<{ id: string }, RequestResponse<ClientType>>(
     unique,
-    () => {},
+    () => { },
     "client"
   );
 
   const { mutate: getBillboardItems, isPending: isLoadingBillboardItems } =
     useQueryAction<{ billboardId: string }, RequestResponse<ItemType[]>>(
       allBillboardItem,
-      () => {},
+      () => { },
       "items"
     );
 
@@ -74,7 +81,21 @@ export default function BillboardTab() {
 
   useEffect(() => {
     if (clientId) {
-      mutateClient({ id: clientId });
+      mutateClient({ id: clientId }, {
+        onSuccess(data) {
+          if (data.data) {
+            const client = data.data;
+            setLocationEndDate(
+              addDays(
+                new Date(),
+                paymentTerms.find((p) => p.value === client.paymentTerms)
+                  ?.data ?? 0
+                , "date") as Date
+            )
+          }
+
+        },
+      });
     }
   }, [clientId]);
 
@@ -125,6 +146,8 @@ export default function BillboardTab() {
                 lastDate: item.locationDuration?.[1],
                 discount: client?.discount || defaultDiscount,
                 quantity: 1,
+                locationStart: new Date(),
+                locationEnd: locationEndDate,
                 status: status === "red" ? "non-available" : "available",
                 currency: item.company.currency,
                 itemType: "billboard",
@@ -180,7 +203,7 @@ export default function BillboardTab() {
                     "h-16 transition-colors",
                     isSelected(billboard.id) && "bg-neutral-100",
                     !isClientSelected &&
-                      "bg-gray-100 opacity-50 cursor-not-allowed"
+                    "bg-gray-100 opacity-50 cursor-not-allowed"
                   )}
                 >
                   <TableCell className="text-neutral-600">

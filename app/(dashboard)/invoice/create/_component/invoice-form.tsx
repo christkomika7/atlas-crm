@@ -308,6 +308,13 @@ export default function InvoiceForm() {
     }
   }, [client]);
 
+  useEffect(() => {
+    form.watch(() => {
+      console.log({errors: form.formState.errors});
+    })
+
+  },[form.watch])
+
   const submit = useCallback(
     async (invoiceData: InvoiceSchemaType) => {
       const { success, data } = invoiceSchema.safeParse(invoiceData);
@@ -744,7 +751,7 @@ export default function InvoiceForm() {
                       new Date(),
                       paymentTerms.find((p) => p.value === client.paymentTerms)
                         ?.data ?? 0
-                    )
+                    ) as string
                   : "----"}
               </p>
             </div>

@@ -1,59 +1,63 @@
 "use client";
-import { unique, update } from "@/action/invoice.action";
-import useQueryAction from "@/hook/useQueryAction";
-import {
-  invoiceUpdateSchema,
-  InvoiceUpdateSchemaType,
-} from "@/lib/zod/invoice.schema";
-import { RequestResponse } from "@/types/api.types";
-import { InvoiceType } from "@/types/invoice.types";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useDataStore } from "@/stores/data.store";
-import useClientIdStore from "@/stores/client-id.store";
-import { ClientType } from "@/types/client.types";
-import { ProjectType } from "@/types/project.types";
-import useItemStore from "@/stores/item.store";
-import useProjectStore from "@/stores/project.store";
-import { all as getClients, unique as getClient } from "@/action/client.action";
-import { allByClient } from "@/action/project.action";
-import { ModelDocumentType } from "@/types/document.types";
-import { unique as uniqueDocument } from "@/action/document.action";
-import { calculatePrice, downloadFile, formatNumber } from "@/lib/utils";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { RequestResponse } from "@/types/api.types";
 import { Button } from "@/components/ui/button";
+
+import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import TextInput from "@/components/ui/text-input";
-import { Badge } from "@/components/ui/badge";
-import ProjectModal from "../../../_component/project-modal";
 import { Combobox } from "@/components/ui/combobox";
-import ItemModal from "../../../create/_component/item-modal";
+import { useDataStore } from "@/stores/data.store";
+import { ClientType } from "@/types/client.types";
+import { invoiceUpdateSchema, InvoiceUpdateSchemaType } from "@/lib/zod/invoice.schema";
+import { Badge } from "@/components/ui/badge";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { ProjectType } from "@/types/project.types";
+import useItemStore from "@/stores/item.store";
+import useProjectStore from "@/stores/project.store";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import useClientIdStore from "@/stores/client-id.store";
+import {
+  calculatePrice,
+  calculateTaxes,
+  calculateTaxesTotal,
+  formatNumber,
+} from "@/lib/utils";
+
+import { ModelDocumentType } from "@/types/document.types";
 import { paymentTerms } from "@/lib/data";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { DownloadIcon, XIcon } from "lucide-react";
+import { useParams } from "next/navigation";
+import { InvoiceType } from "@/types/invoice.types";
+import { CompanyType } from "@/types/company.types";
+import { addDays, formatDateToDashModel } from "@/lib/date";
+import { toast } from "sonner";
+import { DatePicker } from "@/components/ui/date-picker";
+
+import { all as getClients, unique as getClient } from "@/action/client.action";
+import { allByClient } from "@/action/project.action";
+import { unique as getUniqueInvoice, update as updateInvoice } from "@/action/invoice.action";
+import { unique as getDocument } from "@/action/document.action";
+import ItemModal from "../../../create/_component/item-modal";
+import ProjectModal from "../../../_component/project-modal";
+
 
 export default function InvoiceTab() {
   const param = useParams();
 
+  // STORE
   const currency = useDataStore.use.currency();
 
   const clientId = useClientIdStore.use.clientId();
   const setClientId = useClientIdStore.use.setClientId();
-  const [clientDiscount, setClientDiscount] = useState<{
-    discount: number;
-    discountType: "purcent" | "money";
-  }>({ discount: 0, discountType: "purcent" });
-  const [client, setClient] = useState<ClientType>();
 
   const items = useItemStore.use.items();
   const updateItem = useItemStore.use.updateItem();
@@ -61,797 +65,884 @@ export default function InvoiceTab() {
   const removeItem = useItemStore.use.removeItem();
   const clearItem = useItemStore.use.clearItem();
   const editItemField = useItemStore.use.editItemField();
-
   const locationBillboardDate = useItemStore.use.locationBillboardDate();
 
   const setProject = useProjectStore.use.setProject();
   const projects = useProjectStore.use.projects();
 
-  const [invoiceNumber, setInvoiceNumber] = useState(1);
-  const [hasEditedDiscount, setHasEditedDiscount] = useState(false);
-
+  // STATE
+  const [company, setCompany] = useState<CompanyType<string>>();
+  const [clientDiscount, setClientDiscount] = useState<{
+    discount: number;
+    discountType: "purcent" | "money";
+  }>({ discount: 0, discountType: "purcent" });
+  const [client, setClient] = useState<ClientType>();
+  const [invoiceNumber, setInvoiceNumber] = useState(0);
   const [lastUploadFiles, setLastUploadFiles] = useState<string[]>([]);
   const [lastUploadPhotos, setLastUploadPhotos] = useState<string[]>([]);
 
+
+
+  // FORM
   const form = useForm<InvoiceUpdateSchemaType>({
     resolver: zodResolver(invoiceUpdateSchema),
     defaultValues: {},
   });
 
-  const { mutate, isPending, data } = useQueryAction<
+  // INVOICE ACTION
+  const { mutate: mutateGetInvoice, isPending: isGettingInvoice, data: invoiceData } = useQueryAction<
     { id: string },
     RequestResponse<InvoiceType>
-  >(unique, () => {}, "invoice");
+  >(getUniqueInvoice, () => { }, "invoice");
 
-  const { mutate: updateInvoice, isPending: isPendingInvoice } = useQueryAction<
+
+  const { mutate: mutateUpdateInvoice, isPending: isUpdatingInvoice } = useQueryAction<
     InvoiceUpdateSchemaType,
     RequestResponse<InvoiceType>
-  >(update, () => {}, "invoice");
+  >(updateInvoice, () => { }, "invoice");
 
+
+  // CLIENT ACTION
   const {
-    mutate: mutateClients,
-    isPending: isLoadingClients,
-    data: clientsData,
+    mutate: mutateGetClients,
+    isPending: isGettingClients,
+    data: clientDatas,
   } = useQueryAction<{ id: string }, RequestResponse<ClientType[]>>(
     getClients,
-    unique as getClient,
-    () => {},
+    () => { },
     "clients"
   );
 
-  const { mutate: mutateClient } = useQueryAction<
+  const { mutate: mutateGetClient } = useQueryAction<
     { id: string },
     RequestResponse<ClientType>
-  >(getClient, () => {}, "client");
+  >(getClient, () => { }, "client");
 
+  // DOCUMENT ACTION
   const {
-    mutate: mutateDocument,
-    isPending: isPendingDocument,
+    mutate: mutateGetDocument,
+    isPending: isGettingDocument,
     data: documentData,
   } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
-    uniqueDocument,
-    () => {},
+    getDocument,
+    () => { },
     "document"
   );
 
+  // PROJECT ACTION
   const {
-    mutate: mutateProject,
-    isPending: isLoadingProject,
-    data: projectData,
+    mutate: mutateGetProject,
+    isPending: isGettingProject,
+    data: projectDatas,
   } = useQueryAction<{ clientId: string }, RequestResponse<ProjectType[]>>(
     allByClient,
-    () => {},
+    () => { },
     "projects"
   );
 
   useEffect(() => {
+    clearItem();
+  }, []);
+
+  console.log({ param })
+
+  useEffect(() => {
     if (param.id) {
-      mutate({ id: param.id as string });
-    }
-  }, [param.id]);
+      mutateGetInvoice({ id: param.id as string }, {
+        onSuccess(data) {
+          if (data.data) {
+            const invoice = data.data;
+            console.log({ invoice });
 
-  useEffect(() => {
-    if (data) {
-      const invoice = data.data as InvoiceType;
-      setLastUploadFiles(invoice.files.filter((file) => Boolean(file)) ?? []);
-      setLastUploadPhotos(
-        invoice.photos.filter((photo) => Boolean(photo)) ?? []
-      );
-      form.reset({
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        companyId: invoice.companyId,
-        clientId: invoice.clientId,
-        projectId: invoice.projectId,
-        note: invoice.note ?? "",
-        discount: invoice.discount ?? "0",
-        payee: invoice.payee ?? "0",
-        item: {
-          billboards:
-            invoice?.items
-              ?.filter((item) => Boolean(item.billboardId))
-              ?.map((billboard) => ({
-                id: billboard.id,
-                name: billboard.name,
-                quantity: billboard.quantity,
-                price: billboard.price,
-                discountType:
-                  billboard.discountType === "purcent" ||
-                  billboard.discountType === "money"
-                    ? billboard.discountType
-                    : undefined,
-                description: billboard.description ?? undefined,
-                discount: String(billboard.discount),
-                billboardId: billboard.id,
-                currency: billboard.currency,
-              })) ?? [],
-          productServices:
-            invoice?.items
-              ?.filter((item) => Boolean(item.productServiceId))
-              ?.map((productService) => ({
-                id: productService.id,
-                name: productService.name,
-                quantity: productService.quantity,
-                price: productService.price,
-                discountType:
-                  productService.discountType === "purcent" ||
-                  productService.discountType === "money"
-                    ? productService.discountType
-                    : undefined,
-                description: productService.description ?? undefined,
-                discount: String(productService.discount),
-                productServiceId: productService.id,
-                currency: productService.currency,
-              })) ?? [],
+            // setCompany(invoice.company);
+            // setClientId(invoice.clientId);
+            // setInvoiceNumber(invoice.invoiceNumber);
+
+            // form.reset({
+            //   companyId: invoice.companyId,
+            //   invoiceNumber: invoice.invoiceNumber,
+            //   note: invoice.note,
+            //   totalHT: invoice.totalHT,
+            //   totalTTC: invoice.totalTTC,
+            //   discount: invoice.discount,
+            //   discountType: invoice.discountType as "purcent" | "money",
+            //   payee: invoice.payee,
+            //   item: {
+            //     billboards: invoice.items.filter(item => Boolean(item.billboardId)).map(billboard => ({
+            //       id: billboard.id,
+            //       name: billboard.name,
+            //       quantity: billboard.quantity,
+            //       price: billboard.price,
+            //       itemType: 'billboard',
+            //       updatedPrice: billboard.updatedPrice,
+            //       locationStart: billboard.locationStart,
+            //       locationEnd: billboard.locationEnd,
+            //       discountType: billboard.discountType as "purcent" | "money",
+            //       discount: billboard.discount,
+            //       description: billboard.description ?? "",
+            //       billboardId: billboard.billboardId as string,
+            //       currency: billboard.currency,
+            //     })),
+            //     productServices: invoice.items.filter(item => Boolean(item.productServiceId)).map(productService => ({
+            //       id: productService.id,
+            //       name: productService.name,
+            //       quantity: productService.quantity,
+            //       price: productService.price,
+            //       itemType: productService.itemType as "product" | "service",
+            //       updatedPrice: productService.updatedPrice,
+            //       discountType: productService.discountType as "purcent" | "money",
+            //       discount: productService.discount,
+            //       description: productService.description ?? "",
+            //       productServiceId: productService.productServiceId as string,
+            //       currency: productService.currency,
+            //     })),
+
+            //   }
+            // });
+
+            // mutateGetClients({ id: invoice.companyId }, {
+            //   onSuccess(data) {
+            //     if (data.data && data.data.length > 0 && invoice.clientId) {
+            //       const clients = data.data;
+            //       setClient(clients.find((c) => c.id === invoice.clientId));
+
+            //     }
+            //   },
+            // });
+            // mutateGetProject({ clientId: invoice.clientId }, {
+            //   onSuccess(data) {
+            //     if (data.data) {
+            //       const project = data.data;
+            //       setProject(project);
+            //     }
+            //   },
+            // });
+            // mutateGetClient({ id: invoice.clientId }, {
+            //   onSuccess(data) {
+            //     if (data.data) {
+            //       const client = data.data;
+            //       updateDiscount(client.discount)
+            //     }
+            //   },
+            // })
+            // mutateGetDocument({ id: invoice.companyId })
+
+          }
         },
-        totalHT: invoice.totalHT,
-        totalTTC: invoice.totalTTC,
-        discountType:
-          invoice.discountType === "purcent" || invoice.discountType === "money"
-            ? invoice.discountType
-            : undefined,
-
-        lastUploadFiles: invoice.files.filter((file) => Boolean(file)) ?? [],
-        lastUploadPhotos:
-          invoice.photos.filter((photo) => Boolean(photo)) ?? [],
-      });
-
-      const formattedItems = invoice.items.map((item) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description ?? "",
-        quantity: item.quantity,
-        price: item.price,
-        discount: String(item.discount ?? "0"),
-        discountType: item.discountType as "purcent" | "money",
-        currency: item.currency,
-        itemType: item.itemType as "billboard" | "product" | "service",
-      }));
-      setItems(formattedItems);
-
-      setClientId(invoice.clientId);
-      mutateClients({ id: invoice.companyId });
-      mutateDocument({ id: invoice.companyId });
-      setTotalHT(parseFloat(invoice.totalHT));
-      setInvoiceNumber(invoice.invoiceNumber);
-      setClientDiscount((prev) =>
-        prev.discount === 0
-          ? {
-              discount: parseFloat(invoice.discount ?? "0"),
-              discountType:
-                invoice.discountType === "purcent" ||
-                invoice.discountType === "money"
-                  ? invoice.discountType
-                  : "purcent",
-            }
-          : prev
-      );
+      })
     }
-  }, [data]);
+  }, [param])
 
-  useEffect(() => {
-    if (data && !hasEditedDiscount) {
-      const invoice = data.data as InvoiceType;
 
-      setClientDiscount({
-        discount: parseFloat(invoice.discount ?? "0"),
-        discountType:
-          invoice.discountType === "purcent" || invoice.discountType === "money"
-            ? invoice.discountType
-            : "purcent",
-      });
-    }
-  }, [data, hasEditedDiscount]);
+  // useEffect(() => {
+  //   if (clientId) {
+  //     mutateGetProject({ clientId: clientId }, {
+  //       onSuccess(data) {
+  //         if (data.data) {
+  //           const project = data.data;
+  //           setProject(project);
+  //         }
+  //       },
+  //     });
+  //     mutateGetClient(
+  //       { id: clientId },
+  //       {
+  //         onSuccess(data) {
+  //           if (data.data) {
+  //             updateDiscount(data.data.discount);
+  //           }
+  //         },
+  //       }
+  //     );
+  //   }
+  // }, [clientId]);
 
-  useEffect(() => {
-    if (clientId) {
-      mutateProject({ clientId });
-    }
-  }, [clientId]);
+  // useEffect(() => {
+  //   if (clientDatas?.data && clientId) {
+  //     const clients = clientDatas.data;
+  //     setClient(clients.find((c) => c.id === clientId));
+  //   }
+  // }, [clientId, clientDatas]);
 
-  useEffect(() => {
-    if (clientsData?.data && clientId) {
-      setClient(clientsData.data.find((c) => c.id === clientId));
-    }
-  }, [clientId, clientsData]);
 
-  useEffect(() => {
-    if (projectData?.data) {
-      setProject(projectData.data);
-    }
-  }, [projectData]);
+  // useEffect(() => {
+  //   if (items.length > 0) {
+  //     form.setValue("item", {
+  //       billboards: items
+  //         .filter((item) => item.itemType === "billboard")
+  //         .map((item) => ({
+  //           name: item.name,
+  //           quantity: item.quantity,
+  //           price: item.price,
+  //           status: item.status,
+  //           itemType: item.itemType,
+  //           updatedPrice: String(
+  //             calculateTaxes({
+  //               items: [
+  //                 {
+  //                   name: item.name,
+  //                   price: calculatePrice(
+  //                     parseFloat(item.price),
+  //                     parseInt(String(item.discount).replace("%", "")),
+  //                     item.discountType
+  //                   ),
+  //                   quantity: item.quantity,
+  //                 },
+  //               ],
+  //               itemType: "article",
+  //               taxes: company?.vatRates ?? [],
+  //               taxOperation: "sequence",
+  //             }).totalWithoutTaxes
+  //           ),
+  //           locationStart: item.locationStart,
+  //           locationEnd: item.locationEnd,
+  //           discountType: item.discountType,
+  //           description: item.description,
+  //           discount: String(item.discount),
+  //           billboardId: item.id,
+  //           currency: item.currency,
+  //         })),
+  //       productServices: items
+  //         .filter((item) => item.itemType !== "billboard")
+  //         .map((item) => ({
+  //           name: item.name,
+  //           quantity: item.quantity,
+  //           price: item.price,
+  //           updatedPrice: String(
+  //             calculateTaxes({
+  //               items: [
+  //                 {
+  //                   name: item.name,
+  //                   price: calculatePrice(
+  //                     parseFloat(item.price),
+  //                     parseInt(String(item.discount).replace("%", "")),
+  //                     item.discountType
+  //                   ),
+  //                   quantity: 1,
+  //                 },
+  //               ],
+  //               itemType: "article",
+  //               taxes: company?.vatRates ?? [],
+  //               taxOperation: "sequence",
+  //             }).totalWithoutTaxes
+  //           ),
+  //           itemType: item.itemType,
+  //           discountType: item.discountType,
+  //           description: item.description,
+  //           discount: String(item.discount),
+  //           productServiceId: item.id,
+  //           currency: item.currency,
+  //         })),
+  //     });
+  //     return;
+  //   }
+  //   form.setValue("item", {
+  //     billboards: [],
+  //     productServices: [],
+  //   });
+  // }, [items]);
 
-  useEffect(() => {
-    if (items.length > 0) {
-      form.setError("item", { message: "" });
-    }
-    form.setValue("item", {
-      billboards: items
-        .filter((item) => item.itemType === "billboard")
-        .map((item) => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          discountType: item.discountType,
-          description: item.description,
-          discount: String(item.discount),
-          billboardId: item.id,
-          currency: item.currency,
-        })),
-      productServices: items
-        .filter((item) => item.itemType !== "billboard")
-        .map((item) => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          discountType: item.discountType,
-          description: item.description,
-          discount: String(item.discount),
-          productServiceId: item.id,
-          currency: item.currency,
-        })),
-    });
+  // const totals = useMemo(() => {
+  //   const HTPrice = calculateTaxes({
+  //     items: items.map((item) => ({
+  //       name: item.name,
+  //       price: calculatePrice(
+  //         parseFloat(item.price),
+  //         parseInt(String(item.discount).replace("%", "")),
+  //         item.discountType
+  //       ),
+  //       quantity: item.quantity,
+  //     })),
+  //     itemType: "article",
+  //     taxes: company?.vatRates ?? [],
+  //     taxOperation: "sequence",
+  //   }).totalWithoutTaxes;
 
-    const HTPrice = items.reduce((sum, item) => {
-      const priceAfterDiscount = calculatePrice(
-        parseFloat(item.price),
-        parseFloat(String(item.discount).replace("%", "")),
-        item.discountType
-      );
+  //   const TTCPrice = calculateTaxesTotal({
+  //     totalPrice: calculatePrice(
+  //       HTPrice,
+  //       parseFloat(String(clientDiscount.discount).replace("%", "")),
+  //       clientDiscount.discountType
+  //     ),
+  //     taxes: company?.vatRates ?? [],
+  //     taxOperation: "sequence",
+  //   }).totalWithTaxes;
 
-      return sum + (priceAfterDiscount || 0);
-    }, 0);
-    form.setValue("totalHT", String(HTPrice));
+  //   return { HTPrice, TTCPrice };
+  // }, [items, company?.vatRates, clientDiscount]);
 
-    setTotalHT(HTPrice);
-  }, [items, form]);
+  // useEffect(() => {
+  //   form.setValue("totalHT", String(totals.HTPrice));
+  //   form.setValue("totalTTC", String(totals.TTCPrice));
+  //   form.setValue("discount", String(clientDiscount.discount));
+  //   form.setValue("discountType", clientDiscount.discountType);
+  // }, [totals, clientDiscount]);
 
-  useEffect(() => {
-    form.setValue(
-      "totalTTC",
-      String(
-        calculatePrice(
-          totalHT,
-          parseFloat(String(clientDiscount.discount).replace("%", "")),
-          clientDiscount.discountType
-        )
-      )
-    );
-    form.setValue("discount", String(clientDiscount.discount));
-    form.setValue("discountType", clientDiscount.discountType);
-  }, [clientDiscount, totalHT]);
+  // useEffect(() => {
+  //   if (client) {
+  //     setClientDiscount({
+  //       discount: client.discount.includes("%")
+  //         ? Number(client.discount.split("%")[0])
+  //         : Number(client.discount),
+  //       discountType: "purcent",
+  //     });
+  //   }
+  // }, [client]);
 
-  useEffect(() => {
-    if (client && !hasEditedDiscount) {
-      setClientDiscount({
-        discount: client.discount.includes("%")
-          ? Number(client.discount.split("%")[0])
-          : Number(client.discount),
-        discountType: client.discount.includes("%") ? "purcent" : "money",
-      });
-    }
-  }, [client, hasEditedDiscount]);
+  // useEffect(() => {
+  //   form.watch(() => {
+  //     console.log({ errors: form.formState.errors });
+  //   })
 
-  function removeLastUpload(name: string, type: "file" | "photo") {
-    switch (type) {
-      case "file":
-        setLastUploadFiles((prev) => prev.filter((d) => d !== name));
-        break;
-      case "photo":
-        setLastUploadPhotos((prev) => prev.filter((d) => d !== name));
-        break;
-    }
-  }
+  // }, [form.watch])
 
-  async function submit(invoiceData: InvoiceUpdateSchemaType) {
-    const { success, data } = invoiceUpdateSchema.safeParse(invoiceData);
-    if (!success) return;
-    updateInvoice(
-      { ...data, lastUploadFiles, lastUploadPhotos },
-      {
-        // mutate({id})
-      }
-    );
-  }
-
-  if (isPending) return <Spinner />;
+  // const submit = useCallback(
+  //   async (invoiceData: InvoiceUpdateSchemaType) => {
+  //     const { success, data } = invoiceUpdateSchema.safeParse(invoiceData);
+  //     if (!success) return;
+  //     mutateUpdateInvoice(data, {
+  //       onSuccess() {
+  //         form.reset();
+  //       },
+  //     });
+  //   },
+  //   [mutateUpdateInvoice, form]
+  // );
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(submit)}
-        className="gap-x-4 space-y-4.5 grid grid-cols-[1.5fr_1fr] m-2"
-      >
-        <div className="space-y-4.5 max-w-lg">
-          <div className="space-y-2">
-            <h2 className="font-semibold">Client</h2>
-            <FormField
-              control={form.control}
-              name="clientId"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isLoadingClients}
-                      datas={
-                        clientsData?.data?.map((client) => ({
-                          id: client.id,
-                          label: `${client.firstname} ${client.lastname}`,
-                          value: client.id,
-                        })) ?? []
-                      }
-                      value={field.value}
-                      setValue={(e) => {
-                        setClientId(e as string);
-                        field.onChange(e);
-                      }}
-                      placeholder="Sélectionner un client"
-                      searchMessage="Rechercher un client"
-                      noResultsMessage="Aucun client trouvé."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">
-              Article{items.length > 1 && "s"} ({items.length})
-            </h2>
-            <FormField
-              control={form.control}
-              name="item"
-              render={() => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <div className="space-y-2">
-                      {items.map((item) => (
-                        <div
-                          className="group relative flex flex-col hover:bg-blue/5 p-1.5 border-blue border-l-4"
-                          key={item.id}
-                        >
-                          <span
-                            className="top-0 right-1 absolute opacity-0 group-hover:opacity-100 font-bold text-red-500 text-sm transition-opacity cursor-pointer"
-                            onClick={() => removeItem(item.id)}
-                          >
-                            ×
-                          </span>
+    <>Hello</>
+    // <Form {...form}>
+    //   <form
+    //     onSubmit={form.handleSubmit(submit)}
+    //     className="gap-x-4 space-y-4.5 grid grid-cols-[1.5fr_1fr] m-2"
+    //   >
+    //     <div className="space-y-4.5 max-w-lg">
+    //       <div className="space-y-2">
+    //         <h2 className="font-semibold">Client</h2>
+    //         <FormField
+    //           control={form.control}
+    //           name="clientId"
+    //           render={({ field }) => (
+    //             <FormItem className="-space-y-2">
+    //               <FormControl>
+    //                 <Combobox
+    //                   isLoading={isGettingClients}
+    //                   datas={
+    //                     clientDatas?.data?.map((client) => ({
+    //                       id: client.id,
+    //                       label: `${client.firstname} ${client.lastname}`,
+    //                       value: client.id,
+    //                     })) ?? []
+    //                   }
+    //                   value={field.value}
+    //                   setValue={(e) => {
+    //                     setClientId(e as string);
+    //                     field.onChange(e);
+    //                   }}
+    //                   placeholder="Sélectionner un client"
+    //                   searchMessage="Rechercher un client"
+    //                   noResultsMessage="Aucun client trouvé."
+    //                 />
+    //               </FormControl>
+    //               <FormMessage />
+    //             </FormItem>
+    //           )}
+    //         />
+    //       </div>
+    //       <div className="space-y-2">
+    //         <h2 className="font-semibold">
+    //           Article{items.length > 1 && "s"} ({items.length})
+    //         </h2>
+    //         <div className="space-y-2">
+    //           {items.map((item) => (
+    //             <div
+    //               className="group relative flex flex-col hover:bg-blue/5 p-1.5 border-blue border-l-4 w-full"
+    //               key={item.id}
+    //             >
+    //               <span
+    //                 className="top-0 right-1 absolute opacity-0 group-hover:opacity-100 font-bold text-red-500 text-sm transition-opacity cursor-pointer"
+    //                 onClick={() => removeItem(item.id)}
+    //               >
+    //                 ×
+    //               </span>
 
-                          <h2 className="font-semibold text-sm">{item.name}</h2>
-                          {item.description && (
-                            <p className="mb-2 text-sm">{item.description}</p>
-                          )}
-                          <div className="flex justify-between items-center gap-x-2">
-                            <p className="flex items-center gap-x-1 font-medium text-sm">
-                              <span>{item.quantity}</span>x
-                              <span>
-                                {formatNumber(item.price)} {item.currency}
-                              </span>
-                            </p>
-                            <div className="flex items-center gap-x-2 max-w-[150px]">
-                              <TextInput
-                                type="number"
-                                value={
-                                  item.discount != null
-                                    ? String(item.discount).includes("%")
-                                      ? String(item.discount).split("%")[0]
-                                      : String(item.discount)
-                                    : "0"
-                                }
-                                className="!rounded-lg h-8"
-                                handleChange={(e) =>
-                                  updateItem({ ...item, discount: e as string })
-                                }
-                              />
+    //               <h2 className="font-semibold text-sm">{item.name}</h2>
+    //               {item.description && (
+    //                 <p className="mb-2 text-sm">{item.description}</p>
+    //               )}
+    //               <div className="flex justify-between items-center gap-x-2">
+    //                 <div className="flex items-center gap-x-1 font-medium text-sm">
+    //                   <span>
+    //                     <TextInput
+    //                       type="number"
+    //                       max={item.maxQuantity ?? 0}
+    //                       value={item.quantity}
+    //                       handleChange={(e) => {
+    //                         if (
+    //                           item.maxQuantity &&
+    //                           Number(e) > item.maxQuantity
+    //                         ) {
+    //                           editItemField(
+    //                             item.id,
+    //                             "quantity",
+    //                             Number(item.maxQuantity)
+    //                           );
+    //                           return toast.error(
+    //                             "La quantité max valable est " +
+    //                             item.maxQuantity
+    //                           );
+    //                         }
+    //                         editItemField(item.id, "quantity", Number(e));
+    //                       }}
+    //                       className="w-20 h-8"
+    //                     />
+    //                   </span>
+    //                   x
+    //                   <span>
+    //                     {formatNumber(item.price)} {item.currency}
+    //                   </span>
+    //                 </div>
 
-                              <ToggleGroup
-                                type="single"
-                                value={item.discountType}
-                                onValueChange={(e) => {
-                                  updateItem({
-                                    ...item,
-                                    discountType: e as "purcent" | "money",
-                                  });
-                                }}
-                              >
-                                <ToggleGroupItem value="purcent">
-                                  %
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value="money">
-                                  $
-                                </ToggleGroupItem>
-                              </ToggleGroup>
-                            </div>
-                          </div>
-                          <p className="font-medium text-sm">
-                            Total:{" "}
-                            {formatNumber(
-                              calculatePrice(
-                                parseFloat(item.price),
-                                parseFloat(
-                                  String(item.discount).replace("%", "")
-                                ),
-                                item.discountType
-                              )
-                            )}{" "}
-                            {item.currency}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    //                 <div className="flex items-center gap-x-2 max-w-[150px]">
+    //                   <TextInput
+    //                     type="number"
+    //                     value={
+    //                       item.discount != null
+    //                         ? String(item.discount).includes("%")
+    //                           ? String(item.discount).split("%")[0]
+    //                           : String(item.discount)
+    //                         : "0"
+    //                     }
+    //                     className="!rounded-lg h-8"
+    //                     handleChange={(e) =>
+    //                       updateItem({ ...item, discount: e as string })
+    //                     }
+    //                   />
 
-            <FormField
-              control={form.control}
-              name="clientId"
-              render={() => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <ItemModal />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">Pièce jointe</h2>
-            <div className="gap-x-2 grid grid-cols-2">
-              <FormField
-                control={form.control}
-                name="photos"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <TextInput
-                        type="file"
-                        multiple={true}
-                        design="float"
-                        label="Photo(s)"
-                        required={false}
-                        value={field.value}
-                        handleChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="files"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <TextInput
-                        type="file"
-                        multiple={true}
-                        design="float"
-                        label="Document(s)"
-                        required={false}
-                        value={field.value}
-                        handleChange={(e) => {
-                          console.log({ e });
-                          field.onChange(e);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="gap-x-2 grid grid-cols-2">
-              <FormField
-                control={form.control}
-                name="lastUploadPhotos"
-                render={() => (
-                  <FormItem className="-space-y-0.5">
-                    <FormLabel>Liste des photos enregistrées</FormLabel>
-                    <FormControl>
-                      <ScrollArea className="bg-gray p-4 border rounded-md h-[100px]">
-                        <ul className="w-full text-sm">
-                          {lastUploadPhotos.length > 0 ? (
-                            lastUploadPhotos.map((photo, index) => {
-                              return (
-                                <li
-                                  key={index}
-                                  className="flex justify-between items-center hover:bg-white/50 p-2 rounded"
-                                >
-                                  {index + 1}. photo.{photo.split(".").pop()}{" "}
-                                  <span className="flex items-center gap-x-2">
-                                    <span
-                                      onClick={() => downloadFile(photo)}
-                                      className="text-blue cursor-pointer"
-                                    >
-                                      <DownloadIcon className="w-4 h-4" />
-                                    </span>{" "}
-                                    <span
-                                      onClick={() =>
-                                        removeLastUpload(photo, "photo")
-                                      }
-                                      className="text-red cursor-pointer"
-                                    >
-                                      <XIcon className="w-4 h-4" />
-                                    </span>{" "}
-                                  </span>
-                                </li>
-                              );
-                            })
-                          ) : (
-                            <li className="text-sm">Aucun document trouvé.</li>
-                          )}
-                        </ul>
-                      </ScrollArea>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastUploadFiles"
-                render={() => (
-                  <FormItem className="-space-y-0.5">
-                    <FormLabel>Liste des fichiers enregistrés</FormLabel>
-                    <FormControl>
-                      <ScrollArea className="bg-gray p-4 border rounded-md h-[100px]">
-                        <ul className="w-full text-sm">
-                          {lastUploadFiles.length > 0 ? (
-                            lastUploadFiles.map((file, index) => {
-                              return (
-                                <li
-                                  key={index}
-                                  className="flex justify-between items-center hover:bg-white/50 p-2 rounded"
-                                >
-                                  {index + 1}. fichier.{file.split(".").pop()}{" "}
-                                  <span className="flex items-center gap-x-2">
-                                    <span
-                                      onClick={() => downloadFile(file)}
-                                      className="text-blue cursor-pointer"
-                                    >
-                                      <DownloadIcon className="w-4 h-4" />
-                                    </span>{" "}
-                                    <span
-                                      onClick={() =>
-                                        removeLastUpload(file, "file")
-                                      }
-                                      className="text-red cursor-pointer"
-                                    >
-                                      <XIcon className="w-4 h-4" />
-                                    </span>{" "}
-                                  </span>
-                                </li>
-                              );
-                            })
-                          ) : (
-                            <li className="text-sm">Aucun document trouvé.</li>
-                          )}
-                        </ul>
-                      </ScrollArea>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">Projet</h2>
-            <FormField
-              control={form.control}
-              name="projectId"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isLoadingProject}
-                      datas={projects.map((project) => ({
-                        id: project.id,
-                        label: project.name,
-                        value: project.id,
-                      }))}
-                      value={field.value}
-                      setValue={(e) => {
-                        field.onChange(e);
-                        setSelectedProject(projects.find((p) => p.id === e));
-                      }}
-                      placeholder="Sélectionner un projet"
-                      searchMessage="Rechercher un projet"
-                      noResultsMessage="Aucun projet trouvé."
-                      addElement={<ProjectModal clientId={clientId} />}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">Détails des paiements</h2>
-            <FormField
-              control={form.control}
-              name="note"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      design="text-area"
-                      required={false}
-                      label="Note"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-        <div className="space-y-4.5 max-w-full">
-          <div className="space-y-2">
-            <div className="flex justify-between gap-x-2">
-              <h2 className="font-semibold">Facture</h2>
-              {isPendingDocument ? (
-                <Spinner size={10} />
-              ) : (
-                <p className="font-medium text-sm">
-                  N°: {documentData?.data?.invoicesPrefix}-{invoiceNumber}
-                </p>
-              )}
-            </div>
-            <Badge variant="secondary" className="px-3 py-2">
-              Non envoyé
-            </Badge>
-          </div>
+    //                   <ToggleGroup
+    //                     type="single"
+    //                     value={item.discountType}
+    //                     onValueChange={(e) => {
+    //                       updateItem({
+    //                         ...item,
+    //                         discountType: e as "purcent" | "money",
+    //                       });
+    //                     }}
+    //                   >
+    //                     <ToggleGroupItem value="purcent">%</ToggleGroupItem>
+    //                     <ToggleGroupItem value="money">$</ToggleGroupItem>
+    //                   </ToggleGroup>
+    //                 </div>
+    //               </div>
+    //               {item.itemType === "billboard" && (
+    //                 <div className="flex mt-3 mb-2">
+    //                   <DatePicker
+    //                     className="flex w-[300px]"
+    //                     label="Durée de la location"
+    //                     mode="range"
+    //                     disabledRanges={
+    //                       locationBillboardDate
+    //                         .find((b) => b.id === item.id)
+    //                         ?.locationDate.map((d) => [
+    //                           new Date(d.start),
+    //                           new Date(d.end),
+    //                         ]) ?? []
+    //                     }
+    //                     value={
+    //                       item.locationStart && item.locationEnd
+    //                         ? {
+    //                           from: new Date(item.locationStart),
+    //                           to: new Date(item.locationEnd),
+    //                         }
+    //                         : undefined
+    //                     }
+    //                     onChange={(e) => {
+    //                       const range = e as
+    //                         | { from: Date; to: Date }
+    //                         | undefined;
+    //                       if (range) {
+    //                         editItemField(item.id, "locationStart", range.from);
+    //                         editItemField(item.id, "locationEnd", range.to);
+    //                         return;
+    //                       }
+    //                       editItemField(item.id, "locationStart", undefined);
+    //                       editItemField(item.id, "locationEnd", undefined);
+    //                     }}
+    //                   />
+    //                 </div>
+    //               )}
+    //               <ul>
+    //                 {calculateTaxes({
+    //                   items: [
+    //                     {
+    //                       name: item.name,
+    //                       price: calculatePrice(
+    //                         parseFloat(item.price),
+    //                         parseFloat(String(item.discount).replace("%", "")),
+    //                         item.discountType
+    //                       ),
+    //                       quantity: item.quantity,
+    //                     },
+    //                   ],
+    //                   itemType: "article",
+    //                   taxes: company?.vatRates ?? [],
+    //                   taxOperation: "sequence",
+    //                 }).taxes.map((tax) => (
+    //                   <li key={tax.taxName} className="text-xs">
+    //                     <span className="font-semibold">{tax.taxName}: </span>
+    //                     {formatNumber(tax.totalTax)} {item.currency}
+    //                   </li>
+    //                 ))}
+    //               </ul>
+    //               <p className="text-xs">
+    //                 <span className="font-semibold">Taxes totales: </span>
+    //                 {formatNumber(
+    //                   calculateTaxes({
+    //                     items: [
+    //                       {
+    //                         name: item.name,
+    //                         price: calculatePrice(
+    //                           parseFloat(item.price),
+    //                           parseFloat(
+    //                             String(item.discount).replace("%", "")
+    //                           ),
+    //                           item.discountType
+    //                         ),
+    //                         quantity: item.quantity,
+    //                       },
+    //                     ],
+    //                     itemType: "article",
+    //                     taxes: company?.vatRates ?? [],
+    //                     taxOperation: "sequence",
+    //                   }).totalTax
+    //                 )}{" "}
+    //                 {item.currency}
+    //               </p>
+    //               <p className="text-xs">
+    //                 <span className="font-semibold">Total HT: </span>
+    //                 {formatNumber(
+    //                   calculateTaxes({
+    //                     items: [
+    //                       {
+    //                         name: item.name,
+    //                         price: calculatePrice(
+    //                           parseFloat(item.price),
+    //                           parseFloat(
+    //                             String(item.discount).replace("%", "")
+    //                           ),
+    //                           item.discountType
+    //                         ),
+    //                         quantity: item.quantity,
+    //                       },
+    //                     ],
+    //                     itemType: "article",
+    //                     taxes: company?.vatRates ?? [],
+    //                     taxOperation: "sequence",
+    //                   }).totalWithoutTaxes
+    //                 )}{" "}
+    //                 {item.currency}
+    //               </p>
+    //               <p className="text-xs">
+    //                 <span className="font-semibold">Total TTC: </span>
+    //                 {formatNumber(
+    //                   calculateTaxes({
+    //                     items: [
+    //                       {
+    //                         name: item.name,
+    //                         price: calculatePrice(
+    //                           parseFloat(item.price),
+    //                           parseFloat(
+    //                             String(item.discount).replace("%", "")
+    //                           ),
+    //                           item.discountType
+    //                         ),
+    //                         quantity: item.quantity,
+    //                       },
+    //                     ],
+    //                     itemType: "article",
+    //                     taxes: company?.vatRates ?? [],
+    //                     taxOperation: "sequence",
+    //                   }).totalWithTaxes
+    //                 )}{" "}
+    //                 {item.currency}
+    //               </p>
+    //             </div>
+    //           ))}
+    //         </div>
 
-          <div className="space-y-2 pb-4 border-neutral-200 border-b">
-            <div className="flex justify-between text-sm">
-              <h2 className="font-semibold">Date</h2>
-              <p>{new Date().toLocaleDateString().replaceAll("/", "-")}</p>
-            </div>
-            <div className="flex justify-between text-sm">
-              <h2>Condition</h2>
-              <p>
-                {client
-                  ? paymentTerms.find((p) => p.value === client.paymentTerms)
-                      ?.label
-                  : "----"}
-              </p>
-            </div>
-            <div className="flex justify-between text-sm">
-              <h2>Date d’échéance</h2>
-              <p>
-                {selectedProject?.deadline
-                  ? new Date(selectedProject.deadline)
-                      .toLocaleDateString()
-                      .replaceAll("/", "-")
-                  : "----"}
-              </p>
-            </div>
-          </div>
-          <div className="space-y-2 pb-4 border-neutral-200 border-b">
-            <div className="flex justify-between text-sm">
-              <h2>Total HT</h2>
+    //         <FormField
+    //           control={form.control}
+    //           name="item"
+    //           render={() => (
+    //             <FormItem className="-space-y-2">
+    //               <FormControl>
+    //                 <ItemModal />
+    //               </FormControl>
+    //               <FormMessage />
+    //             </FormItem>
+    //           )}
+    //         />
+    //       </div>
+    //       <div className="space-y-2">
+    //         <h2 className="font-semibold">Pièce jointe</h2>
+    //         <div className="gap-x-2 grid grid-cols-2">
+    //           <FormField
+    //             control={form.control}
+    //             name="photos"
+    //             render={({ field }) => (
+    //               <FormItem className="-space-y-2">
+    //                 <FormControl>
+    //                   <TextInput
+    //                     type="file"
+    //                     multiple={true}
+    //                     design="float"
+    //                     label="Photo(s)"
+    //                     required={false}
+    //                     value={field.value}
+    //                     handleChange={field.onChange}
+    //                   />
+    //                 </FormControl>
+    //                 <FormMessage />
+    //               </FormItem>
+    //             )}
+    //           />
+    //           <FormField
+    //             control={form.control}
+    //             name="files"
+    //             render={({ field }) => (
+    //               <FormItem className="-space-y-2">
+    //                 <FormControl>
+    //                   <TextInput
+    //                     type="file"
+    //                     multiple={true}
+    //                     design="float"
+    //                     label="Photo(s)"
+    //                     required={false}
+    //                     value={field.value}
+    //                     handleChange={(e) => {
+    //                       console.log({ e });
+    //                       field.onChange(e);
+    //                     }}
+    //                   />
+    //                 </FormControl>
+    //                 <FormMessage />
+    //               </FormItem>
+    //             )}
+    //           />
+    //         </div>
+    //       </div>
+    //       <div className="space-y-2">
+    //         <h2 className="font-semibold">Projet</h2>
+    //         <FormField
+    //           control={form.control}
+    //           name="projectId"
+    //           render={({ field }) => (
+    //             <FormItem className="-space-y-2">
+    //               <FormControl>
+    //                 <Combobox
+    //                   isLoading={isGettingProject}
+    //                   datas={projects.map(({ id, name, status }) => ({
+    //                     id: id,
+    //                     label: name,
+    //                     value: id,
+    //                     color:
+    //                       status === "BLOCKED"
+    //                         ? "bg-red"
+    //                         : status === "TODO"
+    //                           ? "bg-neutral-200"
+    //                           : status === "IN_PROGRESS"
+    //                             ? "bg-blue"
+    //                             : "bg-emerald-500",
+    //                     disabled: status !== "BLOCKED",
+    //                   }))}
+    //                   value={field.value ?? ""}
+    //                   setValue={(e) => {
+    //                     field.onChange(e);
+    //                   }}
+    //                   placeholder="Sélectionner un projet"
+    //                   searchMessage="Rechercher un projet"
+    //                   noResultsMessage="Aucun projet trouvé."
+    //                   addElement={<ProjectModal clientId={clientId} />}
+    //                 />
+    //               </FormControl>
+    //               <FormMessage />
+    //             </FormItem>
+    //           )}
+    //         />
+    //       </div>
+    //       <div className="space-y-2">
+    //         <h2 className="font-semibold">Détails des paiements</h2>
+    //         <FormField
+    //           control={form.control}
+    //           name="note"
+    //           render={({ field }) => (
+    //             <FormItem className="-space-y-2">
+    //               <FormControl>
+    //                 <TextInput
+    //                   design="text-area"
+    //                   required={false}
+    //                   label="Note"
+    //                   value={field.value}
+    //                   handleChange={field.onChange}
+    //                 />
+    //               </FormControl>
+    //               <FormMessage />
+    //             </FormItem>
+    //           )}
+    //         />
+    //       </div>
+    //     </div>
+    //     <div className="space-y-4.5 max-w-full">
+    //       <div className="space-y-2">
+    //         <div className="flex justify-between gap-x-2">
+    //           <h2 className="font-semibold">Facture</h2>
+    //           {isGettingDocument ? (
+    //             <Spinner size={10} />
+    //           ) : (
+    //             <p className="font-medium text-sm">
+    //               N°: {documentData?.data?.invoicesPrefix}-
+    //               {invoiceNumber}
+    //             </p>
+    //           )}
+    //         </div>
+    //         <Badge variant="secondary" className="px-3 py-2">
+    //           Non envoyé
+    //         </Badge>
+    //       </div>
 
-              <p>
-                {items.length > 0 ? (
-                  <>
-                    {formatNumber(
-                      calculatePrice(
-                        totalHT,
-                        parseFloat(
-                          String(clientDiscount.discount).replace("%", "")
-                        ),
-                        clientDiscount.discountType
-                      )
-                    )}
-                  </>
-                ) : (
-                  0
-                )}{" "}
-                {currency}
-              </p>
-            </div>
-            <div className="flex justify-between text-sm">
-              <h2>Réduction</h2>
-              <div className="flex items-center gap-x-2 max-w-[150px]">
-                <TextInput
-                  type="number"
-                  value={clientDiscount.discount}
-                  className="!rounded-lg h-8"
-                  handleChange={(e) => {
-                    setHasEditedDiscount(true);
-                    setClientDiscount({
-                      ...clientDiscount,
-                      discount: Number(e),
-                    });
-                  }}
-                />
+    //       <div className="space-y-2 pb-4 border-neutral-200 border-b">
+    //         <div className="flex justify-between text-sm">
+    //           <h2 className="font-semibold">Date</h2>
+    //           <p>{formatDateToDashModel(new Date())}</p>
+    //         </div>
+    //         <div className="flex justify-between text-sm">
+    //           <h2>Condition</h2>
+    //           <p>
+    //             {client
+    //               ? paymentTerms.find((p) => p.value === client.paymentTerms)
+    //                 ?.label
+    //               : "----"}
+    //           </p>
+    //         </div>
+    //         <div className="flex justify-between text-sm">
+    //           <h2>Date d’échéance</h2>
+    //           <p>
+    //             {client?.paymentTerms
+    //               ? addDays(
+    //                 new Date(),
+    //                 paymentTerms.find((p) => p.value === client.paymentTerms)
+    //                   ?.data ?? 0
+    //               ) as string
+    //               : "----"}
+    //           </p>
+    //         </div>
+    //       </div>
+    //       <div className="space-y-2 pb-4 border-neutral-200 border-b">
+    //         <div className="flex justify-between text-sm">
+    //           <h2>Total HT</h2>
 
-                <ToggleGroup
-                  type="single"
-                  value={clientDiscount.discountType}
-                  onValueChange={(e) => {
-                    setHasEditedDiscount(true);
-                    setClientDiscount({
-                      ...clientDiscount,
-                      discountType: e as "purcent" | "money",
-                    });
-                  }}
-                >
-                  <ToggleGroupItem value="purcent">%</ToggleGroupItem>
-                  <ToggleGroupItem value="money">$</ToggleGroupItem>
-                </ToggleGroup>
-              </div>
-            </div>
-          </div>
+    //           <p>
+    //             {items.length > 0 ? (
+    //               <>
+    //                 {formatNumber(
+    //                   calculatePrice(
+    //                     totals.HTPrice,
+    //                     parseFloat(
+    //                       String(clientDiscount.discount).replace("%", "")
+    //                     ),
+    //                     clientDiscount.discountType
+    //                   )
+    //                 )}
+    //               </>
+    //             ) : (
+    //               0
+    //             )}{" "}
+    //             {currency}
+    //           </p>
+    //         </div>
+    //         <ul>
+    //           {calculateTaxes({
+    //             items: items.map((item) => ({
+    //               name: item.name,
+    //               price: calculatePrice(
+    //                 parseFloat(item.price),
+    //                 parseFloat(String(item.discount).replace("%", "")),
+    //                 item.discountType
+    //               ),
+    //               quantity: item.quantity,
+    //             })),
+    //             itemType: "total",
+    //             taxes: company?.vatRates ?? [],
+    //             taxOperation: "sequence",
+    //           }).taxes.map((tax) => (
+    //             <li key={tax.taxName} className="flex justify-between text-sm">
+    //               <span>{tax.taxName} </span>
+    //               {formatNumber(tax.totalTax)} {company?.currency}
+    //             </li>
+    //           ))}
+    //         </ul>
+    //         <div className="flex justify-between text-sm">
+    //           <h2>Réduction</h2>
+    //           <div className="flex items-center gap-x-2 max-w-[150px]">
+    //             <TextInput
+    //               type="number"
+    //               value={
+    //                 clientDiscount?.discount != null
+    //                   ? String(clientDiscount.discount).includes("%")
+    //                     ? Number(String(clientDiscount.discount).split("%")[0])
+    //                     : Number(clientDiscount.discount)
+    //                   : 0
+    //               }
+    //               className="!rounded-lg h-8"
+    //               handleChange={(e) =>
+    //                 setClientDiscount({
+    //                   ...clientDiscount,
+    //                   discount: Number(e),
+    //                 })
+    //               }
+    //             />
 
-          <div className="space-y-2 pb-4 border-neutral-200 border-b">
-            <div className="flex justify-between text-sm">
-              <h2 className="font-semibold">Total TTC</h2>
-              <p>
-                {items.length > 0 ? (
-                  <>
-                    {formatNumber(
-                      calculatePrice(
-                        totalHT,
-                        parseFloat(
-                          String(clientDiscount.discount).replace("%", "")
-                        ),
-                        clientDiscount.discountType
-                      )
-                    )}
-                  </>
-                ) : (
-                  0
-                )}{" "}
-                {currency}
-              </p>
-            </div>
-            <div className="flex justify-between text-sm">
-              <h2>Avance</h2>
-              <p>0 {currency}</p>
-            </div>
-            <div className="flex justify-between text-sm">
-              <h2>Payer</h2>
-              <p>
-                {" "}
-                {items.length > 0 ? (
-                  <>
-                    {formatNumber(
-                      calculatePrice(
-                        totalHT,
-                        parseFloat(
-                          String(clientDiscount.discount).replace("%", "")
-                        ),
-                        clientDiscount.discountType
-                      )
-                    )}
-                  </>
-                ) : (
-                  0
-                )}{" "}
-                {currency}
-              </p>
-            </div>
-          </div>
+    //             <ToggleGroup
+    //               type="single"
+    //               value={clientDiscount.discountType}
+    //               onValueChange={(e) =>
+    //                 setClientDiscount({
+    //                   ...clientDiscount,
+    //                   discountType: e as "purcent" | "money",
+    //                 })
+    //               }
+    //             >
+    //               <ToggleGroupItem value="purcent">%</ToggleGroupItem>
+    //               <ToggleGroupItem value="money">$</ToggleGroupItem>
+    //             </ToggleGroup>
+    //           </div>
+    //         </div>
+    //       </div>
 
-          <div className="flex justify-center pt-2">
-            <Button type="submit" variant="primary" className="justify-center">
-              {isPendingInvoice ? <Spinner /> : "Valider"}
-            </Button>
-          </div>
-        </div>
-      </form>
-    </Form>
+    //       <div className="space-y-2 pb-4 border-neutral-200 border-b">
+    //         <div className="flex justify-between text-sm">
+    //           <h2 className="font-semibold">Total TTC</h2>
+    //           <p>
+    //             {items.length > 0 ? <>{totals.TTCPrice}</> : 0} {currency}
+    //           </p>
+    //         </div>
+    //         <div className="flex justify-between text-sm">
+    //           <h2>Avance</h2>
+    //           <p>0 {currency}</p>
+    //         </div>
+    //         <div className="flex justify-between text-sm">
+    //           <h2>Payer</h2>
+    //           <p>0 {currency}</p>
+    //         </div>
+    //       </div>
+
+    //       <div className="flex justify-center pt-2">
+    //         <Button type="submit" variant="primary" className="justify-center">
+    //           {isUpdatingInvoice ? <Spinner /> : "Valider"}
+    //         </Button>
+    //       </div>
+    //     </div>
+    //   </form>
+    // </Form>
   );
 }

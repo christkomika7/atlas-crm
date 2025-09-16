@@ -11,12 +11,21 @@ export function formatDateToDashModel(date: Date): string {
     return new Date(date).toLocaleDateString().replaceAll("/", "-");
 }
 
-export function addDays(date: Date, days: number): string {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
+export function addDays(
+  date: Date,
+  days: number,
+  returnType: "date" | "string" = "string"
+): Date | string {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
 
-    return formatDateToDashModel(result);
+  if (returnType === "date") {
+    return result;
+  }
+
+  return formatDateToDashModel(result);
 }
+
 
 export function parseDateTime(
     dateStr: string,  // format "dd/MM/yyyy"
