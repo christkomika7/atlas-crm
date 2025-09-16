@@ -136,10 +136,6 @@ export async function POST(req: NextRequest) {
     let savedFilePaths: string[] = [];
     let savedPhotoPaths: string[] = [];
 
-
-
-
-
     try {
         for (const file of files) {
             const upload = await createFile(file, folderFile);

@@ -196,62 +196,62 @@ export async function PUT(req: NextRequest) {
           note: data.note!,
           photos: savedPhotoPaths,
           files: savedFilePaths,
-          items: {
-            disconnect: deletedItemIds.map((id) => ({ id })),
-            create: [
-              ...(newBillboardItems?.map((billboard) => ({
-                name: billboard.name,
-                description: billboard.description ?? "",
-                quantity: billboard.quantity,
-                price: billboard.price,
-                discount: billboard.discount!,
-                discountType: billboard.discountType as string,
-                currency: billboard.currency!,
-                billboardId: billboard.billboardId,
-                itemType: billboard.itemType ?? "billboard"
-              })) || []),
-              ...(newProductServiceItems?.map((productService) => ({
-                name: productService.name,
-                description: productService.description ?? "",
-                quantity: productService.quantity,
-                price: productService.price,
-                discount: productService.discount!,
-                discountType: productService.discountType as string,
-                currency: productService.currency!,
-                productServiceId: productService.productServiceId,
-                itemType: productService.itemType ?? "product"
-              })) || []),
-            ],
-            update: [
-              ...(data.item.billboards?.map((billboard) => ({
-                where: { id: billboard.billboardId }, // doit exister
-                data: {
-                  name: billboard.name,
-                  description: billboard.description ?? "",
-                  quantity: billboard.quantity,
-                  price: billboard.price,
-                  discount: billboard.discount!,
-                  discountType: billboard.discountType as string,
-                  currency: billboard.currency!,
-                  itemType: billboard.itemType ?? "billboard",
-                },
-              })) || []),
+          // items: {
+          //   disconnect: deletedItemIds.map((id) => ({ id })),
+          //   create: [
+          //     ...(newBillboardItems?.map((billboard) => ({
+          //       name: billboard.name,
+          //       description: billboard.description ?? "",
+          //       quantity: billboard.quantity,
+          //       price: billboard.price,
+          //       discount: billboard.discount!,
+          //       discountType: billboard.discountType as string,
+          //       currency: billboard.currency!,
+          //       billboardId: billboard.billboardId,
+          //       itemType: billboard.itemType ?? "billboard"
+          //     })) || []),
+          //     ...(newProductServiceItems?.map((productService) => ({
+          //       name: productService.name,
+          //       description: productService.description ?? "",
+          //       quantity: productService.quantity,
+          //       price: productService.price,
+          //       discount: productService.discount!,
+          //       discountType: productService.discountType as string,
+          //       currency: productService.currency!,
+          //       productServiceId: productService.productServiceId,
+          //       itemType: productService.itemType ?? "product"
+          //     })) || []),
+          //   ],
+          //   update: [
+          //     ...(data.item.billboards?.map((billboard) => ({
+          //       where: { id: billboard.billboardId }, // doit exister
+          //       data: {
+          //         name: billboard.name,
+          //         description: billboard.description ?? "",
+          //         quantity: billboard.quantity,
+          //         price: billboard.price,
+          //         discount: billboard.discount!,
+          //         discountType: billboard.discountType as string,
+          //         currency: billboard.currency!,
+          //         itemType: billboard.itemType ?? "billboard",
+          //       },
+          //     })) || []),
 
-              ...(data.item.productServices?.map((productService) => ({
-                where: { id: productService.productServiceId }, // doit exister
-                data: {
-                  name: productService.name,
-                  description: productService.description ?? "",
-                  quantity: productService.quantity,
-                  price: productService.price,
-                  discount: productService.discount!,
-                  discountType: productService.discountType as string,
-                  currency: productService.currency!,
-                  itemType: productService.itemType ?? "product",
-                },
-              })) || []),
-            ],
-          },
+          //     ...(data.item.productServices?.map((productService) => ({
+          //       where: { id: productService.productServiceId }, // doit exister
+          //       data: {
+          //         name: productService.name,
+          //         description: productService.description ?? "",
+          //         quantity: productService.quantity,
+          //         price: productService.price,
+          //         discount: productService.discount!,
+          //         discountType: productService.discountType as string,
+          //         currency: productService.currency!,
+          //         itemType: productService.itemType ?? "product",
+          //       },
+          //     })) || []),
+          //   ],
+          // },
 
           project: { connect: { id: data.projectId } },
           client: { connect: { id: data.clientId } },
