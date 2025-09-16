@@ -1,0 +1,129 @@
+import { z } from "zod";
+
+export const itemSchema = z.object({
+    id: z.string().optional(),
+    name: z.string().min(1, { message: "Le nom de l'article est obligatoire." }),
+    description: z.string().optional(),
+    quantity: z
+        .number()
+        .int()
+        .min(1, { message: "La quantité doit être au moins égale à 1." }),
+    locationStart: z.date().optional(),
+    locationEnd: z.date().optional(),
+    status: z.enum(["available", "non-available"]).optional(),
+    price: z.string().min(1, { message: "Le prix est obligatoire." }),
+    updatedPrice: z.string().min(1, { message: "Le prix avec taxe et réduction est obligatoire." }),
+    discount: z.string().optional(),
+    currency: z.string().optional(),
+    discountType: z
+        .enum(["purcent", "money"], {
+            error: "Le type de réduction est obligatoire.",
+        }),
+    itemType: z.enum(["billboard", "product", "service"]).optional(),
+    billboardId: z.string().optional(),
+    productServiceId: z.string().optional(),
+});
+
+export const invoiceSchema = z
+    .object({
+        clientId: z.string({ error: "Le client est requis" }),
+        projectId: z.string({ error: "Le projet est requis" }),
+        companyId: z.string({ error: "L'entreprise est requise" }),
+        item: z.object({
+            productServices: z.array(itemSchema).optional(),
+            billboards: z.array(itemSchema).optional(),
+        }, { error: "Vous devez sélectionner au moins un produit/service ou un panneau publicitaire" }),
+
+        photos: z.array(z.instanceof(File)).optional(),
+        files: z.array(z.instanceof(File)).optional(),
+        totalHT: z.string().min(1, {
+            message: "Le prix total hors taxe est requis.",
+        }),
+        discount: z.string().optional(),
+        discountType: z.enum(["purcent", "money"], {
+            message: "Le type de réduction est obligatoire.",
+        }),
+        totalTTC: z.string().min(1, {
+            message: "Le prix total TTC est requis.",
+        }),
+        payee: z.string().optional(),
+        note: z.string().optional(),
+    })
+    .refine(
+        (data) =>
+
+            (!data.item || data.item.productServices && data.item.productServices.length > 0) ||
+            (data.item.billboards && data.item.billboards.length > 0),
+
+        {
+            message:
+                "Vous devez sélectionner au moins un produit/service ou un panneau publicitaire",
+            path: ["item"],
+        }
+    ).refine(
+        (data) => {
+            if (!data.item?.billboards) return true;
+
+            return data.item.billboards.every((billboard) => {
+                if (
+                    billboard.status === "non-available" &&
+                    billboard.itemType === "billboard"
+                ) {
+                    return billboard.locationStart !== undefined && billboard.locationEnd !== undefined;
+                }
+                return true;
+            });
+        },
+        {
+            message: "Veuillez insérer la date de location pour les panneaux non disponibles.",
+            path: ["item"],
+        }
+    );
+
+export const invoiceUpdateSchema = z
+    .object({
+        id: z.string().min(1, { message: "L'identifiant est requis" }),
+        clientId: z.string().min(1, { message: "Le client est requis" }),
+        projectId: z.string().min(1, { message: "Le projet est requis" }),
+        companyId: z.string().min(1, { message: "L'entreprise est requise" }),
+        invoiceNumber: z.number().min(1, { message: "Le numéro de facture est requis" }),
+        item: z.object({
+            productServices: z.array(itemSchema).optional(),
+            billboards: z.array(itemSchema).optional(),
+        }),
+        photos: z
+            .array(z.instanceof(File))
+            .optional(),
+
+        files: z
+            .array(z.instanceof(File))
+            .optional(),
+        lastUploadPhotos: z.array(z.string()).optional(),
+        lastUploadFiles: z.array(z.string()).optional(),
+
+        totalHT: z.string().min(1, {
+            message: "Le prix total hors taxe est requis."
+        }),
+        discount: z.string().optional(),
+        discountType: z
+            .enum(["purcent", "money"], {
+                error: "Le type de réduction est obligatoire.",
+            }),
+        totalTTC: z.string().min(1, {
+            message: "Le prix total TTC est requis."
+        }),
+        payee: z.string().optional(),
+        note: z.string().optional(),
+    })
+    .refine(
+        (data) =>
+            (data.item.productServices && data.item.productServices.length > 0) ||
+            (data.item.billboards && data.item.billboards.length > 0),
+        {
+            message:
+                "Vous devez sélectionner au moins un produit/service ou un panneau publicitaire",
+            path: ["item"],
+        }
+    );
+export type InvoiceSchemaType = z.infer<typeof invoiceSchema>;
+export type InvoiceUpdateSchemaType = z.infer<typeof invoiceUpdateSchema>;
