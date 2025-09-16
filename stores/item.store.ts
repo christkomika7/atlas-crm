@@ -17,6 +17,7 @@ type ItemType = {
     discountType: "purcent" | "money";
     currency: string;
     itemType: "billboard" | "product" | "service";
+    lastQuantity?: number
 };
 
 type RangeDateType = {
@@ -42,8 +43,6 @@ type ItemStore = {
     editItemField: (id: string, field: keyof ItemType, value: any) => void;
     setItems: (items: ItemType[]) => void;
     clearItem: () => void;
-    addQuantity: (id: string, max: number) => number | undefined;
-    retrieveQuantity: (id: string, min: number) => number | undefined;
     updateDiscount: (discount: string) => void;
 };
 
@@ -114,30 +113,6 @@ const useItemStore = createSelectors(
 
         clearItem() {
             set({ items: [] });
-        },
-
-        addQuantity(id, max) {
-            let newQty: number | undefined;
-            set((state) => ({
-                items: state.items.map((i) => {
-                    if (i.id !== id) return i;
-                    newQty = Math.min(i.quantity + 1, max);
-                    return { ...i, quantity: newQty };
-                }),
-            }));
-            return newQty;
-        },
-
-        retrieveQuantity(id, min) {
-            let newQty: number | undefined;
-            set((state) => ({
-                items: state.items.map((i) => {
-                    if (i.id !== id) return i;
-                    newQty = Math.max(i.quantity - 1, min);
-                    return { ...i, quantity: newQty };
-                }),
-            }));
-            return newQty;
         },
 
         updateDiscount(discount) {

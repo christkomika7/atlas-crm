@@ -20,8 +20,6 @@ import { useEffect } from "react";
 import { unique } from "@/action/client.action";
 import useClientIdStore from "@/stores/client-id.store";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { MinusIcon, PlusIcon } from "lucide-react";
 
 export default function ProductServiceTab() {
   const clientId = useClientIdStore.use.clientId();
@@ -29,8 +27,6 @@ export default function ProductServiceTab() {
   const items = useItemStore.use.items();
   const addItem = useItemStore.use.addItem();
   const removeItem = useItemStore.use.removeItem();
-  const addQuantity = useItemStore.use.addQuantity();
-  const retrieveQuantity = useItemStore.use.retrieveQuantity();
   const companyId = useDataStore.use.currentCompany();
 
   const {
@@ -39,14 +35,14 @@ export default function ProductServiceTab() {
     isPending: isLoadingClient,
   } = useQueryAction<{ id: string }, RequestResponse<ClientType>>(
     unique,
-    () => {},
+    () => { },
     "client"
   );
 
   const { mutate, isPending, data } = useQueryAction<
     { companyId: string },
     RequestResponse<ProductServiceType[]>
-  >(all, () => {}, "product-services");
+  >(all, () => { }, "product-services");
 
   useEffect(() => {
     if (companyId) {
@@ -98,6 +94,16 @@ export default function ProductServiceTab() {
     }
   }
 
+  function currentQuantity(productServiceId: string, quantity: number) {
+    const item = items.find(item => item.id === productServiceId);
+    if (item?.lastQuantity) {
+      console.log(quantity, " + ", item.lastQuantity, " - ", item.quantity)
+      return (quantity + item.lastQuantity || 0) - item.quantity;
+    }
+    return quantity - Number(item?.quantity ?? 0)
+
+  }
+
   return (
     <div className="pt-2">
       <Table>
@@ -112,7 +118,6 @@ export default function ProductServiceTab() {
             </TableHead>
             <TableHead className="font-medium text-center">Quantité</TableHead>
             <TableHead className="font-medium text-center">Montant</TableHead>
-            <TableHead className="font-medium text-center">Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -137,7 +142,7 @@ export default function ProductServiceTab() {
                     "h-16 transition-colors",
                     isItemSelected ? "bg-neutral-100" : "",
                     (isOutOfStock || !isClientSelected) &&
-                      "bg-gray-100 opacity-60 cursor-not-allowed"
+                    "bg-gray-100 opacity-60 cursor-not-allowed"
                   )}
                 >
                   <TableCell className="text-neutral-600">
@@ -158,54 +163,11 @@ export default function ProductServiceTab() {
                     {cutText(productService.designation)}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {Number(productService.quantity) -
-                      Number(
-                        items.find((i) => i.id === productService.id)
-                          ?.quantity || 0
-                      )}
+                    {currentQuantity(productService.id, productService.quantity)}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {formatNumber(Number(productService.unitPrice))}{" "}
                     {productService.company.currency}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    <div className="flex justify-center items-center gap-x-2">
-                      <Button
-                        disabled={
-                          isOutOfStock || !isItemSelected || !isClientSelected
-                        }
-                        onClick={() => {
-                          toggleSelection(true, productService);
-                          addQuantity(
-                            productService.id,
-                            Number(productService.quantity)
-                          );
-                        }}
-                        variant="primary"
-                        className="bg-blue/5 shadow-none border-2 border-blue !size-6 text-blue"
-                      >
-                        <PlusIcon />
-                      </Button>
-
-                      <Button
-                        disabled={
-                          isOutOfStock || !isItemSelected || !isClientSelected
-                        }
-                        onClick={() => {
-                          const newQuantity = retrieveQuantity(
-                            productService.id,
-                            0
-                          );
-                          if (newQuantity === 0) {
-                            toggleSelection(false, productService);
-                          }
-                        }}
-                        variant="primary"
-                        className="bg-red/5 shadow-none border-2 border-red !size-6 text-red"
-                      >
-                        <MinusIcon />
-                      </Button>
-                    </div>
                   </TableCell>
                 </TableRow>
               );

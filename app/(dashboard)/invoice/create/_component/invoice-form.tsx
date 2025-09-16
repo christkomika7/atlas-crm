@@ -85,19 +85,19 @@ export default function InvoiceForm() {
     data: clientsData,
   } = useQueryAction<{ id: string }, RequestResponse<ClientType[]>>(
     getClients,
-    () => {},
+    () => { },
     "clients"
   );
 
   const { mutate: mutateClient } = useQueryAction<
     { id: string },
     RequestResponse<ClientType>
-  >(getClient, () => {}, "client");
+  >(getClient, () => { }, "client");
 
   const { mutate, isPending } = useQueryAction<
     InvoiceSchemaType,
     RequestResponse<InvoiceType>
-  >(create, () => {}, "invoices");
+  >(create, () => { }, "invoices");
 
   const {
     mutate: mutateInvoiceNumber,
@@ -105,7 +105,7 @@ export default function InvoiceForm() {
     data: invoiceNumberData,
   } = useQueryAction<{ companyId: string }, RequestResponse<number>>(
     invoiceNumber,
-    () => {},
+    () => { },
     "invoice-number"
   );
 
@@ -115,7 +115,7 @@ export default function InvoiceForm() {
     data: documentData,
   } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
     unique,
-    () => {},
+    () => { },
     "document"
   );
 
@@ -125,7 +125,7 @@ export default function InvoiceForm() {
     data: projectData,
   } = useQueryAction<{ clientId: string }, RequestResponse<ProjectType[]>>(
     allByClient,
-    () => {},
+    () => { },
     "projects"
   );
 
@@ -217,7 +217,7 @@ export default function InvoiceForm() {
             locationEnd: item.locationEnd,
             discountType: item.discountType,
             description: item.description,
-            discount: String(item.discount),
+            discount: item.discount,
             billboardId: item.id,
             currency: item.currency,
           })),
@@ -310,10 +310,10 @@ export default function InvoiceForm() {
 
   useEffect(() => {
     form.watch(() => {
-      console.log({errors: form.formState.errors});
+      console.log({ errors: form.formState.errors });
     })
 
-  },[form.watch])
+  }, [form.watch])
 
   const submit = useCallback(
     async (invoiceData: InvoiceSchemaType) => {
@@ -408,7 +408,7 @@ export default function InvoiceForm() {
                               );
                               return toast.error(
                                 "La quantité max valable est " +
-                                  item.maxQuantity
+                                item.maxQuantity
                               );
                             }
                             editItemField(item.id, "quantity", Number(e));
@@ -470,9 +470,9 @@ export default function InvoiceForm() {
                         value={
                           item.locationStart && item.locationEnd
                             ? {
-                                from: new Date(item.locationStart),
-                                to: new Date(item.locationEnd),
-                              }
+                              from: new Date(item.locationStart),
+                              to: new Date(item.locationEnd),
+                            }
                             : undefined
                         }
                         onChange={(e) => {
@@ -668,10 +668,10 @@ export default function InvoiceForm() {
                           status === "BLOCKED"
                             ? "bg-red"
                             : status === "TODO"
-                            ? "bg-neutral-200"
-                            : status === "IN_PROGRESS"
-                            ? "bg-blue"
-                            : "bg-emerald-500",
+                              ? "bg-neutral-200"
+                              : status === "IN_PROGRESS"
+                                ? "bg-blue"
+                                : "bg-emerald-500",
                         disabled: status !== "BLOCKED",
                       }))}
                       value={field.value ?? ""}
@@ -739,7 +739,7 @@ export default function InvoiceForm() {
               <p>
                 {client
                   ? paymentTerms.find((p) => p.value === client.paymentTerms)
-                      ?.label
+                    ?.label
                   : "----"}
               </p>
             </div>
@@ -748,10 +748,10 @@ export default function InvoiceForm() {
               <p>
                 {client?.paymentTerms
                   ? addDays(
-                      new Date(),
-                      paymentTerms.find((p) => p.value === client.paymentTerms)
-                        ?.data ?? 0
-                    ) as string
+                    new Date(),
+                    paymentTerms.find((p) => p.value === client.paymentTerms)
+                      ?.data ?? 0
+                  ) as string
                   : "----"}
               </p>
             </div>
