@@ -31,7 +31,9 @@ export default function EmployeeCard({
     const fetchImage = async () => {
       if (isKey) {
         const file = await getFile(imageKey);
-        setImage(file);
+        if (file) {
+          setImage(file);
+        }
       } else {
         setImage(imageKey);
       }
