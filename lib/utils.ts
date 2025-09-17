@@ -320,10 +320,32 @@ export function getIdFromUrl(
 
 export function resolveImageSrc(
   file: string | File | undefined
-): string | undefined {
-  if (!file) return undefined;
-  if (typeof file === "string") return file;
-  return URL.createObjectURL(file);
+): string | null {
+  if (!file) return null;
+
+  try {
+    if (typeof file === "string") {
+      // Vérifie si c'est une URL valide (http(s) ou data: ou chemin local)
+      try {
+        new URL(file, window.location.origin);
+        return file;
+      } catch {
+        return null;
+      }
+    }
+
+    if (file instanceof File) {
+      // Vérifie que ce n’est pas un fichier vide ou corrompu
+      if (file.size === 0 || !file.type.startsWith("image/")) {
+        return null;
+      }
+      return URL.createObjectURL(file);
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export function extractCompanyData(formData: FormData) {

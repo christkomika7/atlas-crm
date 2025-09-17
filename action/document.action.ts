@@ -46,7 +46,6 @@ export async function unique({ id }: { id: string }): Promise<RequestResponse<Mo
 
 export async function create(data: DocumentSchemaType) {
     try {
-        console.log({ data })
         const formData = new FormData();
         formData.append("company", data.companyId);
 

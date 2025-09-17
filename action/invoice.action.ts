@@ -131,7 +131,6 @@ export async function update(data: InvoiceUpdateSchemaType) {
                 formData.append("files", file);
             }
         });
-        console.log({ id: data.id })
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${data.id}`, {
             method: "PUT",
             body: formData,

@@ -10,12 +10,18 @@ export async function GET(req: NextRequest) {
     const invoice = await prisma.invoice.findUnique({
         where: { id },
         include: {
-            company: true,
+            company: {
+                include: {
+                    documentModel: true
+                }
+            },
             client: true,
             project: true,
             items: true,
         }
     });
+
+    console.log(invoice,)
 
     return NextResponse.json({
         state: "success",

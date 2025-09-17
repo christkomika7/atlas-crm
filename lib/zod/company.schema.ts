@@ -35,6 +35,10 @@ export const companySchema = z.object({
     country: z.string().min(1, {
         message: "Le pays est obligatoire."
     }),
+    city: z.string().min(1, {
+        message: "Le ville est obligatoire."
+    }),
+    codePostal: z.string().optional(),
     registeredAddress: z.string().min(1, {
         message: "L'adresse enregistrée est obligatoire."
     }),
@@ -87,6 +91,10 @@ export const editCompanySchema = z.object({
     country: z.string().min(1, {
         message: "Le pays est obligatoire."
     }),
+    city: z.string().min(1, {
+        message: "Le ville est obligatoire."
+    }),
+    codePostal: z.string().optional(),
     registeredAddress: z.string().min(1, {
         message: "L'adresse enregistrée est obligatoire."
     }),

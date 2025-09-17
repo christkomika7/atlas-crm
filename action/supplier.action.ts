@@ -66,7 +66,6 @@ export async function create(data: SupplierSchemaType & { id: string }) {
         });
 
         const res: RequestResponse<SupplierType[]> = await response.json();
-        console.log({ res })
 
         if (!response.ok) {
             throw new Error(res.message || "Erreur lors de la création du fournisseur");
@@ -111,7 +110,6 @@ export async function update(data: EditSupplierSchemaType) {
         });
 
         const res: RequestResponse<SupplierType[]> = await response.json();
-        console.log({ res })
 
         if (!response.ok) {
             throw new Error(res.message || "Erreur lors de la modification du fournisseur");

@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     });
 
     const productServicesParse = JSON.parse(rawData.productServices);
-    const billboardsParse = JSON.parse(rawData.billboards)
+    const billboardsParse = JSON.parse(rawData.billboards);
 
     const data = parseData<InvoiceSchemaType>(invoiceSchema, {
         ...rawData,

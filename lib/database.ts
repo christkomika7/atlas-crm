@@ -14,7 +14,6 @@ type User = {
     role: Role
 };
 
-
 export async function createUser(data: User) {
 
     try {

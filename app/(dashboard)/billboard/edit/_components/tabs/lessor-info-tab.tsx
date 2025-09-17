@@ -315,13 +315,12 @@ export default function LessorInfoTab({
                       value={
                         field.value?.from && field.value.to
                           ? {
-                              from: new Date(field.value.from),
-                              to: new Date(field.value.to),
-                            }
+                            from: new Date(field.value.from),
+                            to: new Date(field.value.to),
+                          }
                           : undefined
                       }
                       onChange={(e) => {
-                        console.log({ e });
                         const range = e as { from: Date; to: Date } | undefined;
                         field.onChange(
                           range ? { from: range.from, to: range.to } : undefined

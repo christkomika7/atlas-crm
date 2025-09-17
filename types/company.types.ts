@@ -27,6 +27,8 @@ export type CompanyType<E> = {
     id: string;
     companyName: string;
     country: string;
+    city: string;
+    codePostal: string;
     registeredAddress: string;
     phoneNumber: string;
     email: string;

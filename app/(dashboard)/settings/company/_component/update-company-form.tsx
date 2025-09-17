@@ -53,6 +53,8 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
       registeredAddress: "",
       phoneNumber: "",
       email: "",
+      city: "",
+      codePostal: "",
       website: "",
       businessRegistrationNumber: "",
       taxIdentificationNumber: "",
@@ -89,6 +91,8 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
         country: company.country,
         registeredAddress: company.registeredAddress,
         phoneNumber: company.phoneNumber,
+        city: company.city,
+        codePostal: company.codePostal,
         email: company.email,
         website: company.website,
         businessRegistrationNumber: company.businessRegistrationNumber,
@@ -109,12 +113,13 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
 
   useEffect(() => {
     const subscription = form.watch((formData) => {
-      console.log({ errors: form.formState.errors, data: formData.employees });
       updateCompany({
         companyName: formData.companyName ?? "",
         registeredAddress: formData.registeredAddress ?? "",
         phoneNumber: formData.phoneNumber ?? "",
         email: formData.email ?? "",
+        city: formData.city,
+        codePostal: formData.codePostal,
         website: formData.website ?? "",
         businessRegistrationNumber: formData.businessRegistrationNumber ?? "",
         taxIdentificationNumber: formData.taxIdentificationNumber ?? "",
@@ -123,9 +128,9 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
         fiscal:
           formData && formData.fiscal?.from && formData.fiscal.to
             ? {
-                from: new Date(formData.fiscal.from),
-                to: new Date(formData.fiscal.to),
-              }
+              from: new Date(formData.fiscal.from),
+              to: new Date(formData.fiscal.to),
+            }
             : undefined,
         bankAccountDetails: formData.bankAccountDetails ?? "",
         businessActivityType: formData.businessActivityType ?? "",
@@ -190,6 +195,40 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
                   placeholder="Pays de résidence"
                   searchMessage="Rechercher un pays"
                   noResultsMessage="Aucun pays trouvé."
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="city"
+          render={({ field }) => (
+            <FormItem className="-space-y-2">
+              <FormControl>
+                <TextInput
+                  design="float"
+                  label="Ville"
+                  value={field.value}
+                  handleChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="codePostal"
+          render={({ field }) => (
+            <FormItem className="-space-y-2">
+              <FormControl>
+                <TextInput
+                  design="float"
+                  label="Boite postale"
+                  value={field.value}
+                  handleChange={field.onChange}
                 />
               </FormControl>
               <FormMessage />
@@ -392,9 +431,9 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
                       value={
                         field.value?.from && field.value.to
                           ? {
-                              from: new Date(field.value.from),
-                              to: new Date(field.value.to),
-                            }
+                            from: new Date(field.value.from),
+                            to: new Date(field.value.to),
+                          }
                           : undefined
                       }
                       onChange={(e) => {

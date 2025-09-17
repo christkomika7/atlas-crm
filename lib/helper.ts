@@ -12,7 +12,7 @@ export const formatedCountries = countries.map((country, index) => {
 
 export function getCountryFrenchName(name: string): string | undefined {
     const country = countries.find(
-        (c) => c.name.common.toLowerCase() === name.toLowerCase()
+        (c) => c.name.common.toLowerCase() === name?.toLowerCase()
     );
     return country?.translations?.fra?.common;
 }

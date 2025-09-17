@@ -184,7 +184,6 @@ export default function InvoiceForm() {
   }, [projectData]);
 
   useEffect(() => {
-    console.log({ items });
     if (items.length > 0) {
       form.setValue("item", {
         billboards: items
@@ -761,21 +760,20 @@ export default function InvoiceForm() {
               <h2>Total HT</h2>
 
               <p>
-                {items.length > 0 ? (
-                  <>
-                    {formatNumber(
-                      calculatePrice(
-                        totals.HTPrice,
-                        parseFloat(
-                          String(clientDiscount.discount).replace("%", "")
-                        ),
-                        clientDiscount.discountType
-                      )
-                    )}
-                  </>
-                ) : (
-                  0
-                )}{" "}
+                {formatNumber(calculateTaxes({
+                  items: items.map((item) => ({
+                    name: item.name,
+                    price: calculatePrice(
+                      parseFloat(item.price),
+                      parseFloat(String(item.discount).replace("%", "")),
+                      item.discountType
+                    ),
+                    quantity: item.quantity,
+                  })),
+                  itemType: "total",
+                  taxes: company?.vatRates ?? [],
+                  taxOperation: "sequence",
+                }).totalWithoutTaxes)} {" "}
                 {currency}
               </p>
             </div>
@@ -790,7 +788,7 @@ export default function InvoiceForm() {
                   ),
                   quantity: item.quantity,
                 })),
-                itemType: "total",
+                itemType: "article",
                 taxes: company?.vatRates ?? [],
                 taxOperation: "sequence",
               }).taxes.map((tax) => (
@@ -842,7 +840,7 @@ export default function InvoiceForm() {
             <div className="flex justify-between text-sm">
               <h2 className="font-semibold">Total TTC</h2>
               <p>
-                {items.length > 0 ? <>{totals.TTCPrice}</> : 0} {currency}
+                {items.length > 0 ? <>{formatNumber(totals.TTCPrice)}</> : 0} {currency}
               </p>
             </div>
             <div className="flex justify-between text-sm">

@@ -137,6 +137,8 @@ export async function PUT(req: NextRequest) {
             data: {
                 companyName: data.companyName,
                 country: data.country,
+                city: data.city,
+                codePostal: data.codePostal ?? "",
                 registeredAddress: data.registeredAddress,
                 phoneNumber: data.phoneNumber,
                 email: data.email,

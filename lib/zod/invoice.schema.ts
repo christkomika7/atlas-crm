@@ -82,15 +82,16 @@ export const invoiceSchema = z
 
 export const invoiceUpdateSchema = z
     .object({
-        id: z.string().min(1, { message: "L'identifiant est requis" }),
-        clientId: z.string().min(1, { message: "Le client est requis" }),
-        projectId: z.string().min(1, { message: "Le projet est requis" }),
-        companyId: z.string().min(1, { message: "L'entreprise est requise" }),
+        id: z.string({ error: "L'identifiant est requis" }),
+        clientId: z.string({ error: "Le client est requis" }),
+        projectId: z.string({ error: "Le projet est requis" }),
+        companyId: z.string({ error: "L'entreprise est requise" }),
         invoiceNumber: z.number().min(1, { message: "Le numéro de facture est requis" }),
         item: z.object({
             productServices: z.array(itemSchema).optional(),
             billboards: z.array(itemSchema).optional(),
-        }),
+        }, { error: "Vous devez sélectionner au moins un produit/service ou un panneau publicitaire" }),
+
         photos: z
             .array(z.instanceof(File))
             .optional(),
@@ -124,6 +125,24 @@ export const invoiceUpdateSchema = z
                 "Vous devez sélectionner au moins un produit/service ou un panneau publicitaire",
             path: ["item"],
         }
-    );
+    ).refine(
+        (data) => {
+            if (!data.item?.billboards) return true;
+
+            return data.item.billboards.every((billboard) => {
+                if (
+                    billboard.status === "non-available" &&
+                    billboard.itemType === "billboard"
+                ) {
+                    return billboard.locationStart !== undefined && billboard.locationEnd !== undefined;
+                }
+                return true;
+            });
+        },
+        {
+            message: "Veuillez insérer la date de location pour les panneaux non disponibles.",
+            path: ["item"],
+        }
+    );;
 export type InvoiceSchemaType = z.infer<typeof invoiceSchema>;
 export type InvoiceUpdateSchemaType = z.infer<typeof invoiceUpdateSchema>;

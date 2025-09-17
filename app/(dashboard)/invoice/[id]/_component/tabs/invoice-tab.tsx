@@ -156,8 +156,6 @@ export default function InvoiceTab() {
         onSuccess(data) {
           if (data.data) {
             const invoice = data.data;
-            console.log({ invoice });
-
             setCompany(invoice.company);
             setClientId(invoice.clientId);
             setInvoiceNumber(invoice.invoiceNumber);
@@ -188,6 +186,7 @@ export default function InvoiceTab() {
             }))]
 
             form.reset({
+              id: invoice.id,
               companyId: invoice.companyId,
               invoiceNumber: invoice.invoiceNumber,
               note: invoice.note,
@@ -198,6 +197,36 @@ export default function InvoiceTab() {
               payee: invoice.payee,
               clientId: invoice.clientId,
               projectId: invoice.projectId,
+              item: {
+                billboards: invoice.items.filter(item => Boolean(item.billboardId)).map(billboard => ({
+                  id: billboard.id,
+                  name: billboard.name,
+                  quantity: billboard.quantity,
+                  price: billboard.price,
+                  itemType: 'billboard',
+                  updatedPrice: billboard.updatedPrice,
+                  locationStart: new Date(billboard.locationStart),
+                  locationEnd: new Date(billboard.locationEnd),
+                  discountType: billboard.discountType as "purcent" | "money",
+                  discount: billboard.discount,
+                  description: billboard.description ?? "",
+                  billboardId: billboard.billboardId as string,
+                  currency: billboard.currency,
+                })),
+                productServices: invoice.items.filter(item => Boolean(item.productServiceId)).map(productService => ({
+                  id: productService.id,
+                  name: productService.name,
+                  quantity: productService.quantity,
+                  price: productService.price,
+                  itemType: productService.itemType as "product" | "service",
+                  updatedPrice: productService.updatedPrice,
+                  discountType: productService.discountType as "purcent" | "money",
+                  discount: productService.discount,
+                  description: productService.description ?? "",
+                  productServiceId: productService.productServiceId as string,
+                  currency: productService.currency,
+                })),
+              }
             });
 
             setItems(mappedItems)
@@ -228,7 +257,6 @@ export default function InvoiceTab() {
               },
             })
             mutateGetDocument({ id: invoice.companyId })
-
           }
         },
       })
@@ -296,11 +324,11 @@ export default function InvoiceTab() {
                 taxOperation: "sequence",
               }).totalWithoutTaxes
             ),
-            locationStart: item.locationStart,
-            locationEnd: item.locationEnd,
+            locationStart: item.locationStart && new Date(item.locationStart),
+            locationEnd: item.locationEnd && new Date(item.locationEnd),
             discountType: item.discountType,
             description: item.description,
-            discount: String(item.discount),
+            discount: item.discount,
             billboardId: item.id,
             currency: item.currency,
           })),
@@ -390,13 +418,6 @@ export default function InvoiceTab() {
       });
     }
   }, [client]);
-
-  // useEffect(() => {
-  //   form.watch(() => {
-  //     console.log({ errors: form.formState.errors });
-  //   })
-
-  // }, [form.watch])
 
   function removeLastUpload(name: string, type: "file" | "photo") {
     switch (type) {
@@ -732,7 +753,6 @@ export default function InvoiceTab() {
                         required={false}
                         value={field.value}
                         handleChange={(e) => {
-                          console.log({ e });
                           field.onChange(e);
                         }}
                       />

@@ -66,7 +66,6 @@ export async function create(data: ClientSchemaType & { id: string }) {
         });
 
         const res: RequestResponse<ClientType[]> = await response.json();
-        console.log({ res })
 
         if (!response.ok) {
             throw new Error(res.message || "Erreur lors de la création du client");
@@ -111,7 +110,6 @@ export async function update(data: EditClientSchemaType) {
         });
 
         const res: RequestResponse<ClientType[]> = await response.json();
-        console.log({ res })
 
         if (!response.ok) {
             throw new Error(res.message || "Erreur lors de la création du client");

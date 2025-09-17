@@ -55,6 +55,8 @@ export default function CreateCompanyForm() {
       registeredAddress: "",
       phoneNumber: "",
       email: "",
+      city: "",
+      codePostal: "",
       website: "",
       businessRegistrationNumber: "",
       taxIdentificationNumber: "",
@@ -72,7 +74,7 @@ export default function CreateCompanyForm() {
   const { mutate, isPending } = useQueryAction<
     CompanySchemaType,
     RequestResponse<CompanyType<UserType>>
-  >(create, () => {}, ["companies", "countries"]);
+  >(create, () => { }, ["companies", "countries"]);
 
   useEffect(() => {
     console.log("HELLO WORLD");
@@ -100,6 +102,8 @@ export default function CreateCompanyForm() {
       phoneNumber: company?.phoneNumber ?? "",
       email: company?.email ?? "",
       website: company?.website ?? "",
+      city: company?.city,
+      codePostal: company?.codePostal ?? "",
       businessRegistrationNumber: company?.businessRegistrationNumber ?? "",
       taxIdentificationNumber: company?.taxIdentificationNumber ?? "",
       capitalAmount: company?.capitalAmount ?? "",
@@ -108,9 +112,9 @@ export default function CreateCompanyForm() {
       fiscal:
         company?.fiscal && company.fiscal.from && company.fiscal.to
           ? {
-              from: new Date(company.fiscal.from),
-              to: new Date(company.fiscal.to),
-            }
+            from: new Date(company.fiscal.from),
+            to: new Date(company.fiscal.to),
+          }
           : undefined,
       bankAccountDetails: company?.bankAccountDetails ?? "",
       businessActivityType: company?.businessActivityType ?? "",
@@ -137,12 +141,12 @@ export default function CreateCompanyForm() {
             taxType: item.taxType,
             cumul: Array.isArray(item.cumul)
               ? item.cumul.filter(
-                  (c): c is { id: number; name: string; check: boolean } =>
-                    !!c &&
-                    typeof c.id === "number" &&
-                    !!c.name &&
-                    typeof c.check === "boolean"
-                )
+                (c): c is { id: number; name: string; check: boolean } =>
+                  !!c &&
+                  typeof c.id === "number" &&
+                  !!c.name &&
+                  typeof c.check === "boolean"
+              )
               : undefined,
           }));
 
@@ -155,6 +159,8 @@ export default function CreateCompanyForm() {
         phoneNumber: formData.phoneNumber ?? "",
         email: formData.email ?? "",
         website: formData.website ?? "",
+        city: formData.city,
+        codePostal: formData.codePostal,
         businessRegistrationNumber: formData.businessRegistrationNumber ?? "",
         taxIdentificationNumber: formData.taxIdentificationNumber ?? "",
         capitalAmount: formData.capitalAmount ?? "",
@@ -162,9 +168,9 @@ export default function CreateCompanyForm() {
         fiscal:
           formData.fiscal?.from && formData.fiscal?.to
             ? {
-                from: new Date(formData.fiscal.from),
-                to: new Date(formData.fiscal.to),
-              }
+              from: new Date(formData.fiscal.from),
+              to: new Date(formData.fiscal.to),
+            }
             : undefined,
         bankAccountDetails: formData.bankAccountDetails ?? "",
         businessActivityType: formData.businessActivityType ?? "",
@@ -183,7 +189,6 @@ export default function CreateCompanyForm() {
         { ...data },
         {
           onSuccess(data) {
-            console.log({ data });
             if (data.data && !currentCompany) {
               setCurrentCompany(data.data.id);
               setCurrency(data.data.currency);
@@ -239,6 +244,40 @@ export default function CreateCompanyForm() {
                   placeholder="Pays de résidence"
                   searchMessage="Rechercher un pays"
                   noResultsMessage="Aucun pays trouvé."
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="city"
+          render={({ field }) => (
+            <FormItem className="-space-y-2">
+              <FormControl>
+                <TextInput
+                  design="float"
+                  label="Ville"
+                  value={field.value}
+                  handleChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="codePostal"
+          render={({ field }) => (
+            <FormItem className="-space-y-2">
+              <FormControl>
+                <TextInput
+                  design="float"
+                  label="Boite postale"
+                  value={field.value}
+                  handleChange={field.onChange}
                 />
               </FormControl>
               <FormMessage />
@@ -441,9 +480,9 @@ export default function CreateCompanyForm() {
                       value={
                         field.value?.from && field.value.to
                           ? {
-                              from: new Date(field.value.from),
-                              to: new Date(field.value.to),
-                            }
+                            from: new Date(field.value.from),
+                            to: new Date(field.value.to),
+                          }
                           : undefined
                       }
                       onChange={(e) => {

@@ -55,7 +55,7 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
     data,
   } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
     getCollaborators,
-    () => {},
+    () => { },
     "collaborators"
   );
 
@@ -76,7 +76,7 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
   const { mutate, isPending } = useQueryAction<
     TaskSchemaType,
     RequestResponse<TaskType>
-  >(create, () => {}, "tasks");
+  >(create, () => { }, "tasks");
 
   async function submit(taskData: TaskSchemaType) {
     const { success, data } = taskSchema.safeParse(taskData);
@@ -86,7 +86,6 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
       { ...data, projectId: param.projectId as string },
       {
         onSuccess(data) {
-          console.log({ newData: data });
           if (data.data) {
             const taskData = data.data;
             const parsed: KanbanTask = {
@@ -96,8 +95,8 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
                 taskData.status === "TODO"
                   ? "todo"
                   : taskData.status === "IN_PROGRESS"
-                  ? "inProgress"
-                  : "done",
+                    ? "inProgress"
+                    : "done",
               owner: [],
               description: taskData.desc,
               status: taskData.status,

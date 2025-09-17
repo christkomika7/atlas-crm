@@ -56,7 +56,7 @@ export default function BillboardCreateContractForm({
     data: areas,
   } = useQueryAction<{ cityId: string }, RequestResponse<AreaType[]>>(
     allAreas,
-    () => {},
+    () => { },
     "areas"
   );
 
@@ -67,7 +67,7 @@ export default function BillboardCreateContractForm({
   } = useQueryAction<
     { companyId: string },
     RequestResponse<BillboardTypeType[]>
-  >(allBillboardType, () => {}, "billboardsType");
+  >(allBillboardType, () => { }, "billboardsType");
 
   const {
     mutate: mutateCity,
@@ -75,14 +75,14 @@ export default function BillboardCreateContractForm({
     data: cities,
   } = useQueryAction<{ companyId: string }, RequestResponse<CityType[]>>(
     allCities,
-    () => {},
+    () => { },
     "cities"
   );
 
   const { mutate: mutateBilboardFilter, isPending: isPendingBillboardFilter } =
     useQueryAction<ContractSchemaType, RequestResponse<BillboardType[]>>(
       filter,
-      () => {},
+      () => { },
       "filter-billboard"
     );
 
@@ -98,12 +98,6 @@ export default function BillboardCreateContractForm({
       mutateArea({ cityId });
     }
   }, [cityId]);
-
-  useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors });
-    });
-  }, [form.watch]);
 
   async function downloadPdf(data: BillboardType[]) {
     const doc = (
@@ -208,9 +202,9 @@ export default function BillboardCreateContractForm({
                     value={
                       field.value?.from && field.value?.to
                         ? {
-                            from: new Date(field.value.from),
-                            to: new Date(field.value.to),
-                          }
+                          from: new Date(field.value.from),
+                          to: new Date(field.value.to),
+                        }
                         : undefined
                     }
                     onChange={(e) => {

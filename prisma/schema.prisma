@@ -66,6 +66,8 @@ model Company {
   id                         String           @id @default(uuid())
   companyName                String           @unique
   country                    String
+  city                       String
+  codePostal                 String
   registeredAddress          String
   phoneNumber                String
   email                      String

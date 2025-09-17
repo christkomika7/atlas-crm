@@ -126,14 +126,14 @@ export default function BillboardTab() {
             if (data.data) {
               const billboardItem = data.data;
               const status = getDateStatus({
-                startDate: item.locationDuration?.[0],
-                endDate: item.locationDuration?.[1],
+                startDate: item.locationDuration?.[0] && new Date(item.locationDuration[0]),
+                endDate: item.locationDuration?.[1] && new Date(item.locationDuration[1]),
               });
               addLocationBillboard({
                 id: item.id,
                 locationDate: billboardItem.map((i) => ({
-                  start: i.locationStart,
-                  end: i.locationEnd,
+                  start: new Date(i.locationStart),
+                  end: new Date(i.locationEnd),
                 })),
               });
               addItem({
@@ -191,8 +191,8 @@ export default function BillboardTab() {
           ) : data?.data && data.data.length > 0 ? (
             data.data.map((billboard) => {
               const status = getDateStatus({
-                startDate: billboard.locationDuration?.[0],
-                endDate: billboard.locationDuration?.[1],
+                startDate: billboard.locationDuration?.[0] && new Date(billboard.locationDuration[0]),
+                endDate: billboard.locationDuration?.[1] && new Date(billboard.locationDuration[1]),
               });
               const isClientSelected = !!clientId;
 

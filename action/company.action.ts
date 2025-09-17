@@ -52,16 +52,6 @@ export async function unique({ id }: { id: string }) {
             })
         );
 
-        console.log({
-            data: {
-                ...res,
-                data: {
-                    ...res.data,
-                    employees: updatedEmployees,
-                },
-            }
-        })
-
         return {
             ...res,
             data: {
@@ -99,6 +89,8 @@ export async function create(data: CompanySchemaType) {
 
         formData.append("companyName", data.companyName);
         formData.append("country", data.country);
+        formData.append("city", data.city);
+        formData.append("codePostal", data.codePostal ?? "");
         formData.append("registeredAddress", data.registeredAddress);
         formData.append("phoneNumber", data.phoneNumber);
         formData.append("email", data.email);
@@ -154,6 +146,8 @@ export async function update(data: EditCompanySchemaType) {
 
         formData.append("companyName", data.companyName);
         formData.append("country", data.country);
+        formData.append("city", data.city);
+        formData.append("codePostal", data.codePostal ?? "");
         formData.append("registeredAddress", data.registeredAddress);
         formData.append("phoneNumber", data.phoneNumber);
         formData.append("email", data.email);

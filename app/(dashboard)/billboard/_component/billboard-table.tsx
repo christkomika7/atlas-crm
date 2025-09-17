@@ -43,7 +43,7 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
     const { mutate, isPending, data } = useQueryAction<
       { companyId: string },
       RequestResponse<BillboardType[]>
-    >(all, () => {}, "billboard");
+    >(all, () => { }, "billboard");
 
     const toggleSelection = (billboardId: string, checked: boolean) => {
       setSelectedBillboardIds((prev) =>
@@ -55,7 +55,6 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
 
     const refreshBillboard = () => {
       if (companyId) {
-        console.log({ companyId });
         mutate({ companyId });
       }
     };
@@ -102,9 +101,8 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
               data.data.map((billboard) => (
                 <TableRow
                   key={billboard.id}
-                  className={`h-16 transition-colors ${
-                    isSelected(billboard.id) ? "bg-neutral-100" : ""
-                  }`}
+                  className={`h-16 transition-colors ${isSelected(billboard.id) ? "bg-neutral-100" : ""
+                    }`}
                 >
                   <TableCell className="text-neutral-600">
                     <div className="flex justify-center items-center">

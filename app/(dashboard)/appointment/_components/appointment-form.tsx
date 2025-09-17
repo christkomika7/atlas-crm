@@ -48,7 +48,7 @@ export default function AppointmentForm({
     data,
   } = useQueryAction<{ id: string }, RequestResponse<ClientType[]>>(
     all,
-    () => {},
+    () => { },
     "clients"
   );
 
@@ -71,7 +71,7 @@ export default function AppointmentForm({
   const { mutate, isPending } = useQueryAction<
     AppointmentSchemaType,
     RequestResponse<AppointmentType[]>
-  >(create, () => {}, "appointments");
+  >(create, () => { }, "appointments");
 
   async function submit(appointmentData: AppointmentSchemaType) {
     const { success, data } = appointmentSchema.safeParse(appointmentData);
@@ -170,7 +170,6 @@ export default function AppointmentForm({
                       label="Heure du rendez-vous"
                       value={field.value}
                       handleChange={(e) => {
-                        console.log({ e, type: typeof e });
                         field.onChange(e);
                       }}
                     />

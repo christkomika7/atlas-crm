@@ -267,11 +267,6 @@ export async function update(data: EditBillboardSchemaFormType) {
             }
         });
 
-        console.log({
-            lastSignedLeaseContract: data.lessor.lastSignedLeaseContract?.join(";"),
-            lastFiles: data.lessor.lastFiles?.join(";")
-        });
-
         formData.append("lastFiles", data.lessor.lastFiles?.join(";") as string)
         data.lessor.files?.forEach((file) => {
             if (file instanceof File) {

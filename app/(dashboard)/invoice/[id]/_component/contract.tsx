@@ -1,7 +1,11 @@
 import Spinner from "@/components/ui/spinner";
-import { cn, formatNumber, resolveImageSrc } from "@/lib/utils";
+import { generalSans } from "@/fonts/font";
+import { formatDateToDashModel } from "@/lib/date";
+import { getCountryFrenchName } from "@/lib/helper";
+import { calculatePrice, calculateTaxes, cn, formatNumber, resolveImageSrc } from "@/lib/utils";
 import { InvoiceType } from "@/types/invoice.types";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type DocumentPreviewProps = {
@@ -10,6 +14,8 @@ type DocumentPreviewProps = {
   logo?: File;
   logoSize?: string;
   logoPosition?: string;
+  orderValue: string;
+  orderNote: string;
   invoice?: InvoiceType;
   isLoading?: boolean;
 };
@@ -20,6 +26,8 @@ export default function Contract({
   logo,
   logoSize,
   logoPosition,
+  orderValue,
+  orderNote,
   isLoading,
   invoice,
 }: DocumentPreviewProps) {
@@ -44,8 +52,8 @@ export default function Contract({
             logoPosition === "Left"
               ? "flex-start"
               : logoPosition === "Right"
-              ? "flex-end"
-              : "center",
+                ? "flex-end"
+                : "center",
           alignItems: "center",
         }}
       >
@@ -92,18 +100,18 @@ export default function Contract({
         <div className="space-y-1">
           <p className="gap-x-2 grid grid-cols-[60px_1fr] text-neutral-600 text-sm">
             <span className="font-semibold">BC N° :</span>
-            <span className="font-medium">FAKE-1234</span>
+            <span className="font-medium">{orderValue}-{invoice?.invoiceNumber}</span>
           </p>
           <p className="gap-x-2 grid grid-cols-[60px_1fr] text-neutral-600 text-sm">
             <span className="font-semibold">Date :</span>
-            <span className="font-medium">01/01/2025</span>
+            <span className="font-medium">{invoice?.updatedAt ? formatDateToDashModel(new Date(invoice.updatedAt)) : formatDateToDashModel(new Date())}</span>
           </p>
           <p className="gap-x-2 grid grid-cols-[60px_1fr] text-neutral-600 text-sm">
             <span className="font-semibold">À :</span>
             <span className="font-medium">
-              Entreprise Exemple SARL <br />
-              exemple@email.com <br />
-              42 Rue Fictive, Ville Imaginée
+              {invoice?.client.companyName} <br />
+              {invoice?.client.email} <br />
+              {invoice?.client.address}
             </span>
           </p>
         </div>
@@ -114,24 +122,29 @@ export default function Contract({
           </h2>
           <div className="space-y-1">
             <p className="text-neutral-600 text-sm text-right">
-              123 Avenue du Test
+              {invoice?.company.registeredAddress}
             </p>
-            <p className="text-neutral-600 text-sm text-right">BP: 0000</p>
+            <p className="text-neutral-600 text-sm text-right">BP: {invoice?.company.codePostal}</p>
             <p className="text-neutral-600 text-sm text-right">
-              Ville Démo, Pays Démo
-            </p>
-            <p className="text-neutral-600 text-sm text-right">
-              contact@entreprise.com
+              {invoice?.company.city},{" "}
+              {getCountryFrenchName(invoice?.company.country as string)}
             </p>
             <p className="text-neutral-600 text-sm text-right">
-              www.entreprise.com
+              {invoice?.company.email}
             </p>
-            <p className="text-neutral-600 text-sm text-right">+0000000000</p>
+            {invoice?.company.website &&
+              <p className="text-neutral-600 text-sm text-right">
+                <Link href={invoice?.company.website}>
+                  {invoice?.company.website}
+                </Link>
+              </p>
+            }
+            <p className="text-neutral-600 text-sm text-right">{invoice?.company.phoneNumber}</p>
             <p className="text-neutral-600 text-sm text-right">
-              RCCM: DEMO-0000-0000
+              RCCM: {invoice?.company.businessRegistrationNumber}
             </p>
             <p className="text-neutral-600 text-sm text-right">
-              NIF: 000000000000
+              NIF: {invoice?.company.taxIdentificationNumber}
             </p>
           </div>
         </div>
@@ -158,10 +171,50 @@ export default function Contract({
               <td className="px-3 py-2">{item.name}</td>
               <td className="py-2 text-right">{item.quantity}</td>
               <td className="py-2 text-right">
-                {formatNumber(item.price)} {item.currency}
+                {formatNumber(
+                  calculateTaxes({
+                    items: [
+                      {
+                        name: item.name,
+                        price: calculatePrice(
+                          parseFloat(item.price),
+                          parseFloat(
+                            String(item.discount).replace("%", "")
+                          ),
+                          item.discountType as "purcent" | "money"
+                        ),
+                        quantity: 1,
+                      },
+                    ],
+                    itemType: "article",
+                    taxes: invoice.company?.vatRates ?? [],
+                    taxOperation: "sequence",
+                  }).totalWithoutTaxes
+                )}{" "}
+
+                {item.currency}
               </td>
               <td className="py-2 pr-3 text-right">
-                {formatNumber(item.quantity * parseFloat(item.price))}{" "}
+                {formatNumber(
+                  calculateTaxes({
+                    items: [
+                      {
+                        name: item.name,
+                        price: calculatePrice(
+                          parseFloat(item.price),
+                          parseFloat(
+                            String(item.discount).replace("%", "")
+                          ),
+                          item.discountType as "purcent" | "money"
+                        ),
+                        quantity: item.quantity,
+                      },
+                    ],
+                    itemType: "article",
+                    taxes: invoice.company?.vatRates ?? [],
+                    taxOperation: "sequence",
+                  }).totalWithoutTaxes
+                )}{" "}
                 {item.currency}
               </td>
             </tr>
@@ -170,28 +223,30 @@ export default function Contract({
         <tfoot>
           <tr className="text-sm">
             <td colSpan={3} className="pr-10 text-right">
-              Faux total
+              total HT
             </td>
-            <td className="pr-3 text-right">789 000 XYZ</td>
+            <td className="pr-3 text-right">{formatNumber(invoice!.totalHT)} {invoice?.company.currency}</td>
           </tr>
-          <tr className="text-sm">
-            <td colSpan={3} className="pr-10 text-right">
-              TVA 99%
-            </td>
-            <td className="pr-3 text-right">0 XYZ</td>
-          </tr>
-          <tr className="text-sm">
-            <td colSpan={3} className="pr-10 text-right">
-              CSS 99%
-            </td>
-            <td className="pr-3 text-right">789 000 XYZ</td>
-          </tr>
-          <tr className="text-sm">
-            <td colSpan={3} className="pr-10 pb-2 text-right">
-              Total final
-            </td>
-            <td className="pr-3 pb-2 text-right">789 000 XYZ</td>
-          </tr>
+          {calculateTaxes({
+            items: invoice!.items.map((item) => ({
+              name: item.name,
+              price: calculatePrice(
+                parseFloat(item.price),
+                parseFloat(String(item.discount).replace("%", "")),
+                item.discountType as "purcent" | "money"
+              ),
+              quantity: item.quantity,
+            })),
+            itemType: "total",
+            taxes: invoice?.company?.vatRates ?? [],
+            taxOperation: "sequence",
+          }).taxes.map((tax) => (
+            <tr key={tax.taxName} className="text-sm">
+              <td colSpan={3} className="pr-10 text-right">
+                {tax.taxName} </td>
+              <td className="pr-3 text-right">  {formatNumber(tax.totalTax)} {invoice?.company?.currency}</td>
+            </tr>
+          ))}
           <tr className="text-sm">
             <td></td>
             <td></td>
@@ -209,7 +264,7 @@ export default function Contract({
               }}
               className="pr-3 font-semibold text-right"
             >
-              789 000 XYZ
+              {formatNumber(invoice!.totalTTC)} {invoice?.company.currency}
             </td>
           </tr>
         </tfoot>
@@ -217,13 +272,13 @@ export default function Contract({
 
       <div className="p-3">
         <h3 className="mb-1 font-semibold text-sm">Message / remarques</h3>
-        <p className="mb-2 text-sm">Campagne : Entreprise Démo</p>
+        <p className="mb-2 text-sm">Campagne : {invoice?.company.companyName}</p>
 
-        <p className="text-sm">
-          <span className="font-medium">NB :</span> Merci de vérifier que toutes
-          les informations sont correctes avant validation. Toute modification
-          ultérieure pourrait entraîner un retard de traitement.
-        </p>
+        {orderNote &&
+          <pre className={`${generalSans.className} text-sm`}>
+            {orderNote}
+          </pre>
+        }
       </div>
     </div>
   );
