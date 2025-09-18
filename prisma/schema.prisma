@@ -30,6 +30,11 @@ enum Resource {
   SETTING
 }
 
+enum TransactionType {
+  RECEIPT
+  DISBURSEMENT
+}
+
 enum Action {
   READ
   CREATE
@@ -54,6 +59,16 @@ enum ProductServiceType {
   SERVICE
 }
 
+enum BankTransaction {
+  INFLOWS
+  OUTFLOWS
+}
+
+enum AmountType {
+  HT
+  TTC
+}
+
 enum ItemInvoiceType {
   INVOICES
   QUOTES
@@ -63,8 +78,8 @@ enum ItemInvoiceType {
 }
 
 model Company {
-  id                         String           @id @default(uuid())
-  companyName                String           @unique
+  id                         String                @id @default(uuid())
+  companyName                String                @unique
   country                    String
   city                       String
   codePostal                 String
@@ -81,8 +96,8 @@ model Company {
   fiscalYearStart            DateTime
   fiscalYearEnd              DateTime
   vatRates                   Json
-  createdAt                  DateTime         @default(now())
-  updatedAt                  DateTime         @updatedAt
+  createdAt                  DateTime              @default(now())
+  updatedAt                  DateTime              @updatedAt
   documentModel              DocumentModel?
   employees                  User[]
   clients                    Client[]
@@ -95,6 +110,11 @@ model Company {
   areas                      Area[]
   invoices                   Invoice[]
   BillboardType              BillboardType[]
+  TransactionCategory        TransactionCategory[]
+  TransactionNature          TransactionNature[]
+  Allocation                 Allocation[]
+  Source                     Source[]
+  Transaction                Transaction[]
 
   @@unique([email])
   @@map("company")
@@ -212,9 +232,10 @@ model Client {
 
   appointments Appointment[]
 
-  projects   Project[]
-  invoices   Invoice[]
-  billboards Billboard[]
+  projects    Project[]
+  invoices    Invoice[]
+  billboards  Billboard[]
+  Transaction Transaction[]
 
   @@map("client")
 }
@@ -500,6 +521,95 @@ model DocumentModel {
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("company_documents")
+}
+
+model Transaction {
+  id        String          @id @default(uuid())
+  type      TransactionType @default(RECEIPT)
+  reference Int             @default(autoincrement())
+  date      DateTime
+  movement  BankTransaction @default(INFLOWS)
+
+  categoryId String
+  category   TransactionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  natureId String
+  nature   TransactionNature @relation(fields: [natureId], references: [id], onDelete: Cascade)
+
+  amount     String
+  amountType AmountType @default(HT)
+
+  paymentType String
+  checkNumber String
+
+  referenceDocumentId String
+  referenceDocument   String
+
+  allocationId String?
+  allocation   Allocation? @relation(fields: [allocationId], references: [id], onDelete: Cascade)
+
+  Source Source[]
+
+  payOnBehalfOfId String?
+  payOnBehalfOf   Client? @relation(fields: [payOnBehalfOfId], references: [id], onDelete: SetNull)
+
+  description String?
+  comment     String?
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model Source {
+  id           String        @id @default(ulid())
+  name         String        @unique
+  transactions Transaction[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("source")
+}
+
+model Allocation {
+  id           String        @id @default(ulid())
+  name         String        @unique
+  transactions Transaction[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("allocation")
+}
+
+model TransactionCategory {
+  id           String              @id @default(ulid())
+  name         String              @unique
+  transactions Transaction[]
+  natures      TransactionNature[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("transaction_category")
+}
+
+model TransactionNature {
+  id   String @id @default(uuid())
+  name String @unique
+
+  transactions Transaction[]
+
+  categoryId String
+  category   TransactionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("transaction_nature")
 }
 
 model Permission {

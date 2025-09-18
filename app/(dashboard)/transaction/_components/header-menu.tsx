@@ -25,7 +25,7 @@ export default function HeaderMenu() {
           <ChevronDownIcon className="w-4 h-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0 w-[180px]">
+      <PopoverContent align="end" className="p-0 w-[220px]">
         <ul className="p-2">
           <li>
             <ModalContainer
@@ -35,10 +35,10 @@ export default function HeaderMenu() {
                   variant="primary"
                   className="bg-white hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
                 >
-                  Ajouter un reçu
+                  Ajouter un encaissement
                 </Button>
               }
-              title="Nouveau reçu"
+              title="Nouvel encaissement"
               open={open.receipt}
               setOpen={function (value: SetStateAction<boolean>): void {
                 setOpen((prev) => ({ ...prev, receipt: value as boolean }));
@@ -59,7 +59,7 @@ export default function HeaderMenu() {
                   variant="primary"
                   className="bg-white hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
                 >
-                  Décaissements
+                  Ajouter  un décaissements
                 </Button>
               }
               title="Nouveau décaissement"

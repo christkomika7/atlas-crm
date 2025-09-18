@@ -12,12 +12,21 @@ import { Button } from "@/components/ui/button";
 import TextInput from "@/components/ui/text-input";
 import { useDataStore } from "@/stores/data.store";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Combobox } from "@/components/ui/combobox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { receiptSchema, ReceiptSchemaType } from "@/lib/zod/receipt.schema";
+import useQueryAction from "@/hook/useQueryAction";
+import { getCategories, getNatures, getReference, getSources } from "@/action/transaction.action";
+import { RequestResponse } from "@/types/api.types";
+import { TransactionCategoryType, TransactionNatureType } from "@/types/transaction.type";
+import useTransactionStore from "@/stores/transaction.store";
+import CategoryModal from "./category-modal";
+import NatureModal from "./nature-modal";
+import { acceptPayment } from "@/lib/data";
+import SourceModal from "./source-modal";
 
 type ReceiptFormProps = {
   closeModal: () => void;
@@ -26,27 +35,109 @@ type ReceiptFormProps = {
 export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
   const companyId = useDataStore.use.currentCompany();
 
+  const categories = useTransactionStore.use.categories();
+  const setCategories = useTransactionStore.use.setCategories();
+  const natures = useTransactionStore.use.natures();
+  const setNatures = useTransactionStore.use.setNatures();
+  const sources = useTransactionStore.use.sources();
+  const setSources = useTransactionStore.use.setSources();
+
+  const [categoryId, setCategoryId] = useState("");
+
+
   const form = useForm<ReceiptSchemaType>({
     resolver: zodResolver(receiptSchema),
     defaultValues: {
+      date: new Date(),
+      moov: "INFLOWS",
       amountType: "HT",
     },
   });
+
+  const { mutate: mutateGetReference, isPending: isGettingReference } = useQueryAction<
+    { companyId: string },
+    RequestResponse<number>
+  >(getReference, () => { }, "reference");
+
+  const {
+    mutate: mutateGetCategories,
+    isPending: isGettingCategories,
+  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionCategoryType[]>>(
+    getCategories,
+    () => { },
+    "categories"
+  );
+
+
+  const {
+    mutate: mutateGetNature,
+    isPending: isGettingNatures,
+  } = useQueryAction<{ categoryId: string }, RequestResponse<TransactionNatureType[]>>(
+    getNatures,
+    () => { },
+    "natures"
+  );
+
+
+  const {
+    mutate: mutateGetSources,
+    isPending: isGettingSources,
+  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionNatureType[]>>(
+    getSources,
+    () => { },
+    "sources"
+  );
+
 
   // const { mutate, isPending } = useQueryAction<
   //   ReceiptSchemaType,
   //   RequestResponse<ReceiptSchemaType>
   // >(create, () => {}, "receipts");
 
+
+
   useEffect(() => {
     if (companyId) {
-      const initForm = {
-        companyId,
-      };
+      mutateGetReference({ companyId }, {
+        onSuccess(data) {
+          form.setValue("reference", data.data ?? 1);
+        },
+      })
 
-      form.reset(initForm);
+      mutateGetCategories({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setCategories(data.data)
+          }
+        },
+      })
+
+      mutateGetSources({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setSources(data.data)
+          }
+        },
+      })
+
+      form.reset({
+        companyId,
+      });
     }
-  }, [form, companyId]);
+  }, [companyId]);
+
+  useEffect(() => {
+    if (categoryId) {
+      mutateGetNature({ categoryId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setNatures(data.data);
+          }
+        },
+      })
+    }
+  }, [categoryId])
+
 
   async function submit(receiptData: ReceiptSchemaType) {
     const { success, data } = receiptSchema.safeParse(receiptData);
@@ -93,6 +184,7 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <DatePicker
+                      value={field.value}
                       label="Date"
                       mode="single"
                       onChange={(e) => field.onChange(e as Date)}
@@ -104,17 +196,26 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
             />
             <FormField
               control={form.control}
-              name="moov"
+              name="category"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      datas={[]}
+                      isLoading={isGettingCategories}
+                      datas={categories.map(category => ({
+                        id: category.id,
+                        label: category.name,
+                        value: category.id
+                      }))}
                       value={field.value}
-                      setValue={field.onChange}
-                      placeholder="Type de mouvement"
-                      searchMessage="Rechercher un type de mouvement"
-                      noResultsMessage="Aucun type trouvé."
+                      setValue={(e) => {
+                        setCategoryId(e)
+                        field.onChange(e)
+                      }}
+                      placeholder="Catégorie"
+                      searchMessage="Rechercher une catégorie"
+                      noResultsMessage="Aucune catégorie trouvée."
+                      addElement={<CategoryModal />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -122,26 +223,8 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
               )}
             />
           </div>
-          <div className="gap-4.5 grid grid-cols-3">
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      datas={[]}
-                      value={field.value}
-                      setValue={field.onChange}
-                      placeholder="Catégorie"
-                      searchMessage="Rechercher une catégorie"
-                      noResultsMessage="Aucune catégorie trouvée."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="gap-4.5 grid grid-cols-2">
+
             <FormField
               control={form.control}
               name="nature"
@@ -149,12 +232,18 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      datas={[]}
+                      isLoading={isGettingNatures}
+                      datas={natures.map(nature => ({
+                        id: nature.id,
+                        label: nature.name,
+                        value: nature.id
+                      }))}
                       value={field.value}
                       setValue={field.onChange}
                       placeholder="Nature"
                       searchMessage="Rechercher une nature"
                       noResultsMessage="Aucune nature trouvée."
+                      addElement={<NatureModal categoryId={categoryId} />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -233,7 +322,7 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
               />
             </div>
           </div>
-          <div className="gap-4.5 grid grid-cols-3">
+          <div className="gap-4.5 grid grid-cols-2">
             <FormField
               control={form.control}
               name="paymentMode"
@@ -241,7 +330,7 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      datas={[]}
+                      datas={acceptPayment}
                       value={field.value}
                       setValue={field.onChange}
                       placeholder="Mode de paiement"
@@ -271,24 +360,6 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="documentRef"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      type="text"
-                      design="float"
-                      label="Référence du document"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </div>
           <div className="gap-4.5 grid grid-cols-2">
             <FormField
@@ -298,12 +369,18 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      datas={[]}
+                      isLoading={isGettingSources}
+                      datas={sources.map(source => ({
+                        id: source.id,
+                        label: source.name,
+                        value: source.id
+                      }))}
                       value={field.value}
                       setValue={field.onChange}
                       placeholder="Source"
                       searchMessage="Rechercher une source"
                       noResultsMessage="Aucune source trouvée."
+                      addElement={<SourceModal />}
                     />
                   </FormControl>
                   <FormMessage />
