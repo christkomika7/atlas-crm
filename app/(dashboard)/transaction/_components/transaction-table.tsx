@@ -25,6 +25,7 @@ import { all } from "@/action/billboard.action";
 import { cn, formatNumber } from "@/lib/utils";
 import { dropdownMenu } from "./table";
 import TableActionButton from "./table-action-button";
+import { useSearchParams } from "next/navigation";
 
 type TransactionTableProps = {
   selectedTransactionIds: string[];
@@ -38,11 +39,24 @@ export interface TransactionTableRef {
 const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
   ({ selectedTransactionIds, setSelectedTransactionIds }, ref) => {
     const companyId = useDataStore.use.currentCompany();
+    const searchParams = useSearchParams();
+
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    const category = searchParams.get("category");
+    const movement = searchParams.get("movement");
+    const paymentMode = searchParams.get("paymentMode");
+    const source = searchParams.get("source");
+    const paidFor = searchParams.get("paidFor");
+
+
 
     const { mutate, isPending, data } = useQueryAction<
       { companyId: string },
       RequestResponse<BillboardType[]>
-    >(all, () => {}, "billboard");
+    >(all, () => { }, "transactions");
+
+
 
     const toggleSelection = (transactionId: string, checked: boolean) => {
       setSelectedTransactionIds((prev) =>
@@ -119,7 +133,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
               <TableRow key={idx} className="h-16">
                 <TableCell>
                   <div className="flex justify-center items-center">
-                    <Checkbox checked={false} onCheckedChange={() => {}} />
+                    <Checkbox checked={false} onCheckedChange={() => { }} />
                   </div>
                 </TableCell>
                 <TableCell className="text-center">2024-06-01</TableCell>
