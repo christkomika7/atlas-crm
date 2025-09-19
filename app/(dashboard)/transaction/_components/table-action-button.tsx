@@ -9,9 +9,9 @@ import { RequestResponse } from "@/types/api.types";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "lucide-react";
-import { remove } from "@/action/billboard.action";
 import { useRouter } from "next/navigation";
 import { TransactionType } from "@/types/transaction.type";
+import { removeTransaction } from "@/action/transaction.action";
 
 type TableActionButtonProps = {
   id: string;
@@ -32,7 +32,7 @@ export default function TableActionButton({
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<TransactionType>
-  >(remove, () => {}, "transaction");
+  >(removeTransaction, () => { }, "transaction");
 
   function handleDelete() {
     if (id) {

@@ -321,3 +321,21 @@ export async function deleteTransactions({ ids }: { ids: string[] }) {
         throw error;
     }
 }
+
+export async function removeTransaction({ id }: { id: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${id}`, {
+            method: 'DELETE',
+
+        });
+
+        const res: RequestResponse<TransactionType> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
