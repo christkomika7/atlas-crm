@@ -1,23 +1,9 @@
+import { DibursementSchemaType } from "@/lib/zod/dibursement.schema";
+import { ReceiptSchemaType } from "@/lib/zod/receipt.schema";
 import { AllocationSchemaType, CategorySchemaType, NatureSchemaType, SourceSchemaType } from "@/lib/zod/transaction.schema";
 import { RequestResponse } from "@/types/api.types";
-import { AllocationType, SourceType, TransactionCategoryType, TransactionNatureType } from "@/types/transaction.type";
+import { AllocationType, SourceType, TransactionCategoryType, TransactionDocument, TransactionNatureType, TransactionType } from "@/types/transaction.type";
 
-export async function getReference({ companyId }: { companyId: string }) {
-    try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${companyId}/reference`, {
-            method: 'GET',
-        });
-
-        const res: RequestResponse<number> = await response.json()
-        if (!response.ok) {
-            throw new Error(res.message);
-        }
-        return res;
-
-    } catch (error) {
-        throw error;
-    }
-}
 
 export async function getCategories({ companyId }: { companyId: string }) {
     try {
@@ -35,7 +21,6 @@ export async function getCategories({ companyId }: { companyId: string }) {
         throw error;
     }
 }
-
 
 export async function getSources({ companyId }: { companyId: string }) {
     try {
@@ -72,8 +57,6 @@ export async function getAllocations({ companyId }: { companyId: string }) {
 }
 
 
-
-
 export async function getNatures({ categoryId }: { categoryId: string }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/nature/${categoryId}`, {
@@ -90,6 +73,25 @@ export async function getNatures({ categoryId }: { categoryId: string }) {
         throw error;
     }
 }
+
+
+export async function getDocuments({ companyId }: { companyId: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${companyId}/document`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<TransactionDocument[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
 
 export async function createCategory(data: CategorySchemaType) {
     try {
@@ -184,6 +186,52 @@ export async function createAllocation(data: AllocationSchemaType) {
 }
 
 
+export async function createReceipt(data: ReceiptSchemaType) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/receipt`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        const res: RequestResponse<TransactionType> = await response.json();
+
+        if (!response.ok) {
+            throw new Error(res.message || "Erreur lors de la création de l'encaissement");
+        }
+
+        return res;
+    } catch (error) {
+        console.error("Erreur dans la fonction create:", error);
+        throw error;
+    }
+}
+
+export async function createDibursement(data: DibursementSchemaType) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/dibursement`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        const res: RequestResponse<TransactionType> = await response.json();
+
+        if (!response.ok) {
+            throw new Error(res.message || "Erreur lors de la création de décaissement");
+        }
+
+        return res;
+    } catch (error) {
+        console.error("Erreur dans la fonction create:", error);
+        throw error;
+    }
+}
+
 export async function deleteCategory({ categoryId }: { categoryId: string }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/category/${categoryId}`, {
@@ -242,6 +290,28 @@ export async function deleteAllocation({ allocationId }: { allocationId: string 
         });
 
         const res: RequestResponse<AllocationType> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+export async function deleteTransactions({ ids }: { ids: string[] }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transactions`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ids }),
+        });
+
+        const res: RequestResponse<TransactionType[]> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }

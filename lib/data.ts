@@ -285,3 +285,8 @@ export const periods = [
     { id: 5, value: "previousYear", label: "Année précédente" },
     { id: 6, value: "custom", label: "Personnalisé" },
 ];
+
+export const movements = [
+    { id: 1, value: "INFLOWS", label: "Entrée" },
+    { id: 2, value: "OUTFLOWS", label: "Sortie" },
+]

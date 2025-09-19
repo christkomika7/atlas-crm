@@ -1,20 +1,117 @@
+import { getCategories, getSources } from "@/action/transaction.action";
+import { getCollaborators } from "@/action/user.action";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { useState } from "react";
+import useQueryAction from "@/hook/useQueryAction";
+import { acceptPayment, movements } from "@/lib/data";
+import { useDataStore } from "@/stores/data.store";
+import useTransactionStore from "@/stores/transaction.store";
+import { RequestResponse } from "@/types/api.types";
+import { SourceType, TransactionCategoryType } from "@/types/transaction.type";
+import { UserType } from "@/types/user.types";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function TransactionFilters() {
-  const [mouvementValue, setMouvementValue] = useState<string>("");
+
+  const router = useRouter();
+
+  const companyId = useDataStore.use.currentCompany();
+
+  const categories = useTransactionStore.use.categories();
+  const setCategories = useTransactionStore.use.setCategories();
+  const sources = useTransactionStore.use.sources();
+  const setSources = useTransactionStore.use.setSources();
+
+  const [movementValue, setMovementValue] = useState<string>("");
   const [categoryValue, setCategoryValue] = useState<string>("");
   const [paymentModeValue, setPaymentModeValue] = useState<string>("");
   const [sourceValue, setSourceValue] = useState<string>("");
   const [paidForValue, setPaidForValue] = useState<string>("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [collaborators, setCollaborators] = useState<UserType[]>([]);
+
+
+  const {
+    mutate: mutateGetCategories,
+    isPending: isGettingCategories,
+  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionCategoryType[]>>(
+    getCategories,
+    () => { },
+    "categories"
+  );
+
+  const {
+    mutate: mutateGetSources,
+    isPending: isGettingSources,
+  } = useQueryAction<{ companyId: string }, RequestResponse<SourceType[]>>(
+    getSources,
+    () => { },
+    "sources"
+  );
+
+  const {
+    mutate: mutateGetCollborators,
+    isPending: isGettingCollaborators,
+  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+    getCollaborators,
+    () => { },
+    "collaborators"
+  );
+
+
+  useEffect(() => {
+    if (companyId) {
+      mutateGetCategories({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setCategories(data.data)
+          }
+        },
+      })
+
+      mutateGetSources({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setSources(data.data)
+          }
+        },
+      })
+
+      mutateGetCollborators({ id: companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setCollaborators(data.data)
+          }
+        },
+      })
+
+    }
+  }, [companyId]);
+
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (movementValue) params.set("movement", movementValue);
+    if (categoryValue) params.set("category", categoryValue);
+    if (paymentModeValue) params.set("paymentMode", paymentModeValue);
+    if (sourceValue) params.set("source", sourceValue);
+    if (paidForValue) params.set("paidFor", paidForValue);
+    if (startDate) params.set("startDate", startDate.toISOString());
+    if (endDate) params.set("endDate", endDate.toISOString());
+
+    const queryString = params.toString();
+    const url = queryString ? `/transaction?${queryString}` : "/transaction";
+
+    router.replace(url);
+  }, [movementValue, categoryValue, paymentModeValue, sourceValue, paidForValue, startDate, endDate, router])
 
   return (
-    <ScrollArea className="pb-2 w-full overflow-x-auto">
-      <div className="flex items-center gap-x-2 w-max">
+    <ScrollArea className="w-full overflow-x-auto">
+      <div className="flex items-center gap-x-2 w-max py-2.5">
         <DatePicker
           label="Date de début"
           mode="single"
@@ -30,16 +127,21 @@ export default function TransactionFilters() {
           onChange={(date) => setEndDate(date as Date)}
         />
         <Combobox
-          datas={[]}
+          datas={movements}
           required={false}
-          value={mouvementValue}
-          setValue={setMouvementValue}
+          value={movementValue}
+          setValue={setMovementValue}
           placeholder="Mouvement"
           searchMessage="Rechercher un mouvement"
           noResultsMessage="Aucun mouvement trouvé."
         />
         <Combobox
-          datas={[]}
+          isLoading={isGettingCategories}
+          datas={categories.map(category => ({
+            id: category.id,
+            label: category.name,
+            value: category.id
+          }))}
           required={false}
           value={categoryValue}
           setValue={setCategoryValue}
@@ -48,7 +150,7 @@ export default function TransactionFilters() {
           noResultsMessage="Aucune catégorie trouvée."
         />
         <Combobox
-          datas={[]}
+          datas={acceptPayment}
           required={false}
           value={paymentModeValue}
           setValue={setPaymentModeValue}
@@ -57,7 +159,12 @@ export default function TransactionFilters() {
           noResultsMessage="Aucun mode de paiement trouvé."
         />
         <Combobox
-          datas={[]}
+          isLoading={isGettingSources}
+          datas={sources.map(source => ({
+            id: source.id,
+            label: source.name,
+            value: source.id
+          }))}
           required={false}
           value={sourceValue}
           setValue={setSourceValue}
@@ -66,11 +173,16 @@ export default function TransactionFilters() {
           noResultsMessage="Aucune source trouvée."
         />
         <Combobox
-          datas={[]}
+          isLoading={isGettingCollaborators}
+          datas={collaborators.map(collaborator => ({
+            id: collaborator.id,
+            label: collaborator.name,
+            value: collaborator.id
+          }))}
           required={false}
           value={paidForValue}
           setValue={setPaidForValue}
-          placeholder="Payé pour le compte de"
+          placeholder="Payé pour le compte"
           searchMessage="Rechercher un compte"
           noResultsMessage="Aucun compte trouvé."
         />

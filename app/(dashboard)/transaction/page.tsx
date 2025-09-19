@@ -12,6 +12,7 @@ import TransactionTable, {
   TransactionTableRef,
 } from "./_components/transaction-table";
 import TransactionFilters from "./_components/transaction-filters";
+import { deleteTransactions } from "@/action/transaction.action";
 
 export default function TransactionPage() {
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<
@@ -23,7 +24,7 @@ export default function TransactionPage() {
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },
     RequestResponse<TransactionType[]>
-  >(removeMany, () => {}, "transactions");
+  >(deleteTransactions, () => { }, "transactions");
 
   const handleAppointmentAdded = () => {
     transactionTableRef.current?.refreshTransaction();

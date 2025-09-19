@@ -24,8 +24,9 @@ type ComboboxProps = {
     icon?: string;
     value: string;
     label: string;
+    more?: Record<string, string>;
     color?: string;
-    disabled?: boolean; // Par défaut false
+    disabled?: boolean;
   }[];
   setValue: Dispatch<SetStateAction<string>>;
   value: string;
@@ -90,8 +91,8 @@ export function Combobox({
           <CommandList>
             {isLoading ? (
               <div className="flex justify-center items-center p-4">
-                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                <span>Chargement...</span>
+                <Loader2 className="mr-2 w-3 h-3 animate-spin" />
+                <span className="text-sm">Chargement...</span>
               </div>
             ) : (
               <>
@@ -126,12 +127,13 @@ export function Combobox({
                             value === data.value ? "opacity-100" : "opacity-0"
                           )}
                         />
+
                         {data.color && (
                           <span
                             className={cn("rounded-full w-4 h-4", data.color)}
                           />
                         )}
-                        {data.label}
+                        <span className="text-sm">{data.label}</span>  {data.more && <span className="text-neutral-500 text-xs">( {data.more.type} de {data.more.price} )</span>}
                       </CommandItem>
                     );
                   })}

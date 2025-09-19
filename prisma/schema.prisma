@@ -114,7 +114,8 @@ model Company {
   TransactionNature          TransactionNature[]
   Allocation                 Allocation[]
   Source                     Source[]
-  Transaction                Transaction[]
+  Receipt                    Receipt[]
+  Dibursement                Dibursement[]
 
   @@unique([email])
   @@map("company")
@@ -176,6 +177,7 @@ model User {
   appointments Appointment[]
   projects     Project[]     @relation("project_collaborators")
   tasks        Task[]        @relation("task_users")
+  Dibursement  Dibursement[]
 
   @@unique([email])
   @@map("user")
@@ -232,10 +234,9 @@ model Client {
 
   appointments Appointment[]
 
-  projects    Project[]
-  invoices    Invoice[]
-  billboards  Billboard[]
-  Transaction Transaction[]
+  projects   Project[]
+  invoices   Invoice[]
+  billboards Billboard[]
 
   @@map("client")
 }
@@ -361,6 +362,8 @@ model Invoice {
   productsServices ProductService[]
 
   billboards Billboard[]
+  items      Item[]
+  Receipt    Receipt[]
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -368,9 +371,9 @@ model Invoice {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  items     Item[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  Dibursement Dibursement[]
 
   @@map("invoice")
 }
@@ -523,7 +526,7 @@ model DocumentModel {
   @@map("company_documents")
 }
 
-model Transaction {
+model Receipt {
   id        String          @id @default(uuid())
   type      TransactionType @default(RECEIPT)
   reference Int             @default(autoincrement())
@@ -542,16 +545,11 @@ model Transaction {
   paymentType String
   checkNumber String
 
-  referenceDocumentId String
-  referenceDocument   String
+  referenceInvoiceId String?
+  referenceInvoice   Invoice? @relation(fields: [referenceInvoiceId], references: [id], onDelete: SetNull)
 
-  allocationId String?
-  allocation   Allocation? @relation(fields: [allocationId], references: [id], onDelete: Cascade)
-
-  Source Source[]
-
-  payOnBehalfOfId String?
-  payOnBehalfOf   Client? @relation(fields: [payOnBehalfOfId], references: [id], onDelete: SetNull)
+  sourceId String?
+  source   Source? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
 
   description String?
   comment     String?
@@ -561,38 +559,85 @@ model Transaction {
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
+
+  @@map("receipt")
 }
 
-model Source {
-  id           String        @id @default(ulid())
-  name         String        @unique
-  transactions Transaction[]
+model Dibursement {
+  id        String          @id @default(uuid())
+  type      TransactionType @default(DISBURSEMENT)
+  reference Int             @default(autoincrement())
+  date      DateTime
+  movement  BankTransaction @default(OUTFLOWS)
+
+  categoryId String
+  category   TransactionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  natureId String
+  nature   TransactionNature @relation(fields: [natureId], references: [id], onDelete: Cascade)
+
+  amount     String
+  amountType AmountType @default(HT)
+
+  paymentType String
+  checkNumber String
+
+  referenceInvoiceId String?
+  referenceInvoice   Invoice? @relation(fields: [referenceInvoiceId], references: [id], onDelete: SetNull)
+
+  allocationId String?
+  allocation   Allocation? @relation(fields: [allocationId], references: [id], onDelete: Cascade)
+
+  sourceId String?
+  source   Source? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  payOnBehalfOfId String?
+  payOnBehalfOf   User?   @relation(fields: [payOnBehalfOfId], references: [id], onDelete: SetNull)
+
+  description String?
+  comment     String?
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("dibursement")
+}
+
+model Source {
+  id   String @id @default(ulid())
+  name String @unique
+
+  companyId   String
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Receipt     Receipt[]
+  Dibursement Dibursement[]
 
   @@map("source")
 }
 
 model Allocation {
-  id           String        @id @default(ulid())
-  name         String        @unique
-  transactions Transaction[]
+  id   String @id @default(ulid())
+  name String @unique
 
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId   String
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Dibursement Dibursement[]
 
   @@map("allocation")
 }
 
 model TransactionCategory {
-  id           String              @id @default(ulid())
-  name         String              @unique
-  transactions Transaction[]
-  natures      TransactionNature[]
+  id      String              @id @default(ulid())
+  name    String              @unique
+  natures TransactionNature[]
+  Receipt Receipt[]
 
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId   String
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Dibursement Dibursement[]
 
   @@map("transaction_category")
 }
@@ -601,13 +646,14 @@ model TransactionNature {
   id   String @id @default(uuid())
   name String @unique
 
-  transactions Transaction[]
-
   categoryId String
   category   TransactionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Receipt Receipt[]
+
+  companyId   String
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Dibursement Dibursement[]
 
   @@map("transaction_nature")
 }

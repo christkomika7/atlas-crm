@@ -13,8 +13,7 @@ import Spinner from "@/components/ui/spinner";
 import TextInput from "@/components/ui/text-input";
 import { useDataStore } from "@/stores/data.store";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useEffect } from "react";
-import { MultipleSelect } from "@/components/ui/multi-select";
+import { useEffect, useState } from "react";
 import {
   dibursementSchema,
   DibursementSchemaType,
@@ -22,7 +21,19 @@ import {
 import { Combobox } from "@/components/ui/combobox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
+import useTransactionStore from "@/stores/transaction.store";
+import { AllocationType, SourceType, TransactionCategoryType, TransactionDocument, TransactionNatureType, TransactionType } from "@/types/transaction.type";
+import useQueryAction from "@/hook/useQueryAction";
+import { RequestResponse } from "@/types/api.types";
+import { createDibursement, getAllocations, getCategories, getDocuments, getNatures, getSources } from "@/action/transaction.action";
+import CategoryModal from "./category-modal";
+import NatureModal from "./nature-modal";
+import { acceptPayment } from "@/lib/data";
+import SourceModal from "./source-modal";
+import AllocationModal from "./allocation-modal";
+import { getCollaborators } from "@/action/user.action";
+import { UserType } from "@/types/user.types";
 
 type DibursementFormProps = {
   closeModal: () => void;
@@ -31,66 +42,194 @@ type DibursementFormProps = {
 export default function DibursementForm({ closeModal }: DibursementFormProps) {
   const companyId = useDataStore.use.currentCompany();
 
+  const categories = useTransactionStore.use.categories();
+  const setCategories = useTransactionStore.use.setCategories();
+  const natures = useTransactionStore.use.natures();
+  const setNatures = useTransactionStore.use.setNatures();
+  const sources = useTransactionStore.use.sources();
+  const setSources = useTransactionStore.use.setSources();
+  const allocations = useTransactionStore.use.allocations();
+  const setAllocations = useTransactionStore.use.setAllocations();
+
+  const [categoryId, setCategoryId] = useState("");
+  const [documents, setDocuments] = useState<TransactionDocument[]>([]);
+  const [documentType, setDocumentType] = useState<"invoice" | "quote">();
+  const [collaborators, setCollaborators] = useState<UserType[]>([]);
+
+
   const form = useForm<DibursementSchemaType>({
     resolver: zodResolver(dibursementSchema),
     defaultValues: {
-      amountType: "HT",
     },
   });
 
-  // const { mutate, isPending } = useQueryAction<
-  //   DibursementSchemaType,
-  //   RequestResponse<DibursementSchemaType>
-  // >(create, () => {}, "dibursements");
+  const {
+    mutate: mutateGetCategories,
+    isPending: isGettingCategories,
+  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionCategoryType[]>>(
+    getCategories,
+    () => { },
+    "categories"
+  );
+
+  const {
+    mutate: mutateGetNature,
+    isPending: isGettingNatures,
+  } = useQueryAction<{ categoryId: string }, RequestResponse<TransactionNatureType[]>>(
+    getNatures,
+    () => { },
+    "natures"
+  );
+
+  const {
+    mutate: mutateGetSources,
+    isPending: isGettingSources,
+  } = useQueryAction<{ companyId: string }, RequestResponse<SourceType[]>>(
+    getSources,
+    () => { },
+    "sources"
+  );
+
+
+
+  const {
+    mutate: mutateGetAllocations,
+    isPending: isGettingAllocations,
+  } = useQueryAction<{ companyId: string }, RequestResponse<AllocationType[]>>(
+    getAllocations,
+    () => { },
+    "allocations"
+  );
+
+
+  const {
+    mutate: mutateGetDocuments,
+    isPending: isGettingDocuments,
+  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionDocument[]>>(
+    getDocuments,
+    () => { },
+    "documents"
+  );
+
+  const {
+    mutate: mutateGetCollborators,
+    isPending: isGettingCollaborators,
+  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+    getCollaborators,
+    () => { },
+    "collaborators"
+  );
+
+
+  const { mutate: mutateCreateDibursement, isPending: isCreatingDibursement } = useQueryAction<
+    DibursementSchemaType,
+    RequestResponse<TransactionType>
+  >(createDibursement, () => { }, "dibursement");
+
+
 
   useEffect(() => {
     if (companyId) {
-      const initForm = {
-        companyId,
-      };
+      mutateGetCategories({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setCategories(data.data)
+          }
+        },
+      })
 
-      form.reset(initForm);
+      mutateGetSources({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setSources(data.data)
+          }
+        },
+      })
+
+      mutateGetAllocations({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setAllocations(data.data)
+          }
+        },
+      })
+
+
+      mutateGetDocuments({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setDocuments(data.data)
+          }
+        },
+      })
+
+      mutateGetCollborators({ id: companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setCollaborators(data.data)
+          }
+        },
+      })
+
+      form.reset({
+        companyId,
+        date: new Date(),
+        amountType: "HT",
+      });
     }
-  }, [form, companyId]);
+  }, [companyId]);
+
+  useEffect(() => {
+    if (categoryId) {
+      mutateGetNature({ categoryId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setNatures(data.data);
+          }
+        },
+      })
+    }
+  }, [categoryId])
+
+
+
+  useEffect(() => {
+    if (documentType) {
+      form.setValue('documentRefType', documentType);
+    }
+  }, [documentType])
+
+
+  function getDocumentType(id: string) {
+    const type = documents.find(document => document.id === id)?.type;
+
+    switch (type) {
+      case "Facture":
+        return "invoice";
+      case "Devis":
+        return "quote"
+    }
+  }
 
   async function submit(dibursementData: DibursementSchemaType) {
     const { success, data } = dibursementSchema.safeParse(dibursementData);
     if (!success) return;
-    console.log({ data });
-    // mutate(
-    //   { ...data },
-    //   {
-    //     onSuccess() {
-    //       form.reset();
-    //       closeModal();
-    //     },
-    //   }
-    // );
+    mutateCreateDibursement(
+      { ...data },
+      {
+        onSuccess() {
+          form.reset();
+          closeModal();
+        },
+      }
+    );
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)} className="space-y-4.5 m-2">
         <div className="space-y-4.5 max-w-full">
-          <div className="gap-4.5 grid grid-cols-3">
-            <FormField
-              control={form.control}
-              name="reference"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      type="text"
-                      design="float"
-                      label="Référence"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="gap-4.5 grid grid-cols-2">
             <FormField
               control={form.control}
               name="date"
@@ -98,6 +237,7 @@ export default function DibursementForm({ closeModal }: DibursementFormProps) {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <DatePicker
+                      value={field.value}
                       label="Date"
                       mode="single"
                       onChange={(e) => field.onChange(e as Date)}
@@ -107,27 +247,7 @@ export default function DibursementForm({ closeModal }: DibursementFormProps) {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="moov"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      datas={[]}
-                      value={field.value}
-                      setValue={field.onChange}
-                      placeholder="Type de mouvement"
-                      searchMessage="Rechercher un type de mouvement"
-                      noResultsMessage="Aucun type trouvé."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="gap-4.5 grid grid-cols-3">
+
             <FormField
               control={form.control}
               name="category"
@@ -135,18 +255,29 @@ export default function DibursementForm({ closeModal }: DibursementFormProps) {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      datas={[]}
+                      isLoading={isGettingCategories}
+                      datas={categories.map(category => ({
+                        id: category.id,
+                        label: category.name,
+                        value: category.id
+                      }))}
                       value={field.value}
-                      setValue={field.onChange}
+                      setValue={(e) => {
+                        setCategoryId(e)
+                        field.onChange(e)
+                      }}
                       placeholder="Catégorie"
                       searchMessage="Rechercher une catégorie"
                       noResultsMessage="Aucune catégorie trouvée."
+                      addElement={<CategoryModal />}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          </div>
+          <div className="gap-4.5 grid grid-cols-2">
             <FormField
               control={form.control}
               name="nature"
@@ -154,12 +285,18 @@ export default function DibursementForm({ closeModal }: DibursementFormProps) {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      datas={[]}
+                      isLoading={isGettingNatures}
+                      datas={natures.map(nature => ({
+                        id: nature.id,
+                        label: nature.name,
+                        value: nature.id
+                      }))}
                       value={field.value}
                       setValue={field.onChange}
                       placeholder="Nature"
                       searchMessage="Rechercher une nature"
                       noResultsMessage="Aucune nature trouvée."
+                      addElement={<NatureModal categoryId={categoryId} />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -246,7 +383,7 @@ export default function DibursementForm({ closeModal }: DibursementFormProps) {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      datas={[]}
+                      datas={acceptPayment}
                       value={field.value}
                       setValue={field.onChange}
                       placeholder="Mode de paiement"
@@ -282,12 +419,25 @@ export default function DibursementForm({ closeModal }: DibursementFormProps) {
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
-                    <TextInput
-                      type="text"
-                      design="float"
-                      label="Référence du document"
+                    <Combobox
+                      isLoading={isGettingDocuments}
+                      datas={documents.map(category => ({
+                        id: category.id,
+                        label: category.reference,
+                        more: {
+                          type: category.type,
+                          price: `${formatNumber(category.price)} ${category.currency}`
+                        },
+                        value: category.id
+                      }))}
                       value={field.value}
-                      handleChange={field.onChange}
+                      setValue={e => {
+                        setDocumentType(getDocumentType(e as string));
+                        field.onChange(e)
+                      }}
+                      placeholder="Référence du document"
+                      searchMessage="Rechercher une référence"
+                      noResultsMessage="Aucune référence trouvée."
                     />
                   </FormControl>
                   <FormMessage />
@@ -303,12 +453,18 @@ export default function DibursementForm({ closeModal }: DibursementFormProps) {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      datas={[]}
+                      isLoading={isGettingAllocations}
+                      datas={allocations.map(allocation => ({
+                        id: allocation.id,
+                        label: allocation.name,
+                        value: allocation.id
+                      }))}
                       value={field.value}
                       setValue={field.onChange}
                       placeholder="Allocation"
                       searchMessage="Rechercher une allocation"
                       noResultsMessage="Aucune allocation trouvée."
+                      addElement={<AllocationModal />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -322,12 +478,18 @@ export default function DibursementForm({ closeModal }: DibursementFormProps) {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      datas={[]}
+                      isLoading={isGettingSources}
+                      datas={sources.map(source => ({
+                        id: source.id,
+                        label: source.name,
+                        value: source.id
+                      }))}
                       value={field.value}
                       setValue={field.onChange}
                       placeholder="Source"
                       searchMessage="Rechercher une source"
                       noResultsMessage="Aucune source trouvée."
+                      addElement={<SourceModal />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -341,7 +503,12 @@ export default function DibursementForm({ closeModal }: DibursementFormProps) {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      datas={[]}
+                      isLoading={isGettingCollaborators}
+                      datas={collaborators.map(collaborator => ({
+                        id: collaborator.id,
+                        label: collaborator.name,
+                        value: collaborator.id
+                      }))}
                       value={field.value}
                       setValue={field.onChange}
                       placeholder="Sélectionner un tiers payeur"
@@ -402,8 +569,7 @@ export default function DibursementForm({ closeModal }: DibursementFormProps) {
             variant="primary"
             className="justify-center max-w-xs"
           >
-            {/* {isPending ? <Spinner /> : "Enregistrer"} */}
-            Enregistrer
+            {isCreatingDibursement ? <Spinner /> : "Enregistrer"}
           </Button>
         </div>
       </form>

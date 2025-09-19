@@ -16,17 +16,18 @@ import { useEffect, useState } from "react";
 import { Combobox } from "@/components/ui/combobox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 import { receiptSchema, ReceiptSchemaType } from "@/lib/zod/receipt.schema";
 import useQueryAction from "@/hook/useQueryAction";
-import { getCategories, getNatures, getReference, getSources } from "@/action/transaction.action";
+import { createReceipt, getCategories, getDocuments, getNatures, getSources } from "@/action/transaction.action";
 import { RequestResponse } from "@/types/api.types";
-import { TransactionCategoryType, TransactionNatureType } from "@/types/transaction.type";
+import { SourceType, TransactionCategoryType, TransactionDocument, TransactionNatureType, TransactionType } from "@/types/transaction.type";
 import useTransactionStore from "@/stores/transaction.store";
 import CategoryModal from "./category-modal";
 import NatureModal from "./nature-modal";
 import { acceptPayment } from "@/lib/data";
 import SourceModal from "./source-modal";
+import Spinner from "@/components/ui/spinner";
 
 type ReceiptFormProps = {
   closeModal: () => void;
@@ -43,21 +44,15 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
   const setSources = useTransactionStore.use.setSources();
 
   const [categoryId, setCategoryId] = useState("");
+  const [documents, setDocuments] = useState<TransactionDocument[]>([]);
+  const [documentType, setDocumentType] = useState<"invoice" | "quote">();
 
 
   const form = useForm<ReceiptSchemaType>({
     resolver: zodResolver(receiptSchema),
     defaultValues: {
-      date: new Date(),
-      moov: "INFLOWS",
-      amountType: "HT",
     },
   });
-
-  const { mutate: mutateGetReference, isPending: isGettingReference } = useQueryAction<
-    { companyId: string },
-    RequestResponse<number>
-  >(getReference, () => { }, "reference");
 
   const {
     mutate: mutateGetCategories,
@@ -82,28 +77,31 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
   const {
     mutate: mutateGetSources,
     isPending: isGettingSources,
-  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionNatureType[]>>(
+  } = useQueryAction<{ companyId: string }, RequestResponse<SourceType[]>>(
     getSources,
     () => { },
     "sources"
   );
 
 
-  // const { mutate, isPending } = useQueryAction<
-  //   ReceiptSchemaType,
-  //   RequestResponse<ReceiptSchemaType>
-  // >(create, () => {}, "receipts");
+  const {
+    mutate: mutateGetDocuments,
+    isPending: isGettingDocuments,
+  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionDocument[]>>(
+    getDocuments,
+    () => { },
+    "documents"
+  );
+
+  const { mutate: mutateCreateReceipt, isPending: isCreatingReceipt } = useQueryAction<
+    ReceiptSchemaType,
+    RequestResponse<TransactionType>
+  >(createReceipt, () => { }, "receipt");
 
 
 
   useEffect(() => {
     if (companyId) {
-      mutateGetReference({ companyId }, {
-        onSuccess(data) {
-          form.setValue("reference", data.data ?? 1);
-        },
-      })
-
       mutateGetCategories({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -120,8 +118,19 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
         },
       })
 
+
+      mutateGetDocuments({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setDocuments(data.data)
+          }
+        },
+      })
+
       form.reset({
         companyId,
+        date: new Date(),
+        amountType: "HT",
       });
     }
   }, [companyId]);
@@ -138,45 +147,44 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
     }
   }, [categoryId])
 
+  useEffect(() => {
+    if (documentType) {
+      form.setValue('documentRefType', documentType);
+    }
+  }, [documentType])
+
+
+  function getDocumentType(id: string) {
+    const type = documents.find(document => document.id === id)?.type;
+
+    switch (type) {
+      case "Facture":
+        return "invoice";
+      case "Devis":
+        return "quote"
+    }
+  }
+
 
   async function submit(receiptData: ReceiptSchemaType) {
     const { success, data } = receiptSchema.safeParse(receiptData);
     if (!success) return;
-    console.log({ data });
-    // mutate(
-    //   { ...data },
-    //   {
-    //     onSuccess() {
-    //       form.reset();
-    //       closeModal();
-    //     },
-    //   }
-    // );
+    mutateCreateReceipt(
+      { ...data },
+      {
+        onSuccess() {
+          form.reset();
+          closeModal();
+        },
+      }
+    );
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)} className="space-y-4.5 m-2">
         <div className="space-y-4.5 max-w-full">
-          <div className="gap-4.5 grid grid-cols-3">
-            <FormField
-              control={form.control}
-              name="reference"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      type="text"
-                      design="float"
-                      label="Référence"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="gap-4.5 grid grid-cols-2">
             <FormField
               control={form.control}
               name="date"
@@ -224,7 +232,6 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
             />
           </div>
           <div className="gap-4.5 grid grid-cols-2">
-
             <FormField
               control={form.control}
               name="nature"
@@ -393,12 +400,25 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
-                    <TextInput
-                      type="text"
-                      design="float"
-                      label="Référence du document"
+                    <Combobox
+                      isLoading={isGettingDocuments}
+                      datas={documents.map(category => ({
+                        id: category.id,
+                        label: category.reference,
+                        more: {
+                          type: category.type,
+                          price: `${formatNumber(category.price)} ${category.currency}`
+                        },
+                        value: category.id
+                      }))}
                       value={field.value}
-                      handleChange={field.onChange}
+                      setValue={e => {
+                        setDocumentType(getDocumentType(e as string));
+                        field.onChange(e)
+                      }}
+                      placeholder="Référence du document"
+                      searchMessage="Rechercher une référence"
+                      noResultsMessage="Aucune référence trouvée."
                     />
                   </FormControl>
                   <FormMessage />
@@ -454,8 +474,7 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
             variant="primary"
             className="justify-center max-w-xs"
           >
-            {/* {isPending ? <Spinner /> : "Enregistrer"} */}
-            Enregistrer
+            {isCreatingReceipt ? <Spinner /> : "Enregistrer"}
           </Button>
         </div>
       </form>

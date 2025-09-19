@@ -7,8 +7,6 @@ export async function GET(req: NextRequest) {
     await checkAccess(["CLIENTS", "PROJECTS"], "READ");
     const id = getIdFromUrl(req.url, 2) as string;
 
-
-    console.log({ id });
     const users = await prisma.user.findMany({
         where: {
             companyId: id
