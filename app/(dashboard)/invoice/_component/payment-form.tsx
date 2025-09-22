@@ -11,19 +11,29 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import TextInput from "@/components/ui/text-input";
-import { businessSectors } from "@/lib/data";
+import { acceptPayment } from "@/lib/data";
 import { paymentSchema, PaymentSchemaType } from "@/lib/zod/payment.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 export default function PaymentForm() {
+  const [isPaid, setIsPaid] = useState(false);
+
   const form = useForm<PaymentSchemaType>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       isPaid: false,
+      amount: 0,
+      date: new Date()
     },
   });
+
+  useEffect(() => {
+    if (isPaid) {
+      return form.setValue('amount', 0);
+    }
+  }, [isPaid])
 
   function submit(formData: PaymentSchemaType) {
     const { success, data } = paymentSchema.safeParse(formData);
@@ -47,7 +57,10 @@ export default function PaymentForm() {
                     <Switch
                       id="isPaid"
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(e) => {
+                        setIsPaid(e)
+                        field.onChange(e)
+                      }}
                     />
                   </div>
                 </FormControl>
@@ -55,25 +68,26 @@ export default function PaymentForm() {
               </FormItem>
             )}
           />
-
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <TextInput
-                    design="float"
-                    type="number"
-                    label="Montant"
-                    value={field.value}
-                    handleChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {isPaid &&
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      type="number"
+                      label="Montant"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          }
 
           <FormField
             control={form.control}
@@ -82,7 +96,7 @@ export default function PaymentForm() {
               <FormItem className="-space-y-2">
                 <FormControl>
                   <Combobox
-                    datas={businessSectors}
+                    datas={acceptPayment}
                     value={field.value}
                     setValue={field.onChange}
                     placeholder="Mode de paiement"

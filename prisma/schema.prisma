@@ -114,8 +114,8 @@ model Company {
   TransactionNature          TransactionNature[]
   Allocation                 Allocation[]
   Source                     Source[]
-  Receipt                    Receipt[]
-  Dibursement                Dibursement[]
+  receipts                   Receipt[]
+  dibursements               Dibursement[]
 
   @@unique([email])
   @@map("company")
@@ -363,7 +363,7 @@ model Invoice {
 
   billboards Billboard[]
   items      Item[]
-  Receipt    Receipt[]
+  receipts   Receipt[]
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -371,11 +371,27 @@ model Invoice {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  Dibursement Dibursement[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  dibursements Dibursement[]
+  payments     Payment[]
 
   @@map("invoice")
+}
+
+model Payment {
+  id          String  @id @default(uuid())
+  amount      String
+  paymentMode String
+  infos       String?
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("payment")
 }
 
 model Item {
@@ -610,10 +626,10 @@ model Source {
   id   String @id @default(ulid())
   name String @unique
 
-  companyId   String
-  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  Receipt     Receipt[]
-  Dibursement Dibursement[]
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  receipts     Receipt[]
+  dibursements Dibursement[]
 
   @@map("source")
 }
@@ -622,22 +638,22 @@ model Allocation {
   id   String @id @default(ulid())
   name String @unique
 
-  companyId   String
-  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  Dibursement Dibursement[]
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  dibursements Dibursement[]
 
   @@map("allocation")
 }
 
 model TransactionCategory {
-  id      String              @id @default(ulid())
-  name    String              @unique
-  natures TransactionNature[]
-  Receipt Receipt[]
+  id           String              @id @default(ulid())
+  name         String              @unique
+  natures      TransactionNature[]
+  receipts     Receipt[]
+  dibursements Dibursement[]
 
-  companyId   String
-  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  Dibursement Dibursement[]
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("transaction_category")
 }
@@ -649,11 +665,11 @@ model TransactionNature {
   categoryId String
   category   TransactionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  Receipt Receipt[]
+  receipts Receipt[]
 
-  companyId   String
-  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  Dibursement Dibursement[]
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  dibursements Dibursement[]
 
   @@map("transaction_nature")
 }

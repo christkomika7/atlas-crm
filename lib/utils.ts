@@ -353,7 +353,7 @@ export function extractCompanyData(formData: FormData) {
 
   // Champs simples
   const simpleFields = [
-    'companyName', 'country', 'registeredAddress', 'phoneNumber',
+    'companyName', 'country', 'registeredAddress', 'phoneNumber', 'city', 'codePostal',
     'email', 'website', 'businessRegistrationNumber', 'taxIdentificationNumber',
     'capitalAmount', 'currency', 'bankAccountDetails', 'businessActivityType',
   ];

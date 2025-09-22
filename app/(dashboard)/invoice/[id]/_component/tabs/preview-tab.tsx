@@ -16,11 +16,12 @@ import PaymentForm from "../../../_component/payment-form";
 import RecurrenceForm from "../../../_component/recurrence-form";
 import { InvoiceType } from "@/types/invoice.types";
 import { unique } from "@/action/invoice.action";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { formatNumber } from "@/lib/utils";
 
 export default function PreviewTab() {
   const param = useParams();
+  const router = useRouter();
 
   const [invoice, setInvoice] = useState<InvoiceType | undefined>(undefined);
   const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(undefined);
@@ -68,6 +69,10 @@ export default function PreviewTab() {
       });
     }
   }, [param.id]);
+
+  function close() {
+    router.push("/invoice")
+  }
 
   if (isGettingDocument && isGettingInvoice) return <Spinner />
 
@@ -124,7 +129,8 @@ export default function PreviewTab() {
               <div className="space-y-2 py-4">
                 <p className="flex justify-between items-center gap-x-2 text-sm">
                   <span className="font-semibold">Total TTC</span>
-                  <span>{formatNumber(invoice!.totalTTC)} {invoice?.company.currency}</span>
+
+                  <span>{invoice?.totalTTC ? formatNumber(invoice?.totalTTC) : 0} {invoice?.company.currency}</span>
                 </p>
                 <p className="flex justify-between items-center gap-x-2 text-sm">
                   <span>Arriéré</span>
@@ -148,9 +154,8 @@ export default function PreviewTab() {
               >
                 <PaymentForm />
               </ModalContainer>
-              <Button variant="primary">Sauvegarder</Button>
               <Button variant="primary">Générer un contrat</Button>
-              <Button variant="primary" className="bg-gray text-black">
+              <Button onClick={close} variant="primary" className="bg-gray text-black">
                 Fermer
               </Button>
 
