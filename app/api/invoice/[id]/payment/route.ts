@@ -24,35 +24,40 @@ export async function POST(req: NextRequest) {
         { ...res, date: new Date(res.date) }
     ) as PaymentSchemaType;
 
-    try {
-        const [createdPayment] = await prisma.$transaction([
-            prisma.payment.create({
-                data: {
-                    amount: String(data.amount),
-                    paymentMode: data.mode,
-                    infos: data.information,
-                    invoice: {
-                        connect: {
-                            id: id
-                        }
-                    }
-                }
-            }),
+    // try {
+    //     const [createdPayment] = await prisma.$transaction([
+    //         prisma.payment.create({
+    //             data: {
+    //                 amount: String(data.amount),
+    //                 paymentMode: data.mode,
+    //                 infos: data.information,
+    //                 invoice: {
+    //                     connect: {
+    //                         id: id
+    //                     }
+    //                 }
+    //             }
+    //         }),
 
-            prisma.invoice.update({
-                where: { id },
-                data: {
-                    isPaid: true,
-                    // payee: data.isPaid ? invoiceExist.totalTTC : 
-                }
-            })
+    //         prisma.invoice.update({
+    //             where: { id },
+    //             data: {
+    //                 isPaid: true,
+    //                 // payee: data.isPaid ? invoiceExist.totalTTC : 
+    //             }
+    //         })
 
-        ]);
+    //     ]);
 
-    } catch (error) {
-        return NextResponse.json({
-            status: "error",
-            message: "Erreur lors de la création du payment.",
-        }, { status: 500 });
-    }
+    // } catch (error) {
+    //     return NextResponse.json({
+    //         status: "error",
+    //         message: "Erreur lors de la création du payment.",
+    //     }, { status: 500 });
+    // }
+
+    return NextResponse.json({
+        status: "error",
+        message: "Erreur lors de la création du payment.",
+    }, { status: 500 });
 }
