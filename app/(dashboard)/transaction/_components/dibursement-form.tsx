@@ -36,10 +36,11 @@ import { getCollaborators } from "@/action/user.action";
 import { UserType } from "@/types/user.types";
 
 type DibursementFormProps = {
+  refreshTransaction: () => void
   closeModal: () => void;
 };
 
-export default function DibursementForm({ closeModal }: DibursementFormProps) {
+export default function DibursementForm({ closeModal, refreshTransaction }: DibursementFormProps) {
   const companyId = useDataStore.use.currentCompany();
 
   const categories = useTransactionStore.use.categories();
@@ -219,6 +220,7 @@ export default function DibursementForm({ closeModal }: DibursementFormProps) {
       {
         onSuccess() {
           form.reset();
+          refreshTransaction();
           closeModal();
         },
       }

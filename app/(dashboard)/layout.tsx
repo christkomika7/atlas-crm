@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { isRestrictedToAdminPath } from "@/lib/utils";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default async function DashboardLayout({
   children,
@@ -29,7 +30,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="relative grid grid-cols-[260px_1fr] bg-dark w-screen h-screen overflow-hidden">
+    <div className="relative grid grid-cols-[260px_1fr] bg-dark w-screen h-screen">
       <div className="flex flex-col space-y-6 p-6 h-full overflow-y-auto">
         <div className="flex flex-shrink-0 justify-center">
           <Logo color="white" />
@@ -44,9 +45,10 @@ export default async function DashboardLayout({
           />
         </div>
       </div>
-
-      <div className="relative flex flex-col bg-white p-4 rounded-tl-4xl rounded-bl-4xl w-full h-full overflow-hidden">
-        {children}
+      <div className="relative bg-white p-4 rounded-tl-4xl rounded-bl-4xl w-(sidebar-width) h-svh overflow-hidden">
+        <ScrollArea className="h-full pr-2">
+          {children}
+        </ScrollArea>
       </div>
     </div>
   );

@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { useRef, useState } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
-import { removeMany } from "@/action/billboard.action";
 import Spinner from "@/components/ui/spinner";
 import HeaderMenu from "./_components/header-menu";
-import { TransactionType } from "@/types/transaction.type";
+import { DeletedTransactions, TransactionType } from "@/types/transaction.type";
 import TransactionTable, {
   TransactionTableRef,
 } from "./_components/transaction-table";
@@ -16,30 +15,30 @@ import { deleteTransactions } from "@/action/transaction.action";
 
 export default function TransactionPage() {
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<
-    string[]
+    DeletedTransactions[]
   >([]);
 
   const transactionTableRef = useRef<TransactionTableRef>(null);
 
-  const { mutate, isPending } = useQueryAction<
-    { ids: string[] },
+  const { mutate: mutateDeleteTransactions, isPending } = useQueryAction<
+    { data: DeletedTransactions[] },
     RequestResponse<TransactionType[]>
-  >(deleteTransactions, () => { }, "transactions");
+  >(deleteTransactions, () => {}, "transactions");
 
-  const handleAppointmentAdded = () => {
+  const handleTransactionAdded = () => {
     transactionTableRef.current?.refreshTransaction();
   };
 
-  function removeClients() {
+  function removeTransactions() {
     if (selectedTransactionIds.length > 0) {
-      mutate(
-        { ids: selectedTransactionIds },
+      mutateDeleteTransactions(
+        { data: selectedTransactionIds },
         {
           onSuccess() {
             setSelectedTransactionIds([]);
-            handleAppointmentAdded();
+            handleTransactionAdded();
           },
-        }
+        },
       );
     }
   }
@@ -52,7 +51,7 @@ export default function TransactionPage() {
           <Button
             variant="primary"
             className="bg-red font-medium"
-            onClick={removeClients}
+            onClick={removeTransactions}
           >
             {isPending ? (
               <Spinner />
@@ -64,16 +63,20 @@ export default function TransactionPage() {
               </>
             )}
           </Button>
-          <HeaderMenu />
+          <HeaderMenu refreshTransaction={handleTransactionAdded} />
         </div>
       </Header>
-      <div className="space-y-2">
-        <TransactionFilters />
-        <TransactionTable
-          ref={transactionTableRef}
-          selectedTransactionIds={selectedTransactionIds}
-          setSelectedTransactionIds={setSelectedTransactionIds}
-        />
+      <div className="space-y-2 h-full w-(--left-sidebar-width)">
+        <div className="sticky top-[54px] bg-white z-20 left-0 pb-2">
+          <TransactionFilters />
+        </div>
+        <div className="p-2">
+          <TransactionTable
+            ref={transactionTableRef}
+            selectedTransactionIds={selectedTransactionIds}
+            setSelectedTransactionIds={setSelectedTransactionIds}
+          />
+        </div>
       </div>
     </div>
   );

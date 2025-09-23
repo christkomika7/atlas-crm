@@ -7,7 +7,6 @@ export type RequestResponse<T> = {
     message: string;
     state: "error" | "success";
     data?: T;
-    total?: number;
-    totalPages?: number;
-    all?: number;
+    nextCursor: string;
 };
+

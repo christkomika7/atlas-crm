@@ -58,6 +58,11 @@ export async function POST(req: NextRequest) {
                         id: data.nature
                     }
                 },
+                source: {
+                    connect: {
+                        id: data.source
+                    }
+                },
                 company: {
                     connect: {
                         id: data.companyId

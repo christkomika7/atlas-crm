@@ -28,7 +28,7 @@ export default function Header({ title, back, children }: HeaderProps) {
   }
 
   return (
-    <div className="flex items-center gap-x-2 px-6 h-14">
+    <div className="flex items-center gap-x-2 px-6 h-14 sticky -top-0.5 left-0 z-40 w-(--left-sidebar-width) bg-white">
       <div
         className={clsx(
           "grid",

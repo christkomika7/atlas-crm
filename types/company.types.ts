@@ -1,4 +1,5 @@
 import { JsonValue } from "@prisma/client/runtime/library";
+import { ModelDocumentType } from "./document.types";
 
 export type TaxType = {
     name: string;
@@ -43,6 +44,7 @@ export type CompanyType<E> = {
     fiscalYearEnd: Date;
     vatRates: VatRateType[];
     employees: E[]
+    documentModel: ModelDocumentType<string>
 }
 
 export type CompanyCountriesType = {

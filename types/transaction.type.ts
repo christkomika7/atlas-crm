@@ -4,71 +4,99 @@ import { ClientType } from "./client.types";
 import { CompanyType } from "./company.types";
 
 export type TransactionType = {
-    id: string;
-    type: $Enums.TransactionType,
-    reference: number;
-    date: Date;
-    movement: $Enums.BankTransaction;
+  id: string;
+  type: $Enums.TransactionType;
+  reference: number;
+  date: Date;
+  movement: $Enums.BankTransaction;
 
-    categoryId: string;
-    category: TransactionCategoryType;
+  categoryId: string;
+  category: TransactionCategoryType;
 
-    natureId: string;
-    nature: TransactionNatureType;
+  natureId: string;
+  nature: TransactionNatureType;
 
-    amount: string;
-    amountType: $Enums.AmountType,
+  amount: string;
+  amountType: $Enums.AmountType;
 
-    paymentType: string;
-    checkNumber: string;
+  paymentType: string;
+  checkNumber: string;
 
-    referenceInvoiceId: string;
-    referenceInvoice: InvoiceType;
+  referenceInvoiceId: string;
+  referenceInvoice: InvoiceType;
 
-    allocationId: string;
-    allocation: AllocationType;
+  allocationId: string;
+  allocation: AllocationType;
 
-    sourceId: string;
-    source: SourceType;
+  sourceId: string;
+  source: SourceType;
 
-    payOnBehalfOfId: string;
-    payOnBehalfOf: ClientType;
+  payOnBehalfOfId: string;
+  payOnBehalfOf: ClientType;
 
-    description: string;
-    comment: string;
+  description: string;
+  comment: string;
 
-    companyId: string;
-    company: CompanyType<string>;
+  companyId: string;
+  company: CompanyType<string>;
 
-    updatedAt: Date;
-    createdAt: Date;
-}
+  updatedAt: Date;
+  createdAt: Date;
+};
 
 export type TransactionCategoryType = {
-    id: string;
-    name: string;
-    natures: TransactionNatureType[]
-}
+  id: string;
+  name: string;
+  natures: TransactionNatureType[];
+};
 
 export type TransactionNatureType = {
-    id: string;
-    name: string;
-}
+  id: string;
+  name: string;
+};
 
 export type SourceType = {
-    id: string;
-    name: string;
-}
+  id: string;
+  name: string;
+};
 
 export type AllocationType = {
-    id: string;
-    name: string;
-}
+  id: string;
+  name: string;
+};
 
 export type TransactionDocument = {
-    id: string;
-    type: string,
-    reference: string;
-    price: string;
-    currency: string;
-}
+  id: string;
+  type: string;
+  reference: string;
+  price: string;
+  currency: string;
+};
+
+export type GetTransactionsParams = {
+  companyId: string;
+  cursor?: string | null;
+  take?: number;
+  startDate?: string | null;
+  endDate?: string | null;
+  movementValue?: string | null;
+  categoryValue?: string | null;
+  paymentModeValue?: string | null;
+  sourceValue?: string | null;
+  paidForValue?: string | null;
+  byDate?: "asc" | "desc";
+  byAmount?: "asc" | "desc";
+  byMovement?: "asc" | "desc";
+  byCategory?: "asc" | "desc";
+  byNature?: "asc" | "desc";
+  byDescription?: "asc" | "desc";
+  byPaymentMode?: "asc" | "desc";
+  byAllocation?: "asc" | "desc";
+  bySource?: "asc" | "desc";
+  byPaidOnBehalfOf?: "asc" | "desc";
+};
+
+export type DeletedTransactions = {
+  id: string;
+  transactionType: $Enums.TransactionType;
+};

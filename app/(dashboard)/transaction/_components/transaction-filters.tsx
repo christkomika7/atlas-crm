@@ -14,7 +14,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function TransactionFilters() {
-
   const router = useRouter();
 
   const companyId = useDataStore.use.currentCompany();
@@ -33,64 +32,62 @@ export default function TransactionFilters() {
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [collaborators, setCollaborators] = useState<UserType[]>([]);
 
+  const { mutate: mutateGetCategories, isPending: isGettingCategories } =
+    useQueryAction<
+      { companyId: string },
+      RequestResponse<TransactionCategoryType[]>
+    >(getCategories, () => {}, "categories");
 
-  const {
-    mutate: mutateGetCategories,
-    isPending: isGettingCategories,
-  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionCategoryType[]>>(
-    getCategories,
-    () => { },
-    "categories"
-  );
+  const { mutate: mutateGetSources, isPending: isGettingSources } =
+    useQueryAction<{ companyId: string }, RequestResponse<SourceType[]>>(
+      getSources,
+      () => {},
+      "sources",
+    );
 
-  const {
-    mutate: mutateGetSources,
-    isPending: isGettingSources,
-  } = useQueryAction<{ companyId: string }, RequestResponse<SourceType[]>>(
-    getSources,
-    () => { },
-    "sources"
-  );
-
-  const {
-    mutate: mutateGetCollborators,
-    isPending: isGettingCollaborators,
-  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
-    getCollaborators,
-    () => { },
-    "collaborators"
-  );
-
+  const { mutate: mutateGetCollborators, isPending: isGettingCollaborators } =
+    useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+      getCollaborators,
+      () => {},
+      "collaborators",
+    );
 
   useEffect(() => {
     if (companyId) {
-      mutateGetCategories({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setCategories(data.data)
-          }
+      mutateGetCategories(
+        { companyId },
+        {
+          onSuccess(data) {
+            if (data.data) {
+              setCategories(data.data);
+            }
+          },
         },
-      })
+      );
 
-      mutateGetSources({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setSources(data.data)
-          }
+      mutateGetSources(
+        { companyId },
+        {
+          onSuccess(data) {
+            if (data.data) {
+              setSources(data.data);
+            }
+          },
         },
-      })
+      );
 
-      mutateGetCollborators({ id: companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setCollaborators(data.data)
-          }
+      mutateGetCollborators(
+        { id: companyId },
+        {
+          onSuccess(data) {
+            if (data.data) {
+              setCollaborators(data.data);
+            }
+          },
         },
-      })
-
+      );
     }
   }, [companyId]);
-
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -107,11 +104,20 @@ export default function TransactionFilters() {
     const url = queryString ? `/transaction?${queryString}` : "/transaction";
 
     router.replace(url);
-  }, [movementValue, categoryValue, paymentModeValue, sourceValue, paidForValue, startDate, endDate, router])
+  }, [
+    movementValue,
+    categoryValue,
+    paymentModeValue,
+    sourceValue,
+    paidForValue,
+    startDate,
+    endDate,
+    router,
+  ]);
 
   return (
     <ScrollArea className="w-full overflow-x-auto">
-      <div className="flex items-center gap-x-2 w-max py-2.5">
+      <div className="flex items-center gap-x-2 w-max py-2.5 pr-2 ">
         <DatePicker
           label="Date de début"
           mode="single"
@@ -137,10 +143,10 @@ export default function TransactionFilters() {
         />
         <Combobox
           isLoading={isGettingCategories}
-          datas={categories.map(category => ({
+          datas={categories.map((category) => ({
             id: category.id,
             label: category.name,
-            value: category.id
+            value: category.id,
           }))}
           required={false}
           value={categoryValue}
@@ -160,10 +166,10 @@ export default function TransactionFilters() {
         />
         <Combobox
           isLoading={isGettingSources}
-          datas={sources.map(source => ({
+          datas={sources.map((source) => ({
             id: source.id,
             label: source.name,
-            value: source.id
+            value: source.id,
           }))}
           required={false}
           value={sourceValue}
@@ -174,10 +180,10 @@ export default function TransactionFilters() {
         />
         <Combobox
           isLoading={isGettingCollaborators}
-          datas={collaborators.map(collaborator => ({
+          datas={collaborators.map((collaborator) => ({
             id: collaborator.id,
             label: collaborator.name,
-            value: collaborator.id
+            value: collaborator.id,
           }))}
           required={false}
           value={paidForValue}

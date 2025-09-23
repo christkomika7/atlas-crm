@@ -31,9 +31,10 @@ import Spinner from "@/components/ui/spinner";
 
 type ReceiptFormProps = {
   closeModal: () => void;
+  refreshTransaction: () => void
 };
 
-export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
+export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptFormProps) {
   const companyId = useDataStore.use.currentCompany();
 
   const categories = useTransactionStore.use.categories();
@@ -174,6 +175,7 @@ export default function ReceiptForm({ closeModal }: ReceiptFormProps) {
       {
         onSuccess() {
           form.reset();
+          refreshTransaction();
           closeModal();
         },
       }

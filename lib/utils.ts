@@ -1,30 +1,40 @@
-import { clsx, type ClassValue } from "clsx"
-import { customAlphabet } from 'nanoid'
+import { clsx, type ClassValue } from "clsx";
+import { customAlphabet } from "nanoid";
 
-import { twMerge } from "tailwind-merge"
+import { twMerge } from "tailwind-merge";
 import { $Enums, Action, Permission, Resource, Role } from "./generated/prisma";
 import { UserEditSchemaType, UserSchemaType } from "./zod/user.schema";
-import { CalculateTaxesParams, CalculateTaxesParamsTotal, CalculateTaxesResult, CalculateTaxesResultTotal, TaxResult, TaxResultTotal } from "@/types/tax.type";
+import {
+  CalculateTaxesParams,
+  CalculateTaxesParamsTotal,
+  CalculateTaxesResult,
+  CalculateTaxesResultTotal,
+  TaxResult,
+  TaxResultTotal,
+} from "@/types/tax.type";
 import { PrefixType } from "@/types/document.types";
-
+import { TransactionType } from "@/types/transaction.type";
+import { DataListType } from "@/types/data.type";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-
-
 export function generateId() {
-  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
   return customAlphabet(alphabet, 7)();
 }
 
 export function cutText(name: string, limit?: number, isPoint = true) {
   const point = isPoint ? "..." : "";
   if (name.length > (limit || 15)) {
-    return name.slice(0, (limit || 15)) + point;
+    return name.slice(0, limit || 15) + point;
   }
   return name;
+}
+
+export function getLabelByValue(lists: DataListType[], value: string): string {
+  return lists.find((l) => l.value === value)?.label || value;
 }
 
 export function checkDeadline(dateStr: string | Date) {
@@ -40,10 +50,9 @@ export function checkDeadline(dateStr: string | Date) {
 
   return {
     isOverdue: diffDays < 0,
-    days: Math.abs(diffDays)
+    days: Math.abs(diffDays),
   };
 }
-
 
 export function getStatusName(status: $Enums.ProjectStatus) {
   switch (status) {
@@ -61,7 +70,7 @@ export function getStatusName(status: $Enums.ProjectStatus) {
 export function calculatePrice(
   price: number,
   discount: number,
-  type?: "purcent" | "money"
+  type?: "purcent" | "money",
 ): number {
   let finalPrice = price;
 
@@ -86,7 +95,9 @@ export function calculateTaxes({
 
   for (const tax of taxes) {
     let taxAmount = 0;
-    let appliedRates: number[] = tax.taxValue.map((v) => parseFloat(v.replace("%", "")));
+    let appliedRates: number[] = tax.taxValue.map((v) =>
+      parseFloat(v.replace("%", "")),
+    );
 
     // Vérifier si la taxe s'applique
     const shouldApplyTax = tax.hasApplicableToAll || itemType === "total";
@@ -132,7 +143,9 @@ export function calculateTaxes({
       // Donc taxPrice = baseAmount, et taxAmount représente la taxe incluse
       taxPrice = baseAmount;
       // Recalculer le montant de la taxe pour TTC
-      const htPrice = baseAmount / (1 + appliedRates.reduce((sum, rate) => sum + rate / 100, 0));
+      const htPrice =
+        baseAmount /
+        (1 + appliedRates.reduce((sum, rate) => sum + rate / 100, 0));
       taxAmount = baseAmount - htPrice;
     } else {
       // Type indéfini : retourner le montant de base
@@ -170,7 +183,7 @@ export function calculateTaxesTotal({
   for (const tax of taxes) {
     let taxAmount = 0;
     const appliedRates: number[] = tax.taxValue.map((v) =>
-      parseFloat(v.replace("%", ""))
+      parseFloat(v.replace("%", "")),
     );
 
     const baseAmount = totalPrice;
@@ -241,26 +254,28 @@ export function calculateTaxesTotal({
     totalTax: parseFloat(totalTax.toFixed(2)),
     totalWithTaxes,
     totalWithoutTaxes: parseFloat(totalPrice.toFixed(2)),
-
   };
 }
 
-
 export function formatNumber(value: string | number): string {
-  const str = value.toString().replace(/\s+/g, '');
+  const str = value.toString().replace(/\s+/g, "");
 
   if (!/^-?\d+(\.\d+)?$/.test(str)) {
-    throw new Error("La valeur doit être un nombre valide (entier, décimal ou négatif)");
+    throw new Error(
+      "La valeur doit être un nombre valide (entier, décimal ou négatif)",
+    );
   }
 
-  const isNegative = str.startsWith('-');
+  const isNegative = str.startsWith("-");
   const absStr = isNegative ? str.slice(1) : str;
 
-  const [integerPart, decimalPart] = absStr.split('.');
+  const [integerPart, decimalPart] = absStr.split(".");
 
-  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-  const formattedNumber = decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+  const formattedNumber = decimalPart
+    ? `${formattedInteger}.${decimalPart}`
+    : formattedInteger;
 
   return isNegative ? `-${formattedNumber}` : formattedNumber;
 }
@@ -279,7 +294,6 @@ export function initialName(name: string): string {
 
 export function generateAmaId(id: number) {
   return `AMA-${String(id).padStart(3, "0")}`;
-
 }
 
 export async function urlToFile(path: string): Promise<File> {
@@ -292,8 +306,8 @@ export async function urlToFile(path: string): Promise<File> {
     }
 
     const blob = await res.blob();
-    const name = path.split('/').pop() || 'fichier_sans_nom';
-    const type = res.headers.get('Content-Type') || 'application/octet-stream';
+    const name = path.split("/").pop() || "fichier_sans_nom";
+    const type = res.headers.get("Content-Type") || "application/octet-stream";
 
     return new File([blob], name, { type });
   } catch (e) {
@@ -304,7 +318,7 @@ export async function urlToFile(path: string): Promise<File> {
 
 export function getIdFromUrl(
   reqUrl: string,
-  index: number | "last"
+  index: number | "last",
 ): string | null {
   const url = new URL(reqUrl);
   const parts = url.pathname.split("/").filter(Boolean);
@@ -319,7 +333,7 @@ export function getIdFromUrl(
 }
 
 export function resolveImageSrc(
-  file: string | File | undefined
+  file: string | File | undefined,
 ): string | null {
   if (!file) return null;
 
@@ -353,12 +367,23 @@ export function extractCompanyData(formData: FormData) {
 
   // Champs simples
   const simpleFields = [
-    'companyName', 'country', 'registeredAddress', 'phoneNumber', 'city', 'codePostal',
-    'email', 'website', 'businessRegistrationNumber', 'taxIdentificationNumber',
-    'capitalAmount', 'currency', 'bankAccountDetails', 'businessActivityType',
+    "companyName",
+    "country",
+    "registeredAddress",
+    "phoneNumber",
+    "city",
+    "codePostal",
+    "email",
+    "website",
+    "businessRegistrationNumber",
+    "taxIdentificationNumber",
+    "capitalAmount",
+    "currency",
+    "bankAccountDetails",
+    "businessActivityType",
   ];
 
-  simpleFields.forEach(field => {
+  simpleFields.forEach((field) => {
     const value = formData.get(field);
     if (value !== null) {
       data[field] = value.toString();
@@ -367,13 +392,13 @@ export function extractCompanyData(formData: FormData) {
 
   try {
     // Vat rate
-    const vatRateJson = formData.get('vatRate');
+    const vatRateJson = formData.get("vatRate");
     if (vatRateJson) {
       data.vatRate = JSON.parse(vatRateJson.toString());
     }
 
     // Fiscal
-    const fiscalJson = formData.get('fiscal');
+    const fiscalJson = formData.get("fiscal");
     if (fiscalJson) {
       const fiscalData = JSON.parse(fiscalJson.toString());
       data.fiscal = {
@@ -412,9 +437,11 @@ export function extractCompanyData(formData: FormData) {
     }
 
     data.employees = employees;
-
   } catch (error) {
-    console.error("Erreur lors du parsing JSON ou du traitement des fichiers:", error);
+    console.error(
+      "Erreur lors du parsing JSON ou du traitement des fichiers:",
+      error,
+    );
     throw new Error("Données JSON ou fichiers invalides");
   }
 
@@ -422,7 +449,7 @@ export function extractCompanyData(formData: FormData) {
 }
 
 export function getFilePath(file: string) {
-  return `/api/upload?path=${encodeURIComponent(file)}`
+  return `/api/upload?path=${encodeURIComponent(file)}`;
 }
 
 export function downloadFile(url: string) {
@@ -433,7 +460,7 @@ export function downloadFile(url: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-};
+}
 
 export function hasPermission(
   role: Role,
@@ -447,16 +474,23 @@ export function hasPermission(
     const isAdmin = role === "ADMIN";
     if (log) {
       if (isAdmin) {
-        console.log(`[PERMISSION] Accès réservé ADMIN autorisé (${resources.join(", ")})`);
+        console.log(
+          `[PERMISSION] Accès réservé ADMIN autorisé (${resources.join(", ")})`,
+        );
       } else {
-        console.warn(`[PERMISSION] Accès refusé : seul ADMIN peut accéder à ${resources.join(", ")}`);
+        console.warn(
+          `[PERMISSION] Accès refusé : seul ADMIN peut accéder à ${resources.join(", ")}`,
+        );
       }
     }
     return isAdmin;
   }
 
   if (role === "ADMIN") {
-    if (log) console.log(`[PERMISSION] ADMIN accès accordé à ${resources.join(", ")} (${action})`);
+    if (log)
+      console.log(
+        `[PERMISSION] ADMIN accès accordé à ${resources.join(", ")} (${action})`,
+      );
     return true;
   }
 
@@ -469,30 +503,36 @@ export function hasPermission(
   const validActions = actionHierarchy[action] ?? [action];
 
   for (const resource of resources) {
-    const permission = userPermissions?.find(p => p.resource === resource);
+    const permission = userPermissions?.find((p) => p.resource === resource);
     if (!permission) continue;
 
-    if (permission.actions.some(a => validActions.includes(a))) {
-      if (log) console.log(`[PERMISSION] Accès autorisé: ${resource} (${action}) via ${permission.actions.join(", ")}`);
+    if (permission.actions.some((a) => validActions.includes(a))) {
+      if (log)
+        console.log(
+          `[PERMISSION] Accès autorisé: ${resource} (${action}) via ${permission.actions.join(", ")}`,
+        );
       return true;
     }
   }
 
-  if (log) console.warn(`[PERMISSION] Accès refusé: ${resources.join(", ")} (${action})`);
+  if (log)
+    console.warn(
+      `[PERMISSION] Accès refusé: ${resources.join(", ")} (${action})`,
+    );
   return false;
 }
 
 export function isRestrictedToAdminPath(
   isAdmin: boolean,
   adminOnlyPaths: string[],
-  currentPath: string
+  currentPath: string,
 ): boolean {
   if (isAdmin) return true;
 
   for (const adminPath of adminOnlyPaths) {
     const regexPath = adminPath
       .split("/")
-      .map(segment => (segment.startsWith(":") ? "[^/]+" : segment))
+      .map((segment) => (segment.startsWith(":") ? "[^/]+" : segment))
       .join("/");
 
     const regex = new RegExp(`^${regexPath}$`);
@@ -506,12 +546,15 @@ export function isRestrictedToAdminPath(
 
 export function sanitize(value: string): string {
   return value
-    .replace(/[^a-zA-Z0-9.-]/g, '_')
-    .replace(/_{2,}/g, '_')
+    .replace(/[^a-zA-Z0-9.-]/g, "_")
+    .replace(/_{2,}/g, "_")
     .toLowerCase();
 }
 
-export function validateMimeType(file: File, acceptedTypes: readonly string[]): boolean {
+export function validateMimeType(
+  file: File,
+  acceptedTypes: readonly string[],
+): boolean {
   return acceptedTypes.includes(file.type);
 }
 
@@ -522,7 +565,9 @@ export function getFileExtension(name: string, fallback = ".jpg") {
   return fallback;
 }
 
-export function createPermissionsData(user: UserSchemaType | UserEditSchemaType) {
+export function createPermissionsData(
+  user: UserSchemaType | UserEditSchemaType,
+) {
   return [
     {
       resource: Resource.DASHBOARD,
@@ -636,9 +681,8 @@ export function createPermissionsData(user: UserSchemaType | UserEditSchemaType)
         user.setting?.create ? Action.CREATE : null,
       ].filter((a): a is Action => a !== null),
     },
-  ].filter(permission => permission.actions.length > 0); // Ne créer que les permissions avec des actions
+  ].filter((permission) => permission.actions.length > 0); // Ne créer que les permissions avec des actions
 }
-
 
 export function formatMonthsToYears(months: number): string {
   if (months < 0) throw new Error("Le nombre de mois doit être positif");
@@ -662,7 +706,6 @@ export function formatMonthsToYears(months: number): string {
   return result;
 }
 
-
 // await generateAndDownloadPDF({
 //   baseUrl: env.NEXT_PUBLIC_BETTER_AUTH_URL,
 //   resourcePath: "admin/real-state/export",
@@ -684,13 +727,8 @@ export async function generateAndDownloadPDF(params: {
   };
   setIsLoading: (loading: boolean) => void;
 }) {
-  const {
-    resourcePath,
-    apiConvertPath,
-    fileName,
-    toast,
-    setIsLoading,
-  } = params;
+  const { resourcePath, apiConvertPath, fileName, toast, setIsLoading } =
+    params;
 
   const toastId = toast.loading("Génération du PDF en cours...");
 
@@ -719,7 +757,7 @@ export async function generateAndDownloadPDF(params: {
       signal: controller.signal,
       headers: {
         // Transférer les cookies de la session actuelle
-        'Cookie': document.cookie,
+        Cookie: document.cookie,
       },
     });
 
@@ -728,13 +766,15 @@ export async function generateAndDownloadPDF(params: {
     if (!res.ok) {
       const errorText = await res.text();
       console.error("Erreur de l'API:", errorText);
-      throw new Error(`Échec de la génération du PDF: ${res.status} ${res.statusText}`);
+      throw new Error(
+        `Échec de la génération du PDF: ${res.status} ${res.statusText}`,
+      );
     }
 
     const blob = await res.blob();
 
     // Vérifier que c'est bien un PDF
-    if (!blob.type.includes('pdf')) {
+    if (!blob.type.includes("pdf")) {
       console.error("Type de fichier reçu:", blob.type);
       throw new Error("Le serveur n'a pas retourné un fichier PDF valide");
     }
@@ -755,16 +795,17 @@ export async function generateAndDownloadPDF(params: {
     URL.revokeObjectURL(url);
 
     toast.success("PDF généré avec succès !", { id: toastId });
-
   } catch (err: any) {
     console.error("Erreur lors de la génération du PDF:", err);
 
     let errorMessage = "Erreur lors de la génération du PDF.";
 
-    if (err.name === 'AbortError') {
-      errorMessage = "La génération du PDF a pris trop de temps. Veuillez réessayer.";
-    } else if (err.message.includes('Failed to fetch')) {
-      errorMessage = "Impossible de contacter le serveur. Vérifiez votre connexion.";
+    if (err.name === "AbortError") {
+      errorMessage =
+        "La génération du PDF a pris trop de temps. Veuillez réessayer.";
+    } else if (err.message.includes("Failed to fetch")) {
+      errorMessage =
+        "Impossible de contacter le serveur. Vérifiez votre connexion.";
     } else if (err.message) {
       errorMessage = err.message;
     }
@@ -781,7 +822,9 @@ export async function debugPageElements(resourcePath: string) {
   const fullResourceUrl = `${baseUrl}/${resourcePath}`;
 
   try {
-    const response = await fetch(`${baseUrl}/api/debug-page?url=${encodeURIComponent(fullResourceUrl)}`);
+    const response = await fetch(
+      `${baseUrl}/api/debug-page?url=${encodeURIComponent(fullResourceUrl)}`,
+    );
     const debug = await response.json();
     console.log("Debug de la page:", debug);
     return debug;
@@ -791,8 +834,10 @@ export async function debugPageElements(resourcePath: string) {
   }
 }
 
-
-export function getPrefix(itemType: $Enums.ItemInvoiceType, prefixs: PrefixType): string {
+export function getPrefix(
+  itemType: $Enums.ItemInvoiceType,
+  prefixs: PrefixType,
+): string {
   switch (itemType) {
     case "INVOICES":
       return prefixs.invoices;
@@ -806,5 +851,17 @@ export function getPrefix(itemType: $Enums.ItemInvoiceType, prefixs: PrefixType)
       return prefixs.creditNotes;
     default:
       return "";
+  }
+}
+
+export function getDocumentRef(transaction: TransactionType) {
+  console.log({ transaction });
+  console.log("transac -> ", transaction.referenceInvoiceId);
+  if (transaction.referenceInvoiceId) {
+    console.log(
+      "Transac ref -> ",
+      `${transaction.company.documentModel.invoicesPrefix || "Facture"}-${transaction.referenceInvoice.invoiceNumber}`,
+    );
+    return `${transaction.company.documentModel.invoicesPrefix || "Facture"}-${transaction.referenceInvoice.invoiceNumber}`;
   }
 }

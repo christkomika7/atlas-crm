@@ -53,6 +53,11 @@ export async function POST(req: NextRequest) {
                         id: data.category
                     }
                 },
+                source: {
+                    connect: {
+                        id: data.source
+                    }
+                },
                 nature: {
                     connect: {
                         id: data.nature

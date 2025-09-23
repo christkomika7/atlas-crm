@@ -11,7 +11,11 @@ import { SetStateAction, useState } from "react";
 import ReceiptForm from "./receipt-form";
 import DibursementForm from "./dibursement-form";
 
-export default function HeaderMenu() {
+type HeaderMenuProps = {
+  refreshTransaction: () => void;
+}
+
+export default function HeaderMenu({ refreshTransaction }: HeaderMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState({
     receipt: false,
@@ -45,6 +49,7 @@ export default function HeaderMenu() {
               }}
             >
               <ReceiptForm
+                refreshTransaction={refreshTransaction}
                 closeModal={() =>
                   setOpen((prev) => ({ ...prev, receipt: false }))
                 }
@@ -69,6 +74,7 @@ export default function HeaderMenu() {
               }}
             >
               <DibursementForm
+                refreshTransaction={refreshTransaction}
                 closeModal={() =>
                   setOpen((prev) => ({ ...prev, dibursement: false }))
                 }
