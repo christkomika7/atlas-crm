@@ -25,6 +25,7 @@ import { useDataStore } from "@/stores/data.store";
 import { useSearchParams } from "next/navigation";
 import { getTransactions } from "@/action/transaction.action";
 import {
+  DeletedTransactions,
   GetTransactionsParams,
   TransactionType,
 } from "@/types/transaction.type";
@@ -36,10 +37,11 @@ import {
 import { formatDateToDashModel } from "@/lib/date";
 import { cutText, getDocumentRef } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
+import { $Enums } from "@/lib/generated/prisma";
 
 type TransactionTableProps = {
-  selectedTransactionIds: string[];
-  setSelectedTransactionIds: Dispatch<SetStateAction<string[]>>;
+  selectedTransactionIds: DeletedTransactions[];
+  setSelectedTransactionIds: Dispatch<SetStateAction<DeletedTransactions[]>>;
 };
 
 export interface TransactionTableRef {
@@ -84,15 +86,15 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const { mutate: mutateGetTransactions, isPending: isGettingTransactions } =
       useQueryAction<GetTransactionsParams, RequestResponse<TransactionType[]>>(
         getTransactions,
-        () => {},
+        () => { },
         "transactions",
       );
 
-    const toggleSelection = (transactionId: string, checked: boolean) => {
+    const toggleSelection = (transactionId: string, checked: boolean, transactionType: $Enums.TransactionType) => {
       setSelectedTransactionIds((prev) =>
         checked
-          ? [...prev, transactionId]
-          : prev.filter((id) => id !== transactionId),
+          ? [...prev, { id: transactionId, transactionType }]
+          : prev.filter((transac) => transac.id !== transactionId),
       );
     };
 
@@ -316,7 +318,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
       refreshTransaction,
     }));
 
-    const isSelected = (id: string) => selectedTransactionIds.includes(id);
+    const isSelected = (id: string) => selectedTransactionIds.some(transac => transac.id === id);
 
     return (
       <div
@@ -473,16 +475,15 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                 {transactions.map((transaction) => (
                   <TableRow
                     key={transaction.id}
-                    className={`h-16 transition-colors ${
-                      isSelected(transaction.id) ? "bg-neutral-100" : ""
-                    }`}
+                    className={`h-16 transition-colors ${isSelected(transaction.id) ? "bg-neutral-100" : ""
+                      }`}
                   >
                     <TableCell className="text-neutral-600">
                       <div className="flex justify-center items-center">
                         <Checkbox
                           checked={isSelected(transaction.id)}
                           onCheckedChange={(checked) =>
-                            toggleSelection(transaction.id, !!checked)
+                            toggleSelection(transaction.id, !!checked, transaction.type)
                           }
                         />
                       </div>
@@ -530,8 +531,8 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                     <TableCell className="text-center">
                       {transaction.payOnBehalfOf
                         ? cutText(
-                            `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`,
-                          )
+                          `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`,
+                        )
                         : "-"}
                     </TableCell>
                     <TableCell className="text-center">
