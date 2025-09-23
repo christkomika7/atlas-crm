@@ -38,7 +38,7 @@ export default function TableActionButton({
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<InvoiceType[]>
-  >(remove, () => {}, "invoices");
+  >(remove, () => { }, "invoices");
 
   function goTo(id: string, action: "update" | "preview" | "send") {
     switch (action) {
@@ -96,7 +96,7 @@ export default function TableActionButton({
                       setOpen={setOpen}
                       onClose={() => setOpen(false)}
                     >
-                      <PaymentForm />
+                      <PaymentForm closeModal={() => setOpen(false)} invoiceId={id} />
                     </ModalContainer>
                   </li>
                 );
