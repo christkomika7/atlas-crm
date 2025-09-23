@@ -24,7 +24,9 @@ export default function PreviewTab() {
   const router = useRouter();
 
   const [invoice, setInvoice] = useState<InvoiceType | undefined>(undefined);
-  const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(undefined);
+  const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
+    undefined,
+  );
   const [open, setOpen] = useState({
     payment: false,
     recurrence: false,
@@ -32,49 +34,54 @@ export default function PreviewTab() {
 
   const idCompany = useDataStore.use.currentCompany();
 
-  const { mutate: mutateGetInvoice, isPending: isGettingInvoice } = useQueryAction<
-    { id: string },
-    RequestResponse<InvoiceType>
-  >(unique, () => { }, "invoice");
+  const { mutate: mutateGetInvoice, isPending: isGettingInvoice } =
+    useQueryAction<{ id: string }, RequestResponse<InvoiceType>>(
+      unique,
+      () => {},
+      "invoice",
+    );
 
-  const {
-    mutate: mutateGetDocument,
-    isPending: isGettingDocument,
-  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
-    uniqueDocument,
-    () => { },
-    ["model-document"]
-  );
+  const { mutate: mutateGetDocument, isPending: isGettingDocument } =
+    useQueryAction<
+      { id: string },
+      RequestResponse<ModelDocumentType<File>>
+    >(uniqueDocument, () => {}, ["model-document"]);
 
   useEffect(() => {
     if (idCompany) {
-      mutateGetDocument({ id: idCompany }, {
-        onSuccess(data) {
-          if (data.data) {
-            setDocument(data.data);
-          }
+      mutateGetDocument(
+        { id: idCompany },
+        {
+          onSuccess(data) {
+            if (data.data) {
+              setDocument(data.data);
+            }
+          },
         },
-      });
+      );
     }
   }, [idCompany]);
 
   useEffect(() => {
     if (param.id) {
-      mutateGetInvoice({ id: param.id as string }, {
-        onSuccess(data) {
-          if (data.data) {
-            setInvoice(data.data);
-          }
+      mutateGetInvoice(
+        { id: param.id as string },
+        {
+          onSuccess(data) {
+            if (data.data) {
+              setInvoice(data.data);
+            }
+          },
         },
-      });
+      );
     }
   }, [param.id]);
 
   function close() {
-    router.push("/invoice")
+    router.push("/invoice");
   }
 
-  if (isGettingDocument && isGettingInvoice) return <Spinner />
+  if (isGettingDocument && isGettingInvoice) return <Spinner />;
 
   return (
     <ScrollArea className="pr-4 h-full">
@@ -123,44 +130,63 @@ export default function PreviewTab() {
               </ModalContainer>
               <div className="flex justify-between items-center mt-4">
                 <h2 className="font-semibold">Facture</h2>
-                <p className="text-sm">N° {document?.invoicesPrefix}-{invoice?.invoiceNumber}</p>
+                <p className="text-sm">
+                  N° {document?.invoicesPrefix}-{invoice?.invoiceNumber}
+                </p>
               </div>
               <Badge variant="secondary">Non Envoyé</Badge>
               <div className="space-y-2 py-4">
                 <p className="flex justify-between items-center gap-x-2 text-sm">
                   <span className="font-semibold">Total TTC</span>
 
-                  <span>{invoice?.totalTTC ? formatNumber(invoice?.totalTTC) : 0} {invoice?.company.currency}</span>
+                  <span>
+                    {invoice?.totalTTC ? formatNumber(invoice?.totalTTC) : 0}{" "}
+                    {invoice?.company.currency}
+                  </span>
                 </p>
                 <p className="flex justify-between items-center gap-x-2 text-sm">
                   <span>Arriéré</span>
-                  <span>{formatNumber(parseFloat(invoice!.totalTTC) - parseFloat(invoice!.payee))} {invoice?.company.currency}</span>
+                  <span>
+                    {formatNumber(
+                      parseFloat(invoice!.totalTTC) -
+                        parseFloat(invoice!.payee),
+                    )}{" "}
+                    {invoice?.company.currency}
+                  </span>
                 </p>
                 <p className="flex justify-between items-center gap-x-2 text-sm">
                   <span>Payé</span>
-                  <span>{formatNumber(invoice!.payee)} {invoice?.company.currency}</span>
+                  <span>
+                    {formatNumber(invoice!.payee)} {invoice?.company.currency}
+                  </span>
                 </p>
               </div>
               <p className="flex justify-between items-center gap-x-2 pb-4 text-sm">
                 <span className="font-semibold">Convertir depuis le devis</span>
-                <span className="font-medium text-blue underline">AC-D-023</span>
+                <span className="font-medium text-blue underline">
+                  AC-D-023
+                </span>
               </p>
               <ModalContainer
                 action={<Button variant="primary">Ajouter un paiement</Button>}
                 title="Enregistrer un paiement"
                 open={open.payment}
-                setOpen={(value) => setOpen({ ...open, payment: value as boolean })}
+                setOpen={(value) =>
+                  setOpen({ ...open, payment: value as boolean })
+                }
                 onClose={() => setOpen({ ...open, payment: false })}
               >
                 <PaymentForm />
               </ModalContainer>
               <Button variant="primary">Générer un contrat</Button>
-              <Button onClick={close} variant="primary" className="bg-gray text-black">
+              <Button
+                onClick={close}
+                variant="primary"
+                className="bg-gray text-black"
+              >
                 Fermer
               </Button>
-
             </>
-
           )}
         </div>
       </div>
