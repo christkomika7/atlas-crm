@@ -45,18 +45,11 @@ export default function AddTaxForm({
     },
   });
 
-  useEffect(() => {
-    form.watch((value, { name }) => {
-      if (name === "cumul") {
-        console.log({ cumul: value });
-      }
-    });
-  }, [form.watch]);
-
   function resetForm() {
     form.reset();
     setCheck("TTC");
   }
+
 
   function handleClose() {
     resetForm();

@@ -5,16 +5,20 @@ export const taxSchema = z.object({
     taxName: z.string().min(1, {
         message: "Le nom de la taxe est obligatoire."
     }),
-    taxValue: z.array(z.string())
+    taxValue: z
+        .array(z.string())
         .min(1, {
-            message: "Au minimum une valeur de taxe doit être ajoutée."
+            message: "Au minimum une valeur de taxe doit être ajoutée.",
         })
         .refine(
-            (values) => values.every(val => /^\d+%$/.test(val)),
+            (values) =>
+                values.every((val) => /^(\d+([.]\d+)?)%$/.test(val)),
             {
-                message: "Chaque valeur de taxe doit être un nombre suivi du symbole '%' (ex: 10%)."
+                message:
+                    "Chaque valeur de taxe doit être un nombre (entier ou décimal) suivi du symbole '%' (ex: 10% ou 0.9%).",
             }
         ),
+
     taxType: z.enum(["HT", "TTC"]).default("TTC").optional(),
     cumul: z.array(z.object({
         id: z

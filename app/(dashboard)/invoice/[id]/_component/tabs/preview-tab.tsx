@@ -37,7 +37,7 @@ export default function PreviewTab() {
   const { mutate: mutateGetInvoice, isPending: isGettingInvoice } =
     useQueryAction<{ id: string }, RequestResponse<InvoiceType>>(
       unique,
-      () => {},
+      () => { },
       "invoice",
     );
 
@@ -45,7 +45,7 @@ export default function PreviewTab() {
     useQueryAction<
       { id: string },
       RequestResponse<ModelDocumentType<File>>
-    >(uniqueDocument, () => {}, ["model-document"]);
+    >(uniqueDocument, () => { }, ["model-document"]);
 
   useEffect(() => {
     if (idCompany) {
@@ -149,7 +149,7 @@ export default function PreviewTab() {
                   <span>
                     {formatNumber(
                       parseFloat(invoice!.totalTTC) -
-                        parseFloat(invoice!.payee),
+                      parseFloat(invoice!.payee),
                     )}{" "}
                     {invoice?.company.currency}
                   </span>
@@ -176,7 +176,7 @@ export default function PreviewTab() {
                 }
                 onClose={() => setOpen({ ...open, payment: false })}
               >
-                <PaymentForm />
+                <PaymentForm invoiceId={invoice?.id as string} closeModal={() => setOpen({ ...open, payment: false })} />
               </ModalContainer>
               <Button variant="primary">Générer un contrat</Button>
               <Button

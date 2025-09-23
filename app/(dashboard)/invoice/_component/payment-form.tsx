@@ -1,3 +1,4 @@
+import { createdPayment } from "@/action/invoice.action";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -9,25 +10,40 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
+import Spinner from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import TextInput from "@/components/ui/text-input";
+import useQueryAction from "@/hook/useQueryAction";
 import { acceptPayment } from "@/lib/data";
 import { paymentSchema, PaymentSchemaType } from "@/lib/zod/payment.schema";
+import { RequestResponse } from "@/types/api.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
-export default function PaymentForm() {
+type PaymentFormProps = {
+  invoiceId: string;
+  closeModal: () => void;
+}
+
+export default function PaymentForm({ invoiceId, closeModal }: PaymentFormProps) {
   const [isPaid, setIsPaid] = useState(false);
 
   const form = useForm<PaymentSchemaType>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
+      invoiceId,
       isPaid: false,
       amount: 0,
       date: new Date()
     },
   });
+
+  const { mutate: mutateCreatePayment, isPending: isCreatingPayment } = useQueryAction<
+    PaymentSchemaType,
+    RequestResponse<null>
+  >(createdPayment, () => { }, "payment");
+
 
   useEffect(() => {
     if (isPaid) {
@@ -35,10 +51,15 @@ export default function PaymentForm() {
     }
   }, [isPaid])
 
+
   function submit(formData: PaymentSchemaType) {
     const { success, data } = paymentSchema.safeParse(formData);
     if (success) {
-      console.log({ data });
+      mutateCreatePayment(data, {
+        onSuccess() {
+          closeModal()
+        },
+      })
     }
   }
 
@@ -68,7 +89,7 @@ export default function PaymentForm() {
               </FormItem>
             )}
           />
-          {isPaid &&
+          {!isPaid &&
             <FormField
               control={form.control}
               name="amount"
@@ -115,6 +136,7 @@ export default function PaymentForm() {
               <FormItem className="-space-y-2">
                 <FormControl>
                   <DatePicker
+                    value={field.value}
                     label="Date du paiement"
                     mode="single"
                     onChange={(e) => field.onChange(e as Date)}
@@ -145,19 +167,19 @@ export default function PaymentForm() {
           />
         </div>
 
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-center pt-2 gap-x-4">
           <Button
             type="submit"
             variant="primary"
             className="justify-center max-w-xs"
           >
-            {/* {isPending ? <Spinner /> : "Enregistrer"} */}
-            Enregistrer le paiement
+            {isCreatingPayment ? <Spinner /> : " Enregistrer le paiement"}
+
           </Button>
           <Button
             type="submit"
             variant="primary"
-            className="justify-center bg-gray max-w-xs"
+            className="justify-center bg-neutral-100 max-w-xs text-black"
           >
             Quitter
           </Button>

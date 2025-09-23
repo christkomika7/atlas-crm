@@ -1,4 +1,5 @@
 import { InvoiceSchemaType, InvoiceUpdateSchemaType } from "@/lib/zod/invoice.schema";
+import { PaymentSchemaType } from "@/lib/zod/payment.schema";
 import { RequestResponse } from "@/types/api.types";
 import { InvoiceType } from "@/types/invoice.types";
 
@@ -100,6 +101,31 @@ export async function create(data: InvoiceSchemaType) {
         throw error;
     }
 }
+
+
+export async function createdPayment(data: PaymentSchemaType) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${data.invoiceId}/payment`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        const res: RequestResponse<null> = await response.json();
+
+        if (!response.ok) {
+            throw new Error(res.message || "Erreur lors de la création du paiement");
+        }
+
+        return res;
+    } catch (error) {
+        console.error("Erreur dans la fonction create:", error);
+        throw error;
+    }
+}
+
 
 export async function update(data: InvoiceUpdateSchemaType) {
     try {

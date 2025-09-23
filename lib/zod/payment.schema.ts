@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 export const paymentSchema = z.object({
+  invoiceId: z.string({ error: "Aucune facture trouvée." }),
   isPaid: z.boolean(),
-  amount: z.number({ error: "Le montant  est requis." }),
+  amount: z.number({ error: "Le montant  est requis." }).min(0, { message: "Les nombres négatifs ne sont pas autorisés." }),
   mode: z.string({ error: "Le mode de paiement est requis." }),
   date: z.date({ error: "La date du paiement est requise." }),
   information: z.string().optional(),
