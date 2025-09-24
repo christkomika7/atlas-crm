@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
         where: {
             cityId: data.city,
             typeId: data.billboardType,
-            placementId: {
+            areaId: {
                 in: data.area,
             },
             locationStart: {
