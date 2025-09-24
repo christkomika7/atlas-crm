@@ -57,7 +57,7 @@ export default function ProductServiceForm({
   const { mutate, isPending } = useQueryAction<
     ProductServiceSchemaType,
     RequestResponse<ProductServiceType[]>
-  >(create, () => {}, "product-services");
+  >(create, () => { }, "product-services");
 
   async function submit(productServiceData: ProductServiceSchemaType) {
     const { success, data } =
@@ -81,7 +81,7 @@ export default function ProductServiceForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)} className="space-y-4.5 m-2">
         <div className="space-y-4.5 max-w-full">
-          <div className="gap-x-2 grid grid-cols-2 w-full">
+          <div className="gap-x-2 grid grid-cols-3 w-full">
             <FormField
               control={form.control}
               name="itemType"
@@ -118,64 +118,27 @@ export default function ProductServiceForm({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      datas={productServiceCategories}
+                      value={field.value}
+                      setValue={field.onChange}
+                      placeholder="Sélectionner une catégorie"
+                      searchMessage="Rechercher une catégorie"
+                      noResultsMessage="Aucune catégorie trouvée."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <Combobox
-                    datas={productServiceCategories}
-                    value={field.value}
-                    setValue={field.onChange}
-                    placeholder="Sélectionner une catégorie"
-                    searchMessage="Rechercher une catégorie"
-                    noResultsMessage="Aucune catégorie trouvée."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="designation"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <TextInput
-                    design="float"
-                    label="Désignation"
-                    value={field.value}
-                    handleChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <TextInput
-                    design="float"
-                    label="Description"
-                    value={field.value}
-                    required={false}
-                    handleChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="gap-x-2 grid grid-cols-2 w-full">
+          <div className="gap-x-2 grid grid-cols-3 w-full">
             <FormField
               control={form.control}
               name="unitPrice"
@@ -212,8 +175,6 @@ export default function ProductServiceForm({
                 </FormItem>
               )}
             />
-          </div>
-          <div className="gap-x-2 grid grid-cols-2 w-full">
             <FormField
               control={form.control}
               name="cost"
@@ -226,6 +187,25 @@ export default function ProductServiceForm({
                       label="Coût"
                       value={field.value}
                       handleChange={(e) => field.onChange(String(e))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="gap-x-2 grid grid-cols-2 w-full">
+            <FormField
+              control={form.control}
+              name="designation"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Désignation"
+                      value={field.value}
+                      handleChange={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />
@@ -252,6 +232,24 @@ export default function ProductServiceForm({
               )}
             />
           </div>
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem className="-space-y-2">
+                <FormControl>
+                  <TextInput
+                    design="text-area"
+                    label="Description"
+                    value={field.value}
+                    required={false}
+                    handleChange={field.onChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
         <div className="flex justify-center pt-2">
           <Button

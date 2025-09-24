@@ -148,8 +148,8 @@ export default function PreviewTab() {
                   <span>Arriéré</span>
                   <span>
                     {formatNumber(
-                      parseFloat(invoice!.totalTTC) -
-                      parseFloat(invoice!.payee),
+                      parseFloat(invoice?.totalTTC ?? "0") -
+                      parseFloat(invoice?.payee ?? "0"),
                     )}{" "}
                     {invoice?.company.currency}
                   </span>
@@ -157,7 +157,7 @@ export default function PreviewTab() {
                 <p className="flex justify-between items-center gap-x-2 text-sm">
                   <span>Payé</span>
                   <span>
-                    {formatNumber(invoice!.payee)} {invoice?.company.currency}
+                    {formatNumber(invoice?.payee ?? 0)} {invoice?.company.currency}
                   </span>
                 </p>
               </div>

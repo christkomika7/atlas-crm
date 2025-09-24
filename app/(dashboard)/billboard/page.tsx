@@ -1,4 +1,5 @@
 "use client";
+
 import Header from "@/components/header/header";
 import { Button } from "@/components/ui/button";
 import { useRef, useState } from "react";
@@ -6,11 +7,9 @@ import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
 import { removeMany } from "@/action/billboard.action";
 import Spinner from "@/components/ui/spinner";
-import BillboardTable, {
-  BillboardTableRef,
-} from "./_component/billboard-table";
-import { BillboardType } from "@/types/billboard.types";
+import BillboardTable, { BillboardTableRef } from "./_component/billboard-table";
 import HeaderMenu from "./_component/header-menu";
+import { BillboardType } from "@/types/billboard.types";
 
 export default function BillboardPage() {
   const [selectedBillboardIds, setSelectedBillboardIds] = useState<string[]>(
@@ -22,7 +21,7 @@ export default function BillboardPage() {
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },
     RequestResponse<BillboardType[]>
-  >(removeMany, () => {}, "billboards");
+  >(removeMany, () => { }, "billboards");
 
   const handleAppointmentAdded = () => {
     billboardTableRef.current?.refreshBillboard();

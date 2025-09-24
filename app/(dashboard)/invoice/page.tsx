@@ -21,7 +21,7 @@ export default function InvoicePage() {
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },
     RequestResponse<InvoiceType[]>
-  >(removeMany, () => {}, "invoices");
+  >(removeMany, () => { }, "invoices");
 
   const handleInvoiceAdded = () => {
     invoiceTableRef.current?.refreshInvoice();
@@ -43,7 +43,7 @@ export default function InvoicePage() {
 
   return (
     <div className="space-y-9">
-      <Header title="Rendez-vous">
+      <Header title="Factures">
         <div className="flex gap-x-2">
           <Button
             variant="primary"
