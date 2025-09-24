@@ -21,7 +21,7 @@ import { unique as getUniqueDocument } from "@/action/document.action";
 import { ModelDocumentType, PrefixType } from "@/types/document.types";
 import { useDataStore } from "@/stores/data.store";
 import { getMonthsAndDaysDifference } from "@/lib/date";
-import { formatNumber, getPrefix } from "@/lib/utils";
+import { formatNumber, generateAmaId, getPrefix } from "@/lib/utils";
 import { unique as getUniqueBillboard } from "@/action/billboard.action";
 import { BillboardType } from "@/types/billboard.types";
 
@@ -34,6 +34,7 @@ export default function InfoTab() {
     category: "",
     emplacement: "",
     neighbourhood: "",
+    address: "",
   });
   const [prefixs, setPrefixs] = useState<PrefixType>({
     invoices: "",
@@ -45,19 +46,19 @@ export default function InfoTab() {
   const { mutate, isPending } = useQueryAction<
     { billboardId: string },
     RequestResponse<ItemType[]>
-  >(allBillboardItem, () => {}, "items");
+  >(allBillboardItem, () => { }, "items");
 
   const { mutate: getDocumentModel, isPending: isLoadingDocumentModel } =
     useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
       getUniqueDocument,
-      () => {},
+      () => { },
       "document"
     );
 
   const { mutate: getBillboard, isPending: isLoadingBillboard } =
     useQueryAction<{ id: string }, RequestResponse<BillboardType>>(
       getUniqueBillboard,
-      () => {},
+      () => { },
       "billboard"
     );
 
@@ -99,7 +100,8 @@ export default function InfoTab() {
                 name: billboardData.name,
                 category: billboardData.type.name,
                 emplacement: billboardData.city.name,
-                neighbourhood: billboardData.placement.name,
+                neighbourhood: billboardData.area.name,
+                address: billboardData.placement
               });
             }
           },
@@ -117,12 +119,12 @@ export default function InfoTab() {
             if (data.data) {
               const modelDocument = data.data;
               setPrefixs({
-                invoices: modelDocument.invoicesPrefix ?? "Facture",
-                quotes: modelDocument.quotesPrefix ?? "Devis",
+                invoices: modelDocument.invoicesPrefix || "Facture",
+                quotes: modelDocument.quotesPrefix || "Devis",
                 purchaseOrders:
-                  modelDocument.purchaseOrderPrefix ?? "Bon_Commande",
+                  modelDocument.purchaseOrderPrefix || "Bon_Commande",
                 deliveryNotes:
-                  modelDocument.deliveryNotesPrefix ?? "Bon_Livraison",
+                  modelDocument.deliveryNotesPrefix || "Bon_Livraison",
                 creditNotes: "Avoirs",
               });
             }
@@ -182,7 +184,7 @@ export default function InfoTab() {
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
                       {getPrefix(item.itemInvoiceType, prefixs)}-
-                      {item.invoideNumber}
+                      {generateAmaId(item.invoideNumber, false)}
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
                       {item.client}

@@ -9,7 +9,7 @@ import { RequestResponse } from "@/types/api.types";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "lucide-react";
-import { remove } from "@/action/billboard.action";
+import { duplicateBillboard, remove } from "@/action/billboard.action";
 import { useRouter } from "next/navigation";
 import { BillboardType } from "@/types/billboard.types";
 import BillboardCreateContractModal from "./billboard-create-contract-modal";
@@ -33,15 +33,28 @@ export default function TableActionButton({
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<BillboardType>
-  >(remove, () => {}, "billboards");
+  >(remove, () => { }, "billboards");
 
-  function goTo(id: string, action: "update" | "infos") {
+
+  const { mutate: mutateDuplicateBillboard, isPending: isDuplicatingBillboard } = useQueryAction<
+    { id: string },
+    RequestResponse<null>
+  >(duplicateBillboard, () => { }, "billboard");
+
+  function goTo(id: string, action: "update" | "infos" | "duplicate") {
     switch (action) {
       case "update":
         router.push(`/billboard/edit/${id}`);
         break;
       case "infos":
         router.push(`/billboard/infos/${id}`);
+        break;
+      case "duplicate":
+        mutateDuplicateBillboard({ id }, {
+          onSuccess() {
+            refreshBillboard()
+          },
+        })
         break;
     }
   }
@@ -95,7 +108,7 @@ export default function TableActionButton({
               <li key={menu.id}>
                 <button
                   className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
-                  onClick={() => goTo(id, menu.action as "update" | "infos")}
+                  onClick={() => goTo(id, menu.action as "update" | "infos" | "duplicate")}
                 >
                   <menu.icon className="w-4 h-4" />
                   {menu.title}

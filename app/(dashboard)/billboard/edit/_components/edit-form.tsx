@@ -39,7 +39,7 @@ export default function EditForm() {
   const { mutate, isPending } = useQueryAction<
     EditBillboardSchemaFormType,
     RequestResponse<BillboardType>
-  >(update, () => {}, "billboards");
+  >(update, () => { }, "billboards");
 
   const {
     mutate: mutateBillboard,
@@ -47,7 +47,7 @@ export default function EditForm() {
     data,
   } = useQueryAction<{ id: string }, RequestResponse<BillboardType>>(
     unique,
-    () => {},
+    () => { },
     "billboard"
   );
 
@@ -74,13 +74,13 @@ export default function EditForm() {
           name: billboard.name,
           dimension: billboard.dimension,
           city: billboard.cityId,
-          placement: billboard.placementId,
+          area: billboard.areaId,
+          placement: billboard.placement,
           orientation: billboard.orientation,
           information: billboard.information,
           address: billboard.address,
           gmaps: billboard.gmaps,
           zone: billboard.zone,
-          visibility: billboard.visibility,
           rentalPrice: billboard.rentalPrice,
           installationCost: billboard.installationCost,
           maintenance: billboard.maintenance,
@@ -109,13 +109,13 @@ export default function EditForm() {
           leasedSpace: billboard.leasedSpace,
           contractDuration: billboard.contractDuration
             ? {
-                from: billboard.contractDuration[0]
-                  ? new Date(billboard.contractDuration[0])
-                  : undefined,
-                to: billboard.contractDuration[1]
-                  ? new Date(billboard.contractDuration[1])
-                  : undefined,
-              }
+              from: billboard.contractDuration[0]
+                ? new Date(billboard.contractDuration[0])
+                : undefined,
+              to: billboard.contractDuration[1]
+                ? new Date(billboard.contractDuration[1])
+                : undefined,
+            }
             : undefined,
           paymentMethod: billboard.paymentMethod,
           specificCondition: billboard.specificCondition,
@@ -149,12 +149,12 @@ export default function EditForm() {
             dimension: validateData.data.billboard.dimension,
             placement: validateData.data.billboard.placement,
             city: validateData.data.billboard.city,
+            area: validateData.data.billboard.area,
             orientation: validateData.data.billboard.orientation,
             information: validateData.data.billboard.information,
             address: validateData.data.billboard.address,
             gmaps: validateData.data.billboard.gmaps,
             zone: validateData.data.billboard.zone,
-            visibility: validateData.data.billboard.visibility,
             rentalPrice: validateData.data.billboard.rentalPrice,
             locationDuration: validateData.data.billboard.locationDuration,
             installationCost: validateData.data.billboard.installationCost,

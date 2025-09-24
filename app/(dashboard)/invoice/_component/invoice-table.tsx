@@ -23,7 +23,7 @@ import Spinner from "@/components/ui/spinner";
 import TableActionButton from "./table-action-button";
 import { all } from "@/action/invoice.action";
 import { dropdownMenu } from "./table";
-import { checkDeadline, cutText, formatNumber } from "@/lib/utils";
+import { checkDeadline, cutText, formatNumber, generateAmaId } from "@/lib/utils";
 import { InvoiceType } from "@/types/invoice.types";
 
 type InvoiceTableProps = {
@@ -43,7 +43,7 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
     const { mutate, isPending, data } = useQueryAction<
       { companyId: string; filter: "unpaid" | "paid" },
       RequestResponse<InvoiceType[]>
-    >(all, () => {}, "invoices");
+    >(all, () => { }, "invoices");
 
     const toggleSelection = (invoiceId: string, checked: boolean) => {
       setSelectedInvoiceIds((prev) =>
@@ -94,9 +94,8 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
               data.data.map((invoice) => (
                 <TableRow
                   key={invoice.id}
-                  className={`h-16 transition-colors ${
-                    isSelected(invoice.id) ? "bg-neutral-100" : ""
-                  }`}
+                  className={`h-16 transition-colors ${isSelected(invoice.id) ? "bg-neutral-100" : ""
+                    }`}
                 >
                   <TableCell className="text-neutral-600">
                     <div className="flex justify-center items-center">
@@ -109,7 +108,9 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
                     </div>
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {invoice.invoiceNumber}
+                    {invoice.company?.documentModel?.invoicesPrefix || "Facture"}-
+                    {generateAmaId(invoice.invoiceNumber, false)}
+
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {cutText(

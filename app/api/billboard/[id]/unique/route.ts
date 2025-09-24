@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
             company: true,
             type: true,
             city: true,
-            placement: true
+            area: true,
         }
     });
 

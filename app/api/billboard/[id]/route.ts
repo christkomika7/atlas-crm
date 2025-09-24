@@ -1,9 +1,9 @@
 import { checkAccess } from "@/lib/access";
 import { checkData } from "@/lib/database";
-import { createFolder, removePath, updateFiles } from "@/lib/file";
+import { copyTo, createFolder, removePath, updateFiles } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { getIdFromUrl } from "@/lib/utils";
+import { generateId, getIdFromUrl } from "@/lib/utils";
 import { editBillboardFormSchema, EditBillboardSchemaFormType, EditBillboardSchemaType, EditLessorSchemaType } from "@/lib/zod/billboard.schema";
 import { BillboardType } from "@/types/billboard.types";
 import { NextResponse, type NextRequest } from "next/server";
@@ -35,6 +35,129 @@ export async function GET(req: NextRequest) {
     );
 }
 
+export async function POST(req: NextRequest) {
+    await checkAccess(["BILLBOARDS"], "CREATE");
+    const id = getIdFromUrl(req.url, "last") as string;
+
+    const billboard = await prisma.billboard.findUnique({
+        where: { id },
+        include: {
+            company: true
+        }
+    });
+
+    if (!billboard) {
+        return NextResponse.json({
+            state: "error",
+            message: "Aucun panneau d'affichage trouvé."
+        }, {
+            status: 400
+        })
+    }
+
+    const key = generateId();
+
+    const folderPhoto = createFolder([billboard.company.companyName, "billboard", "photo", `${billboard.name}_----${key}`]);
+    const folderBrochure = createFolder([billboard.company.companyName, "billboard", "brochure", `${billboard.name}_----${key}`]);
+    const folderContract = createFolder([billboard.company.companyName, "billboard", "contract", `${billboard.name}_----${key}`]);
+    const folderOther = createFolder([billboard.company.companyName, "billboard", "other", `${billboard.name}_----${key}`]);
+
+    // console.log(billboard.imageFiles)
+    // return
+    let savedPathsPhoto: string[] = await copyTo(billboard.imageFiles, folderPhoto);
+    let savedPathsBrochure: string[] = await copyTo(billboard.brochureFiles, folderBrochure);
+    let savedPathsContract: string[] = await copyTo(billboard.signedLeaseContract, folderContract);
+    let savedPathsOther: string[] = await copyTo(billboard.files, folderOther);
+
+    try {
+
+        await prisma.billboard.create({
+            data: {
+                reference: key,
+                pathBrochure: folderBrochure,
+                pathContract: folderContract,
+                pathFile: folderOther,
+                pathPhoto: folderPhoto,
+                type: {
+                    connect: {
+                        id: billboard.typeId
+                    }
+                },
+                name: billboard.name,
+                dimension: billboard.dimension,
+                city: { connect: { id: billboard.cityId } },
+                area: { connect: { id: billboard.areaId } },
+                placement: billboard.placement,
+                orientation: billboard.orientation,
+                information: billboard.information,
+                address: billboard.address,
+                gmaps: billboard.gmaps,
+                zone: billboard.zone,
+                rentalPrice: billboard.rentalPrice,
+                installationCost: billboard.installationCost,
+                maintenance: billboard.maintenance,
+                imageFiles: savedPathsPhoto,
+                brochureFiles: savedPathsBrochure,
+                structure: billboard.structure,
+                decorativeElement: billboard.decorativeElement,
+                foundations: billboard.foundations,
+                technicalVisibility: billboard.technicalVisibility,
+                note: billboard.note,
+
+                lessorType: billboard.lessorType,
+                lessorName: billboard.lessorName,
+                lessorEmail: billboard.lessorEmail,
+                lessorJob: billboard.lessorJob,
+                lessorPhone: billboard.lessorPhone,
+                capital: billboard.capital,
+                rccm: billboard.rccm,
+
+                taxIdentificationNumber: billboard.taxIdentificationNumber,
+                lessorAddress: billboard.lessorAddress,
+                representativeName: billboard.representativeName,
+                representativeContract: billboard.representativeContract,
+                leasedSpace: billboard.leasedSpace,
+                contractStart: billboard.contractStart,
+                contractEnd: billboard.contractEnd,
+                paymentMethod: billboard.paymentMethod,
+                specificCondition: billboard.specificCondition,
+                signedLeaseContract: savedPathsContract,
+                files: savedPathsOther,
+                company: { connect: { id: billboard.companyId } },
+            },
+        });
+
+        return NextResponse.json({
+            status: "success",
+            message: "Panneau a été dupliqué avec succès.",
+        });
+
+    }
+    catch (error) {
+
+        await removePath([
+            ...savedPathsPhoto,
+            ...savedPathsBrochure,
+            ...savedPathsContract,
+            ...savedPathsOther
+        ]);
+
+        return NextResponse.json({
+            status: "error",
+            message: "Erreur lors de le la duplication du panneau.",
+        }, { status: 500 });
+
+    }
+
+
+
+
+
+
+
+
+}
+
 export async function PUT(req: NextRequest) {
     await checkAccess(["BILLBOARDS"], "CREATE");
 
@@ -57,8 +180,8 @@ export async function PUT(req: NextRequest) {
     });
 
     const billboardFields = [
-        "id", "companyId", "reference", "type", "name", "dimension", "placement", "city",
-        "orientation", "information", "address", "gmaps", "zone", "visibility",
+        "id", "companyId", "reference", "type", "name", "dimension", "placement", "city", "area",
+        "orientation", "information", "address", "gmaps", "zone",
         "rentalPrice", "installationCost", "maintenance", "structure", "decorativeElement",
         "foundations", "technicalVisibility", "note", "lastImageFiles", "lastBrochureFiles",
     ];
@@ -86,8 +209,6 @@ export async function PUT(req: NextRequest) {
         to: new Date(rawData["contractTo"]),
     } : undefined;
 
-    console.log({ contractDuration: lessorData.contractDuration })
-
     // Fichiers uploadés
     billboardData.imageFiles = filesMap["imageFiles"] ?? [];
     billboardData.brochureFiles = filesMap["brochureFiles"] ?? [];
@@ -114,18 +235,15 @@ export async function PUT(req: NextRequest) {
     ) as EditBillboardSchemaFormType;
 
     // Vérifications préalables
-    const [companyExist, nameExist, refExist] = await prisma.$transaction([
+    const [companyExist, refExist] = await prisma.$transaction([
         prisma.company.findUnique({ where: { id: data.billboard.companyId } }),
-        prisma.billboard.findUnique({ where: { name: data.billboard.name } }),
         prisma.billboard.findUnique({ where: { reference: data.billboard.reference } }),
     ]);
 
     if (!companyExist) {
         return NextResponse.json({ status: "error", message: "Société introuvable." }, { status: 404 });
     }
-    if (nameExist && nameExist.id !== data.billboard.id) {
-        return NextResponse.json({ status: "error", message: "Nom déjà utilisé." }, { status: 400 });
-    }
+
     if (refExist && refExist.id !== data.billboard.id) {
         return NextResponse.json({ status: "error", message: "Référence déjà utilisée." }, { status: 400 });
     }
@@ -161,13 +279,13 @@ export async function PUT(req: NextRequest) {
                 name: data.billboard.name,
                 dimension: data.billboard.dimension,
                 city: { connect: { id: data.billboard.city } },
-                placement: { connect: { id: data.billboard.placement } },
+                area: { connect: { id: data.billboard.area } },
+                placement: data.billboard.placement,
                 orientation: data.billboard.orientation,
                 information: data.billboard.information,
                 address: data.billboard.address,
                 gmaps: data.billboard.gmaps,
                 zone: data.billboard.zone,
-                visibility: data.billboard.visibility,
                 rentalPrice: data.billboard.rentalPrice,
                 installationCost: data.billboard.installationCost,
                 maintenance: data.billboard.maintenance,
@@ -218,7 +336,6 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ status: "error", message: "Erreur lors de la modification." }, { status: 500 });
     }
 }
-
 
 export async function DELETE(req: NextRequest) {
     await checkAccess(["BILLBOARDS"], "MODIFY");

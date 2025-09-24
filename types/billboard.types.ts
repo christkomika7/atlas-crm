@@ -17,16 +17,16 @@ export type BillboardType = {
     locationDuration: Date[];
     dimension: string;
     city: CityType
-    placement: AreaType;
+    area: AreaType;
+    placement: string;
     cityId: string;
-    placementId: string;
+    areaId: string;
     revenueGenerate: String;
     orientation: string;
     information?: string;
     address: string;
     gmaps: string;
     zone: string;
-    visibility: string;
     rentalPrice: string;
     installationCost: string;
     maintenance: string;

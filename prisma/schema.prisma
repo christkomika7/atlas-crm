@@ -274,10 +274,12 @@ model Billboard {
   typeId String
   type   BillboardType @relation(fields: [typeId], references: [id], onDelete: Cascade)
 
-  name                String    @unique
-  dimension           String
-  placementId         String
-  placement           Area      @relation(fields: [placementId], references: [id], onDelete: Cascade)
+  name      String
+  dimension String
+  areaId    String
+  area      Area   @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+  placement           String
   cityId              String
   city                City      @relation(fields: [cityId], references: [id], onDelete: Cascade)
   orientation         String
@@ -285,7 +287,6 @@ model Billboard {
   address             String
   gmaps               String
   zone                String
-  visibility          String
   rentalPrice         String
   installationCost    String
   maintenance         String

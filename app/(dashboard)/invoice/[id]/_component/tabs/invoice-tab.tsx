@@ -463,7 +463,7 @@ export default function InvoiceTab() {
                       datas={
                         clientDatas?.data?.map((client) => ({
                           id: client.id,
-                          label: `${client.firstname} ${client.lastname}`,
+                          label: `${client.companyName} - ${client.firstname} ${client.lastname}`,
                           value: client.id,
                         })) ?? []
                       }

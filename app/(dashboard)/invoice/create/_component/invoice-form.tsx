@@ -348,7 +348,7 @@ export default function InvoiceForm() {
                       datas={
                         clientsData?.data?.map((client) => ({
                           id: client.id,
-                          label: `${client.firstname} ${client.lastname}`,
+                          label: `${client.companyName} - ${client.firstname} ${client.lastname}`,
                           value: client.id,
                         })) ?? []
                       }

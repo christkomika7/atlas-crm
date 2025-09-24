@@ -15,6 +15,7 @@ import {
   useEffect,
   forwardRef,
   useImperativeHandle,
+  useState,
 } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
@@ -26,6 +27,7 @@ import { cn, formatNumber } from "@/lib/utils";
 import TableActionButton from "./table-action-button";
 import { dropdownMenu } from "./table";
 import { getDateStatus } from "@/lib/date";
+import BillboardPhoto from "./billboard-photo";
 
 type BillboardTableProps = {
   selectedBillboardIds: string[];
@@ -39,11 +41,12 @@ export interface BillboardTableRef {
 const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
   ({ selectedBillboardIds, setSelectedBillboardIds }, ref) => {
     const companyId = useDataStore.use.currentCompany();
+    const [billboards, setBillboards] = useState<BillboardType[]>([]);
 
-    const { mutate, isPending, data } = useQueryAction<
+    const { mutate: mutateGetBillboards, isPending: isGettingBillboards } = useQueryAction<
       { companyId: string },
       RequestResponse<BillboardType[]>
-    >(all, () => { }, "billboard");
+    >(all, () => { }, "billboards");
 
     const toggleSelection = (billboardId: string, checked: boolean) => {
       setSelectedBillboardIds((prev) =>
@@ -55,7 +58,13 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
 
     const refreshBillboard = () => {
       if (companyId) {
-        mutate({ companyId });
+        mutateGetBillboards({ companyId }, {
+          async onSuccess(data) {
+            if (data.data) {
+              setBillboards(data.data);
+            }
+          },
+        });
       }
     };
 
@@ -89,7 +98,7 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isPending ? (
+            {isGettingBillboards ? (
               <TableRow>
                 <TableCell colSpan={9}>
                   <div className="flex justify-center items-center py-6 w-full">
@@ -97,8 +106,8 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
                   </div>
                 </TableCell>
               </TableRow>
-            ) : data?.data && data.data.length > 0 ? (
-              data.data.map((billboard) => (
+            ) : billboards && billboards.length > 0 ? (
+              billboards.map((billboard) => (
                 <TableRow
                   key={billboard.id}
                   className={`h-16 transition-colors ${isSelected(billboard.id) ? "bg-neutral-100" : ""
@@ -115,10 +124,10 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
                     </div>
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    Photo
+                    <BillboardPhoto path={billboard.imageFiles.length > 0 ? billboard.imageFiles[0] : undefined} name={billboard.name.toUpperCase()} />
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {billboard.reference}
+                    {billboard.reference.toUpperCase()}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {billboard.type.name}

@@ -20,12 +20,12 @@ export default function BillboardDetails({ detail }: BillboardDetailsProps) {
             <span>{detail.category}</span>
           </p>
           <p className="flex justify-between items-center gap-x-2">
-            <span className="font-semibold">Emplacement</span>{" "}
-            <span>{detail.emplacement}</span>
+            <span className="font-semibold">Quartier</span>{" "}
+            <span>{detail.neighbourhood}</span>
           </p>
           <p className="flex justify-between items-center gap-x-2">
-            <span className="font-semibold">Neighbourhood</span>{" "}
-            <span>{detail.neighbourhood}</span>
+            <span className="font-semibold">Emplacement</span>{" "}
+            <span>{detail.address}</span>
           </p>
         </div>
       </div>

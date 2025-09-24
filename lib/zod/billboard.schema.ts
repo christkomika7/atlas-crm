@@ -19,6 +19,9 @@ export const billboardSchema = z.object({
     city: z.string().min(1, {
         message: "La ville est requis.",
     }),
+    area: z.string().min(1, {
+        message: "Le quartier est requis.",
+    }),
     placement: z.string().min(1, {
         message: "Le placement du panneau publicitaire est requis.",
     }),
@@ -36,9 +39,6 @@ export const billboardSchema = z.object({
     }),
     zone: z.string().min(1, {
         message: "La zone du panneau publicitaire est requise.",
-    }),
-    visibility: z.string().min(1, {
-        message: "La visibilité du panneau publicitaire est requise.",
     }),
 
     // Section Photos and Brochure
@@ -213,6 +213,9 @@ export const editBillboardSchema = z.object({
     city: z.string().min(1, {
         message: "La ville est requis.",
     }),
+    area: z.string().min(1, {
+        message: "Le quartier est requis.",
+    }),
     placement: z.string().min(1, {
         message: "Le placement du panneau publicitaire est requis.",
     }),
@@ -239,9 +242,6 @@ export const editBillboardSchema = z.object({
     }),
 
     // Section Photos and Brochure
-    visibility: z.string().min(1, {
-        message: "La visibilité du panneau publicitaire est requise.",
-    }),
     rentalPrice: z.string().min(1, {
         message: "Le prix de location du panneau publicitaire (hors TVA) est requis.",
     })
@@ -371,6 +371,7 @@ export const billboardError = {
     name: "Nom du panneau ",
     dimension: "Dimensions du panneau  (en mètres)",
     city: "Ville",
+    area: "Quartier",
     placement: "Placement du panneau ",
     orientation: "Orientation du panneau ",
     information: "Informations supplémentaires",
@@ -378,7 +379,6 @@ export const billboardError = {
     address: "Adresse du panneau ",
     gmaps: "Lien Google Maps",
     zone: "Zone du panneau ",
-    visibility: "Visibilité du panneau ",
     rentalPrice: "Prix de location du panneau  (hors TVA)",
     installationCost: "Coût d'installation",
     maintenance: "Entretien du panneau ",

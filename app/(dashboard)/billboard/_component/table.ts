@@ -1,5 +1,5 @@
 import { TableActionButtonType } from "@/types/table.types";
-import { EditIcon, FileTextIcon, InfoIcon, Trash2Icon } from "lucide-react";
+import { EditIcon, FileTextIcon, InfoIcon, Layers2Icon, Trash2Icon } from "lucide-react";
 
 export const dropdownMenu: TableActionButtonType[] = [
     {
@@ -16,12 +16,18 @@ export const dropdownMenu: TableActionButtonType[] = [
     },
     {
         id: 3,
+        action: "duplicate",
+        icon: Layers2Icon,
+        title: "Dupliquer",
+    },
+    {
+        id: 4,
         action: "update",
         icon: EditIcon,
         title: "Modifier",
     },
     {
-        id: 4,
+        id: 5,
         action: "delete",
         icon: Trash2Icon,
         title: "Supprimer",

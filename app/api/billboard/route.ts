@@ -35,8 +35,8 @@ export async function POST(req: NextRequest) {
     });
 
     const billboardFields = [
-        "companyId", "reference", "type", "name", "dimension", "city", "placement",
-        "orientation", "information", "address", "gmaps", "zone", "visibility",
+        "companyId", "reference", "type", "name", "dimension", "city", "area", "placement",
+        "orientation", "information", "address", "gmaps", "zone",
         "rentalPrice", "installationCost", "maintenance", "structure", "decorativeElement",
         "foundations", "technicalVisibility", "note",
     ];
@@ -82,9 +82,8 @@ export async function POST(req: NextRequest) {
         dataToValidate as BillboardSchemaFormType
     ) as BillboardSchemaFormType;
 
-    const [companyExist, billboardNameExist, billboardReferenceExist] = await prisma.$transaction([
+    const [companyExist, billboardReferenceExist] = await prisma.$transaction([
         prisma.company.findUnique({ where: { id: data.billboard.companyId } }),
-        prisma.billboard.findUnique({ where: { name: data.billboard.name } }),
         prisma.billboard.findUnique({ where: { reference: data.billboard.reference } }),
     ]);
 
@@ -92,13 +91,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             status: "error",
             message: "Aucun élément trouvé pour cet identifiant.",
-        }, { status: 404 });
-    }
-
-    if (billboardNameExist) {
-        return NextResponse.json({
-            status: "error",
-            message: "Le nom du panneau publicitaire est déjà utilisé.",
         }, { status: 404 });
     }
 
@@ -162,13 +154,13 @@ export async function POST(req: NextRequest) {
                 name: data.billboard.name,
                 dimension: data.billboard.dimension,
                 city: { connect: { id: data.billboard.city } },
-                placement: { connect: { id: data.billboard.placement } },
+                area: { connect: { id: data.billboard.area } },
+                placement: data.billboard.placement,
                 orientation: data.billboard.orientation,
                 information: data.billboard.information,
                 address: data.billboard.address,
                 gmaps: data.billboard.gmaps,
                 zone: data.billboard.zone,
-                visibility: data.billboard.visibility,
                 rentalPrice: data.billboard.rentalPrice,
                 installationCost: data.billboard.installationCost,
                 maintenance: data.billboard.maintenance,
@@ -214,7 +206,6 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error) {
-        // Nettoyage si erreur
         await removePath([
             ...savedPathsPhoto,
             ...savedPathsBrochure,

@@ -172,6 +172,44 @@ export async function createFile(
     }
 }
 
+export async function copyTo(files: string[], destination: string): Promise<string[]> {
+    const copiedPaths: string[] = [];
+
+    if (!files || files.length === 0) {
+        return copiedPaths; // rien à copier → rien à créer
+    }
+
+    const absoluteDestination = path.join("uploads", destination);
+
+    for (const file of files) {
+        const absoluteSource = path.join("uploads", file);
+
+        if (!(await fs.pathExists(absoluteSource))) {
+            console.warn(`⚠️ Le fichier "${absoluteSource}" n'existe pas, ignoré.`);
+            continue;
+        }
+
+        // Crée le dossier uniquement si un fichier est valide
+        await fs.ensureDir(absoluteDestination);
+
+        const fileName = path.basename(file);
+        const absoluteDestPath = path.join(absoluteDestination, fileName);
+
+        await fs.copy(absoluteSource, absoluteDestPath, { overwrite: true });
+
+        copiedPaths.push(path.join(destination, fileName));
+        console.log(`✅ Copié : ${absoluteSource} → ${absoluteDestPath}`);
+    }
+
+    // ✅ Supprimer le dossier si aucun fichier n'a été copié
+    if (copiedPaths.length === 0 && await fs.pathExists(absoluteDestination)) {
+        await fs.remove(absoluteDestination);
+        console.log(`🗑️ Dossier supprimé car vide : ${absoluteDestination}`);
+    }
+
+    return copiedPaths;
+}
+
 
 export async function updateFiles({
     folder,
@@ -196,8 +234,6 @@ export async function updateFiles({
         (doc) => updatedData.lastUploadDocuments?.includes(doc)
     );
 
-    console.log({ deletedDocs, keptDocs, newDocs: files, oldDocs: previousDocs });
-
     // supprimer les anciens fichiers retirés
     await removePath(deletedDocs);
 
@@ -213,7 +249,6 @@ export async function updateFiles({
     for (const doc of keptDocs) {
         const filename = doc.split("/").pop() as string;
         const newPath = `${folder}/${filename}`;
-        console.log("keep -> ", newPath);
 
         // ⚠️ si on a changé de dossier, il faut copier/déplacer le fichier
         if (outdatedData.path !== folder) {
@@ -226,7 +261,6 @@ export async function updateFiles({
     // ajouter les nouveaux fichiers
     for (const file of files) {
         const filePath = await saveFile(file, folder);
-        console.log("new -> ", filePath);
         savedPaths.push(filePath);
     }
 

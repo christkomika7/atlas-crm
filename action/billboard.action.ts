@@ -82,6 +82,24 @@ export async function unique({ id }: { id: string }) {
     }
 }
 
+
+export async function duplicateBillboard({ id }: { id: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard/${id}`, {
+            method: 'POST',
+        });
+
+        const res: RequestResponse<null> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
 export async function create(data: BillboardSchemaFormType) {
     try {
         const formData = new FormData();
@@ -93,6 +111,7 @@ export async function create(data: BillboardSchemaFormType) {
         formData.append("name", data.billboard.name);
         formData.append("dimension", data.billboard.dimension);
         formData.append("city", data.billboard.city);
+        formData.append("area", data.billboard.area);
         formData.append("placement", data.billboard.placement);
         formData.append("orientation", data.billboard.orientation);
         formData.append("information", data.billboard.information ?? "");
@@ -101,7 +120,6 @@ export async function create(data: BillboardSchemaFormType) {
         formData.append("address", data.billboard.address);
         formData.append("gmaps", data.billboard.gmaps);
         formData.append("zone", data.billboard.zone);
-        formData.append("visibility", data.billboard.visibility);
 
         // BILLBOARD - Prix
         formData.append("rentalPrice", data.billboard.rentalPrice);
@@ -198,6 +216,7 @@ export async function update(data: EditBillboardSchemaFormType) {
         formData.append("name", data.billboard.name);
         formData.append("dimension", data.billboard.dimension);
         formData.append("city", data.billboard.city);
+        formData.append("area", data.billboard.area);
         formData.append("placement", data.billboard.placement);
         formData.append("orientation", data.billboard.orientation);
         formData.append("information", data.billboard.information ?? "");
@@ -206,7 +225,6 @@ export async function update(data: EditBillboardSchemaFormType) {
         formData.append("address", data.billboard.address);
         formData.append("gmaps", data.billboard.gmaps);
         formData.append("zone", data.billboard.zone);
-        formData.append("visibility", data.billboard.visibility);
 
         // BILLBOARD - Prix
         formData.append("rentalPrice", data.billboard.rentalPrice);

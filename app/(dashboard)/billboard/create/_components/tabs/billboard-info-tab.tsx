@@ -54,7 +54,7 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
     data: dataAreas,
   } = useQueryAction<{ cityId: string }, RequestResponse<AreaType[]>>(
     allAreas,
-    () => {},
+    () => { },
     "areas"
   );
 
@@ -65,7 +65,7 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
   } = useQueryAction<
     { companyId: string },
     RequestResponse<BillboardTypeType[]>
-  >(allBillboardType, () => {}, "BillboardsType");
+  >(allBillboardType, () => { }, "BillboardsType");
 
   const {
     mutate: mutateCity,
@@ -73,7 +73,7 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
     data: dataCities,
   } = useQueryAction<{ companyId: string }, RequestResponse<CityType[]>>(
     allCities,
-    () => {},
+    () => { },
     "cities"
   );
 
@@ -131,7 +131,7 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
                             <span className="font-medium">
                               {
                                 billboardError[
-                                  field as keyof BillboardErrorType
+                                field as keyof BillboardErrorType
                                 ]
                               }
                             </span>
@@ -254,7 +254,7 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
             />
             <FormField
               control={form.control}
-              name="billboard.placement"
+              name="billboard.area"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
@@ -267,10 +267,28 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
                       }))}
                       value={field.value}
                       setValue={field.onChange}
-                      placeholder="Emplacement de panneau publicitaire"
-                      searchMessage="Rechercher un emplacement"
-                      noResultsMessage="Aucun emplacement trouvé."
+                      placeholder="Quartier"
+                      searchMessage="Rechercher un quartier"
+                      noResultsMessage="Aucun quartier trouvé."
                       addElement={<AreaModal cityId={cityId} />}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="billboard.placement"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Emplacement du panneau publicitaire"
+                      value={field.value}
+                      handleChange={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />
@@ -362,24 +380,6 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
                     <TextInput
                       design="float"
                       label="Zone"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="billboard.visibility"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      design="float"
-                      label="Visibbilité"
                       value={field.value}
                       handleChange={field.onChange}
                     />

@@ -46,6 +46,7 @@ export type BillboardInfo = {
     category: string;
     emplacement: string;
     neighbourhood: string;
+    address: string;
 }
 
 export type Sale = {

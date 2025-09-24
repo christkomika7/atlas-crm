@@ -292,8 +292,11 @@ export function initialName(name: string): string {
   );
 }
 
-export function generateAmaId(id: number) {
-  return `AMA-${String(id).padStart(3, "0")}`;
+
+
+export function generateAmaId(id: number, withText: boolean = true) {
+  if (withText) return `AMA-${String(id).padStart(3, "0")}`;
+  return String(id).padStart(3, "0");
 }
 
 export async function urlToFile(path: string): Promise<File> {
@@ -855,13 +858,7 @@ export function getPrefix(
 }
 
 export function getDocumentRef(transaction: TransactionType) {
-  console.log({ transaction });
-  console.log("transac -> ", transaction.referenceInvoiceId);
   if (transaction.referenceInvoiceId) {
-    console.log(
-      "Transac ref -> ",
-      `${transaction.company.documentModel.invoicesPrefix || "Facture"}-${transaction.referenceInvoice.invoiceNumber}`,
-    );
     return `${transaction.company.documentModel.invoicesPrefix || "Facture"}-${transaction.referenceInvoice.invoiceNumber}`;
   }
 }

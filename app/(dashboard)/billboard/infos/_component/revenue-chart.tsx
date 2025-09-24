@@ -82,7 +82,7 @@ export function RevenueChart({ sales }: RevenueChartProps) {
       <div className="grid grid-cols-[2fr_1.5fr] bg-neutral-100/40 pl-4">
         <p className="flex flex-col px-2 py-2 text-sm">
           <span className="font-medium">Montant moyen par location</span>
-          {(totalAmount / sales.length).toLocaleString()} {currency}
+          {sales.length > 0 ? (totalAmount / sales.length).toLocaleString() : 0} {currency}
         </p>
         <div className="grid grid-cols-2">
           <p className="flex flex-col bg-neutral-100 px-2 py-2 text-sm">

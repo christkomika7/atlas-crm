@@ -36,6 +36,11 @@ export async function POST(req: NextRequest) {
       client: true,
       project: true,
       items: true,
+      company: {
+        include: {
+          documentModel: true
+        }
+      }
     },
   });
 

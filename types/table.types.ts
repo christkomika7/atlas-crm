@@ -7,5 +7,5 @@ export type TableActionButtonType = {
         Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
     >;
     title: string;
-    action?: "default" | "delete" | "send" | "convert" | "update" | "add" | "infos";
+    action?: "default" | "delete" | "send" | "convert" | "update" | "add" | "infos" | "duplicate";
 };
