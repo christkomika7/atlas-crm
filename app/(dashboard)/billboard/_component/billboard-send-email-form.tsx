@@ -36,7 +36,7 @@ export default function BillboardSendEmailForm({
   const { mutate, isPending } = useQueryAction<
     EmailSchemaType,
     RequestResponse<string>
-  >(email, () => {}, "email");
+  >(email, () => { }, "email");
 
   useEffect(() => {
     if (pdf && companyId) {

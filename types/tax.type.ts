@@ -1,24 +1,17 @@
-import { CumulType } from "./company.types";
+export type Item = {
+    name: string;
+    price: string;
+    discountType: "purcent" | "money";
+    discount: number;
+    quantity: number;
+};
 
 export type TaxInput = {
     taxName: string;
     taxValue: string[];
     hasApplicableToAll: boolean;
     taxType?: "HT" | "TTC";
-    cumul?: CumulType[];
-};
-
-export type ItemInput = {
-    name: string;
-    price: number;
-    quantity: number;
-};
-
-export type CalculateTaxesParams = {
-    items: ItemInput[];
-    itemType: "article" | "total";
-    taxes: TaxInput[];
-    taxOperation?: "cumul" | "sequence";
+    cumul?: { id: number; name: string; check: boolean }[];
 };
 
 export type TaxResult = {

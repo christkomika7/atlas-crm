@@ -5,10 +5,11 @@ import { twMerge } from "tailwind-merge";
 import { $Enums, Action, Permission, Resource, Role } from "./generated/prisma";
 import { UserEditSchemaType, UserSchemaType } from "./zod/user.schema";
 import {
-  CalculateTaxesParams,
   CalculateTaxesParamsTotal,
   CalculateTaxesResult,
   CalculateTaxesResultTotal,
+  Item,
+  TaxInput,
   TaxResult,
   TaxResultTotal,
 } from "@/types/tax.type";
@@ -83,95 +84,135 @@ export function calculatePrice(
   return finalPrice;
 }
 
-export function calculateTaxes({
-  items,
-  itemType,
-  taxes,
-  taxOperation = "cumul",
-}: CalculateTaxesParams): CalculateTaxesResult {
-  const taxesResult: TaxResult[] = [];
-  let totalTax = 0;
-  let totalBase = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-  for (const tax of taxes) {
-    let taxAmount = 0;
-    let appliedRates: number[] = tax.taxValue.map((v) =>
-      parseFloat(v.replace("%", "")),
-    );
-
-    // Vérifier si la taxe s'applique
-    const shouldApplyTax = tax.hasApplicableToAll || itemType === "total";
-
-    if (!shouldApplyTax) {
-      // Si la taxe ne s'applique pas, on l'ajoute quand même avec des valeurs à 0
-      taxesResult.push({
-        taxName: tax.taxName,
-        appliedRates,
-        totalTax: 0,
-        taxPrice: totalBase, // Prix de base sans cette taxe
-        taxType: tax.taxType,
-      });
-      continue;
-    }
-
-    const baseAmount = totalBase;
-
-    if (taxOperation === "sequence" && appliedRates.length > 1) {
-      // Taxes séquentielles : chaque taux s'applique sur le montant précédent + taxe précédente
-      let currentAmount = baseAmount;
-      for (const rate of appliedRates) {
-        const singleTax = (currentAmount * rate) / 100;
-        taxAmount += singleTax;
-        currentAmount += singleTax; // Le montant suivant inclut cette taxe
-      }
-    } else {
-      // Taxes cumulatives : tous les taux s'appliquent sur le montant de base
-      for (const rate of appliedRates) {
-        taxAmount += (baseAmount * rate) / 100;
-      }
-    }
-
-    totalTax += taxAmount;
-
-    // Calcul du prix selon le type de taxe
-    let taxPrice: number;
-    if (tax.taxType === "HT") {
-      // Prix HT : on ajoute la taxe au montant de base
-      taxPrice = baseAmount + taxAmount;
-    } else if (tax.taxType === "TTC") {
-      // Prix TTC : le montant de base inclut déjà la taxe
-      // Donc taxPrice = baseAmount, et taxAmount représente la taxe incluse
-      taxPrice = baseAmount;
-      // Recalculer le montant de la taxe pour TTC
-      const htPrice =
-        baseAmount /
-        (1 + appliedRates.reduce((sum, rate) => sum + rate / 100, 0));
-      taxAmount = baseAmount - htPrice;
-    } else {
-      // Type indéfini : retourner le montant de base
-      taxPrice = baseAmount;
-    }
-
-    taxesResult.push({
-      taxName: tax.taxName,
-      appliedRates,
-      totalTax: parseFloat(taxAmount.toFixed(2)),
-      taxPrice: parseFloat(taxPrice.toFixed(2)),
-      taxType: tax.taxType,
-    });
-  }
-
-  // Pour le total final, on utilise la logique HT par défaut
-  const totalWithTaxes = parseFloat((totalBase + totalTax).toFixed(2));
-
-  return {
-    taxes: taxesResult,
-    totalTax: parseFloat(totalTax.toFixed(2)),
-    totalWithTaxes,
-    totalWithoutTaxes: parseFloat(totalBase.toFixed(2)),
-  };
+function round(value: number, decimals = 3): number {
+  return parseFloat(value.toFixed(decimals));
 }
 
+export function calculateTaxes(params: {
+  items: Item[];
+  taxes: TaxInput[];
+  taxOperation: "sequence" | "cumul";
+}): CalculateTaxesResult {
+  const { items, taxes, taxOperation } = params;
+
+  const results: { [taxName: string]: TaxResult } = {};
+  taxes.forEach(tax => {
+    const appliedRates = tax.taxValue.map(val =>
+      parseFloat(val.replace(/%$/, "")) || 0
+    );
+    results[tax.taxName] = {
+      taxName: tax.taxName,
+      appliedRates,
+      totalTax: 0,
+      taxPrice: 0,
+      taxType: tax.taxType
+    };
+  });
+
+  let totalWithoutTaxes = 0;
+  let totalTaxSum = 0;
+  let totalWithTaxes = 0;
+
+  items.forEach(item => {
+    let priceValue = parseFloat(item.price) || 0;
+    const quantity = item.quantity;
+    const discountType = item.discountType;
+    const discount = item.discount;
+
+    const baseAfterDiscountByTax: { [taxName: string]: number } = {};
+
+    taxes.forEach(tax => {
+      const rates = tax.taxValue.map(val => parseFloat(val.replace(/%$/, "")) || 0);
+      let baseBeforeDiscount: number;
+
+      if (tax.taxType === "TTC") {
+        if (rates.length === 1) {
+          baseBeforeDiscount = priceValue / (1 + rates[0] / 100);
+        } else if (taxOperation === "cumul") {
+          const totalRate = rates.reduce((s, r) => s + r, 0);
+          baseBeforeDiscount = priceValue / (1 + totalRate / 100);
+        } else {
+          let baseTemp = priceValue;
+          rates.forEach(r => {
+            baseTemp = baseTemp / (1 + r / 100);
+          });
+          baseBeforeDiscount = baseTemp;
+        }
+      } else {
+        baseBeforeDiscount = priceValue;
+      }
+
+      let discountAmount = 0;
+      if (discountType === "purcent") {
+        discountAmount = baseBeforeDiscount * (discount / 100);
+      } else {
+        discountAmount = discount;
+      }
+      if (discountAmount < 0) discountAmount = 0;
+
+      let baseAfterDiscount = round(baseBeforeDiscount - discountAmount);
+      if (baseAfterDiscount < 0) baseAfterDiscount = 0;
+
+      baseAfterDiscountByTax[tax.taxName] = baseAfterDiscount;
+    });
+
+    const firstTaxName = taxes.length > 0 ? taxes[0].taxName : "";
+    const baseHT = firstTaxName ? baseAfterDiscountByTax[firstTaxName] : 0;
+    totalWithoutTaxes += round(baseHT * quantity);
+
+    let itemTaxSum = 0;
+    taxes.forEach(tax => {
+      const taxName = tax.taxName;
+      const rates = tax.taxValue.map(val => parseFloat(val.replace(/%$/, "")) || 0);
+      const baseAfterDiscount = baseAfterDiscountByTax[taxName];
+      let taxPerUnit = 0;
+
+      if (rates.length === 1) {
+        taxPerUnit = baseAfterDiscount * (rates[0] / 100);
+      } else if (taxOperation === "cumul") {
+        const totalRate = rates.reduce((s, r) => s + r, 0);
+        taxPerUnit = baseAfterDiscount * (totalRate / 100);
+      } else {
+        let tmp = baseAfterDiscount;
+        rates.forEach(r => {
+          const portion = tmp * (r / 100);
+          taxPerUnit += portion;
+          tmp += portion;
+        });
+      }
+
+      taxPerUnit = round(taxPerUnit);
+
+      const taxTotalForItem = tax.hasApplicableToAll
+        ? round(taxPerUnit * quantity)
+        : round(taxPerUnit * 1);
+
+      results[taxName].totalTax = round(results[taxName].totalTax + taxTotalForItem);
+      results[taxName].taxPrice = round(
+        results[taxName].taxPrice +
+        (tax.hasApplicableToAll ? baseAfterDiscount * quantity : baseAfterDiscount)
+      );
+
+      itemTaxSum += taxTotalForItem;
+    });
+
+    totalTaxSum += round(itemTaxSum);
+    totalWithTaxes += round(baseHT * quantity + itemTaxSum);
+  });
+
+  const taxesArray: TaxResult[] = Object.values(results).map(tax => ({
+    ...tax,
+    totalTax: round(tax.totalTax),
+    taxPrice: round(tax.taxPrice)
+  }));
+
+  return {
+    taxes: taxesArray,
+    totalTax: round(totalTaxSum),
+    totalWithTaxes: round(totalWithTaxes),
+    totalWithoutTaxes: round(totalWithoutTaxes)
+  };
+}
 export function calculateTaxesTotal({
   totalPrice,
   taxes,

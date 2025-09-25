@@ -11,9 +11,9 @@ export const userSchema = z.object({
         .refine((file) => file.size <= MAX_FILE_SIZE, {
             message: `Le fichier doit être inférieur à ${MAX_FILE_SIZE} octets`,
         })
-        .refine((file) => ACCEPTED_IMAGE_TYPES.includes(file.type as IMAGE_TYPES), {
-            message: "Formats acceptés : .jpeg, .jpg, .png, .webp",
-        })
+        // .refine((file) => ACCEPTED_IMAGE_TYPES.includes(file.type as IMAGE_TYPES), {
+        //     message: "Formats acceptés : .jpeg, .jpg, .png, .webp",
+        // })
         .optional()
         .nullable(),
     path: z.string().optional(),
@@ -145,9 +145,9 @@ export const userEditSchema = z.object({
         .refine((file) => file.size <= MAX_FILE_SIZE, {
             message: `Le fichier doit être inférieur à ${MAX_FILE_SIZE} octets`,
         })
-        .refine((file) => ACCEPTED_IMAGE_TYPES.includes(file.type as IMAGE_TYPES), {
-            message: "Formats acceptés : .jpeg, .jpg, .png, .webp",
-        })
+        // .refine((file) => ACCEPTED_IMAGE_TYPES.includes(file.type as IMAGE_TYPES), {
+        //     message: "Formats acceptés : .jpeg, .jpg, .png, .webp",
+        // })
         .optional()
         .nullable(),
     path: z.string().optional(),

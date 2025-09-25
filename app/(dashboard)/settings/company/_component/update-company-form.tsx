@@ -152,6 +152,13 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
     "companies"
   );
 
+  useEffect(() => {
+    form.watch((data) => {
+      console.log({ errors: form.formState.errors });
+      console.log({ data })
+    })
+  }, [form.watch])
+
   function submit(formData: EditCompanySchemaType) {
     const { success, data } = editCompanySchema.safeParse(formData);
     if (success) {

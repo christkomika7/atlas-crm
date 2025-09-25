@@ -26,7 +26,7 @@ export default function UpdateCompany() {
   const { mutate, isPending, data } = useQueryAction<
     { id: string },
     RequestResponse<CompanyType<UserType<File>>>
-  >(unique, () => {}, "company");
+  >(unique, () => { }, "company");
 
   useEffect(() => {
     if (param.id) {
@@ -45,6 +45,8 @@ export default function UpdateCompany() {
               companyName: company.companyName ?? "",
               registeredAddress: company.registeredAddress ?? "",
               phoneNumber: company.phoneNumber ?? "",
+              city: company.city,
+              codePostal: company.codePostal,
               email: company.email ?? "",
               website: company.website ?? "",
               businessRegistrationNumber:
@@ -106,6 +108,7 @@ export default function UpdateCompany() {
       );
     }
   }, [param.id]);
+
 
   return (
     <div className="flex flex-col h-full">

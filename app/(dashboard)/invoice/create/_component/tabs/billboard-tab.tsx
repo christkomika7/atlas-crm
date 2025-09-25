@@ -28,6 +28,7 @@ import { toast } from "sonner";
 export default function BillboardTab() {
   // ** STATE ** //
   const [locationEndDate, setLocationEndDate] = useState<Date | undefined>(undefined);
+  const [currentItemId, setCurrentItemId] = useState<string>();
 
 
   // ** STORE ** //
@@ -62,7 +63,7 @@ export default function BillboardTab() {
     "client"
   );
 
-  const { mutate: getBillboardItems, isPending: isLoadingBillboardItems } =
+  const { mutate: getBillboardItems, isPending: isGettingBillboardItems } =
     useQueryAction<{ billboardId: string }, RequestResponse<ItemType[]>>(
       allBillboardItem,
       () => { },
@@ -117,6 +118,7 @@ export default function BillboardTab() {
     // Obtenir les données du client ou utiliser des valeurs par défaut
     const client = clientData?.data;
     const defaultDiscount = "0"; // Valeur par défaut si pas encore de données client
+    setCurrentItemId(item.id);
 
     if (check) {
       getBillboardItems(
@@ -152,6 +154,7 @@ export default function BillboardTab() {
                 currency: item.company.currency,
                 itemType: "billboard",
               });
+              setCurrentItemId("")
             }
           },
         }
@@ -159,6 +162,7 @@ export default function BillboardTab() {
     } else {
       removeItem(item.id);
       removeLocationBillboard(item.id);
+      setCurrentItemId("");
     }
   }
 
@@ -176,7 +180,7 @@ export default function BillboardTab() {
               Disponibilité
             </TableHead>
             <TableHead className="font-medium text-center">Montant</TableHead>
-            <TableHead className="font-medium text-center"></TableHead>
+            <TableHead className="font-medium text-center w-[40px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -239,7 +243,7 @@ export default function BillboardTab() {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-center">
-                      {isLoadingBillboardItems && <Spinner />}
+                      {currentItemId === billboard.id && isGettingBillboardItems && <Spinner />}
                     </div>
                   </TableCell>
                 </TableRow>

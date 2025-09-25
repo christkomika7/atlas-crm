@@ -32,7 +32,6 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import useClientIdStore from "@/stores/client-id.store";
 import {
   calculatePrice,
-  calculateTaxes,
   calculateTaxesTotal,
   formatNumber,
 } from "@/lib/utils";
@@ -45,6 +44,7 @@ import { CompanyType } from "@/types/company.types";
 import { addDays, formatDateToDashModel } from "@/lib/date";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
+import { calculateTaxes } from "@/lib/price";
 
 export default function InvoiceForm() {
   const router = useRouter();
@@ -199,15 +199,12 @@ export default function InvoiceForm() {
                 items: [
                   {
                     name: item.name,
-                    price: calculatePrice(
-                      parseFloat(item.price),
-                      parseInt(String(item.discount).replace("%", "")),
-                      item.discountType
-                    ),
+                    price: item.price,
+                    discountType: item.discountType,
+                    discount: Number(String(item.discount).replace("%", "")),
                     quantity: item.quantity,
                   },
                 ],
-                itemType: "article",
                 taxes: company?.vatRates ?? [],
                 taxOperation: "sequence",
               }).totalWithoutTaxes
@@ -231,15 +228,12 @@ export default function InvoiceForm() {
                 items: [
                   {
                     name: item.name,
-                    price: calculatePrice(
-                      parseFloat(item.price),
-                      parseInt(String(item.discount).replace("%", "")),
-                      item.discountType
-                    ),
+                    price: item.price,
+                    discountType: item.discountType,
+                    discount: Number(String(item.discount).replace("%", "")),
                     quantity: 1,
                   },
                 ],
-                itemType: "article",
                 taxes: company?.vatRates ?? [],
                 taxOperation: "sequence",
               }).totalWithoutTaxes
@@ -264,14 +258,11 @@ export default function InvoiceForm() {
     const HTPrice = calculateTaxes({
       items: items.map((item) => ({
         name: item.name,
-        price: calculatePrice(
-          parseFloat(item.price),
-          parseInt(String(item.discount).replace("%", "")),
-          item.discountType
-        ),
+        price: (item.price),
+        discountType: item.discountType,
+        discount: Number(String(item.discount).replace("%", "")),
         quantity: item.quantity,
       })),
-      itemType: "article",
       taxes: company?.vatRates ?? [],
       taxOperation: "sequence",
     }).totalWithoutTaxes;
@@ -390,34 +381,45 @@ export default function InvoiceForm() {
                   )}
                   <div className="flex justify-between items-center gap-x-2">
                     <div className="flex items-center gap-x-1 font-medium text-sm">
-                      <span>
+                      {item.itemType === "billboard" ? 1 :
+                        <span>
+                          <TextInput
+                            type="number"
+                            max={item.maxQuantity ?? 0}
+                            value={item.quantity}
+                            handleChange={(e) => {
+                              if (
+                                item.maxQuantity &&
+                                Number(e) > item.maxQuantity
+                              ) {
+                                editItemField(
+                                  item.id,
+                                  "quantity",
+                                  Number(item.maxQuantity)
+                                );
+                                return toast.error(
+                                  "La quantité max valable est " +
+                                  item.maxQuantity
+                                );
+                              }
+                              editItemField(item.id, "quantity", Number(e));
+                            }}
+                            className="w-16 h-8"
+                          />
+                        </span>
+                      }
+                      {" x "}
+                      <span className="flex items-center gap-x-1">
                         <TextInput
                           type="number"
-                          max={item.maxQuantity ?? 0}
-                          value={item.quantity}
+                          min={0}
+                          value={item.price}
                           handleChange={(e) => {
-                            if (
-                              item.maxQuantity &&
-                              Number(e) > item.maxQuantity
-                            ) {
-                              editItemField(
-                                item.id,
-                                "quantity",
-                                Number(item.maxQuantity)
-                              );
-                              return toast.error(
-                                "La quantité max valable est " +
-                                item.maxQuantity
-                              );
-                            }
-                            editItemField(item.id, "quantity", Number(e));
+                            editItemField(item.id, "price", e as string);
                           }}
-                          className="w-20 h-8"
+                          className="w-32 h-8"
                         />
-                      </span>
-                      x
-                      <span>
-                        {formatNumber(item.price)} {item.currency}
+                        {item.currency}
                       </span>
                     </div>
 
@@ -494,15 +496,12 @@ export default function InvoiceForm() {
                       items: [
                         {
                           name: item.name,
-                          price: calculatePrice(
-                            parseFloat(item.price),
-                            parseFloat(String(item.discount).replace("%", "")),
-                            item.discountType
-                          ),
+                          price: (item.price),
+                          discountType: item.discountType,
+                          discount: Number(String(item.discount).replace("%", "")),
                           quantity: item.quantity,
                         },
                       ],
-                      itemType: "article",
                       taxes: company?.vatRates ?? [],
                       taxOperation: "sequence",
                     }).taxes.map((tax) => (
@@ -519,17 +518,12 @@ export default function InvoiceForm() {
                         items: [
                           {
                             name: item.name,
-                            price: calculatePrice(
-                              parseFloat(item.price),
-                              parseFloat(
-                                String(item.discount).replace("%", "")
-                              ),
-                              item.discountType
-                            ),
+                            price: (item.price),
+                            discountType: item.discountType,
+                            discount: Number(String(item.discount).replace("%", "")),
                             quantity: item.quantity,
                           },
                         ],
-                        itemType: "article",
                         taxes: company?.vatRates ?? [],
                         taxOperation: "sequence",
                       }).totalTax
@@ -543,17 +537,12 @@ export default function InvoiceForm() {
                         items: [
                           {
                             name: item.name,
-                            price: calculatePrice(
-                              parseFloat(item.price),
-                              parseFloat(
-                                String(item.discount).replace("%", "")
-                              ),
-                              item.discountType
-                            ),
+                            price: (item.price),
+                            discountType: item.discountType,
+                            discount: Number(String(item.discount).replace("%", "")),
                             quantity: item.quantity,
                           },
                         ],
-                        itemType: "article",
                         taxes: company?.vatRates ?? [],
                         taxOperation: "sequence",
                       }).totalWithoutTaxes
@@ -567,17 +556,12 @@ export default function InvoiceForm() {
                         items: [
                           {
                             name: item.name,
-                            price: calculatePrice(
-                              parseFloat(item.price),
-                              parseFloat(
-                                String(item.discount).replace("%", "")
-                              ),
-                              item.discountType
-                            ),
+                            price: (item.price),
+                            discountType: item.discountType,
+                            discount: Number(String(item.discount).replace("%", "")),
                             quantity: item.quantity,
                           },
                         ],
-                        itemType: "article",
                         taxes: company?.vatRates ?? [],
                         taxOperation: "sequence",
                       }).totalWithTaxes
@@ -763,14 +747,11 @@ export default function InvoiceForm() {
                 {formatNumber(calculateTaxes({
                   items: items.map((item) => ({
                     name: item.name,
-                    price: calculatePrice(
-                      parseFloat(item.price),
-                      parseFloat(String(item.discount).replace("%", "")),
-                      item.discountType
-                    ),
+                    price: (item.price),
+                    discountType: item.discountType,
+                    discount: Number(String(item.discount).replace("%", "")),
                     quantity: item.quantity,
                   })),
-                  itemType: "total",
                   taxes: company?.vatRates ?? [],
                   taxOperation: "sequence",
                 }).totalWithoutTaxes)} {" "}
@@ -781,14 +762,11 @@ export default function InvoiceForm() {
               {calculateTaxes({
                 items: items.map((item) => ({
                   name: item.name,
-                  price: calculatePrice(
-                    parseFloat(item.price),
-                    parseFloat(String(item.discount).replace("%", "")),
-                    item.discountType
-                  ),
+                  price: (item.price),
+                  discountType: item.discountType,
+                  discount: Number(String(item.discount).replace("%", "")),
                   quantity: item.quantity,
                 })),
-                itemType: "article",
                 taxes: company?.vatRates ?? [],
                 taxOperation: "sequence",
               }).taxes.map((tax) => (

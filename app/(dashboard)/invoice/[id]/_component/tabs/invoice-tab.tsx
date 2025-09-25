@@ -29,11 +29,12 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import useClientIdStore from "@/stores/client-id.store";
 import {
   calculatePrice,
-  calculateTaxes,
   calculateTaxesTotal,
   downloadFile,
   formatNumber,
 } from "@/lib/utils";
+
+import { calculateTaxes } from "@/lib/price";
 
 import { ModelDocumentType } from "@/types/document.types";
 import { paymentTerms } from "@/lib/data";
@@ -311,15 +312,12 @@ export default function InvoiceTab() {
                 items: [
                   {
                     name: item.name,
-                    price: calculatePrice(
-                      parseFloat(item.price),
-                      parseInt(String(item.discount).replace("%", "")),
-                      item.discountType
-                    ),
+                    price: (item.price),
+                    discountType: item.discountType,
+                    discount: Number(String(item.discount).replace("%", "")),
                     quantity: item.quantity,
                   },
                 ],
-                itemType: "article",
                 taxes: company?.vatRates ?? [],
                 taxOperation: "sequence",
               }).totalWithoutTaxes
@@ -343,15 +341,12 @@ export default function InvoiceTab() {
                 items: [
                   {
                     name: item.name,
-                    price: calculatePrice(
-                      parseFloat(item.price),
-                      parseInt(String(item.discount).replace("%", "")),
-                      item.discountType
-                    ),
+                    price: (item.price),
+                    discountType: item.discountType,
+                    discount: Number(String(item.discount).replace("%", "")),
                     quantity: 1,
                   },
                 ],
-                itemType: "article",
                 taxes: company?.vatRates ?? [],
                 taxOperation: "sequence",
               }).totalWithoutTaxes
@@ -376,14 +371,11 @@ export default function InvoiceTab() {
     const HTPrice = calculateTaxes({
       items: items.map((item) => ({
         name: item.name,
-        price: calculatePrice(
-          parseFloat(item.price),
-          parseInt(String(item.discount).replace("%", "")),
-          item.discountType
-        ),
+        price: (item.price),
+        discountType: item.discountType,
+        discount: Number(String(item.discount).replace("%", "")),
         quantity: item.quantity,
       })),
-      itemType: "article",
       taxes: company?.vatRates ?? [],
       taxOperation: "sequence",
     }).totalWithoutTaxes;
@@ -609,15 +601,12 @@ export default function InvoiceTab() {
                       items: [
                         {
                           name: item.name,
-                          price: calculatePrice(
-                            parseFloat(item.price),
-                            parseFloat(String(item.discount).replace("%", "")),
-                            item.discountType
-                          ),
+                          price: (item.price),
+                          discountType: item.discountType,
+                          discount: Number(String(item.discount).replace("%", "")),
                           quantity: item.quantity,
                         },
                       ],
-                      itemType: "article",
                       taxes: company?.vatRates ?? [],
                       taxOperation: "sequence",
                     }).taxes.map((tax) => (
@@ -634,17 +623,12 @@ export default function InvoiceTab() {
                         items: [
                           {
                             name: item.name,
-                            price: calculatePrice(
-                              parseFloat(item.price),
-                              parseFloat(
-                                String(item.discount).replace("%", "")
-                              ),
-                              item.discountType
-                            ),
+                            price: (item.price),
+                            discountType: item.discountType,
+                            discount: Number(String(item.discount).replace("%", "")),
                             quantity: item.quantity,
                           },
                         ],
-                        itemType: "article",
                         taxes: company?.vatRates ?? [],
                         taxOperation: "sequence",
                       }).totalTax
@@ -658,17 +642,12 @@ export default function InvoiceTab() {
                         items: [
                           {
                             name: item.name,
-                            price: calculatePrice(
-                              parseFloat(item.price),
-                              parseFloat(
-                                String(item.discount).replace("%", "")
-                              ),
-                              item.discountType
-                            ),
+                            price: (item.price),
+                            discountType: item.discountType,
+                            discount: Number(String(item.discount).replace("%", "")),
                             quantity: item.quantity,
                           },
                         ],
-                        itemType: "article",
                         taxes: company?.vatRates ?? [],
                         taxOperation: "sequence",
                       }).totalWithoutTaxes
@@ -682,17 +661,12 @@ export default function InvoiceTab() {
                         items: [
                           {
                             name: item.name,
-                            price: calculatePrice(
-                              parseFloat(item.price),
-                              parseFloat(
-                                String(item.discount).replace("%", "")
-                              ),
-                              item.discountType
-                            ),
+                            price: (item.price),
+                            discountType: item.discountType,
+                            discount: Number(String(item.discount).replace("%", "")),
                             quantity: item.quantity,
                           },
                         ],
-                        itemType: "article",
                         taxes: company?.vatRates ?? [],
                         taxOperation: "sequence",
                       }).totalWithTaxes
@@ -990,14 +964,11 @@ export default function InvoiceTab() {
               {calculateTaxes({
                 items: items.map((item) => ({
                   name: item.name,
-                  price: calculatePrice(
-                    parseFloat(item.price),
-                    parseFloat(String(item.discount).replace("%", "")),
-                    item.discountType
-                  ),
+                  price: (item.price),
+                  discountType: item.discountType,
+                  discount: Number(String(item.discount).replace("%", "")),
                   quantity: item.quantity,
                 })),
-                itemType: "total",
                 taxes: company?.vatRates ?? [],
                 taxOperation: "sequence",
               }).taxes.map((tax) => (
