@@ -1,6 +1,5 @@
 import React from "react";
 import Header from "@/components/header/header";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs } from "@/components/ui/tabs";
 import InvoiceTab from "./_component/tabs/invoice-tab";
 import PreviewTab from "./_component/tabs/preview-tab";
@@ -13,7 +12,7 @@ export default function CreateInvoice() {
       <div className="flex-1 px-6 py-4 overflow-auto">
         <Tabs
           tabs={[
-            { id: 1, title: "Facture", content: <InvoiceTab /> },
+            { id: 1, title: "Modifier", content: <InvoiceTab /> },
             { id: 2, title: "Aperçu", content: <PreviewTab /> },
             { id: 3, title: "Partage", content: <ShareTab /> },
           ]}

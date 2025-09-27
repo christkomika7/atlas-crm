@@ -195,8 +195,6 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  console.log({ it: data.item.billboards })
-
   const savedFilePaths = await updateFiles({
     folder: folderFile,
     outdatedData: {
