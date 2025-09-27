@@ -20,14 +20,9 @@ export type ItemType = {
     lastQuantity?: number
 };
 
-type RangeDateType = {
-    start: Date;
-    end: Date;
-}
-
 export type LocationBillboardDateType = {
     id: string;
-    locationDate: RangeDateType[]
+    locationDate: [Date, Date]
 }
 
 type ItemStore = {
@@ -35,6 +30,7 @@ type ItemStore = {
     locationBillboardDate: LocationBillboardDateType[];
     addItem: (item: ItemType) => void;
     addLocationBillboard: (item: LocationBillboardDateType) => void;
+    setLocationBillboard: (itemLocation: LocationBillboardDateType[]) => void;
     clearLocationBillboard: () => void;
     removeItem: (id: string) => void;
     removeLocationBillboard: (id: string) => void;
@@ -50,6 +46,11 @@ const useItemStore = createSelectors(
     create<ItemStore>()((set, get) => ({
         items: [],
         locationBillboardDate: [],
+
+        setLocationBillboard(itemLocation) {
+            set({ locationBillboardDate: itemLocation })
+        },
+
 
         addLocationBillboard(item) {
             set((state) => {

@@ -30,3 +30,38 @@ export type InvoiceType = {
     updatedAt: Date,
 
 }
+
+export type BillboardItem = {
+    name: string;
+    quantity: number;
+    price: string;
+    updatedPrice: string;
+    discountType: "purcent" | "money";
+    id?: string | undefined;
+    description?: string | undefined;
+    locationStart?: Date | undefined;
+    locationEnd?: Date | undefined;
+    status?: "available" | "non-available" | undefined;
+    discount?: string | undefined;
+    currency?: string | undefined;
+    itemType?: "billboard" | "product" | "service" | undefined;
+    billboardId?: string | undefined;
+    productServiceId?: string | undefined;
+}
+
+export type ExistingBillboardItem = {
+    id: string;
+    billboardId: string | null;
+    locationStart: Date | null;
+    locationEnd: Date | null;
+    invoiceId?: string;
+}
+
+export type ConflictResult = {
+    hasConflict: boolean;
+    conflicts: Array<{
+        newItem: BillboardItem;
+        conflictingItem: ExistingBillboardItem;
+        message: string;
+    }>;
+}

@@ -21,7 +21,7 @@ type DatePickerProps = {
   value?: Date | Date[] | { from: Date; to: Date };
   onChange?: (value: Date | Date[] | { from: Date; to: Date }) => void;
   disabled?: boolean;
-  disabledRanges?: DateRange[]; // 👈 tableau de ranges [ [min, max], ... ]
+  disabledRanges?: DateRange[];
   className?: string;
 };
 
@@ -82,15 +82,6 @@ export function DatePicker({
   const normalizeDate = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   };
-
-  //   const isDateDisabled = (date: Date) => {
-  //   if (disabled) return true;
-  //   if (!disabledRanges || disabledRanges.length === 0) return false;
-
-  //   return disabledRanges.some(([min, max]) => {
-  //     return date >= min && date <= max;
-  //   });
-  // };
 
   const isDateDisabled = (date: Date) => {
     if (disabled) return true;

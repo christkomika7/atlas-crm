@@ -356,8 +356,8 @@ model Invoice {
   payee         String
   isPaid        Boolean  @default(false)
 
-  clientId String
-  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   productsServices ProductService[]
 
@@ -365,8 +365,8 @@ model Invoice {
   items      Item[]
   receipts   Receipt[]
 
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)

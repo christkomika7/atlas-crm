@@ -20,9 +20,9 @@ import { Combobox } from "@/components/ui/combobox";
 import { useDataStore } from "@/stores/data.store";
 import { ClientType } from "@/types/client.types";
 import { invoiceUpdateSchema, InvoiceUpdateSchemaType } from "@/lib/zod/invoice.schema";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { ProjectType } from "@/types/project.types";
-import useItemStore from "@/stores/item.store";
+import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
 import useProjectStore from "@/stores/project.store";
 import useClientIdStore from "@/stores/client-id.store";
 
@@ -34,7 +34,7 @@ import { CompanyType } from "@/types/company.types";
 
 import { all as getClients, unique as getClient } from "@/action/client.action";
 import { allByClient } from "@/action/project.action";
-import { unique as getUniqueInvoice, update as updateInvoice } from "@/action/invoice.action";
+import { getBillboardItemLocations, unique as getUniqueInvoice, update as updateInvoice } from "@/action/invoice.action";
 import { unique as getDocument } from "@/action/document.action";
 import ProjectModal from "../../../_component/project-modal";
 import { DownloadIcon, XIcon } from "lucide-react";
@@ -45,12 +45,17 @@ import InvoiceInfo from "../../../create/_component/invoice-info";
 import { INVOICE_PREFIX } from "@/config/constant";
 import { downloadFile } from "@/lib/utils";
 import { DiscountType } from "@/types/tax.type";
+import ItemModal from "../../../create/_component/item-modal";
 
 
 export default function InvoiceTab() {
   const param = useParams();
 
   // STORE
+  const isFirstLoad = useRef(true);
+
+  const companyId = useDataStore.use.currentCompany();
+
   const currency = useDataStore.use.currency();
   const { calculate } = useCalculateTaxe();
 
@@ -60,8 +65,11 @@ export default function InvoiceTab() {
   const items = useItemStore.use.items();
   const updateDiscount = useItemStore.use.updateDiscount();
   const clearItem = useItemStore.use.clearItem();
-  const setItems = useItemStore.use.setItems()
+  const setItems = useItemStore.use.setItems();
+
   const locationBillboardDate = useItemStore.use.locationBillboardDate();
+  const setLocationBillboard = useItemStore.use.setLocationBillboard();
+
 
   const setProject = useProjectStore.use.setProject();
   const projects = useProjectStore.use.projects();
@@ -92,6 +100,16 @@ export default function InvoiceTab() {
     InvoiceUpdateSchemaType,
     RequestResponse<InvoiceType>
   >(updateInvoice, () => { }, "invoice");
+
+
+  const {
+    mutate: mutateGetItemLocations,
+    isPending: isGettingItemLOcations,
+  } = useQueryAction<{ companyId: string }, RequestResponse<LocationBillboardDateType[]>>(
+    getBillboardItemLocations,
+    () => { },
+    "item-locations"
+  );
 
 
   // CLIENT ACTION
@@ -125,7 +143,6 @@ export default function InvoiceTab() {
   const {
     mutate: mutateGetProject,
     isPending: isGettingProject,
-    data: projectDatas,
   } = useQueryAction<{ clientId: string }, RequestResponse<ProjectType[]>>(
     allByClient,
     () => { },
@@ -135,6 +152,19 @@ export default function InvoiceTab() {
   useEffect(() => {
     clearItem();
   }, []);
+
+
+  useEffect(() => {
+    if (companyId) {
+      mutateGetItemLocations({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setLocationBillboard(data.data);
+          }
+        },
+      })
+    }
+  }, [companyId])
 
 
   useEffect(() => {
@@ -148,9 +178,14 @@ export default function InvoiceTab() {
             setInvoiceNumber(invoice.invoiceNumber);
             setPaymentLimit(invoice.paymentLimit);
             setLastUploadFiles(invoice.files.filter((file) => Boolean(file)) ?? []);
+            setClientDiscount({
+              discount: Number(invoice.discount),
+              discountType: invoice.discountType as "purcent" | "money"
+            })
 
             const mappedItems = [...invoice.items.map(item => ({
-              id: item.itemType === 'billboard' ? item.billboardId as string : item.productServiceId as string,
+              id: item.id,
+              ...item.itemType === "billboard" ? { billboardId: item.billboardId } : { productServiceId: item.productServiceId },
               name: item.name,
               quantity: item.quantity,
               price: item.price,
@@ -263,6 +298,10 @@ export default function InvoiceTab() {
         {
           onSuccess(data) {
             if (data.data) {
+              if (isFirstLoad.current) {
+                isFirstLoad.current = false;
+                return;
+              }
               updateDiscount(data.data.discount);
             }
           },
@@ -294,7 +333,6 @@ export default function InvoiceTab() {
               calculate({
                 items: [item],
                 taxes: company?.vatRates ?? [],
-                discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
               }).totalWithoutTaxes
             ),
             locationStart: item.locationStart && new Date(item.locationStart),
@@ -315,7 +353,6 @@ export default function InvoiceTab() {
               calculate({
                 items: [item],
                 taxes: company?.vatRates ?? [],
-                discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
               }).totalWithoutTaxes
             ),
             itemType: item.itemType,
@@ -435,9 +472,26 @@ export default function InvoiceTab() {
             />
           </div>
           <div className="space-y-2">
-            {items.map((item) => (
-              <ItemList key={item.id} item={item} locationBillboardDate={locationBillboardDate} calculate={calculate} taxes={company?.vatRates ?? []} />
-            ))}
+            <h2 className="font-semibold">
+              Article{items.length > 1 && "s"} ({items.length})
+            </h2>
+            <div className="space-y-2">
+              {items.map((item) => (
+                <ItemList key={item.id} item={item} locationBillboardDate={locationBillboardDate} calculate={calculate} taxes={company?.vatRates ?? []} />
+              ))}
+            </div>
+            <FormField
+              control={form.control}
+              name="item"
+              render={() => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <ItemModal />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
           <div className="space-y-2">
             <h2 className="font-semibold">Pièce jointe</h2>

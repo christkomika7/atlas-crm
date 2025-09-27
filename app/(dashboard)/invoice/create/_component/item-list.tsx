@@ -26,6 +26,13 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
     const removeItem = useItemStore.use.removeItem();
     const editItemField = useItemStore.use.editItemField();
 
+    const discount: number = item.discount != null
+        ? String(item.discount).includes("%")
+            ? Number(String(item.discount).replace("%", ""))
+            : Number(item.discount)
+        : 0;
+
+
     return (
         <div
             className="group relative flex flex-col hover:bg-blue/5 p-1.5 border-blue border-l-4 w-full"
@@ -47,6 +54,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                         <span>
                             <TextInput
                                 type="number"
+                                min={0}
                                 max={item.maxQuantity ?? 0}
                                 value={item.quantity}
                                 handleChange={(e) => {
@@ -77,7 +85,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                             min={0}
                             value={item.price}
                             handleChange={(e) => {
-                                editItemField(item.id, "price", e as string);
+                                editItemField(item.id, "price", String(e));
                             }}
                             className="w-32 h-8"
                         />
@@ -88,13 +96,8 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                 <div className="flex items-center gap-x-2 max-w-[150px]">
                     <TextInput
                         type="number"
-                        value={
-                            item.discount != null
-                                ? String(item.discount).includes("%")
-                                    ? String(item.discount).split("%")[0]
-                                    : String(item.discount)
-                                : "0"
-                        }
+                        min={0}
+                        value={discount}
                         className="!rounded-lg h-8"
                         handleChange={(e) =>
                             updateItem({ ...item, discount: String(e) })
@@ -124,12 +127,9 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                             label=""
                             mode="range"
                             disabledRanges={
-                                locationBillboardDate
-                                    .find((b) => b.id === item.id)
-                                    ?.locationDate.map((d) => [
-                                        new Date(d.start),
-                                        new Date(d.end),
-                                    ]) ?? []
+                                locationBillboardDate.filter(it => it.id !== item.id).map(
+                                    (item) => item.locationDate
+                                )
                             }
                             value={
                                 item.locationStart && item.locationEnd
@@ -160,7 +160,6 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                     <span className="font-semibold">Durée: </span>
                     {getMonthsAndDaysDifference(item.locationStart, item.locationEnd)}
                 </p>
-
             }
             <ul>
                 {calculate({

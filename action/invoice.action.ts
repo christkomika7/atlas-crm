@@ -1,5 +1,6 @@
 import { InvoiceSchemaType, InvoiceUpdateSchemaType } from "@/lib/zod/invoice.schema";
 import { PaymentSchemaType } from "@/lib/zod/payment.schema";
+import { LocationBillboardDateType } from "@/stores/item.store";
 import { RequestResponse } from "@/types/api.types";
 import { InvoiceType } from "@/types/invoice.types";
 
@@ -40,6 +41,25 @@ export async function all({ companyId, filter }: { companyId: string, filter: "u
         throw error;
     }
 }
+
+
+export async function getBillboardItemLocations({ companyId }: { companyId: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${companyId}/location`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<LocationBillboardDateType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
 
 export async function unique({ id }: { id: string }) {
     try {
@@ -97,7 +117,6 @@ export async function create(data: InvoiceSchemaType) {
     }
 }
 
-
 export async function createdPayment(data: PaymentSchemaType) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${data.invoiceId}/payment`, {
@@ -120,7 +139,6 @@ export async function createdPayment(data: PaymentSchemaType) {
         throw error;
     }
 }
-
 
 export async function update(data: InvoiceUpdateSchemaType) {
     try {

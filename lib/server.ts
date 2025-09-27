@@ -5,7 +5,8 @@ import { existsSync } from "fs";
 import mime from "mime-types";
 import prisma from "./prisma";
 import { removePath, saveFile } from "./file";
-import { InvoiceType } from "@/types/invoice.types";
+import { BillboardItem, ConflictResult, ExistingBillboardItem, InvoiceType } from "@/types/invoice.types";
+import { format, isAfter, isBefore, isEqual, isValid, setDate } from "date-fns";
 
 // @ts-ignore - on utilise la classe globale File de Node 18+
 const NodeFile = globalThis.File;
@@ -310,72 +311,76 @@ export async function rollbackInvoiceSimple(invoiceExist: InvoiceType, companyId
 }
 
 
-interface BillboardItem {
-    name: string;
-    quantity: number;
-    price: string;
-    updatedPrice: string;
-    discountType: "purcent" | "money";
-    id?: string | undefined;
-    description?: string | undefined;
-    locationStart?: Date | undefined;
-    locationEnd?: Date | undefined;
-    status?: "available" | "non-available" | undefined;
-    discount?: string | undefined;
-    currency?: string | undefined;
-    itemType?: "billboard" | "product" | "service" | undefined;
-    billboardId?: string | undefined;
-    productServiceId?: string | undefined;
-}
-
-interface ExistingBillboardItem {
-    id: string;
-    billboardId: string | null;
-    locationStart: Date | null;
-    locationEnd: Date | null;
-    invoiceId?: string;
-}
-
-interface ConflictResult {
-    hasConflict: boolean;
-    conflicts: Array<{
-        newItem: BillboardItem;
-        conflictingItem: ExistingBillboardItem;
-        message: string;
-    }>;
-}
-
-/**
- * Vérifie s'il y a conflit entre deux plages de dates
- * Deux plages se chevauchent si : start1 <= end2 && start2 <= end1
- */
 function hasDateOverlap(
     start1: Date,
     end1: Date,
     start2: Date,
     end2: Date
 ): boolean {
-    return start1 <= end2 && start2 <= end1;
+    console.log('=== Vérification de chevauchement ===');
+    console.log({
+        nouvelle_plage: {
+            debut: format(start1, 'dd/MM/yyyy HH:mm:ss'),
+            fin: format(end1, 'dd/MM/yyyy HH:mm:ss')
+        },
+        plage_existante: {
+            debut: format(start2, 'dd/MM/yyyy HH:mm:ss'),
+            fin: format(end2, 'dd/MM/yyyy HH:mm:ss')
+        }
+    });
+
+    // Vérifier que les dates sont valides
+    if (!isValid(start1) || !isValid(end1) || !isValid(start2) || !isValid(end2)) {
+        console.log('❌ Une ou plusieurs dates sont invalides');
+        return false;
+    }
+
+    // Vérifier que chaque plage est cohérente (début <= fin)
+    if (isAfter(start1, end1)) {
+        console.log('❌ Nouvelle plage incohérente : début > fin');
+        return false;
+    }
+
+    if (isAfter(start2, end2)) {
+        console.log('❌ Plage existante incohérente : début > fin');
+        return false;
+    }
+
+    // Deux plages se chevauchent si :
+    // - Le début de la première est avant ou égal à la fin de la seconde ET
+    // - Le début de la seconde est avant ou égal à la fin de la première
+    // 
+    // En d'autres termes : start1 <= end2 && start2 <= end1
+    const condition1 = isBefore(start1, end2) || isEqual(start1, end2); // start1 <= end2
+    const condition2 = isBefore(start2, end1) || isEqual(start2, end1); // start2 <= end1
+
+    const hasOverlap = condition1 && condition2;
+
+    console.log({
+        'start1 <= end2': condition1,
+        'start2 <= end1': condition2,
+        'chevauchement': hasOverlap
+    });
+
+    if (hasOverlap) {
+        console.log('🔴 CONFLIT DÉTECTÉ - Les périodes se chevauchent');
+    } else {
+        console.log('✅ Aucun conflit - Les périodes ne se chevauchent pas');
+    }
+    return hasOverlap;
 }
 
-/**
- * Convertit une date Date/undefined en objet Date
- */
+
 function parseDate(date: Date | undefined | null): Date | null {
     if (!date) return null;
-    if (date instanceof Date && !isNaN(date.getTime())) return date;
+    if (date instanceof Date && !isNaN(date.getTime())) return date
     return null;
 }
 
-/**
- * Vérifie les conflits de dates pour les panneaux billboard
- * @param billboards - Items billboard à vérifier (peut contenir différents types)
- * @param excludeInvoiceId - ID de la facture à exclure (optionnel, pour les mises à jour)
- * @returns Résultat avec les conflits détectés
- */
+
 export async function checkBillboardConflicts(
     billboards: BillboardItem[],
-    excludeInvoiceId?: string
+    excludeInvoiceIds?: string[]
 ): Promise<ConflictResult> {
 
     // Filtrer UNIQUEMENT les items de type billboard avec des IDs et dates valides
@@ -400,9 +405,8 @@ export async function checkBillboardConflicts(
         where: {
             billboardId: { in: billboardIds },
             itemType: "billboard",
-            // Exclure la facture actuelle si spécifiée (pour les mises à jour)
-            ...(excludeInvoiceId && {
-                invoiceId: { not: excludeInvoiceId }
+            ...(excludeInvoiceIds && excludeInvoiceIds.length > 0 && {
+                invoiceId: { notIn: excludeInvoiceIds }
             })
         },
         include: {
@@ -413,6 +417,9 @@ export async function checkBillboardConflicts(
     });
 
     const conflicts: ConflictResult['conflicts'] = [];
+
+    console.log({ validBillboards });
+
 
     // Vérifier chaque nouveau billboard
     for (const newBillboard of validBillboards) {
@@ -467,24 +474,4 @@ export async function checkBillboardConflicts(
         hasConflict: conflicts.length > 0,
         conflicts
     };
-}
-
-/**
- * Version pour remplacer directement votre code existant
- */
-export async function validateBillboardDates(
-    billboards: BillboardItem[],
-    excludeInvoiceId?: string
-) {
-    const conflictResult = await checkBillboardConflicts(billboards, excludeInvoiceId);
-
-    if (conflictResult.hasConflict) {
-        return {
-            hasError: true,
-            message: "Conflit de dates détecté pour au moins un panneau.",
-            details: conflictResult.conflicts.map(c => c.message)
-        };
-    }
-
-    return { hasError: false };
 }

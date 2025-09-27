@@ -49,7 +49,6 @@ export async function POST(req: NextRequest) {
         files,
     }) as InvoiceSchemaType;
 
-
     const [companyExist, clientExist, projectExist, document, lastInvoice] = await prisma.$transaction([
         prisma.company.findUnique({ where: { id: data.companyId } }),
         prisma.client.findUnique({ where: { id: data.clientId } }),
@@ -108,8 +107,9 @@ export async function POST(req: NextRequest) {
         for (const file of files) {
             const upload = await createFile(file, folderFile);
             savedFilePaths = [...savedFilePaths, upload];
-
         }
+
+        console.log({ billboards: data.item.billboards })
 
         const [createdInvoice] = await prisma.$transaction([
             prisma.invoice.create({

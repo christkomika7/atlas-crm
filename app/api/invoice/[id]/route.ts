@@ -12,6 +12,13 @@ export async function GET(req: NextRequest) {
   await checkAccess(["INVOICES"], "READ");
   const companyId = getIdFromUrl(req.url, "last") as string;
 
+  if (!companyId) {
+    return NextResponse.json({
+      state: "error",
+      message: "Aucune facture trouvée.",
+    }, { status: 404 });
+  }
+
   const lastInvoice = await prisma.invoice.findFirst({
     where: { companyId },
     orderBy: { invoiceNumber: "desc" },
@@ -28,6 +35,13 @@ export async function POST(req: NextRequest) {
   await checkAccess(["INVOICES"], "READ");
   const id = getIdFromUrl(req.url, "last") as string;
   const { data }: { data: "unpaid" | "paid" } = await req.json();
+
+  if (!id) {
+    return NextResponse.json({
+      status: "error",
+      message: "Aucune facture trouvée.",
+    }, { status: 404 });
+  }
 
   const invoices = await prisma.invoice.findMany({
     where: {
@@ -59,6 +73,13 @@ export async function PUT(req: NextRequest) {
   // 1. Contrôle d’accès et récupération de l’ID
   await checkAccess(["INVOICES"], "MODIFY");
   const id = getIdFromUrl(req.url, "last") as string;
+
+  if (!id) {
+    return NextResponse.json({
+      status: "error",
+      message: "Aucune facture trouvée.",
+    }, { status: 404 });
+  }
 
   // 2. Récupération et parsing des données du formulaire
   const formData = await req.formData();
@@ -102,6 +123,7 @@ export async function PUT(req: NextRequest) {
     files,
     invoiceNumber: parseInt(rawData.invoiceNumber)
   }) as InvoiceUpdateSchemaType;
+
 
   const [invoiceExist, companyExist, clientExist, projectExist] =
     await prisma.$transaction([
@@ -147,6 +169,34 @@ export async function PUT(req: NextRequest) {
     `${invoiceNumber}_----${key}/files`,
   ]);
 
+  const billboards = data.item.billboards ?? [];
+  const excludeBillboardIds = invoiceExist.items.filter(item => item.itemType === "billboard").map(item => item.id)
+
+  const conflictResult = await checkBillboardConflicts(billboards, excludeBillboardIds);
+
+  if (conflictResult.hasConflict) {
+    return NextResponse.json({
+      status: "error",
+      message: "Conflit de dates détecté pour au moins un panneau.",
+    }, { status: 404 });
+  }
+
+  if (Number(invoiceExist.payee) === 0 || !invoiceExist.isPaid) {
+    await rollbackInvoice(invoiceExist as unknown as InvoiceType, data.companyId)
+  }
+
+  if (invoiceExist.isPaid) {
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "La facture a déjà été réglée",
+      },
+      { status: 400 }
+    );
+  }
+
+  console.log({ it: data.item.billboards })
+
   const savedFilePaths = await updateFiles({
     folder: folderFile,
     outdatedData: {
@@ -161,39 +211,10 @@ export async function PUT(req: NextRequest) {
     files,
   });
 
-  if (Number(invoiceExist.payee) === 0 || !invoiceExist.isPaid) {
-    console.log("TEST 1")
-    rollbackInvoice(invoiceExist as unknown as InvoiceType, data.companyId)
-  }
-
-  if (invoiceExist.isPaid) {
-    return NextResponse.json(
-      {
-        status: "error",
-        message: "La facture a déjà été réglée",
-      },
-      { status: 400 }
-    );
-  }
-
-  const billboards = data.item.billboards ?? [];
-
-  const conflictResult = await checkBillboardConflicts(billboards);
-
-  if (conflictResult.hasConflict) {
-    return NextResponse.json({
-      status: "error",
-      message: "Conflit de dates détecté pour au moins un panneau.",
-    }, { status: 404 });
-  }
-
-
-
   try {
-
     const [updatedInvoice] = await prisma.$transaction([
       prisma.client.update({
-        where: { id: invoiceExist.clientId },
+        where: { id: invoiceExist.clientId as string },
         data: {
           invoices: {
             disconnect: {
@@ -203,13 +224,14 @@ export async function PUT(req: NextRequest) {
         }
       }),
       prisma.project.update({
-        where: { id: invoiceExist.projectId },
+        where: { id: invoiceExist.projectId as string },
         data: {
           invoices: {
             disconnect: {
               id: invoiceExist.id
             }
           },
+          status: "BLOCKED",
           amount: "0",
           balance: "0"
         }
@@ -336,6 +358,7 @@ export async function PUT(req: NextRequest) {
       message: "Facture modifiée avec succès.",
       data: updatedInvoice,
     });
+
   } catch (error) {
     // En cas d'erreur, suppression des fichiers enregistrés pendant ce processus
     await removePath([...savedFilePaths]);
@@ -357,6 +380,9 @@ export async function DELETE(req: NextRequest) {
 
   const invoice = await prisma.invoice.findUnique({
     where: { id },
+    include: {
+      items: true
+    }
   });
 
   if (!invoice) {
@@ -366,7 +392,38 @@ export async function DELETE(req: NextRequest) {
     }, { status: 400 })
   }
 
-  await prisma.invoice.delete({ where: { id } });
+
+  if (invoice?.items && invoice?.items.length > 0) {
+    await rollbackInvoice(invoice as unknown as InvoiceType, invoice.companyId)
+  }
+
+  await prisma.$transaction([
+    prisma.client.update({
+      where: { id: invoice.clientId as string },
+      data: {
+        invoices: {
+          disconnect: {
+            id: invoice.id
+          }
+        }
+      }
+    }),
+    prisma.project.update({
+      where: { id: invoice.projectId as string },
+      data: {
+        invoices: {
+          disconnect: {
+            id: invoice.id
+          }
+        },
+        status: "BLOCKED",
+        amount: "0",
+        balance: "0"
+      }
+    }),
+    prisma.invoice.delete({ where: { id } })
+  ]);
+
   await removePath([...invoice.pathFiles]);
   return NextResponse.json({
     state: "success",
