@@ -133,10 +133,9 @@ export default function BillboardTab() {
               });
               addLocationBillboard({
                 id: item.id,
-                locationDate: billboardItem.map((i) => ({
-                  start: new Date(i.locationStart),
-                  end: new Date(i.locationEnd),
-                })),
+                locationDate: billboardItem.length > 0
+                  ? [new Date(billboardItem[0].locationStart), new Date(billboardItem[0].locationEnd)] as [Date, Date]
+                  : [new Date(), new Date()] as [Date, Date],
               });
               addItem({
                 id: item.id,
