@@ -1,248 +1,225 @@
-// ---------- types ----------
-type Item = {
-    name: string;
-    price: string; // ex: "300000"
-    discountType: "purcent" | "money";
-    discount: number;
-    quantity: number;
-};
+import { CalculateTaxesInput, CalculateTaxesResult, TaxInput, TaxResult } from "@/types/tax.type";
 
-export type TaxInput = {
-    taxName: string;
-    taxValue: string[]; // ex: ["2%", "3%"]
-    hasApplicableToAll: boolean;
-    taxType?: "HT" | "TTC"; // meta: si "TTC" => ces taux *peuvent* être inclus si pricesIncludeTaxes === true
-    cumul?: { id: number; name: string; check: boolean }[];
-};
-
-export type TaxResult = {
-    taxName: string;
-    appliedRates: number[];
-    totalTax: number;
-    taxPrice: number;
-    taxType?: "HT" | "TTC";
-};
-
-export type ItemTaxBreakdown = {
-    itemName: string;
-    baseHTBeforeDiscount: number; // base utilisée pour calcul taxe (avant remise)
-    baseHTAfterDiscount: number; // base HT après remise (sert aux totaux HT)
-    quantity: number;
-    taxResults: {
-        taxName: string;
-        appliedRates: number[];
-        taxPerUnit: number; // taxe calculée par unité (sur base BEFORE discount)
-        taxTotalForItem: number; // taxe appliquée (tenant compte de hasApplicableToAll)
-        applied: boolean; // si cette ligne est celle où la taxe a été appliquée (utile pour hasApplicableToAll=false)
-    }[];
-    totalItemTax: number;
-    totalItemPriceWithTax: number; // baseAfterDiscount*qty + totalItemTax
-};
-
-export type CalculateTaxesResult = {
-    taxes: TaxResult[];
-    totalTax: number;
-    totalWithTaxes: number;
-    totalWithoutTaxes: number;
-    itemBreakdown: ItemTaxBreakdown[];
-};
-
-// ---------- helpers ----------
-function parseRateString(s: string): number {
-    return parseFloat(String(s).replace(/\s|%/g, "")) || 0;
-}
-function round(value: number, decimals = 3): number {
-    return parseFloat(value.toFixed(decimals));
+/**
+ * Convertit une string de taxe en nombre
+ * Ex: "20%" -> 20, "0.5" -> 0.5
+ */
+function parseTaxValue(taxValue: string): number {
+    const cleaned = taxValue.replace(/[%\s]/g, "");
+    return parseFloat(cleaned) || 0;
 }
 
 /**
- * Convertit un prix TTC en HT en retirant les rates fournis.
- * Si taxOperation === "cumul" on retire (1 + sumRates/100).
- * Si "sequence" on divise successivement par (1 + r/100).
+ * Calcule le prix HT à partir d'un prix TTC et d'un taux de taxe
  */
-function htFromTtc(priceTTC: number, rates: number[], taxOperation: "sequence" | "cumul"): number {
-    if (!rates || rates.length === 0) return priceTTC;
-    if (taxOperation === "cumul") {
-        const totalRate = rates.reduce((s, r) => s + r, 0);
-        return priceTTC / (1 + totalRate / 100);
+function calculateHTFromTTC(priceTTC: number, taxRate: number): number {
+    const taxe = priceTTC * (taxRate / 100);
+    return priceTTC - taxe;
+}
+
+
+/**
+ * Applique la réduction sur le prix de base (HT)
+ */
+function applyDiscount(basePrice: number, discount: number, discountType: "purcent" | "money"): number {
+    if (discountType === "money") {
+        return Math.max(0, basePrice - discount);
     } else {
-        let base = priceTTC;
-        for (const r of rates) {
-            base = base / (1 + r / 100);
-        }
-        return base;
+        const discountAmount = (basePrice * discount) / 100;
+        return Math.max(0, basePrice - discountAmount);
     }
 }
 
 /**
- * Calcule la taxe par unité en se basant sur baseHT (avant remise).
- * Supporte "cumul" (somme des taux) et "sequence" (taxe sur taxe).
+ * Calcule les taux de taxe selon l'opération (séquence ou cumul)
  */
-function taxPerUnitFromRates(baseHT: number, rates: number[], taxOperation: "sequence" | "cumul"): number {
-    if (!rates || rates.length === 0) return 0;
-    if (rates.length === 1) return baseHT * (rates[0] / 100);
-    if (taxOperation === "cumul") {
-        const totalRate = rates.reduce((s, r) => s + r, 0);
-        return baseHT * (totalRate / 100);
+function calculateTaxRates(taxValues: string[], operation: "sequence" | "cumul"): { rates: number[], total: number } {
+    const rates = taxValues.map(parseTaxValue);
+
+    if (operation === "cumul") {
+        const total = rates.reduce((sum, rate) => sum + rate, 0);
+        return { rates, total };
     } else {
-        let tmp = baseHT;
-        let taxSum = 0;
-        for (const r of rates) {
-            const portion = tmp * (r / 100);
-            taxSum += portion;
-            tmp += portion;
+        // Séquence : application successive des taux
+        let total = 0;
+        let currentBase = 100;
+
+        for (const rate of rates) {
+            total += (currentBase * rate) / 100;
+            currentBase += (currentBase * rate) / 100;
         }
-        return taxSum;
+
+        return { rates, total };
     }
 }
 
-// ---------- fonction principale ----------
 /**
- * pricesIncludeTaxes: boolean (default false)
- *   - false => on considère que le price fourni est HT (comportement par défaut).
- *   - true  => on considère que le price fourni contient les taxes marquées taxType === "TTC"
+ * Calcule les taxes cumulées entre différentes taxes
  */
-export function calculateTaxes(params: {
-    items: Item[];
-    taxes: TaxInput[];
-    taxOperation: "sequence" | "cumul";
-    decimals?: number; // par défaut 3
-    pricesIncludeTaxes?: boolean; // IMPORTANT: par défaut false (price est HT)
-}): CalculateTaxesResult {
-    const { items, taxes, taxOperation, decimals = 3, pricesIncludeTaxes = false } = params;
+function calculateCumulatedTaxes(taxes: TaxInput[], taxResults: Map<string, TaxResult>): Map<string, TaxResult> {
+    const updatedResults = new Map(taxResults);
 
-    // préparer map des taxes
-    const taxesMap: Record<string, TaxResult> = {};
-    for (const t of taxes) {
-        taxesMap[t.taxName] = {
-            taxName: t.taxName,
-            appliedRates: t.taxValue.map(parseRateString),
+    for (const tax of taxes) {
+        if (tax.cumul && tax.cumul.length > 0) {
+            const currentTax = updatedResults.get(tax.taxName);
+            if (!currentTax) continue;
+
+            let cumulatedTax = 0;
+            const cumulatedWith: string[] = [];
+
+            for (const cumul of tax.cumul) {
+                if (cumul.check) {
+                    const otherTax = updatedResults.get(cumul.name);
+                    if (otherTax) {
+                        cumulatedTax += otherTax.totalTax;
+                        cumulatedWith.push(cumul.name);
+                    }
+                }
+            }
+
+            // Mise à jour de la taxe avec cumul
+            updatedResults.set(tax.taxName, {
+                ...currentTax,
+                totalTax: currentTax.totalTax + cumulatedTax
+            });
+        }
+    }
+
+    return updatedResults;
+}
+
+/**
+ * Arrondit un nombre à 1 chiffre après la virgule
+ */
+function roundToOneDecimal(value: number): number {
+    return Math.round(value * 10) / 10;
+}
+
+/**
+ * Fonction principale de calcul des taxes
+ */
+export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult {
+    const { items, taxes, taxOperation, discount } = input;
+
+    if (!items || items.length === 0) {
+        return {
+            taxes: [],
             totalTax: 0,
-            taxPrice: 0,
-            taxType: t.taxType,
+            totalWithTaxes: 0,
+            totalWithoutTaxes: 0
         };
     }
 
+    const taxResults = new Map<string, TaxResult>();
     let totalWithoutTaxes = 0;
-    let totalTax = 0;
-    let totalWithTaxes = 0;
-    const itemBreakdown: ItemTaxBreakdown[] = [];
+    let totalTaxAmount = 0;
 
-    // Si pricesIncludeTaxes === true, on va enlever les taux marqués TTC du price
-    const ratesIncludedInPriceAllTaxes: number[] = pricesIncludeTaxes
-        ? taxes.filter((t) => t.taxType === "TTC").flatMap((t) => t.taxValue.map(parseRateString))
-        : [];
-
-    // Map pour éviter d'appliquer plusieurs fois une taxe "non applicable à tous"
-    const appliedOnce: Record<string, boolean> = {};
-
-    for (const item of items) {
-        const qty = item.quantity;
-        const priceNum = parseFloat(item.price) || 0;
-
-        // 1) déterminer la base HT AVANT remise
-        let baseHTBeforeDiscount = ratesIncludedInPriceAllTaxes.length
-            ? htFromTtc(priceNum, ratesIncludedInPriceAllTaxes, taxOperation)
-            : priceNum;
-        baseHTBeforeDiscount = round(baseHTBeforeDiscount, decimals);
-
-        // 2) applique la remise SUR la base HT (la remise N'AFFECTE PAS les taxes)
-        let discountAmount = 0;
-        if (item.discountType === "purcent") {
-            discountAmount = baseHTBeforeDiscount * (item.discount / 100);
-        } else {
-            discountAmount = item.discount;
-        }
-        if (discountAmount < 0) discountAmount = 0;
-        let baseHTAfterDiscount = baseHTBeforeDiscount - discountAmount;
-        if (baseHTAfterDiscount < 0) baseHTAfterDiscount = 0;
-        baseHTAfterDiscount = round(baseHTAfterDiscount, decimals);
-
-        // 3) calcul des taxes pour cet item (chaque taxe est calculée sur baseHTBeforeDiscount)
-        const taxResultsForItem: ItemTaxBreakdown["taxResults"] = [];
-        let totalItemTax = 0;
-
-        for (const tax of taxes) {
-            const rates = tax.taxValue.map(parseRateString);
-            const taxPerUnit = round(taxPerUnitFromRates(baseHTBeforeDiscount, rates, taxOperation), decimals);
-
-            // si hasApplicableToAll === false => on ne doit appliquer cette taxe qu'une seule fois
-            let taxTotalForThisLine = 0;
-            let applied = true;
-
-            if (tax.hasApplicableToAll) {
-                taxTotalForThisLine = round(taxPerUnit * qty, decimals);
-            } else {
-                // appliquer une seule fois pour l'ensemble des billets
-                if (!appliedOnce[tax.taxName]) {
-                    taxTotalForThisLine = round(taxPerUnit * 1, decimals);
-                    appliedOnce[tax.taxName] = true;
-                } else {
-                    taxTotalForThisLine = 0;
-                    applied = false;
-                }
-            }
-
-            // maj agrégats globaux par taxe (si la taxe n'est pas appliquée sur cette ligne, on ajoute 0)
-            taxesMap[tax.taxName].totalTax = round(taxesMap[tax.taxName].totalTax + taxTotalForThisLine, decimals);
-
-            // taxPrice: base taxable cumulée (si hasApplicableToAll => base * qty, sinon une seule base)
-            if (tax.hasApplicableToAll) {
-                taxesMap[tax.taxName].taxPrice = round(
-                    taxesMap[tax.taxName].taxPrice + baseHTBeforeDiscount * qty,
-                    decimals
-                );
-            } else {
-                if (applied) {
-                    taxesMap[tax.taxName].taxPrice = round(
-                        taxesMap[tax.taxName].taxPrice + baseHTBeforeDiscount,
-                        decimals
-                    );
-                }
-                // sinon on n'ajoute pas la base (déjà prise en compte une fois)
-            }
-
-            taxResultsForItem.push({
-                taxName: tax.taxName,
-                appliedRates: rates,
-                taxPerUnit,
-                taxTotalForItem: taxTotalForThisLine,
-                applied,
-            });
-
-            totalItemTax = round(totalItemTax + taxTotalForThisLine, decimals);
-        }
-
-        const totalItemPriceWithTax = round(baseHTAfterDiscount * qty + totalItemTax, decimals);
-
-        // cumuls globaux
-        totalWithoutTaxes = round(totalWithoutTaxes + baseHTAfterDiscount * qty, decimals);
-        totalTax = round(totalTax + totalItemTax, decimals);
-        totalWithTaxes = round(totalWithTaxes + totalItemPriceWithTax, decimals);
-
-        itemBreakdown.push({
-            itemName: item.name,
-            baseHTBeforeDiscount,
-            baseHTAfterDiscount,
-            quantity: qty,
-            taxResults: taxResultsForItem,
-            totalItemTax,
-            totalItemPriceWithTax,
+    // Initialisation des résultats de taxes
+    for (const tax of taxes) {
+        taxResults.set(tax.taxName, {
+            taxName: tax.taxName,
+            appliedRates: [],
+            totalTax: 0,
+            taxPrice: 0,
+            taxType: tax.taxType
         });
     }
 
-    // transformer taxesMap => tableau
-    const taxesArray: TaxResult[] = Object.values(taxesMap).map((t) => ({
-        ...t,
-        totalTax: round(t.totalTax, decimals),
-        taxPrice: round(t.taxPrice, decimals),
-    }));
+    // Traitement de chaque article
+    for (const item of items) {
+        const basePrice = parseFloat(item.price) || 0;
+        const quantity = Math.max(1, item.quantity);
+
+        // Traitement de chaque taxe pour cet article
+        for (const tax of taxes) {
+            const taxResult = taxResults.get(tax.taxName)!;
+            const { rates, total: taxRate } = calculateTaxRates(tax.taxValue, taxOperation);
+
+            let basePriceHT: number;
+
+            // Détermination du prix HT selon le type de CETTE taxe spécifique
+            if (tax.taxType === "TTC") {
+                // Cette taxe spécifique est incluse dans le prix
+                basePriceHT = calculateHTFromTTC(basePrice, taxRate);
+
+            } else {
+                // Cette taxe est HT : le prix donné n'inclut pas cette taxe
+                basePriceHT = basePrice;
+            }
+
+            const itemTaxAmount = basePrice * (taxRate / 100)
+
+
+            // Application de la quantité et hasApplicableToAll pour la taxe
+            let finalTaxAmount: number;
+            if (tax.hasApplicableToAll) {
+                // Taxe appliquée sur chaque unité
+                finalTaxAmount = itemTaxAmount * quantity;
+            } else {
+                // Taxe appliquée une seule fois peu importe la quantité
+                finalTaxAmount = itemTaxAmount;
+            }
+
+            // Mise à jour des résultats avec arrondissement
+            taxResult.appliedRates = rates;
+            taxResult.totalTax += roundToOneDecimal(finalTaxAmount);
+            taxResult.taxPrice += roundToOneDecimal(basePriceHT * quantity);
+        }
+
+        // Calcul du prix HT avec réduction (pour le total sans taxes)
+        // On utilise le prix de base comme HT s'il n'y a pas de taxe TTC
+        let itemBasePriceHT = basePrice;
+        const ttcTax = taxes.find(tax => tax.taxType === "TTC");
+        if (ttcTax) {
+            const { total: ttcTaxRate } = calculateTaxRates(ttcTax.taxValue, taxOperation);
+            itemBasePriceHT = calculateHTFromTTC(basePrice, ttcTaxRate);
+        }
+
+        const discountedPriceHT = applyDiscount(itemBasePriceHT, item.discount, item.discountType);
+        totalWithoutTaxes += roundToOneDecimal(discountedPriceHT * quantity);
+    }
+
+    // Application des cumuls entre taxes
+    const finalTaxResults = calculateCumulatedTaxes(taxes, taxResults);
+
+    // Calcul des totaux finaux avec arrondissement
+    for (const taxResult of finalTaxResults.values()) {
+        taxResult.totalTax = roundToOneDecimal(taxResult.totalTax);
+        taxResult.taxPrice = roundToOneDecimal(taxResult.taxPrice);
+        totalTaxAmount += taxResult.totalTax;
+    }
+
+    if (!discount) {
+        totalWithoutTaxes = roundToOneDecimal(totalWithoutTaxes);
+        totalTaxAmount = roundToOneDecimal(totalTaxAmount);
+        const totalWithTaxes = roundToOneDecimal(totalWithoutTaxes + totalTaxAmount);
+
+        return {
+            taxes: Array.from(finalTaxResults.values()),
+            totalTax: totalTaxAmount,
+            totalWithTaxes,
+            totalWithoutTaxes
+        };
+    }
+
+    const [discountValue, discountType] = discount;
+
+    let discountPrice = 0;
+
+    if (discountType === "money") {
+        discountPrice = totalWithoutTaxes - discountValue;
+    } else {
+        discountPrice = totalWithoutTaxes * (discountValue / 100);
+    }
+
+    totalWithoutTaxes = roundToOneDecimal(discountPrice);
+    totalTaxAmount = roundToOneDecimal(totalTaxAmount);
+    const totalWithTaxes = roundToOneDecimal(totalWithoutTaxes + totalTaxAmount);
 
     return {
-        taxes: taxesArray,
-        totalTax: round(totalTax, decimals),
-        totalWithTaxes: round(totalWithTaxes, decimals),
-        totalWithoutTaxes: round(totalWithoutTaxes, decimals),
-        itemBreakdown,
+        taxes: Array.from(finalTaxResults.values()),
+        totalTax: totalTaxAmount,
+        totalWithTaxes,
+        totalWithoutTaxes
     };
 }

@@ -1,4 +1,4 @@
-import { createdPayment } from "@/action/invoice.action";
+import { createdPayment, unique } from "@/action/invoice.action";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -17,6 +17,7 @@ import useQueryAction from "@/hook/useQueryAction";
 import { acceptPayment } from "@/lib/data";
 import { paymentSchema, PaymentSchemaType } from "@/lib/zod/payment.schema";
 import { RequestResponse } from "@/types/api.types";
+import { InvoiceType } from "@/types/invoice.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -28,6 +29,7 @@ type PaymentFormProps = {
 
 export default function PaymentForm({ invoiceId, closeModal }: PaymentFormProps) {
   const [isPaid, setIsPaid] = useState(false);
+  const [invoice, setInvoice] = useState<InvoiceType>();
 
   const form = useForm<PaymentSchemaType>({
     resolver: zodResolver(paymentSchema),
@@ -39,16 +41,34 @@ export default function PaymentForm({ invoiceId, closeModal }: PaymentFormProps)
     },
   });
 
+  const { mutate: mutateGettingPayment, isPending: isGettingPayment } = useQueryAction<
+    { id: string },
+    RequestResponse<InvoiceType>
+  >(unique, () => { }, "payment");
+
   const { mutate: mutateCreatePayment, isPending: isCreatingPayment } = useQueryAction<
     PaymentSchemaType,
     RequestResponse<null>
   >(createdPayment, () => { }, "payment");
 
+  useEffect(() => {
+    if (invoiceId) {
+      mutateGettingPayment({ id: invoiceId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setInvoice(data.data);
+          }
+        },
+      })
+    }
+  }, [invoiceId])
+
 
   useEffect(() => {
-    if (isPaid) {
-      return form.setValue('amount', 0);
+    if (isPaid && invoice) {
+      return form.setValue('amount', Number(invoice.totalTTC) ?? 0);
     }
+    form.setValue("amount", 0);
   }, [isPaid])
 
 
@@ -61,6 +81,10 @@ export default function PaymentForm({ invoiceId, closeModal }: PaymentFormProps)
         },
       })
     }
+  }
+
+  if (isGettingPayment) {
+    return <Spinner />
   }
 
   return (
@@ -89,26 +113,25 @@ export default function PaymentForm({ invoiceId, closeModal }: PaymentFormProps)
               </FormItem>
             )}
           />
-          {!isPaid &&
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      design="float"
-                      type="number"
-                      label="Montant"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          }
+
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem className="-space-y-2">
+                <FormControl>
+                  <TextInput
+                    design="float"
+                    type="number"
+                    label="Montant"
+                    value={field.value}
+                    handleChange={field.onChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}

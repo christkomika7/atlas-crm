@@ -33,8 +33,7 @@ export const invoiceSchema = z
             productServices: z.array(itemSchema).optional(),
             billboards: z.array(itemSchema).optional(),
         }, { error: "Vous devez sélectionner au moins un produit/service ou un panneau publicitaire" }),
-
-        photos: z.array(z.instanceof(File)).optional(),
+        paymentLimit: z.string({ error: "La condition de paiement est obligatoire." }),
         files: z.array(z.instanceof(File)).optional(),
         totalHT: z.string().min(1, {
             message: "Le prix total hors taxe est requis.",
@@ -91,17 +90,11 @@ export const invoiceUpdateSchema = z
             productServices: z.array(itemSchema).optional(),
             billboards: z.array(itemSchema).optional(),
         }, { error: "Vous devez sélectionner au moins un produit/service ou un panneau publicitaire" }),
-
-        photos: z
-            .array(z.instanceof(File))
-            .optional(),
-
         files: z
             .array(z.instanceof(File))
             .optional(),
-        lastUploadPhotos: z.array(z.string()).optional(),
         lastUploadFiles: z.array(z.string()).optional(),
-
+        paymentLimit: z.string({ error: "La condition de paiement est obligatoire." }),
         totalHT: z.string().min(1, {
             message: "Le prix total hors taxe est requis."
         }),

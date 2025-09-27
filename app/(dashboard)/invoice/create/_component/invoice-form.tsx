@@ -21,53 +21,46 @@ import { Combobox } from "@/components/ui/combobox";
 import { useDataStore } from "@/stores/data.store";
 import { ClientType } from "@/types/client.types";
 import { invoiceSchema, InvoiceSchemaType } from "@/lib/zod/invoice.schema";
-import { Badge } from "@/components/ui/badge";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { ProjectType } from "@/types/project.types";
 import ItemModal from "./item-modal";
 import useItemStore from "@/stores/item.store";
 import useProjectStore from "@/stores/project.store";
 import ProjectModal from "../../_component/project-modal";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import useClientIdStore from "@/stores/client-id.store";
-import {
-  calculatePrice,
-  calculateTaxesTotal,
-  formatNumber,
-} from "@/lib/utils";
 import { unique } from "@/action/document.action";
 import { ModelDocumentType } from "@/types/document.types";
-import { paymentTerms } from "@/lib/data";
 import { useRouter } from "next/navigation";
 import { InvoiceType } from "@/types/invoice.types";
 import { CompanyType } from "@/types/company.types";
-import { addDays, formatDateToDashModel } from "@/lib/date";
-import { toast } from "sonner";
-import { DatePicker } from "@/components/ui/date-picker";
-import { calculateTaxes } from "@/lib/price";
+import { useCalculateTaxe } from "@/hook/useCalculateTaxe";
+import ItemList from "./item-list";
+import InvoiceInfo from "./invoice-info";
+import { INVOICE_PREFIX } from "@/config/constant";
+import useTabStore from "@/stores/tab.store";
+import { DiscountType } from "@/types/tax.type";
 
 export default function InvoiceForm() {
   const router = useRouter();
 
-  const companyId = useDataStore.use.currentCompany();
   const [company, setCompany] = useState<CompanyType<string>>();
+  const [paymentLimit, setPaymentLimit] = useState("");
+
+  const companyId = useDataStore.use.currentCompany();
+
+  const { calculate } = useCalculateTaxe();
 
   const currency = useDataStore.use.currency();
+  const setTab = useTabStore.use.setTab();
 
   const clientId = useClientIdStore.use.clientId();
   const setClientId = useClientIdStore.use.setClientId();
-  const [clientDiscount, setClientDiscount] = useState<{
-    discount: number;
-    discountType: "purcent" | "money";
-  }>({ discount: 0, discountType: "purcent" });
+  const [clientDiscount, setClientDiscount] = useState<DiscountType>({ discount: 0, discountType: "purcent" });
   const [client, setClient] = useState<ClientType>();
 
   const items = useItemStore.use.items();
-  const updateItem = useItemStore.use.updateItem();
   const updateDiscount = useItemStore.use.updateDiscount();
-  const removeItem = useItemStore.use.removeItem();
   const clearItem = useItemStore.use.clearItem();
-  const editItemField = useItemStore.use.editItemField();
 
   const locationBillboardDate = useItemStore.use.locationBillboardDate();
 
@@ -100,8 +93,8 @@ export default function InvoiceForm() {
   >(create, () => { }, "invoices");
 
   const {
-    mutate: mutateInvoiceNumber,
-    isPending: isPendingInvoiceNumber,
+    mutate: mutateGetInvoiceNumber,
+    isPending: isGettingInvoiceNumber,
     data: invoiceNumberData,
   } = useQueryAction<{ companyId: string }, RequestResponse<number>>(
     invoiceNumber,
@@ -110,8 +103,8 @@ export default function InvoiceForm() {
   );
 
   const {
-    mutate: mutateDocument,
-    isPending: isPendingDocument,
+    mutate: mutateGetDocument,
+    isPending: isGettingDocument,
     data: documentData,
   } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
     unique,
@@ -141,8 +134,8 @@ export default function InvoiceForm() {
         discount: "0",
       });
       mutateClients({ id: companyId });
-      mutateInvoiceNumber({ companyId });
-      mutateDocument(
+      mutateGetInvoiceNumber({ companyId });
+      mutateGetDocument(
         { id: companyId },
         {
           onSuccess(data) {
@@ -163,6 +156,7 @@ export default function InvoiceForm() {
         {
           onSuccess(data) {
             if (data.data) {
+              setPaymentLimit(data.data.paymentTerms);
               updateDiscount(data.data.discount);
             }
           },
@@ -170,6 +164,18 @@ export default function InvoiceForm() {
       );
     }
   }, [clientId]);
+
+
+  useEffect(() => {
+    form.watch(() => {
+      console.log({ errors: form.formState.errors })
+    })
+  }, [form.watch])
+
+
+  useEffect(() => {
+    form.setValue("paymentLimit", paymentLimit);
+  }, [paymentLimit])
 
   useEffect(() => {
     if (clientsData?.data && clientId) {
@@ -183,6 +189,7 @@ export default function InvoiceForm() {
     }
   }, [projectData]);
 
+
   useEffect(() => {
     if (items.length > 0) {
       form.setValue("item", {
@@ -195,18 +202,9 @@ export default function InvoiceForm() {
             status: item.status,
             itemType: item.itemType,
             updatedPrice: String(
-              calculateTaxes({
-                items: [
-                  {
-                    name: item.name,
-                    price: item.price,
-                    discountType: item.discountType,
-                    discount: Number(String(item.discount).replace("%", "")),
-                    quantity: item.quantity,
-                  },
-                ],
-                taxes: company?.vatRates ?? [],
-                taxOperation: "sequence",
+              calculate({
+                items: [item],
+                taxes: company?.vatRates ?? []
               }).totalWithoutTaxes
             ),
             locationStart: item.locationStart,
@@ -224,18 +222,9 @@ export default function InvoiceForm() {
             quantity: item.quantity,
             price: item.price,
             updatedPrice: String(
-              calculateTaxes({
-                items: [
-                  {
-                    name: item.name,
-                    price: item.price,
-                    discountType: item.discountType,
-                    discount: Number(String(item.discount).replace("%", "")),
-                    quantity: 1,
-                  },
-                ],
-                taxes: company?.vatRates ?? [],
-                taxOperation: "sequence",
+              calculate({
+                items: [item],
+                taxes: company?.vatRates ?? []
               }).totalWithoutTaxes
             ),
             itemType: item.itemType,
@@ -255,27 +244,17 @@ export default function InvoiceForm() {
   }, [items]);
 
   const totals = useMemo(() => {
-    const HTPrice = calculateTaxes({
-      items: items.map((item) => ({
-        name: item.name,
-        price: (item.price),
-        discountType: item.discountType,
-        discount: Number(String(item.discount).replace("%", "")),
-        quantity: item.quantity,
-      })),
+    const HTPrice = calculate({
+      items: items,
       taxes: company?.vatRates ?? [],
-      taxOperation: "sequence",
+      discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
     }).totalWithoutTaxes;
 
-    const TTCPrice = calculateTaxesTotal({
-      totalPrice: calculatePrice(
-        HTPrice,
-        parseFloat(String(clientDiscount.discount).replace("%", "")),
-        clientDiscount.discountType
-      ),
+    const TTCPrice = calculate({
+      items: items,
       taxes: company?.vatRates ?? [],
-      taxOperation: "sequence",
-    }).totalWithTaxes;
+      discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
+    }).totalWithTaxes
 
     return { HTPrice, TTCPrice };
   }, [items, company?.vatRates, clientDiscount]);
@@ -298,21 +277,17 @@ export default function InvoiceForm() {
     }
   }, [client]);
 
-  useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors });
-    })
-
-  }, [form.watch])
-
   const submit = useCallback(
     async (invoiceData: InvoiceSchemaType) => {
       const { success, data } = invoiceSchema.safeParse(invoiceData);
       if (!success) return;
       mutate(data, {
-        onSuccess() {
-          form.reset();
-          router.push("/invoice/");
+        onSuccess(data) {
+          if (data.data) {
+            form.reset();
+            setTab("action-invoice-tab", 1);
+            router.push(`/invoice/${data.data.id}`);
+          }
         },
       });
     },
@@ -364,211 +339,7 @@ export default function InvoiceForm() {
             </h2>
             <div className="space-y-2">
               {items.map((item) => (
-                <div
-                  className="group relative flex flex-col hover:bg-blue/5 p-1.5 border-blue border-l-4 w-full"
-                  key={item.id}
-                >
-                  <span
-                    className="top-0 right-1 absolute opacity-0 group-hover:opacity-100 font-bold text-red-500 text-sm transition-opacity cursor-pointer"
-                    onClick={() => removeItem(item.id)}
-                  >
-                    ×
-                  </span>
-
-                  <h2 className="font-semibold text-sm">{item.name}</h2>
-                  {item.description && (
-                    <p className="mb-2 text-sm">{item.description}</p>
-                  )}
-                  <div className="flex justify-between items-center gap-x-2">
-                    <div className="flex items-center gap-x-1 font-medium text-sm">
-                      {item.itemType === "billboard" ? 1 :
-                        <span>
-                          <TextInput
-                            type="number"
-                            max={item.maxQuantity ?? 0}
-                            value={item.quantity}
-                            handleChange={(e) => {
-                              if (
-                                item.maxQuantity &&
-                                Number(e) > item.maxQuantity
-                              ) {
-                                editItemField(
-                                  item.id,
-                                  "quantity",
-                                  Number(item.maxQuantity)
-                                );
-                                return toast.error(
-                                  "La quantité max valable est " +
-                                  item.maxQuantity
-                                );
-                              }
-                              editItemField(item.id, "quantity", Number(e));
-                            }}
-                            className="w-16 h-8"
-                          />
-                        </span>
-                      }
-                      {" x "}
-                      <span className="flex items-center gap-x-1">
-                        <TextInput
-                          type="number"
-                          min={0}
-                          value={item.price}
-                          handleChange={(e) => {
-                            editItemField(item.id, "price", e as string);
-                          }}
-                          className="w-32 h-8"
-                        />
-                        {item.currency}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-x-2 max-w-[150px]">
-                      <TextInput
-                        type="number"
-                        value={
-                          item.discount != null
-                            ? String(item.discount).includes("%")
-                              ? String(item.discount).split("%")[0]
-                              : String(item.discount)
-                            : "0"
-                        }
-                        className="!rounded-lg h-8"
-                        handleChange={(e) =>
-                          updateItem({ ...item, discount: e as string })
-                        }
-                      />
-
-                      <ToggleGroup
-                        type="single"
-                        value={item.discountType}
-                        onValueChange={(e) => {
-                          updateItem({
-                            ...item,
-                            discountType: e as "purcent" | "money",
-                          });
-                        }}
-                      >
-                        <ToggleGroupItem value="purcent">%</ToggleGroupItem>
-                        <ToggleGroupItem value="money">$</ToggleGroupItem>
-                      </ToggleGroup>
-                    </div>
-                  </div>
-                  {item.itemType === "billboard" && (
-                    <div className="flex mt-3 mb-2">
-                      <DatePicker
-                        className="flex w-[300px]"
-                        label="Durée de la location"
-                        mode="range"
-                        disabledRanges={
-                          locationBillboardDate
-                            .find((b) => b.id === item.id)
-                            ?.locationDate.map((d) => [
-                              new Date(d.start),
-                              new Date(d.end),
-                            ]) ?? []
-                        }
-                        value={
-                          item.locationStart && item.locationEnd
-                            ? {
-                              from: new Date(item.locationStart),
-                              to: new Date(item.locationEnd),
-                            }
-                            : undefined
-                        }
-                        onChange={(e) => {
-                          const range = e as
-                            | { from: Date; to: Date }
-                            | undefined;
-                          if (range) {
-                            editItemField(item.id, "locationStart", range.from);
-                            editItemField(item.id, "locationEnd", range.to);
-                            return;
-                          }
-                          editItemField(item.id, "locationStart", undefined);
-                          editItemField(item.id, "locationEnd", undefined);
-                        }}
-                      />
-                    </div>
-                  )}
-                  <ul>
-                    {calculateTaxes({
-                      items: [
-                        {
-                          name: item.name,
-                          price: (item.price),
-                          discountType: item.discountType,
-                          discount: Number(String(item.discount).replace("%", "")),
-                          quantity: item.quantity,
-                        },
-                      ],
-                      taxes: company?.vatRates ?? [],
-                      taxOperation: "sequence",
-                    }).taxes.map((tax) => (
-                      <li key={tax.taxName} className="text-xs">
-                        <span className="font-semibold">{tax.taxName}: </span>
-                        {formatNumber(tax.totalTax)} {item.currency}
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-xs">
-                    <span className="font-semibold">Taxes totales: </span>
-                    {formatNumber(
-                      calculateTaxes({
-                        items: [
-                          {
-                            name: item.name,
-                            price: (item.price),
-                            discountType: item.discountType,
-                            discount: Number(String(item.discount).replace("%", "")),
-                            quantity: item.quantity,
-                          },
-                        ],
-                        taxes: company?.vatRates ?? [],
-                        taxOperation: "sequence",
-                      }).totalTax
-                    )}{" "}
-                    {item.currency}
-                  </p>
-                  <p className="text-xs">
-                    <span className="font-semibold">Total HT: </span>
-                    {formatNumber(
-                      calculateTaxes({
-                        items: [
-                          {
-                            name: item.name,
-                            price: (item.price),
-                            discountType: item.discountType,
-                            discount: Number(String(item.discount).replace("%", "")),
-                            quantity: item.quantity,
-                          },
-                        ],
-                        taxes: company?.vatRates ?? [],
-                        taxOperation: "sequence",
-                      }).totalWithoutTaxes
-                    )}{" "}
-                    {item.currency}
-                  </p>
-                  <p className="text-xs">
-                    <span className="font-semibold">Total TTC: </span>
-                    {formatNumber(
-                      calculateTaxes({
-                        items: [
-                          {
-                            name: item.name,
-                            price: (item.price),
-                            discountType: item.discountType,
-                            discount: Number(String(item.discount).replace("%", "")),
-                            quantity: item.quantity,
-                          },
-                        ],
-                        taxes: company?.vatRates ?? [],
-                        taxOperation: "sequence",
-                      }).totalWithTaxes
-                    )}{" "}
-                    {item.currency}
-                  </p>
-                </div>
+                <ItemList key={item.id} item={item} locationBillboardDate={locationBillboardDate} calculate={calculate} taxes={company?.vatRates ?? []} />
               ))}
             </div>
 
@@ -587,51 +358,29 @@ export default function InvoiceForm() {
           </div>
           <div className="space-y-2">
             <h2 className="font-semibold">Pièce jointe</h2>
-            <div className="gap-x-2 grid grid-cols-2">
-              <FormField
-                control={form.control}
-                name="photos"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <TextInput
-                        type="file"
-                        multiple={true}
-                        design="float"
-                        label="Photo(s)"
-                        required={false}
-                        value={field.value}
-                        handleChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="files"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <TextInput
-                        type="file"
-                        multiple={true}
-                        design="float"
-                        label="Photo(s)"
-                        required={false}
-                        value={field.value}
-                        handleChange={(e) => {
-                          console.log({ e });
-                          field.onChange(e);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="files"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      type="file"
+                      multiple={true}
+                      design="float"
+                      label="Document(s)"
+                      required={false}
+                      value={field.value}
+                      handleChange={(e) => {
+                        console.log({ e });
+                        field.onChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
           <div className="space-y-2">
             <h2 className="font-semibold">Projet</h2>
@@ -695,142 +444,18 @@ export default function InvoiceForm() {
           </div>
         </div>
         <div className="space-y-4.5 max-w-full">
-          <div className="space-y-2">
-            <div className="flex justify-between gap-x-2">
-              <h2 className="font-semibold">Facture</h2>
-              {isPendingInvoiceNumber && isPendingDocument ? (
-                <Spinner size={10} />
-              ) : (
-                <p className="font-medium text-sm">
-                  N°: {documentData?.data?.invoicesPrefix}-
-                  {invoiceNumberData?.data}
-                </p>
-              )}
-            </div>
-            <Badge variant="secondary" className="px-3 py-2">
-              Non envoyé
-            </Badge>
-          </div>
-
-          <div className="space-y-2 pb-4 border-neutral-200 border-b">
-            <div className="flex justify-between text-sm">
-              <h2 className="font-semibold">Date</h2>
-              <p>{formatDateToDashModel(new Date())}</p>
-            </div>
-            <div className="flex justify-between text-sm">
-              <h2>Condition</h2>
-              <p>
-                {client
-                  ? paymentTerms.find((p) => p.value === client.paymentTerms)
-                    ?.label
-                  : "----"}
-              </p>
-            </div>
-            <div className="flex justify-between text-sm">
-              <h2>Date d’échéance</h2>
-              <p>
-                {client?.paymentTerms
-                  ? addDays(
-                    new Date(),
-                    paymentTerms.find((p) => p.value === client.paymentTerms)
-                      ?.data ?? 0
-                  ) as string
-                  : "----"}
-              </p>
-            </div>
-          </div>
-          <div className="space-y-2 pb-4 border-neutral-200 border-b">
-            <div className="flex justify-between text-sm">
-              <h2>Total HT</h2>
-
-              <p>
-                {formatNumber(calculateTaxes({
-                  items: items.map((item) => ({
-                    name: item.name,
-                    price: (item.price),
-                    discountType: item.discountType,
-                    discount: Number(String(item.discount).replace("%", "")),
-                    quantity: item.quantity,
-                  })),
-                  taxes: company?.vatRates ?? [],
-                  taxOperation: "sequence",
-                }).totalWithoutTaxes)} {" "}
-                {currency}
-              </p>
-            </div>
-            <ul>
-              {calculateTaxes({
-                items: items.map((item) => ({
-                  name: item.name,
-                  price: (item.price),
-                  discountType: item.discountType,
-                  discount: Number(String(item.discount).replace("%", "")),
-                  quantity: item.quantity,
-                })),
-                taxes: company?.vatRates ?? [],
-                taxOperation: "sequence",
-              }).taxes.map((tax) => (
-                <li key={tax.taxName} className="flex justify-between text-sm">
-                  <span>{tax.taxName} </span>
-                  {formatNumber(tax.totalTax)} {company?.currency}
-                </li>
-              ))}
-            </ul>
-            <div className="flex justify-between text-sm">
-              <h2>Réduction</h2>
-              <div className="flex items-center gap-x-2 max-w-[150px]">
-                <TextInput
-                  type="number"
-                  value={
-                    clientDiscount?.discount != null
-                      ? String(clientDiscount.discount).includes("%")
-                        ? Number(String(clientDiscount.discount).split("%")[0])
-                        : Number(clientDiscount.discount)
-                      : 0
-                  }
-                  className="!rounded-lg h-8"
-                  handleChange={(e) =>
-                    setClientDiscount({
-                      ...clientDiscount,
-                      discount: Number(e),
-                    })
-                  }
-                />
-
-                <ToggleGroup
-                  type="single"
-                  value={clientDiscount.discountType}
-                  onValueChange={(e) =>
-                    setClientDiscount({
-                      ...clientDiscount,
-                      discountType: e as "purcent" | "money",
-                    })
-                  }
-                >
-                  <ToggleGroupItem value="purcent">%</ToggleGroupItem>
-                  <ToggleGroupItem value="money">$</ToggleGroupItem>
-                </ToggleGroup>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2 pb-4 border-neutral-200 border-b">
-            <div className="flex justify-between text-sm">
-              <h2 className="font-semibold">Total TTC</h2>
-              <p>
-                {items.length > 0 ? <>{formatNumber(totals.TTCPrice)}</> : 0} {currency}
-              </p>
-            </div>
-            <div className="flex justify-between text-sm">
-              <h2>Avance</h2>
-              <p>0 {currency}</p>
-            </div>
-            <div className="flex justify-between text-sm">
-              <h2>Payer</h2>
-              <p>0 {currency}</p>
-            </div>
-          </div>
-
+          <InvoiceInfo isGettingDocument={isGettingDocument} isGettingInvoiceNumber={isGettingInvoiceNumber}
+            reference={`${documentData?.data?.invoicesPrefix || INVOICE_PREFIX}-${invoiceNumberData?.data}`}
+            discount={clientDiscount}
+            setDiscount={setClientDiscount}
+            currency={currency}
+            calculate={calculate}
+            taxes={company?.vatRates ?? []}
+            items={items}
+            paymentLimit={paymentLimit}
+            setPaymentLimit={setPaymentLimit}
+            TTCPrice={totals.TTCPrice}
+          />
           <div className="flex justify-center pt-2">
             <Button type="submit" variant="primary" className="justify-center">
               {isPending ? <Spinner /> : "Enregistrer"}

@@ -22,3 +22,6 @@ export type IMAGE_TYPES = "image/jpeg" | "image/jpg" | "image/png" | "image/webp
 export const SEARCH_DEBOUND = 800 as const;
 
 export const IMAGE_TYPES = ["jpeg", "jpg", "png", "webp"];
+
+// PREFIX
+export const INVOICE_PREFIX = "Facture";

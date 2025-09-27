@@ -2,6 +2,7 @@ import { checkAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
+import { checkBillboardConflicts } from "@/lib/server";
 import { generateId } from "@/lib/utils";
 import { invoiceSchema, InvoiceSchemaType } from "@/lib/zod/invoice.schema";
 import { NextResponse, type NextRequest } from "next/server";
@@ -12,14 +13,10 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const rawData: any = {};
     const files: File[] = [];
-    const photos: File[] = [];
 
     formData.forEach((value, key) => {
         if (key === "files" && value instanceof File) {
             files.push(value);
-        }
-        else if (key === "photos" && value instanceof File) {
-            photos.push(value)
         }
         else {
             rawData[key] = value as string;
@@ -50,7 +47,6 @@ export async function POST(req: NextRequest) {
             })) ?? [],
         },
         files,
-        photos
     }) as InvoiceSchemaType;
 
 
@@ -93,35 +89,9 @@ export async function POST(req: NextRequest) {
     }
 
     const billboards = data.item.billboards ?? [];
+    const conflictResult = await checkBillboardConflicts(billboards);
 
-    const billboardIds = billboards.map(b => b.billboardId).filter((id): id is string => id !== undefined);
-
-    const existingItems = await prisma.item.findMany({
-        where: {
-            billboardId: { in: billboardIds },
-        },
-    });
-
-    const conflicts = billboards.map(billboard => {
-        return existingItems.find(existing => {
-            if (existing.billboardId !== billboard.billboardId) return false;
-
-            const newStart = billboard.locationStart;
-            const newEnd = billboard.locationEnd;
-            const oldStart = existing.locationStart;
-            const oldEnd = existing.locationEnd;
-
-            return (
-                newStart &&
-                newEnd &&
-                oldStart &&
-                oldEnd &&
-                !(oldEnd < newStart || oldStart > newEnd)
-            );
-        });
-    });
-
-    if (conflicts.some(c => c !== undefined)) {
+    if (conflictResult.hasConflict) {
         return NextResponse.json({
             status: "error",
             message: "Conflit de dates détecté pour au moins un panneau.",
@@ -130,11 +100,9 @@ export async function POST(req: NextRequest) {
 
     const key = generateId();
     const invoiceNumber = `${document?.invoicesPrefix ?? "Facture"}-${lastInvoice?.invoiceNumber ? lastInvoice.invoiceNumber + 1 : 1}`;
-    const folderPhoto = createFolder([companyExist.companyName, "invoice", `${invoiceNumber}_----${key}/photos`]);
     const folderFile = createFolder([companyExist.companyName, "invoice", `${invoiceNumber}_----${key}/files`]);
 
     let savedFilePaths: string[] = [];
-    let savedPhotoPaths: string[] = [];
 
     try {
         for (const file of files) {
@@ -143,12 +111,6 @@ export async function POST(req: NextRequest) {
 
         }
 
-        for (const photo of photos) {
-            const upload = await createFile(photo, folderPhoto);
-            savedPhotoPaths = [...savedPhotoPaths, upload];
-        }
-
-
         const [createdInvoice] = await prisma.$transaction([
             prisma.invoice.create({
                 data: {
@@ -156,11 +118,10 @@ export async function POST(req: NextRequest) {
                     discount: data.discount!,
                     discountType: data.discountType,
                     pathFiles: folderFile,
-                    pathPhotos: folderPhoto,
+                    paymentLimit: data.paymentLimit,
                     totalTTC: data.totalTTC,
                     payee: data.payee!,
                     note: data.note!,
-                    photos: savedPhotoPaths,
                     files: savedFilePaths,
                     items: {
                         createMany: {
@@ -171,7 +132,7 @@ export async function POST(req: NextRequest) {
                                     quantity: billboard.quantity,
                                     price: billboard.price,
                                     updatedPrice: billboard.updatedPrice,
-                                    discount: billboard.discount!,
+                                    discount: billboard.discount ?? "0",
                                     locationStart: billboard.locationStart ?? new Date(),
                                     locationEnd: billboard.locationEnd ?? projectExist.deadline,
                                     discountType: billboard.discountType as string,
@@ -187,7 +148,7 @@ export async function POST(req: NextRequest) {
                                     updatedPrice: productService.updatedPrice,
                                     locationStart: new Date(),
                                     locationEnd: projectExist.deadline,
-                                    discount: productService.discount!,
+                                    discount: productService.discount ?? "0",
                                     discountType: productService.discountType as string,
                                     currency: productService.currency!,
                                     productServiceId: productService.productServiceId,
@@ -227,7 +188,7 @@ export async function POST(req: NextRequest) {
                 where: {
                     id: projectExist.id
                 },
-                data: { status: "TODO" }
+                data: { status: "TODO", amount: data.totalTTC }
             }),
             prisma.client.update({
                 where: { id: data.clientId },
@@ -273,7 +234,7 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error) {
-        await removePath([...savedFilePaths, ...savedPhotoPaths])
+        await removePath([...savedFilePaths])
         console.log({ error });
 
         return NextResponse.json({
@@ -305,7 +266,7 @@ export async function DELETE(req: NextRequest) {
     })
 
     invoices.map(async invoice => {
-        await removePath([...invoice.pathFiles, ...invoice.pathPhotos])
+        await removePath([...invoice.pathFiles])
     })
     return NextResponse.json({
         state: "success",

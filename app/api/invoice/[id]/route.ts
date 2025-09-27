@@ -2,8 +2,10 @@ import { checkAccess } from "@/lib/access";
 import { createFolder, removePath, updateFiles } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
+import { checkBillboardConflicts, rollbackInvoice } from "@/lib/server";
 import { getIdFromUrl } from "@/lib/utils";
 import { invoiceUpdateSchema, InvoiceUpdateSchemaType } from "@/lib/zod/invoice.schema";
+import { InvoiceType } from "@/types/invoice.types";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -62,56 +64,67 @@ export async function PUT(req: NextRequest) {
   const formData = await req.formData();
   const rawData: any = {};
   const files: File[] = [];
-  const photos: File[] = [];
+
   formData.forEach((value, key) => {
     if (key === "files" && value instanceof File) {
-      files.push(value);
-    } else if (key === "photos" && value instanceof File) {
-      photos.push(value);
-    } else {
+      files.push(value)
+    }
+    else {
       rawData[key] = value as string;
     }
   });
   // On parse les listes JSON et on adapte les dates
-  const productServicesParse = JSON.parse(rawData.productServices || "[]");
-  const billboardsParse = JSON.parse(rawData.billboards || "[]");
+  const productServicesParse = JSON.parse(rawData.productServices);
+  const billboardsParse = JSON.parse(rawData.billboards);
+
+
   const data = parseData<InvoiceUpdateSchemaType>(invoiceUpdateSchema, {
     ...rawData,
     item: {
       productServices: productServicesParse,
       billboards: billboardsParse?.map((b: any) => ({
-        ...b,
+        id: b.id,
+        name: b.name,
+        quantity: b.quantity,
         locationStart: new Date(b.locationStart),
-        locationEnd: new Date(b.locationEnd)
+        locationEnd: new Date(b.locationEnd),
+        status: b.status,
+        price: b.price,
+        updatedPrice: b.updatedPrice,
+        currency: b.currency,
+        discount: b.discount,
+        discountType: b.discountType,
+        itemType: b.itemType,
+        billboardId: b.billboardId
       })) ?? []
     },
     lastUploadFiles: JSON.parse(rawData.lastUploadFiles || "[]"),
-    lastUploadPhotos: JSON.parse(rawData.lastUploadPhotos || "[]"),
     files,
-    photos,
     invoiceNumber: parseInt(rawData.invoiceNumber)
   }) as InvoiceUpdateSchemaType;
 
-  // 3. Vérification que la facture, l’entreprise, le client et le projet existent
   const [invoiceExist, companyExist, clientExist, projectExist] =
     await prisma.$transaction([
-      prisma.invoice.findUnique({ where: { id }, include: { items: true } }),
+      prisma.invoice.findUnique({ where: { id }, include: { items: true, productsServices: true, billboards: true } }),
       prisma.company.findUnique({ where: { id: data.companyId } }),
       prisma.client.findUnique({ where: { id: data.clientId } }),
       prisma.project.findUnique({ where: { id: data.projectId } }),
     ]);
+
   if (!invoiceExist) {
     return NextResponse.json(
       { status: "error", message: "Facture introuvable." },
       { status: 404 }
     );
   }
+
   if (!companyExist) {
     return NextResponse.json(
       { status: "error", message: "Entreprise introuvable." },
       { status: 404 }
     );
   }
+
   if (!clientExist) {
     return NextResponse.json(
       { status: "error", message: "Client introuvable." },
@@ -125,21 +138,15 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  // 4. Préparation des dossiers pour les fichiers
   const key = invoiceExist.pathFiles.split("/")[2].split("_----")[1];
   const invoiceNumber = invoiceExist.pathFiles.split("/")[2].split("_----")[0];
-  const folderPhoto = createFolder([
-    companyExist.companyName,
-    "invoice",
-    `${invoiceNumber}_----${key}/photos`,
-  ]);
+
   const folderFile = createFolder([
     companyExist.companyName,
     "invoice",
     `${invoiceNumber}_----${key}/files`,
   ]);
 
-  // 5. Mise à jour des fichiers (documents et photos)
   const savedFilePaths = await updateFiles({
     folder: folderFile,
     outdatedData: {
@@ -153,206 +160,175 @@ export async function PUT(req: NextRequest) {
     },
     files,
   });
-  const savedPhotoPaths = await updateFiles({
-    folder: folderPhoto,
-    outdatedData: {
-      id: invoiceExist.id,
-      path: invoiceExist.pathPhotos,
-      files: invoiceExist.photos,
-    },
-    updatedData: {
-      id: data.id,
-      lastUploadDocuments: data.lastUploadPhotos,
-    },
-    files: photos,
-  });
+
+  if (Number(invoiceExist.payee) === 0 || !invoiceExist.isPaid) {
+    console.log("TEST 1")
+    rollbackInvoice(invoiceExist as unknown as InvoiceType, data.companyId)
+  }
+
+  if (invoiceExist.isPaid) {
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "La facture a déjà été réglée",
+      },
+      { status: 400 }
+    );
+  }
+
+  const billboards = data.item.billboards ?? [];
+
+  const conflictResult = await checkBillboardConflicts(billboards);
+
+  if (conflictResult.hasConflict) {
+    return NextResponse.json({
+      status: "error",
+      message: "Conflit de dates détecté pour au moins un panneau.",
+    }, { status: 404 });
+  }
+
+
 
   try {
-    // 6. Différentiation des articles (items) : existants vs nouveaux vs supprimés
-    const invoiceItems = invoiceExist.items;
-    const oldBillboardIds = invoiceItems
-      .filter(i => i.billboardId)
-      .map(i => i.billboardId!);
-    const oldProductIds = invoiceItems
-      .filter(i => i.productServiceId)
-      .map(i => i.productServiceId!);
 
-    // Nouveaux articles à créer
-    const newBillboardItems = (data.item.billboards || [])
-      .filter(b => b.billboardId && !oldBillboardIds.includes(b.billboardId));
-    const newProductItems = (data.item.productServices || [])
-      .filter(p => p.productServiceId && !oldProductIds.includes(p.productServiceId));
-    // Articles existants à mettre à jour
-    const updateBillboardItems = (data.item.billboards || [])
-      .filter(b => b.billboardId && oldBillboardIds.includes(b.billboardId));
-    const updateProductItems = (data.item.productServices || [])
-      .filter(p => p.productServiceId && oldProductIds.includes(p.productServiceId));
-    // Articles à supprimer : présents dans invoiceExist mais plus dans la requête
-    const removeBillboardItems = invoiceItems.filter(i =>
-      i.billboardId && !(data.item.billboards || []).some(b => b.billboardId === i.billboardId)
-    );
-    const removeProductItems = invoiceItems.filter(i =>
-      i.productServiceId && !(data.item.productServices || []).some(p => p.productServiceId === i.productServiceId)
-    );
-
-    // 7. Transaction : suppression des anciens articles et restauration des stocks
-    await prisma.$transaction([
-      // Réajuster le stock des produits/services supprimés (remettre la quantité)
-      ...removeProductItems.map(item =>
-        prisma.productService.update({
-          where: { id: item.productServiceId! },
-          data: { quantity: { increment: item.quantity } }
-        })
-      ),
-      // Libérer les dates des panneaux supprimés
-      ...removeBillboardItems.map(item =>
-        prisma.billboard.update({
-          where: { id: item.billboardId! },
-          data: { locationStart: null, locationEnd: null }
-        })
-      ),
-      // Supprimer les enregistrements d'item correspondants
-      prisma.item.deleteMany({
-        where: {
-          id: {
-            in: removeBillboardItems.map(i => i.id)
-              .concat(removeProductItems.map(i => i.id))
+    const [updatedInvoice] = await prisma.$transaction([
+      prisma.client.update({
+        where: { id: invoiceExist.clientId },
+        data: {
+          invoices: {
+            disconnect: {
+              id: invoiceExist.id
+            }
           }
         }
-      })
-    ]);
-
-    // 8. Gestion des quantités pour les articles mis à jour (différences éventuelles)
-    await prisma.$transaction(
-      updateProductItems
-        .map(item => {
-          const oldItem = invoiceItems.find(i => i.productServiceId === item.productServiceId);
-          if (!oldItem) return null;
-          const diff = item.quantity - oldItem.quantity;
-          if (diff > 0) {
-            // quantité augmentée dans la facture -> retirer du stock
-            return prisma.productService.update({
-              where: { id: item.productServiceId },
-              data: { quantity: { decrement: diff } }
-            });
-          } else if (diff < 0) {
-            // quantité réduite -> remettre au stock
-            return prisma.productService.update({
-              where: { id: item.productServiceId },
-              data: { quantity: { increment: -diff } }
-            });
-          }
-          return null;
-        })
-        .filter(Boolean) as any[]
-    );
-
-    // 9. Mise à jour des dates pour les panneaux mis à jour
-    await prisma.$transaction(
-      updateBillboardItems.map(item =>
-        prisma.billboard.update({
-          where: { id: item.billboardId! },
-          data: {
-            locationStart: item.locationStart,
-            locationEnd: item.locationEnd
-          }
-        })
-      )
-    );
-
-    // 10. Mise à jour de la facture elle-même (totaux, liaisons, connexions/déconnexions)
-    const updatedInvoice = await prisma.invoice.update({
-      where: { id },
-      data: {
-        totalHT: data.totalHT,
-        discount: data.discount,
-        discountType: data.discountType,
-        totalTTC: data.totalTTC,
-        payee: data.payee,
-        note: data.note,
-        pathFiles: folderFile,
-        pathPhotos: folderPhoto,
-        files: savedFilePaths,
-        photos: savedPhotoPaths,
-        // Déconnecter les anciens liens M:N
-        billboards: {
-          disconnect: removeBillboardItems.map(i => ({ id: i.billboardId! })),
-          connect: newBillboardItems.map(b => ({ id: b.billboardId }))
-        },
-        productsServices: {
-          disconnect: removeProductItems.map(i => ({ id: i.productServiceId! })),
-          connect: newProductItems.map(p => ({ id: p.productServiceId }))
-        },
-        // Créer les nouveaux articles liés à la facture
-        items: {
-          create: [
-            ...newBillboardItems.map(b => ({
-              name: b.name,
-              description: b.description || "",
-              quantity: b.quantity,
-              price: b.price,
-              updatedPrice: b.updatedPrice,
-              discount: b.discount || "",
-              locationStart: b.locationStart!,
-              locationEnd: b.locationEnd! || projectExist.deadline,
-              discountType: b.discountType,
-              currency: b.currency!,
-              billboardId: b.billboardId,
-              itemType: b.itemType || "billboard"
-            })),
-            ...newProductItems.map(p => ({
-              name: p.name,
-              description: p.description || "",
-              quantity: p.quantity,
-              price: p.price,
-              updatedPrice: p.updatedPrice,
-              locationStart: new Date(),
-              locationEnd: projectExist.deadline,
-              discount: p.discount || "",
-              discountType: p.discountType,
-              currency: p.currency!,
-              productServiceId: p.productServiceId,
-              itemType: p.itemType || "product"
-            }))
-          ]
-        },
-        // Mettre à jour les liaisons projet/client si besoin
-        project: invoiceExist.projectId !== data.projectId
-          ? { connect: { id: data.projectId } }
-          : undefined,
-        client: invoiceExist.clientId !== data.clientId
-          ? { connect: { id: data.clientId } }
-          : undefined,
-        company: { connect: { id: data.companyId } }
-      }
-    });
-
-    // 11. Mise à jour des statuts si le projet a changé
-    if (invoiceExist.projectId !== data.projectId) {
-      await prisma.project.update({
+      }),
+      prisma.project.update({
         where: { id: invoiceExist.projectId },
-        data: { status: "BLOCKED" }
-      });
-      await prisma.project.update({
-        where: { id: data.projectId },
-        data: { status: "TODO" }
-      });
-    }
-
-    // 12. Si le client a changé, associer les panneaux au nouveau client
-    if (invoiceExist.clientId !== data.clientId) {
-      await prisma.client.update({
+        data: {
+          invoices: {
+            disconnect: {
+              id: invoiceExist.id
+            }
+          },
+          amount: "0",
+          balance: "0"
+        }
+      }),
+      prisma.invoice.delete({ where: { id: invoiceExist.id } }),
+      prisma.invoice.create({
+        data: {
+          totalHT: data.totalHT,
+          discount: data.discount!,
+          discountType: data.discountType,
+          pathFiles: folderFile,
+          paymentLimit: data.paymentLimit,
+          totalTTC: data.totalTTC,
+          payee: data.payee!,
+          note: data.note!,
+          files: savedFilePaths,
+          items: {
+            createMany: {
+              data: [
+                ...data.item.billboards?.map(billboard => ({
+                  name: billboard.name,
+                  description: billboard.description ?? "",
+                  quantity: billboard.quantity,
+                  price: billboard.price,
+                  updatedPrice: billboard.updatedPrice,
+                  discount: billboard.discount!,
+                  locationStart: billboard.locationStart ?? new Date(),
+                  locationEnd: billboard.locationEnd ?? projectExist.deadline,
+                  discountType: billboard.discountType as string,
+                  currency: billboard.currency!,
+                  billboardId: billboard.billboardId,
+                  itemType: billboard.itemType ?? "billboard"
+                })) ?? [],
+                ...data.item.productServices?.map(productService => ({
+                  name: productService.name,
+                  description: productService.description ?? "",
+                  quantity: productService.quantity,
+                  price: productService.price,
+                  updatedPrice: productService.updatedPrice,
+                  locationStart: new Date(),
+                  locationEnd: projectExist.deadline,
+                  discount: productService.discount!,
+                  discountType: productService.discountType as string,
+                  currency: productService.currency!,
+                  productServiceId: productService.productServiceId,
+                  itemType: productService.itemType ?? "product"
+                })) ?? []
+              ]
+            },
+          },
+          project: {
+            connect: {
+              id: data.projectId
+            }
+          },
+          client: {
+            connect: {
+              id: data.clientId
+            }
+          },
+          company: {
+            connect: {
+              id: data.companyId
+            }
+          },
+          billboards: {
+            connect: data.item.billboards?.map(billboard => ({
+              id: billboard.billboardId
+            })) ?? []
+          },
+          productsServices: {
+            connect: data.item.productServices?.map(productService => ({
+              id: productService.productServiceId
+            })) ?? []
+          },
+        },
+      }),
+      prisma.project.update({
+        where: {
+          id: projectExist.id
+        },
+        data: { status: "TODO", amount: data.totalTTC }
+      }),
+      prisma.client.update({
         where: { id: data.clientId },
         data: {
           billboards: {
             connect: [
-              ...updateBillboardItems.map(b => ({ id: b.billboardId! })),
-              ...newBillboardItems.map(b => ({ id: b.billboardId }))
+              ...data.item.billboards?.map(billboard => ({
+                id: billboard.billboardId
+              })) ?? []
             ]
           }
         }
-      });
-    }
+      }),
+      ...(data.item.billboards?.map(billboard => (
+        prisma.billboard.update({
+          where: {
+            id: billboard.billboardId
+          },
+          data: {
+            locationStart: new Date(),
+            locationEnd: projectExist.deadline,
+          }
+        })
+      )) ?? []),
+      ...(data.item.productServices?.map(productService => (
+        prisma.productService.update({
+          where: {
+            id: productService.productServiceId
+          },
+          data: {
+            quantity: {
+              decrement: productService.quantity
+            },
+          }
+        })
+      )) ?? [])
+    ])
 
     // Réponse succès
     return NextResponse.json({
@@ -362,7 +338,7 @@ export async function PUT(req: NextRequest) {
     });
   } catch (error) {
     // En cas d'erreur, suppression des fichiers enregistrés pendant ce processus
-    await removePath([...savedFilePaths, ...savedPhotoPaths]);
+    await removePath([...savedFilePaths]);
     console.error("Erreur mise à jour facture :", error);
     return NextResponse.json(
       {
@@ -391,7 +367,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   await prisma.invoice.delete({ where: { id } });
-  await removePath([...invoice.pathFiles, ...invoice.pathPhotos]);
+  await removePath([...invoice.pathFiles]);
   return NextResponse.json({
     state: "success",
     message: "Facture supprimée avec succès.",

@@ -23,6 +23,7 @@ type InvoiceInfoProps = {
         items: ItemType[];
         taxes: VatRateType[];
         taxOperation?: "cumul" | "sequence";
+        discount?: [number, "purcent" | "money"]
     }): CalculateTaxesResult;
     items: ItemType[];
     taxes: VatRateType[];
@@ -75,26 +76,24 @@ export default function InvoiceInfo({ isGettingDocument, isGettingInvoiceNumber,
                 <div className="flex justify-between text-sm">
                     <h2>Date d’échéance</h2>
                     <p>
-                        <Combobox
-                            datas={paymentTerms}
-                            value={paymentLimit}
-                            setValue={setPaymentLimit}
-                            placeholder=""
-                            searchMessage="Rechercher une condition de paiement"
-                            noResultsMessage="Aucune condition trouvé."
-                            inputClassName='!h-8 w-[230px]'
-                        />
+                        {paymentLimit
+                            ? addDays(
+                                new Date(),
+                                paymentTerms.find((p) => p.value === paymentLimit)
+                                    ?.data ?? 0
+                            ) as string
+                            : "----"}
                     </p>
                 </div>
             </div>
             <div className="space-y-2 pb-4 border-neutral-200 border-b">
                 <div className="flex justify-between text-sm">
                     <h2>Total HT</h2>
-
                     <p>
                         {formatNumber(calculate({
                             items,
                             taxes,
+                            discount: discount.discount && discount.discountType ? [discount.discount, discount.discountType] : undefined
                         }).totalWithoutTaxes)} {" "}
                         {currency}
                     </p>

@@ -65,6 +65,7 @@ export async function create(data: InvoiceSchemaType) {
         formData.append("projectId", data.projectId);
         formData.append("companyId", data.companyId);
         formData.append("totalHT", data.totalHT);
+        formData.append("paymentLimit", data.paymentLimit);
         formData.append("productServices", JSON.stringify(data.item.productServices));
         formData.append("billboards", JSON.stringify(data.item.billboards));
         formData.append("discount", data.discount ?? "0");
@@ -72,12 +73,6 @@ export async function create(data: InvoiceSchemaType) {
         formData.append("totalTTC", data.totalTTC);
         formData.append("payee", data.payee ?? "0");
         formData.append("note", data.note ?? "");
-
-        data.photos?.forEach((file) => {
-            if (file instanceof File) {
-                formData.append("photos", file);
-            }
-        });
 
         data.files?.forEach((file) => {
             if (file instanceof File) {
@@ -130,11 +125,13 @@ export async function createdPayment(data: PaymentSchemaType) {
 export async function update(data: InvoiceUpdateSchemaType) {
     try {
         const formData = new FormData();
+
         formData.append("id", data.id);
         formData.append("clientId", data.clientId);
         formData.append("projectId", data.projectId);
         formData.append("companyId", data.companyId);
         formData.append("totalHT", data.totalHT);
+        formData.append("paymentLimit", data.paymentLimit);
         formData.append("invoiceNumber", JSON.stringify(data.invoiceNumber));
         formData.append("productServices", JSON.stringify(data.item.productServices));
         formData.append("billboards", JSON.stringify(data.item.billboards));
@@ -144,13 +141,6 @@ export async function update(data: InvoiceUpdateSchemaType) {
         formData.append("payee", data.payee ?? "0");
         formData.append("note", data.note ?? "");
         formData.append("lastUploadFiles", JSON.stringify(data.lastUploadFiles));
-        formData.append("lastUploadPhotos", JSON.stringify(data.lastUploadPhotos));
-
-        data.photos?.forEach((file) => {
-            if (file instanceof File) {
-                formData.append("photos", file);
-            }
-        });
 
         data.files?.forEach((file) => {
             if (file instanceof File) {

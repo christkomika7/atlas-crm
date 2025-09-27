@@ -36,6 +36,7 @@ type ComboboxProps = {
   required?: boolean;
   isLoading?: boolean;
   className?: string;
+  inputClassName?: string;
   disabled?: boolean;
   addElement?: React.ReactNode;
 };
@@ -50,10 +51,11 @@ export function Combobox({
   required = true,
   isLoading = false,
   className = "",
+  inputClassName = "",
   disabled,
   addElement,
 }: ComboboxProps) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
 
   // Fonction pour obtenir le label affiché
@@ -66,16 +68,18 @@ export function Combobox({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger className={className}>
-        <div ref={ref} className="relative">
+        <div className="relative">
           <FloatingInput
+            ref={ref}
             type="text"
             id="country"
             value={getDisplayValue()}
             disabled={true}
             required={required}
+            className={inputClassName}
           />
           <FloatingLabel htmlFor="country" className="!gap-x-0 !cursor-default">
-            {placeholder} {required && <span className="text-red-500">*</span>}
+            {placeholder} {placeholder && required && <span className="text-red-500">*</span>}
           </FloatingLabel>
           <span className="top-1/2 right-2 absolute -translate-y-1/2">
             <ChevronsUpDownIcon className="opacity-50 ml-2 w-4 h-4 shrink-0" />

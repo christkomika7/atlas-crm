@@ -1,9 +1,13 @@
-export type Item = {
-    name: string;
-    price: string;
-    discountType: "purcent" | "money";
+export type DiscountType = {
     discount: number;
-    quantity: number;
+    discountType: "purcent" | "money";
+}
+
+
+export type CumulType = {
+    id: number;
+    name: string;
+    check: boolean;
 };
 
 export type TaxInput = {
@@ -11,7 +15,15 @@ export type TaxInput = {
     taxValue: string[];
     hasApplicableToAll: boolean;
     taxType?: "HT" | "TTC";
-    cumul?: { id: number; name: string; check: boolean }[];
+    cumul?: CumulType[];
+};
+
+export type Item = {
+    name: string;
+    price: string;
+    discountType: "purcent" | "money";
+    discount: number;
+    quantity: number;
 };
 
 export type TaxResult = {
@@ -29,23 +41,9 @@ export type CalculateTaxesResult = {
     totalWithoutTaxes: number;
 };
 
-export type CalculateTaxesParamsTotal = {
-    totalPrice: number;
+export type CalculateTaxesInput = {
+    items: Item[];
     taxes: TaxInput[];
-    taxOperation?: "cumul" | "sequence";
-};
-
-export type TaxResultTotal = {
-    taxName: string;
-    appliedRates: number[];
-    totalTax: number;
-    taxPrice: number;
-    taxType?: "HT" | "TTC";
-};
-
-export type CalculateTaxesResultTotal = {
-    taxes: TaxResultTotal[];
-    totalTax: number;
-    totalWithTaxes: number;
-    totalWithoutTaxes: number;
+    taxOperation: "sequence" | "cumul";
+    discount?: [number, "purcent" | "money"]
 };

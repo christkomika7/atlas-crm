@@ -1,8 +1,11 @@
 import Spinner from "@/components/ui/spinner";
 import { generalSans } from "@/fonts/font";
+import { useCalculateTaxe } from "@/hook/useCalculateTaxe";
 import { formatDateToDashModel } from "@/lib/date";
 import { getCountryFrenchName } from "@/lib/helper";
-import { calculatePrice, calculateTaxes, cn, formatNumber, resolveImageSrc } from "@/lib/utils";
+import { calculateTaxes } from "@/lib/price";
+import { cn, formatNumber, resolveImageSrc } from "@/lib/utils";
+import { ItemType } from "@/stores/item.store";
 import { InvoiceType } from "@/types/invoice.types";
 import Image from "next/image";
 import Link from "next/link";
@@ -32,6 +35,8 @@ export default function Contract({
   invoice,
 }: DocumentPreviewProps) {
   const [logoURL, setLogoURL] = useState<string | null>(null);
+
+  const { calculate } = useCalculateTaxe();
 
   useEffect(() => {
     if (logo && logo instanceof File) {
@@ -172,49 +177,21 @@ export default function Contract({
               <td className="py-2 text-right">{item.quantity}</td>
               <td className="py-2 text-right">
                 {formatNumber(
-                  calculateTaxes({
-                    items: [
-                      {
-                        name: item.name,
-                        price: calculatePrice(
-                          parseFloat(item.price),
-                          parseFloat(
-                            String(item.discount).replace("%", "")
-                          ),
-                          item.discountType as "purcent" | "money"
-                        ),
-                        quantity: 1,
-                      },
-                    ],
-                    itemType: "article",
-                    taxes: invoice.company?.vatRates ?? [],
-                    taxOperation: "sequence",
+                  calculate({
+                    items: [item as ItemType],
+                    taxes: invoice.company?.vatRates ?? []
                   }).totalWithoutTaxes
                 )}{" "}
-
                 {item.currency}
               </td>
               <td className="py-2 pr-3 text-right">
                 {formatNumber(
-                  calculateTaxes({
-                    items: [
-                      {
-                        name: item.name,
-                        price: calculatePrice(
-                          parseFloat(item.price),
-                          parseFloat(
-                            String(item.discount).replace("%", "")
-                          ),
-                          item.discountType as "purcent" | "money"
-                        ),
-                        quantity: item.quantity,
-                      },
-                    ],
-                    itemType: "article",
+                  calculate({
+                    items: [item as ItemType],
                     taxes: invoice.company?.vatRates ?? [],
-                    taxOperation: "sequence",
                   }).totalWithoutTaxes
-                )}{" "}
+                )}
+                {" "}
                 {item.currency}
               </td>
             </tr>
@@ -227,19 +204,9 @@ export default function Contract({
             </td>
             <td className="pr-3 text-right">{formatNumber(invoice!.totalHT)} {invoice?.company.currency}</td>
           </tr>
-          {calculateTaxes({
-            items: invoice!.items.map((item) => ({
-              name: item.name,
-              price: calculatePrice(
-                parseFloat(item.price),
-                parseFloat(String(item.discount).replace("%", "")),
-                item.discountType as "purcent" | "money"
-              ),
-              quantity: item.quantity,
-            })),
-            itemType: "total",
+          {calculate({
+            items: (invoice ? (invoice.items as ItemType[]) : []),
             taxes: invoice?.company?.vatRates ?? [],
-            taxOperation: "sequence",
           }).taxes.map((tax) => (
             <tr key={tax.taxName} className="text-sm">
               <td colSpan={3} className="pr-10 text-right">
@@ -264,7 +231,7 @@ export default function Contract({
               }}
               className="pr-3 font-semibold text-right"
             >
-              {formatNumber(invoice!.totalTTC)} {invoice?.company.currency}
+              {formatNumber(invoice?.totalTTC ?? 0)} {invoice?.company.currency}
             </td>
           </tr>
         </tfoot>

@@ -12,6 +12,7 @@ export type InvoiceType = {
     photos: string[],
     files: string[],
     totalHT: string,
+    paymentLimit: string;
     discount: string,
     discountType: string,
     totalTTC: string,

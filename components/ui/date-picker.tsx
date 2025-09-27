@@ -66,10 +66,10 @@ export function DatePicker({
     displayValue =
       rangeDates && rangeDates.from && rangeDates.to
         ? `${format(rangeDates.from, "PPP", { locale: fr })} - ${format(
-            rangeDates.to,
-            "PPP",
-            { locale: fr }
-          )}`
+          rangeDates.to,
+          "PPP",
+          { locale: fr }
+        )}`
         : "";
   } else {
     displayValue =
@@ -120,12 +120,12 @@ export function DatePicker({
           htmlFor={label.toLowerCase().replaceAll("-", "-")}
           className="!gap-x-0 text-sm !cursor-default"
         >
-          <CalendarIcon className="mr-2 w-4 h-4" />
+          {label && <CalendarIcon className="mr-2 w-4 h-4" />}
           {label}
-          {required && <span className="text-red-500">*</span>}
+          {label && required && <span className="text-red-500">*</span>}
         </FloatingLabel>
       </PopoverTrigger>
-      <PopoverContent className="p-0 w-auto">
+      <PopoverContent className="p-0 w-auto" side="bottom" align="end">
         {isSingle ? (
           <Calendar
             mode="single"
@@ -150,9 +150,9 @@ export function DatePicker({
                 setRangeDates(undefined);
                 onChange?.(
                   undefined as unknown as
-                    | Date
-                    | Date[]
-                    | { from: Date; to: Date }
+                  | Date
+                  | Date[]
+                  | { from: Date; to: Date }
                 );
               }
             }}

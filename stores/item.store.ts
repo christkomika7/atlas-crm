@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createSelectors } from "@/lib/store";
 
-type ItemType = {
+export type ItemType = {
     id: string;
     name: string;
     description?: string;
@@ -25,7 +25,7 @@ type RangeDateType = {
     end: Date;
 }
 
-type LocationBillboardDateType = {
+export type LocationBillboardDateType = {
     id: string;
     locationDate: RangeDateType[]
 }

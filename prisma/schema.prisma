@@ -346,13 +346,12 @@ model Invoice {
   id            String   @id @default(uuid())
   invoiceNumber Int      @default(autoincrement())
   note          String
-  photos        String[]
   files         String[]
   pathFiles     String
-  pathPhotos    String
   totalHT       String
   discount      String
   discountType  String
+  paymentLimit  String
   totalTTC      String
   payee         String
   isPaid        Boolean  @default(false)
