@@ -79,6 +79,7 @@ export async function unique({ id }: { id: string }) {
 }
 
 export async function create(data: InvoiceSchemaType) {
+    console.log({ data })
     try {
         const formData = new FormData();
         formData.append("clientId", data.clientId);
@@ -88,10 +89,10 @@ export async function create(data: InvoiceSchemaType) {
         formData.append("paymentLimit", data.paymentLimit);
         formData.append("productServices", JSON.stringify(data.item.productServices));
         formData.append("billboards", JSON.stringify(data.item.billboards));
-        formData.append("discount", data.discount ?? "0");
+        formData.append("discount", data.discount || "0");
         formData.append("discountType", data.discountType);
         formData.append("totalTTC", data.totalTTC);
-        formData.append("payee", data.payee ?? "0");
+        formData.append("payee", data.payee || "0");
         formData.append("note", data.note ?? "");
 
         data.files?.forEach((file) => {
@@ -143,7 +144,6 @@ export async function createdPayment(data: PaymentSchemaType) {
 export async function update(data: InvoiceUpdateSchemaType) {
     try {
         const formData = new FormData();
-
         formData.append("id", data.id);
         formData.append("clientId", data.clientId);
         formData.append("projectId", data.projectId);

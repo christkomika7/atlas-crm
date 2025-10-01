@@ -5,11 +5,9 @@ export const itemSchema = z.object({
     name: z.string().min(1, { message: "Le nom de l'article est obligatoire." }),
     description: z.string().optional(),
     quantity: z
-        .number()
-        .int()
-        .min(1, { message: "La quantité doit être au moins égale à 1." }),
-    locationStart: z.date().optional(),
-    locationEnd: z.date().optional(),
+        .number({ error: "La quantité doit être au moins égale à 1." }),
+    locationStart: z.date(),
+    locationEnd: z.date(),
     status: z.enum(["available", "non-available"]).optional(),
     price: z.string().min(1, { message: "Le prix est obligatoire." }),
     updatedPrice: z.string().min(1, { message: "Le prix avec taxe et réduction est obligatoire." }),
@@ -22,7 +20,18 @@ export const itemSchema = z.object({
     itemType: z.enum(["billboard", "product", "service"]).optional(),
     billboardId: z.string().optional(),
     productServiceId: z.string().optional(),
-});
+}).refine(
+    (data) => {
+        if ((data.locationStart && !data.locationEnd) || (!data.locationStart && data.locationEnd)) {
+            return false;
+        }
+        return true;
+    },
+    {
+        message: "Les deux dates de location (début et fin) doivent être renseignées.",
+        path: ["item"],
+    }
+);;
 
 export const invoiceSchema = z
     .object({

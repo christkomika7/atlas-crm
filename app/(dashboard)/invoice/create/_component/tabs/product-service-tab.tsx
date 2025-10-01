@@ -56,11 +56,11 @@ export default function ProductServiceTab() {
     }
   }, [clientId]);
 
-  function isSelected(itemId: string) {
-    return items.some((i) => i.id === itemId);
+  function isSelected(productServiceId: string) {
+    return items.some((i) => i.productServiceId === productServiceId);
   }
 
-  function toggleSelection(check: boolean, item: ProductServiceType) {
+  function toggleSelection(check: boolean, productService: ProductServiceType) {
     // Vérifier d'abord si un client est sélectionné
     if (!clientId) {
       return toast.error("Veuillez sélectionner un client en premier.");
@@ -74,30 +74,31 @@ export default function ProductServiceTab() {
     // Obtenir les données du client ou utiliser des valeurs par défaut
     const client = clientData?.data;
     const defaultDiscount = "0"; // Valeur par défaut si pas encore de données client
+    const randomUUID = crypto.randomUUID()
 
     if (check) {
       addItem({
-        id: item.id,
-        name: item.designation,
-        description: item.description,
-        price: item.unitPrice,
+        id: randomUUID,
+        name: productService.designation,
+        description: productService.description,
+        price: productService.unitPrice,
         updatedPrice: "0",
         discountType: "purcent",
         discount: client?.discount || defaultDiscount,
         quantity: 1,
-        maxQuantity: item.quantity,
-        currency: item.company.currency,
-        itemType: item.type === "PRODUCT" ? "product" : "service",
+        maxQuantity: productService.quantity,
+        currency: productService.company.currency,
+        itemType: productService.type === "PRODUCT" ? "product" : "service",
+        productServiceId: productService.id
       });
     } else {
-      removeItem(item.id);
+      removeItem(productService.id);
     }
   }
 
   function currentQuantity(productServiceId: string, quantity: number) {
     const item = items.find(item => item.id === productServiceId);
     if (item?.lastQuantity) {
-      console.log(quantity, " + ", item.lastQuantity, " - ", item.quantity)
       return (quantity + item.lastQuantity || 0) - item.quantity;
     }
     return quantity - Number(item?.quantity ?? 0)

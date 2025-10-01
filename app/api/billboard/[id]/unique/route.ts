@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
             type: true,
             city: true,
             area: true,
+            items: true,
         }
     });
 
@@ -24,7 +25,6 @@ export async function GET(req: NextRequest) {
         data: {
             ...billboard,
             contractDuration: [billboard?.contractStart, billboard?.contractEnd],
-            locationDuration: [billboard?.locationStart, billboard?.locationEnd],
         },
     }, { status: 200 })
 }

@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
             .filter(item => item.locationStart && item.locationEnd)
             .map(item => ({
                 id: item.id,
+                isNew: false,
                 locationDate: [item.locationStart, item.locationEnd]
             }))
     );

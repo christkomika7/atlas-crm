@@ -24,12 +24,12 @@ export async function POST(req: NextRequest) {
             areaId: {
                 in: data.area,
             },
-            locationStart: {
-                gte: data.range.from,
-            },
-            locationEnd: {
-                lte: data.range.to,
-            },
+            // locationStart: {
+            //     gte: data.range.from,
+            // },
+            // locationEnd: {
+            //     lte: data.range.to,
+            // },
         },
     });
 
@@ -37,7 +37,6 @@ export async function POST(req: NextRequest) {
         data: billboards.map(billboard => ({
             ...billboard,
             contractDuration: [billboard?.contractStart, billboard?.contractEnd],
-            locationDuration: [billboard?.locationStart, billboard?.locationEnd],
         }))
     })
 
@@ -47,7 +46,6 @@ export async function POST(req: NextRequest) {
             data: billboards.map(billboard => ({
                 ...billboard,
                 contractDuration: [billboard?.contractStart, billboard?.contractEnd],
-                locationDuration: [billboard?.locationStart, billboard?.locationEnd],
             })),
         },
         { status: 200 }

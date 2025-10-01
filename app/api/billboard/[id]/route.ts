@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
         },
         include: {
             company: true,
-            type: true
+            type: true,
+            items: true
         }
     });
 
@@ -28,7 +29,6 @@ export async function GET(req: NextRequest) {
             data: billboards.map(billboard => ({
                 ...billboard,
                 contractDuration: [billboard?.contractStart, billboard?.contractEnd],
-                locationDuration: [billboard?.locationStart, billboard?.locationEnd],
             })),
         },
         { status: 200 }
@@ -326,8 +326,6 @@ export async function PUT(req: NextRequest) {
             data: {
                 ...updatedBillboard,
                 contractDuration: [updatedBillboard?.contractStart, updatedBillboard?.contractEnd],
-                locationDuration: [updatedBillboard?.locationStart, updatedBillboard?.locationEnd],
-
             },
         });
 

@@ -52,7 +52,8 @@ export default function InvoiceTab() {
   const param = useParams();
 
   // STORE
-  const isFirstLoad = useRef(true);
+  const isFirstLoadingDiscount = useRef(true);
+  const isFirstLoadingClientDiscount = useRef(true);
 
   const companyId = useDataStore.use.currentCompany();
 
@@ -181,11 +182,11 @@ export default function InvoiceTab() {
             setClientDiscount({
               discount: Number(invoice.discount),
               discountType: invoice.discountType as "purcent" | "money"
-            })
+            });
+
 
             const mappedItems = [...invoice.items.map(item => ({
               id: item.id,
-              ...item.itemType === "billboard" ? { billboardId: item.billboardId } : { productServiceId: item.productServiceId },
               name: item.name,
               quantity: item.quantity,
               price: item.price,
@@ -197,11 +198,13 @@ export default function InvoiceTab() {
               currency: item.currency,
               lastUploadFiles: invoice.files.filter((file) => Boolean(file)) ?? [],
               ...item.itemType === "billboard" ? {
-                billboardId: item.billboardId as string,
+                billboardId: item.billboardId || undefined,
                 locationStart: item.locationStart,
                 locationEnd: item.locationEnd,
-              } : { productServiceId: item.productServiceId as string, lastQuantity: item.quantity }
+              } : { productServiceId: item.productServiceId || undefined, lastQuantity: item.quantity }
             }))]
+
+            console.log({ mappedItems });
 
             form.reset({
               id: invoice.id,
@@ -217,7 +220,7 @@ export default function InvoiceTab() {
               clientId: invoice.clientId,
               projectId: invoice.projectId,
               item: {
-                billboards: invoice.items.filter(item => Boolean(item.billboardId)).map(billboard => ({
+                billboards: invoice.items.filter(item => item.itemType === "billboard").map(billboard => ({
                   id: billboard.id,
                   name: billboard.name,
                   quantity: billboard.quantity,
@@ -229,10 +232,10 @@ export default function InvoiceTab() {
                   discountType: billboard.discountType as "purcent" | "money",
                   discount: billboard.discount,
                   description: billboard.description ?? "",
-                  billboardId: billboard.billboardId as string,
+                  billboardId: billboard.billboardId || undefined,
                   currency: billboard.currency,
                 })),
-                productServices: invoice.items.filter(item => Boolean(item.productServiceId)).map(productService => ({
+                productServices: invoice.items.filter(item => item.itemType !== "billboard").map(productService => ({
                   id: productService.id,
                   name: productService.name,
                   quantity: productService.quantity,
@@ -242,7 +245,7 @@ export default function InvoiceTab() {
                   discountType: productService.discountType as "purcent" | "money",
                   discount: productService.discount,
                   description: productService.description ?? "",
-                  productServiceId: productService.productServiceId as string,
+                  productServiceId: productService.productServiceId || undefined,
                   currency: productService.currency,
                 })),
               }
@@ -255,7 +258,6 @@ export default function InvoiceTab() {
                 if (data.data && data.data.length > 0 && invoice.clientId) {
                   const clients = data.data;
                   setClient(clients.find((c) => c.id === invoice.clientId));
-
                 }
               },
             });
@@ -267,14 +269,7 @@ export default function InvoiceTab() {
                 }
               },
             });
-            mutateGetClient({ id: invoice.clientId }, {
-              onSuccess(data) {
-                if (data.data) {
-                  const client = data.data;
-                  updateDiscount(client.discount)
-                }
-              },
-            })
+            mutateGetClient({ id: invoice.clientId })
             mutateGetDocument({ id: invoice.companyId })
           }
         },
@@ -298,8 +293,8 @@ export default function InvoiceTab() {
         {
           onSuccess(data) {
             if (data.data) {
-              if (isFirstLoad.current) {
-                isFirstLoad.current = false;
+              if (isFirstLoadingDiscount.current) {
+                isFirstLoadingDiscount.current = false;
                 return;
               }
               updateDiscount(data.data.discount);
@@ -324,6 +319,7 @@ export default function InvoiceTab() {
         billboards: items
           .filter((item) => item.itemType === "billboard")
           .map((item) => ({
+            id: item.id,
             name: item.name,
             quantity: item.quantity,
             price: item.price,
@@ -340,12 +336,13 @@ export default function InvoiceTab() {
             discountType: item.discountType,
             description: item.description,
             discount: item.discount,
-            billboardId: item.id,
+            billboardId: item.billboardId,
             currency: item.currency,
           })),
         productServices: items
           .filter((item) => item.itemType !== "billboard")
           .map((item) => ({
+            id: item.id,
             name: item.name,
             quantity: item.quantity,
             price: item.price,
@@ -359,7 +356,7 @@ export default function InvoiceTab() {
             discountType: item.discountType,
             description: item.description,
             discount: String(item.discount),
-            productServiceId: item.id,
+            productServiceId: item.productServiceId,
             currency: item.currency,
           })),
       });
@@ -400,6 +397,10 @@ export default function InvoiceTab() {
 
   useEffect(() => {
     if (client) {
+      if (isFirstLoadingClientDiscount.current) {
+        isFirstLoadingClientDiscount.current = false;
+        return
+      }
       setClientDiscount({
         discount: client.discount.includes("%")
           ? Number(client.discount.split("%")[0])

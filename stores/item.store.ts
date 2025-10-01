@@ -9,9 +9,11 @@ export type ItemType = {
     maxQuantity?: number;
     locationStart?: Date;
     locationEnd?: Date;
-    lastDate?: Date;
     price: string;
     updatedPrice: string;
+    billboardId?: string;
+    billboardReference?: string;
+    productServiceId?: string;
     discount: string;
     status?: "available" | "non-available"
     discountType: "purcent" | "money";
@@ -22,6 +24,8 @@ export type ItemType = {
 
 export type LocationBillboardDateType = {
     id: string;
+    isNew: true,
+    billboardReference?: string;
     locationDate: [Date, Date]
 }
 
@@ -51,34 +55,50 @@ const useItemStore = createSelectors(
             set({ locationBillboardDate: itemLocation })
         },
 
-
         addLocationBillboard(item) {
             set((state) => {
                 const exists = state.locationBillboardDate.some((i) => i.id === item.id);
+                console.log({ old: state.locationBillboardDate, exists });
+                console.log({ data: [...state.locationBillboardDate, item] })
                 if (exists) return state;
                 return { locationBillboardDate: [...state.locationBillboardDate, item] };
             });
-        },
-
+        }
+        ,
         addItem(item) {
             set((state) => {
-                const exists = state.items.some((i) => i.id === item.id);
-                if (exists) return state; // Pas de doublons
+                if (item.id) {
+                    const exists = state.items.some((i) => i.id === item.id);
+                    if (exists) return state;
+                }
+
                 return { items: [...state.items, item] };
             });
         },
 
+
         removeItem(id) {
-            set({ items: get().items.filter((i) => i.id !== id) });
+            set({
+                items: get().items.filter(
+                    (i) => i.billboardId !== id && i.productServiceId !== id
+                ),
+            });
         },
+
 
         clearLocationBillboard() {
             set({ locationBillboardDate: [] })
         },
 
-        removeLocationBillboard(id) {
-            set({ locationBillboardDate: get().locationBillboardDate.filter((i) => i.id !== id) });
+        removeLocationBillboard(id: string) {
+            set({
+                locationBillboardDate: get().locationBillboardDate.filter(
+                    (item) =>
+                        item.id !== id && item.id !== `random-id-${id.replace("random-id-", "")}`
+                ),
+            });
         },
+
 
         updateItem(item) {
             set((state) => {

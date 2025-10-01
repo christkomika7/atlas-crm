@@ -7,6 +7,8 @@ import prisma from "./prisma";
 import { removePath, saveFile } from "./file";
 import { BillboardItem, ConflictResult, ExistingBillboardItem, InvoiceType } from "@/types/invoice.types";
 import { format, isAfter, isBefore, isEqual, isValid, setDate } from "date-fns";
+import { updatedItem } from "@/types/item.type";
+import { Item } from "./generated/prisma";
 
 // @ts-ignore - on utilise la classe globale File de Node 18+
 const NodeFile = globalThis.File;
@@ -33,7 +35,6 @@ export async function getFileFromPath(filePath: string): Promise<File | null> {
 }
 
 
-// Fonction séparée pour gérer les fichiers après la transaction
 export async function handleFileOperations(result: any, data: any, companyHasChangeName: boolean) {
     const uploadedPaths: string[] = [];
 
@@ -175,137 +176,59 @@ export async function handleFileOperations(result: any, data: any, companyHasCha
 }
 
 
-export async function rollbackInvoice(invoiceExist: InvoiceType, companyId: string) {
-    // 1. Regrouper les quantités par productService à restaurer
+export async function rollbackInvoice(
+    invoiceExist: InvoiceType,
+) {
+    const productsServices = invoiceExist.productsServices || [];
+    const billboards = invoiceExist.billboards || [];
+
+    // Regrouper les quantités à réincrémenter pour chaque productService
     const productServiceItems = invoiceExist.items
-        .filter((it: any) => it.itemType !== "billboard" && it.productServiceId)
+        .filter(
+            (it: any) => it.itemType !== "billboard" && it.productServiceId
+        )
         .reduce<Record<string, number>>((acc, it) => {
-            acc[String(it.productServiceId)] = (acc[String(it.productServiceId)] || 0) + it.quantity;
+            const key = String(it.productServiceId); // toujours en string
+            acc[key] = (acc[key] || 0) + it.quantity;
             return acc;
         }, {});
 
-    // 2. Préparer les updates produits (restaurer le stock)
-    const productServiceUpdates = invoiceExist.productsServices.map((productService: any) =>
+    // 🔎 Logs de debug
+    console.log("🔎 Quantités à rollback:", productServiceItems);
+    console.log(
+        "🔎 IDs attendus:",
+        productsServices.map((ps: any) => String(ps.id))
+    );
+
+    const productServiceUpdates = productsServices.map((productService: any) =>
         prisma.productService.update({
-            where: { id: productService.id },
+            where: { id: String(productService.id) },
             data: {
                 quantity: {
-                    increment: productServiceItems[productService.id] || 0,
+                    increment: productServiceItems[String(productService.id)] || 0,
                 },
             },
         })
     );
 
-    // 3. Transaction : suppression items + déconnexion + restauration stock
     await prisma.$transaction([
-        // Supprimer les items EN PREMIER (plus propre)
+        // supprimer les items liés à la facture
         prisma.item.deleteMany({ where: { invoiceId: invoiceExist.id } }),
 
-        // Déconnecter les relations
+        // déconnecter les relations avec la facture
         prisma.invoice.update({
             where: { id: invoiceExist.id },
             data: {
-                productsServices: { disconnect: invoiceExist.productsServices.map((ps: any) => ({ id: ps.id })) },
-                billboards: { disconnect: invoiceExist.billboards.map((b: any) => ({ id: b.id })) },
-            },
-        }),
-
-        // Restaurer les stocks
-        ...productServiceUpdates,
-    ]);
-
-    // 4. Récupérer les derniers items billboard RESTANTS (après suppression de la facture)
-    const allBillboardItems = await prisma.item.findMany({
-        where: {
-            itemType: "billboard",
-            invoice: { companyId },
-            billboardId: { not: null },
-        },
-        orderBy: { createdAt: "desc" },
-        include: { billboard: true, invoice: true },
-    });
-
-    // 5. Garder seulement le plus récent par billboard
-    const recentBillboardItems = Object.values(
-        allBillboardItems.reduce<Record<string, typeof allBillboardItems[0]>>((acc, item) => {
-            if (!acc[item.billboardId!]) {
-                acc[item.billboardId!] = item;
-            }
-            return acc;
-        }, {})
-    );
-
-    // 6. Restaurer l'état des billboards avec les valeurs des items restants les plus récents
-    if (recentBillboardItems.length > 0) {
-        await prisma.$transaction(
-            recentBillboardItems.map((item) =>
-                prisma.billboard.update({
-                    where: { id: item.billboardId! },
-                    data: {
-                        locationStart: item.locationStart,
-                        locationEnd: item.locationEnd,
-                    },
-                })
-            )
-        );
-    }
-
-    // 7. Si certains billboards n'ont plus d'items, les remettre à leur état par défaut
-    const billboardsToReset = invoiceExist.billboards.filter((billboard: any) =>
-        !recentBillboardItems.some(item => item.billboardId === billboard.id)
-    );
-
-    if (billboardsToReset.length > 0) {
-        await prisma.$transaction(
-            billboardsToReset.map((billboard: any) =>
-                prisma.billboard.update({
-                    where: { id: billboard.id },
-                    data: {
-                        locationStart: null, // ou billboard.defaultLocationStart
-                        locationEnd: null,   // ou billboard.defaultLocationEnd
-                    },
-                })
-            )
-        );
-    }
-}
-
-export async function rollbackInvoiceSimple(invoiceExist: InvoiceType, companyId: string) {
-    // 1. Regrouper les quantités par productService
-    const productServiceItems = invoiceExist.items
-        .filter((it: any) => it.itemType !== "billboard" && it.productServiceId)
-        .reduce<Record<string, number>>((acc, it) => {
-            acc[String(it.productServiceId)] = (acc[String(it.productServiceId)] || 0) + it.quantity;
-            return acc;
-        }, {});
-
-    // 2. Préparer les updates produits
-    const productServiceUpdates = invoiceExist.productsServices.map((productService: any) =>
-        prisma.productService.update({
-            where: { id: productService.id },
-            data: {
-                quantity: {
-                    increment: productServiceItems[productService.id] || 0,
+                productsServices: {
+                    disconnect: productsServices.map((ps: any) => ({ id: ps.id })),
+                },
+                billboards: {
+                    disconnect: billboards.map((b: any) => ({ id: b.id })),
                 },
             },
-        })
-    );
-
-    // 3. Transaction unique et simple
-    await prisma.$transaction([
-        // Supprimer les items en premier
-        prisma.item.deleteMany({ where: { invoiceId: invoiceExist.id } }),
-
-        // Déconnecter les relations
-        prisma.invoice.update({
-            where: { id: invoiceExist.id },
-            data: {
-                productsServices: { disconnect: invoiceExist.productsServices.map((ps: any) => ({ id: ps.id })) },
-                billboards: { disconnect: invoiceExist.billboards.map((b: any) => ({ id: b.id })) },
-            },
         }),
 
-        // Restaurer les stocks
+        // mettre à jour les stocks
         ...productServiceUpdates,
     ]);
 }
@@ -418,9 +341,6 @@ export async function checkBillboardConflicts(
 
     const conflicts: ConflictResult['conflicts'] = [];
 
-    console.log({ validBillboards });
-
-
     // Vérifier chaque nouveau billboard
     for (const newBillboard of validBillboards) {
         const newStart = parseDate(newBillboard.locationStart);
@@ -474,4 +394,108 @@ export async function checkBillboardConflicts(
         hasConflict: conflicts.length > 0,
         conflicts
     };
+}
+
+function areItemsEqual(a: BillboardItem, b: BillboardItem): boolean {
+    return (
+        a.quantity === b.quantity &&
+        a.price === b.price &&
+        a.updatedPrice === b.updatedPrice &&
+        a.discount === b.discount &&
+        a.discountType === b.discountType &&
+        (!!a.locationStart &&
+            !!b.locationStart &&
+            new Date(a.locationStart).getTime() === new Date(b.locationStart).getTime()) &&
+        (!!a.locationEnd &&
+            !!b.locationEnd &&
+            new Date(a.locationEnd).getTime() === new Date(b.locationEnd).getTime()) &&
+        a.billboardId === b.billboardId
+    );
+}
+
+
+async function removeBillboardItem(items: updatedItem[]) {
+    const deletedIds = items.map(item => item.id).filter(item => typeof item === "string");
+
+    await prisma.$transaction([
+        prisma.item.deleteMany({
+            where: {
+                id: {
+                    in: deletedIds
+                }
+            }
+        }),
+        ...items.filter(item => typeof item.billboardId === "string").map(item => (
+            prisma.billboard.update({
+                where: {
+                    id: item.billboardId
+                },
+                data: {
+                    items: {
+                        disconnect: {
+                            id: item.id
+                        }
+                    },
+                }
+            })
+        ))
+    ])
+
+}
+
+async function addBillboardItem(items: updatedItem[], invoiceId: string) {
+    await prisma.$transaction([
+        prisma.invoice.update({
+            where: {
+                id: invoiceId
+            },
+            data: {
+                items: {
+                    createMany: {
+                        data: [
+                            ...items.map(item => ({
+                                name: item.name,
+                                description: item.description ?? "",
+                                quantity: item.quantity,
+                                price: item.price,
+                                updatedPrice: item.updatedPrice,
+                                discount: item.discount ?? "0",
+                                locationStart: item.locationStart ?? new Date(),
+                                locationEnd: item.locationEnd as Date,
+                                discountType: item.discountType as string,
+                                currency: item.currency!,
+                                billboardId: item.billboardId,
+                                itemType: item.itemType ?? "billboard"
+                            }))
+                        ]
+                    }
+                },
+                billboards: {
+                    // connect: items.map(item => )
+                }
+            }
+        })
+    ]);
+}
+
+
+export async function updateBilloardItem(oldBillboardItems: Item[], newBillboardItems: updatedItem[], invoiceId: string) {
+    console.log({ oldBillboardItems, newBillboardItems });//
+    const itemsToAdd = newBillboardItems.filter((item) => !item.id);
+    const itemsToDelete = oldBillboardItems.filter(
+        (oldItem) =>
+            !newBillboardItems.some((newItem) => newItem.id === oldItem.id)
+    );
+
+    const itemsToUpdate = newBillboardItems.filter((newItem) => {
+        if (!newItem.id) return false;
+        const oldItem = oldBillboardItems.find((o) => o.id === newItem.id);
+        if (!oldItem) return false;
+        return !areItemsEqual(oldItem as updatedItem, newItem);
+    });
+
+    console.log({ itemsToAdd, itemsToDelete, itemsToUpdate })
+    // new items
+    // same items
+    // deleted items
 }

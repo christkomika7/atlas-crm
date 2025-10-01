@@ -22,6 +22,7 @@ type DatePickerProps = {
   onChange?: (value: Date | Date[] | { from: Date; to: Date }) => void;
   disabled?: boolean;
   disabledRanges?: DateRange[];
+  by?: number; // Nouveau paramètre pour définir l'intervalle (uniquement pour mode "range")
   className?: string;
 };
 
@@ -33,6 +34,7 @@ export function DatePicker({
   onChange,
   disabled,
   disabledRanges = [],
+  by,
   className,
 }: DatePickerProps) {
   const isSingle = mode === "single";
@@ -42,6 +44,7 @@ export function DatePicker({
   const [rangeDates, setRangeDates] = useState<
     { from: Date; to: Date } | undefined
   >(undefined);
+  const [rangeStartDate, setRangeStartDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (isSingle && value instanceof Date) {
@@ -85,15 +88,91 @@ export function DatePicker({
 
   const isDateDisabled = (date: Date) => {
     if (disabled) return true;
-    if (!disabledRanges || disabledRanges.length === 0) return false;
 
     const current = normalizeDate(date);
 
-    return disabledRanges.some(([min, max]) => {
-      const start = normalizeDate(new Date(min));
-      const end = normalizeDate(new Date(max));
-      return current >= start && current <= end;
-    });
+    // Vérifier d'abord les disabledRanges existants
+    const isDisabledByRanges = disabledRanges && disabledRanges.length > 0 &&
+      disabledRanges.some(([min, max]) => {
+        const start = normalizeDate(new Date(min));
+        const end = normalizeDate(new Date(max));
+        return current >= start && current <= end;
+      });
+
+    if (isDisabledByRanges) return true;
+
+    // Appliquer la logique du paramètre "by" uniquement en mode range
+    if (mode === "range" && by && rangeStartDate) {
+      const startNormalized = normalizeDate(rangeStartDate);
+      const daysDiff = Math.floor((current.getTime() - startNormalized.getTime()) / (1000 * 60 * 60 * 24));
+
+      // Si la date est après la date de début
+      if (daysDiff > 0) {
+        // La date est valide si elle est exactement à un multiple de "by" jours
+        // ou si c'est une date de début potentielle (multiple de by)
+        return daysDiff % by !== 0;
+      }
+    }
+
+    return false;
+  };
+
+  // Fonction pour vérifier si une date peut être sélectionnée comme date de début en mode range avec "by"
+  const canBeRangeStart = (date: Date) => {
+    if (mode !== "range" || !by) return true;
+
+    // Une date peut être date de début si elle n'est pas désactivée par disabledRanges
+    const current = normalizeDate(date);
+    const isDisabledByRanges = disabledRanges && disabledRanges.length > 0 &&
+      disabledRanges.some(([min, max]) => {
+        const start = normalizeDate(new Date(min));
+        const end = normalizeDate(new Date(max));
+        return current >= start && current <= end;
+      });
+
+    return !isDisabledByRanges && !disabled;
+  };
+
+  // Gestionnaire personnalisé pour la sélection en mode range avec "by"
+  const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
+    if (mode === "range" && by) {
+      // Si on sélectionne une première date
+      if (range?.from && !range?.to) {
+        setRangeStartDate(range.from);
+        setRangeDates(undefined);
+      }
+      // Si on sélectionne la deuxième date (range complet)
+      else if (range?.from && range?.to) {
+        setRangeDates({ from: range.from, to: range.to });
+        setRangeStartDate(undefined);
+        onChange?.({ from: range.from, to: range.to });
+      }
+      // Si on déselectionne
+      else {
+        setRangeDates(undefined);
+        setRangeStartDate(undefined);
+        onChange?.(
+          undefined as unknown as
+          | Date
+          | Date[]
+          | { from: Date; to: Date }
+        );
+      }
+    } else {
+      // Comportement normal sans "by"
+      if (range?.from && range?.to) {
+        setRangeDates({ from: range.from, to: range.to });
+        onChange?.({ from: range.from, to: range.to });
+      } else {
+        setRangeDates(undefined);
+        onChange?.(
+          undefined as unknown as
+          | Date
+          | Date[]
+          | { from: Date; to: Date }
+        );
+      }
+    }
   };
 
   return (
@@ -132,21 +211,8 @@ export function DatePicker({
           <Calendar
             mode="range"
             locale={fr}
-            selected={rangeDates}
-            onSelect={(range) => {
-              if (range?.from && range?.to) {
-                setRangeDates({ from: range.from, to: range.to });
-                onChange?.({ from: range.from, to: range.to });
-              } else {
-                setRangeDates(undefined);
-                onChange?.(
-                  undefined as unknown as
-                  | Date
-                  | Date[]
-                  | { from: Date; to: Date }
-                );
-              }
-            }}
+            selected={rangeDates || (rangeStartDate ? { from: rangeStartDate } : undefined)}
+            onSelect={handleRangeSelect}
             disabled={isDateDisabled}
           />
         ) : (

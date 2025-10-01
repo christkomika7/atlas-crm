@@ -1,6 +1,7 @@
 import { all } from "@/action/billboard.action";
 import { unique } from "@/action/client.action";
 import { allBillboardItem } from "@/action/item.action";
+import BillboardStatus from "@/app/(dashboard)/billboard/_component/billboard-status";
 import { Checkbox } from "@/components/ui/checkbox";
 import Spinner from "@/components/ui/spinner";
 import {
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import useQueryAction from "@/hook/useQueryAction";
 import { paymentTerms } from "@/lib/data";
-import { addDays, getDateStatus } from "@/lib/date";
+import { addDays, getDateStatus, getEnableDate } from "@/lib/date";
 import { cn, formatNumber } from "@/lib/utils";
 import useClientIdStore from "@/stores/client-id.store";
 import { useDataStore } from "@/stores/data.store";
@@ -21,30 +22,23 @@ import useItemStore from "@/stores/item.store";
 import { RequestResponse } from "@/types/api.types";
 import { BillboardType } from "@/types/billboard.types";
 import { ClientType } from "@/types/client.types";
-import { ItemType } from "@/types/item.type";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function BillboardTab() {
-  // ** STATE ** //
   const [locationEndDate, setLocationEndDate] = useState<Date | undefined>(undefined);
-  const [currentItemId, setCurrentItemId] = useState<string>();
-
-
-  // ** STORE ** //
-  // # DATA STORE
   const companyId = useDataStore.use.currentCompany();
-
-  // # CLIENT STORE
   const clientId = useClientIdStore.use.clientId();
 
-  // # ITEM STORE
   const items = useItemStore.use.items();
   const addItem = useItemStore.use.addItem();
-  const addLocationBillboard = useItemStore.use.addLocationBillboard();
-  const clearLocationBillboard = useItemStore.use.clearLocationBillboard();
   const removeLocationBillboard = useItemStore.use.removeLocationBillboard();
+  const addLocationBillboard = useItemStore.use.addLocationBillboard();
   const removeItem = useItemStore.use.removeItem();
+
+
+  const locationBillboardDate = useItemStore.use.locationBillboardDate();
+
 
 
 
@@ -62,17 +56,6 @@ export default function BillboardTab() {
     () => { },
     "client"
   );
-
-  const { mutate: getBillboardItems, isPending: isGettingBillboardItems } =
-    useQueryAction<{ billboardId: string }, RequestResponse<ItemType[]>>(
-      allBillboardItem,
-      () => { },
-      "items"
-    );
-
-  useEffect(() => {
-    clearLocationBillboard();
-  }, []);
 
   useEffect(() => {
     if (companyId) {
@@ -100,70 +83,53 @@ export default function BillboardTab() {
     }
   }, [clientId]);
 
-  function isSelected(itemId: string) {
-    return items.some((i) => i.id === itemId);
+  function isSelected(billboardId: string) {
+    return items.some((i) => i.billboardId === billboardId);
   }
 
-  function toggleSelection(check: boolean, item: BillboardType) {
+  function toggleSelection(check: boolean, billboard: BillboardType) {
     // Vérifier d'abord si un client est sélectionné
     if (!clientId) {
       return toast.error("Veuillez sélectionner un client en premier.");
     }
+    const reference = crypto.randomUUID()
 
-    // Si on charge encore les données du client, on attend
-    if (isLoadingClient) {
-      return toast.info("Chargement des informations client...");
-    }
-
-    // Obtenir les données du client ou utiliser des valeurs par défaut
     const client = clientData?.data;
-    const defaultDiscount = "0"; // Valeur par défaut si pas encore de données client
-    setCurrentItemId(item.id);
+    const randomUUID = crypto.randomUUID()
+    const defaultDiscount = "0";
+    const enableDate = getEnableDate(locationBillboardDate);
 
     if (check) {
-      getBillboardItems(
-        { billboardId: item.id },
-        {
-          onSuccess(data) {
-            if (data.data) {
-              const billboardItem = data.data;
-              const status = getDateStatus({
-                startDate: item.locationDuration?.[0] && new Date(item.locationDuration[0]),
-                endDate: item.locationDuration?.[1] && new Date(item.locationDuration[1]),
-              });
-              addLocationBillboard({
-                id: item.id,
-                locationDate: billboardItem.length > 0
-                  ? [new Date(billboardItem[0].locationStart), new Date(billboardItem[0].locationEnd)] as [Date, Date]
-                  : [new Date(), new Date()] as [Date, Date],
-              });
-              addItem({
-                id: item.id,
-                name: item.name,
-                description: item.information,
-                price: item.rentalPrice,
-                updatedPrice: "0",
-                discountType: "purcent",
-                lastDate: item.locationDuration?.[1],
-                discount: client?.discount || defaultDiscount,
-                quantity: 1,
-                locationStart: new Date(),
-                locationEnd: locationEndDate,
-                status: status === "red" ? "non-available" : "available",
-                currency: item.company.currency,
-                itemType: "billboard",
-              });
-              setCurrentItemId("")
-            }
-          },
-        }
-      );
+      addLocationBillboard({
+        id: billboard.id,
+        billboardReference: reference,
+        isNew: true,
+        locationDate: [new Date(), new Date()],
+      });
+
+      addItem({
+        id: randomUUID,
+        name: billboard.name,
+        description: billboard.information,
+        price: billboard.rentalPrice,
+        billboardReference: reference,
+        updatedPrice: "0",
+        discountType: "purcent",
+        discount: client?.discount || defaultDiscount,
+        quantity: 1,
+        locationStart: enableDate,
+        locationEnd: enableDate,
+        currency: billboard.company.currency,
+        itemType: "billboard",
+        billboardId: billboard.id
+      });
+
     } else {
-      removeItem(item.id);
-      removeLocationBillboard(item.id);
-      setCurrentItemId("");
+      removeLocationBillboard(billboard.id);
+      removeItem(billboard.id);
     }
   }
+
 
   return (
     <div className="pt-2">
@@ -179,7 +145,6 @@ export default function BillboardTab() {
               Disponibilité
             </TableHead>
             <TableHead className="font-medium text-center">Montant</TableHead>
-            <TableHead className="font-medium text-center w-[40px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -193,12 +158,7 @@ export default function BillboardTab() {
             </TableRow>
           ) : data?.data && data.data.length > 0 ? (
             data.data.map((billboard) => {
-              const status = getDateStatus({
-                startDate: billboard.locationDuration?.[0] && new Date(billboard.locationDuration[0]),
-                endDate: billboard.locationDuration?.[1] && new Date(billboard.locationDuration[1]),
-              });
               const isClientSelected = !!clientId;
-
               return (
                 <TableRow
                   key={billboard.id}
@@ -227,23 +187,11 @@ export default function BillboardTab() {
                     {billboard.name}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    <span
-                      className={cn(
-                        "flex mx-auto rounded-full w-5 h-5",
-                        status === "red" && "bg-red",
-                        status === "yellow" && "bg-amber-400",
-                        status === "green" && "bg-emerald-500"
-                      )}
-                    ></span>
+                    <BillboardStatus items={billboard.items.map(item => [item.locationStart, item.locationEnd])} />
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {formatNumber(Number(billboard.rentalPrice))}{" "}
                     {billboard.company.currency}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-center">
-                      {currentItemId === billboard.id && isGettingBillboardItems && <Spinner />}
-                    </div>
                   </TableCell>
                 </TableRow>
               );

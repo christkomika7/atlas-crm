@@ -12,7 +12,7 @@ import { RequestResponse } from "@/types/api.types";
 import { Button } from "@/components/ui/button";
 import { all as getClients, unique as getClient } from "@/action/client.action";
 import { allByClient } from "@/action/project.action";
-import { create, invoiceNumber } from "@/action/invoice.action";
+import { create, getBillboardItemLocations, invoiceNumber } from "@/action/invoice.action";
 
 import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
@@ -24,7 +24,7 @@ import { invoiceSchema, InvoiceSchemaType } from "@/lib/zod/invoice.schema";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { ProjectType } from "@/types/project.types";
 import ItemModal from "./item-modal";
-import useItemStore from "@/stores/item.store";
+import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
 import useProjectStore from "@/stores/project.store";
 import ProjectModal from "../../_component/project-modal";
 import useClientIdStore from "@/stores/client-id.store";
@@ -39,6 +39,8 @@ import InvoiceInfo from "./invoice-info";
 import { INVOICE_PREFIX } from "@/config/constant";
 import useTabStore from "@/stores/tab.store";
 import { DiscountType } from "@/types/tax.type";
+import { generateAmaId } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function InvoiceForm() {
   const router = useRouter();
@@ -63,6 +65,8 @@ export default function InvoiceForm() {
   const clearItem = useItemStore.use.clearItem();
 
   const locationBillboardDate = useItemStore.use.locationBillboardDate();
+  const setLocationBillboard = useItemStore.use.setLocationBillboard();
+
 
   const setProject = useProjectStore.use.setProject();
   const projects = useProjectStore.use.projects();
@@ -113,6 +117,14 @@ export default function InvoiceForm() {
   );
 
   const {
+    mutate: mutateGetItemLocations,
+  } = useQueryAction<{ companyId: string }, RequestResponse<LocationBillboardDateType[]>>(
+    getBillboardItemLocations,
+    () => { },
+    "item-locations"
+  );
+
+  const {
     mutate: mutateProject,
     isPending: isLoadingProject,
     data: projectData,
@@ -145,6 +157,13 @@ export default function InvoiceForm() {
           },
         }
       );
+      mutateGetItemLocations({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setLocationBillboard(data.data);
+          }
+        },
+      })
     }
   }, [companyId]);
 
@@ -171,6 +190,8 @@ export default function InvoiceForm() {
       console.log({ errors: form.formState.errors })
     })
   }, [form.watch])
+
+  console.log({ companyId })
 
 
   useEffect(() => {
@@ -207,12 +228,12 @@ export default function InvoiceForm() {
                 taxes: company?.vatRates ?? []
               }).totalWithoutTaxes
             ),
-            locationStart: item.locationStart,
-            locationEnd: item.locationEnd,
+            locationStart: item.locationStart ?? new Date(),
+            locationEnd: item.locationEnd ?? new Date(),
             discountType: item.discountType,
             description: item.description,
             discount: item.discount,
-            billboardId: item.id,
+            billboardId: item.billboardId,
             currency: item.currency,
           })),
         productServices: items
@@ -227,11 +248,13 @@ export default function InvoiceForm() {
                 taxes: company?.vatRates ?? []
               }).totalWithoutTaxes
             ),
+            locationStart: item.locationStart ?? new Date(),
+            locationEnd: item.locationEnd ?? new Date(),
             itemType: item.itemType,
             discountType: item.discountType,
             description: item.description,
             discount: String(item.discount),
-            productServiceId: item.id,
+            productServiceId: item.productServiceId,
             currency: item.currency,
           })),
       });
@@ -280,11 +303,11 @@ export default function InvoiceForm() {
   const submit = useCallback(
     async (invoiceData: InvoiceSchemaType) => {
       const { success, data } = invoiceSchema.safeParse(invoiceData);
-      if (!success) return;
+
+      if (!success) return toast.error("Merci de compléter tous les champs obligatoires.");
       mutate(data, {
         onSuccess(data) {
           if (data.data) {
-            form.reset();
             setTab("action-invoice-tab", 1);
             router.push(`/invoice/${data.data.id}`);
           }
@@ -293,7 +316,6 @@ export default function InvoiceForm() {
     },
     [mutate, form, router]
   );
-
   return (
     <Form {...form}>
       <form
@@ -339,7 +361,7 @@ export default function InvoiceForm() {
             </h2>
             <div className="space-y-2">
               {items.map((item) => (
-                <ItemList key={item.id} item={item} locationBillboardDate={locationBillboardDate} calculate={calculate} taxes={company?.vatRates ?? []} />
+                <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} locationBillboardDate={locationBillboardDate} calculate={calculate} taxes={company?.vatRates ?? []} />
               ))}
             </div>
 
@@ -445,7 +467,7 @@ export default function InvoiceForm() {
         </div>
         <div className="space-y-4.5 max-w-full">
           <InvoiceInfo isGettingDocument={isGettingDocument} isGettingInvoiceNumber={isGettingInvoiceNumber}
-            reference={`${documentData?.data?.invoicesPrefix || INVOICE_PREFIX}-${invoiceNumberData?.data}`}
+            reference={`${documentData?.data?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(Number(invoiceNumberData?.data || 0), false)}`}
             discount={clientDiscount}
             setDiscount={setClientDiscount}
             currency={currency}

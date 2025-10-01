@@ -1,5 +1,6 @@
+import { LocationBillboardDateType } from "@/stores/item.store";
 import { Sale } from "@/types/item.type";
-import { parse } from "date-fns";
+import { isWithinInterval, parse, startOfDay, addDays as addDaysFNS } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 
 type DateRange = {
@@ -12,18 +13,18 @@ export function formatDateToDashModel(date: Date): string {
 }
 
 export function addDays(
-  date: Date,
-  days: number,
-  returnType: "date" | "string" = "string"
+    date: Date,
+    days: number,
+    returnType: "date" | "string" = "string"
 ): Date | string {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
 
-  if (returnType === "date") {
-    return result;
-  }
+    if (returnType === "date") {
+        return result;
+    }
 
-  return formatDateToDashModel(result);
+    return formatDateToDashModel(result);
 }
 
 
@@ -148,4 +149,46 @@ export function getTotalDuration(sales: Sale[]): string {
     if (days > 0) parts.push(`${days} j`);
 
     return parts.join(" & ") || "0 j";
+}
+
+
+export function durationInMonths(start: Date, end: Date): number {
+    if (end < start) return 0;
+
+    const years = end.getFullYear() - start.getFullYear();
+    const months = end.getMonth() - start.getMonth();
+
+    let totalMonths = years * 12 + months;
+
+    let dayFraction = 0;
+    if (end.getDate() >= start.getDate()) {
+        const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+        const dayDiff = end.getDate() - start.getDate();
+        dayFraction = dayDiff / daysInMonth;
+    } else {
+        totalMonths -= 1;
+        const prevMonthDays = new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate();
+        const dayDiff = end.getDate() + (prevMonthDays - start.getDate());
+        dayFraction = dayDiff / prevMonthDays;
+    }
+
+    return +(totalMonths + dayFraction).toFixed(2);
+}
+
+
+export function getEnableDate(locations: LocationBillboardDateType[]): Date {
+    let current = startOfDay(new Date());
+
+    while (
+        locations.filter(l => !l.isNew).some((loc) =>
+            isWithinInterval(current, {
+                start: startOfDay(new Date(loc.locationDate[0])),
+                end: startOfDay(new Date(loc.locationDate[1])),
+            })
+        )
+    ) {
+        current = addDaysFNS(current, 1);
+    }
+
+    return current;
 }

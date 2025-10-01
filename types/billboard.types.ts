@@ -3,6 +3,7 @@ import { CompanyType } from "./company.types";
 import { CityType } from "./city.types";
 import { BillboardTypeType } from "./billboard-type.types";
 import { ClientType } from "./client.types";
+import { ItemType } from "./item.type";
 
 export type BillboardType = {
     id: string;
@@ -60,4 +61,5 @@ export type BillboardType = {
     client: ClientType;
     createdAt: Date;
     updatedAt: Date;
+    items: ItemType[]
 };

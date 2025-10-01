@@ -281,7 +281,7 @@ model Billboard {
 
   placement           String
   cityId              String
-  city                City      @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  city                City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
   orientation         String
   information         String?
   address             String
@@ -297,8 +297,6 @@ model Billboard {
   foundations         String
   technicalVisibility String
   note                String
-  locationStart       DateTime?
-  locationEnd         DateTime?
 
   lessorType              String
   lessorName              String
@@ -337,7 +335,7 @@ model Billboard {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   invoices  Invoice[]
-  Item      Item[]
+  items     Item[]
 
   @@map("billboard")
 }

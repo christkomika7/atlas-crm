@@ -29,9 +29,23 @@ export async function POST(req: NextRequest) {
     const data = parseData<InvoiceSchemaType>(invoiceSchema, {
         ...rawData,
         item: {
-            productServices: productServicesParse,
+            productServices: productServicesParse?.map((b: { id: string; name: string; quantity: number; locationStart: string; locationEnd: string; status: string; price: string; updatedPrice: string; discount: string; currency: string; discountType: any; itemType: any; productServiceId: string; }) => ({
+                id: "",
+                name: b.name,
+                quantity: b.quantity,
+                locationStart: new Date(b.locationStart),
+                locationEnd: new Date(b.locationEnd),
+                status: b.status,
+                price: b.price,
+                updatedPrice: b.updatedPrice,
+                currency: b.currency,
+                discount: b.discount,
+                discountType: b.discountType,
+                itemType: b.itemType,
+                productServiceId: b.productServiceId
+            })) ?? [],
             billboards: billboardsParse?.map((b: { id: string; name: string; quantity: number; locationStart: string; locationEnd: string; status: string; price: string; updatedPrice: string; discount: string; currency: string; discountType: any; itemType: any; billboardId: string; }) => ({
-                id: b.id,
+                id: "",
                 name: b.name,
                 quantity: b.quantity,
                 locationStart: new Date(b.locationStart),
@@ -108,8 +122,6 @@ export async function POST(req: NextRequest) {
             const upload = await createFile(file, folderFile);
             savedFilePaths = [...savedFilePaths, upload];
         }
-
-        console.log({ billboards: data.item.billboards })
 
         const [createdInvoice] = await prisma.$transaction([
             prisma.invoice.create({
@@ -202,17 +214,6 @@ export async function POST(req: NextRequest) {
                     }
                 }
             }),
-            ...(data.item.billboards?.map(billboard => (
-                prisma.billboard.update({
-                    where: {
-                        id: billboard.billboardId
-                    },
-                    data: {
-                        locationStart: new Date(),
-                        locationEnd: projectExist.deadline,
-                    }
-                })
-            )) ?? []),
             ...(data.item.productServices?.map(productService => (
                 prisma.productService.update({
                     where: {

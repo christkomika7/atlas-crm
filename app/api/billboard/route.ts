@@ -201,7 +201,6 @@ export async function POST(req: NextRequest) {
             data: {
                 ...createdBillboard,
                 contractDuration: [createdBillboard?.contractStart, createdBillboard?.contractEnd],
-                locationDuration: [createdBillboard?.locationStart, createdBillboard?.locationEnd],
             },
         });
 

@@ -89,6 +89,8 @@ export default function TextInput({
               value={
                 typeof value === "number" ? value : Number(value) || undefined
               }
+              min={min}
+              max={max}
               onValueChange={(val) => handleChange(val ?? 0)}
               placeholder={placeholder}
               disabled={disabled}

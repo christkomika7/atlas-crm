@@ -12,6 +12,7 @@ import { ItemType } from '@/stores/item.store';
 import { VatRateType } from '@/types/company.types';
 import { CalculateTaxesResult, DiscountType } from '@/types/tax.type';
 import { Dispatch, SetStateAction } from 'react';
+import { toast } from 'sonner';
 
 
 
@@ -116,20 +117,18 @@ export default function InvoiceInfo({ isGettingDocument, isGettingInvoiceNumber,
                             type="number"
                             value={
                                 discount?.discount != null
-                                    ? String(discount.discount).includes("%")
-                                        ? Number(String(discount.discount).split("%")[0])
-                                        : Number(discount.discount)
+                                    ? Number(String(discount.discount).replace("%", "")) // Toujours en nombre
                                     : 0
                             }
+                            max={discount.discountType === "purcent" ? 100 : Infinity}
                             className="!rounded-lg h-8"
-                            handleChange={(e) =>
+                            handleChange={(e) => {
                                 setDiscount({
                                     ...discount,
-                                    discount: Number(e),
-                                })
-                            }
+                                    discount: Number(e)
+                                });
+                            }}
                         />
-
                         <ToggleGroup
                             type="single"
                             value={discount.discountType}

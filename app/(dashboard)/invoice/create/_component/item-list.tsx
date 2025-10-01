@@ -4,7 +4,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import TextInput from "@/components/ui/text-input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { generalSans } from "@/fonts/font";
-import { getMonthsAndDaysDifference } from "@/lib/date";
+import { durationInMonths, getMonthsAndDaysDifference } from "@/lib/date";
 import { formatNumber } from "@/lib/utils";
 import useItemStore, { ItemType, LocationBillboardDateType } from "@/stores/item.store";
 import { VatRateType } from "@/types/company.types";
@@ -32,6 +32,20 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
             : Number(item.discount)
         : 0;
 
+    function getDisabledRanges() {
+        const updatedExclusion = locationBillboardDate.filter(l => l.billboardReference !== item.billboardReference);
+
+        if (item.id) {
+            return updatedExclusion.filter(it => item.id && it.id !== item.id).map(
+                (item) => item.locationDate
+            )
+        }
+
+        return updatedExclusion.map(
+            (item) => item.locationDate
+        )
+    }
+
 
     return (
         <div
@@ -39,7 +53,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
         >
             <span
                 className="top-0 right-1 absolute opacity-0 group-hover:opacity-100 font-bold text-red-500 text-sm transition-opacity cursor-pointer"
-                onClick={() => removeItem(item.id)}
+                onClick={() => removeItem(item.billboardId as string)}
             >
                 ×
             </span>
@@ -50,7 +64,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
             )}
             <div className="flex justify-between items-center gap-x-2">
                 <div className="flex items-center gap-x-1 font-medium text-sm">
-                    {item.itemType === "billboard" ? 1 :
+                    {item.itemType === "billboard" ? item.quantity :
                         <span>
                             <TextInput
                                 type="number"
@@ -126,10 +140,9 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                             className="flex w-[300px]"
                             label=""
                             mode="range"
+                            by={15}
                             disabledRanges={
-                                locationBillboardDate.filter(it => it.id !== item.id).map(
-                                    (item) => item.locationDate
-                                )
+                                getDisabledRanges()
                             }
                             value={
                                 item.locationStart && item.locationEnd
@@ -144,10 +157,16 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                                     | { from: Date; to: Date }
                                     | undefined;
                                 if (range) {
-                                    editItemField(item.id, "locationStart", range.from);
+                                    const duration = durationInMonths(range.from, range.to);
+                                    editItemField(
+                                        item.id,
+                                        'quantity',
+                                        duration < 0.5 ? 0.5 : duration
+                                    );
                                     editItemField(item.id, "locationEnd", range.to);
                                     return;
                                 }
+                                editItemField(item.id, 'quantity', 1);
                                 editItemField(item.id, "locationStart", undefined);
                                 editItemField(item.id, "locationEnd", undefined);
                             }}

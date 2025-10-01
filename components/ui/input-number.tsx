@@ -14,7 +14,7 @@ export interface InputNumberProps
   prefix?: string;
   onValueChange?: (value: number | undefined) => void;
   fixedDecimalScale?: boolean;
-  decimalScale?: number;
+  decimalScale?: number; // nombre de décimales autorisées
 }
 
 export const InputNumber = forwardRef<HTMLInputElement, InputNumberProps>(
@@ -27,7 +27,7 @@ export const InputNumber = forwardRef<HTMLInputElement, InputNumberProps>(
       max = Infinity,
       onValueChange,
       fixedDecimalScale = false,
-      decimalScale = 0,
+      decimalScale = 2, // <-- par défaut 2 décimales
       suffix,
       prefix,
       value: controlledValue,
@@ -55,32 +55,27 @@ export const InputNumber = forwardRef<HTMLInputElement, InputNumberProps>(
       if (onValueChange) onValueChange(newValue);
     };
 
-    const handleBlur = () => {
-      if (value !== undefined) {
-        if (value < min) setValue(min);
-        else if (value > max) setValue(max);
-      }
-    };
-
     return (
       <div className="flex items-center w-full">
         <NumericFormat
           value={value}
           onValueChange={handleChange}
-          thousandSeparator=" " // <-- ici on ajoute l'espace comme séparateur
-          decimalScale={decimalScale}
+          thousandSeparator=" "
+          decimalScale={decimalScale} // autorise les floats
           fixedDecimalScale={fixedDecimalScale}
           allowNegative={min < 0}
           valueIsNumericString
-          onBlur={handleBlur}
-          max={max}
-          min={min}
           suffix={suffix}
           prefix={prefix}
           customInput={Input}
           placeholder={placeholder}
           className="bg-gray shadow-none border-none rounded-lg focus-visible:ring-blue w-full h-11 placeholder:text-neutral-700"
           getInputRef={ref}
+          isAllowed={(values) => {
+            const { floatValue } = values;
+            if (floatValue === undefined) return true;
+            return floatValue >= min && floatValue <= max;
+          }}
           {...props}
         />
       </div>

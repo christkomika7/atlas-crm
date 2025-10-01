@@ -28,6 +28,7 @@ import TableActionButton from "./table-action-button";
 import { dropdownMenu } from "./table";
 import { getDateStatus } from "@/lib/date";
 import BillboardPhoto from "./billboard-photo";
+import BillboardStatus from "./billboard-status";
 
 type BillboardTableProps = {
   selectedBillboardIds: string[];
@@ -140,23 +141,7 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
                     {billboard.company.currency}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    <span
-                      className={cn(
-                        "flex mx-auto rounded-full w-5 h-5",
-                        getDateStatus({
-                          startDate: billboard.locationDuration?.[0],
-                          endDate: billboard.locationDuration?.[1],
-                        }) === "red" && "bg-red",
-                        getDateStatus({
-                          startDate: billboard.locationDuration?.[0],
-                          endDate: billboard.locationDuration?.[1],
-                        }) === "yellow" && "bg-amber-400",
-                        getDateStatus({
-                          startDate: billboard.locationDuration?.[0],
-                          endDate: billboard.locationDuration?.[1],
-                        }) === "green" && "bg-emerald-500"
-                      )}
-                    ></span>
+                    <BillboardStatus items={billboard.items.map(item => [item.locationStart, item.locationEnd])} />
                   </TableCell>
                   <TableCell className="text-center">
                     <TableActionButton

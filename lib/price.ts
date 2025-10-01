@@ -209,7 +209,7 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     if (discountType === "money") {
         discountPrice = totalWithoutTaxes - discountValue;
     } else {
-        discountPrice = totalWithoutTaxes * (discountValue / 100);
+        discountPrice = totalWithoutTaxes - (totalWithoutTaxes * (discountValue / 100));
     }
 
     totalWithoutTaxes = roundToOneDecimal(discountPrice);
