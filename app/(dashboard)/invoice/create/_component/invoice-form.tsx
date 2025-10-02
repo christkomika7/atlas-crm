@@ -41,6 +41,8 @@ import useTabStore from "@/stores/tab.store";
 import { DiscountType } from "@/types/tax.type";
 import { generateAmaId } from "@/lib/utils";
 import { toast } from "sonner";
+import { ProductServiceType } from "@/types/product-service.types";
+import { getAllProductServices } from "@/action/product-service.action";
 
 export default function InvoiceForm() {
   const router = useRouter();
@@ -63,6 +65,8 @@ export default function InvoiceForm() {
   const items = useItemStore.use.items();
   const updateDiscount = useItemStore.use.updateDiscount();
   const clearItem = useItemStore.use.clearItem();
+
+  const setItemQuantities = useItemStore.use.setItemQuantity();
 
   const locationBillboardDate = useItemStore.use.locationBillboardDate();
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
@@ -134,6 +138,13 @@ export default function InvoiceForm() {
     "projects"
   );
 
+
+  const { mutate: mutateGetProductService } = useQueryAction<
+    { companyId: string; },
+    RequestResponse<ProductServiceType[]>
+  >(getAllProductServices, () => { }, "product-services");
+
+
   useEffect(() => {
     clearItem();
   }, []);
@@ -145,8 +156,25 @@ export default function InvoiceForm() {
         payee: "0",
         discount: "0",
       });
+      mutateGetProductService({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            const mapped = data.data.map(p => ({
+              id: p.id,
+              quantity: p.quantity
+            }))
+            setItemQuantities(mapped);
+          }
+        },
+      })
       mutateClients({ id: companyId });
-      mutateGetInvoiceNumber({ companyId });
+      mutateGetInvoiceNumber({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            form.setValue("invoiceNumber", data.data)
+          }
+        },
+      });
       mutateGetDocument(
         { id: companyId },
         {
@@ -191,8 +219,6 @@ export default function InvoiceForm() {
     })
   }, [form.watch])
 
-  console.log({ companyId })
-
 
   useEffect(() => {
     form.setValue("paymentLimit", paymentLimit);
@@ -217,6 +243,7 @@ export default function InvoiceForm() {
         billboards: items
           .filter((item) => item.itemType === "billboard")
           .map((item) => ({
+            id: item.id,
             name: item.name,
             quantity: item.quantity,
             price: item.price,

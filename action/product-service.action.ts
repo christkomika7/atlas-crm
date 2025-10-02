@@ -3,6 +3,23 @@ import { EditProductServiceSchemaType, ProductServiceSchemaType } from "@/lib/zo
 import { RequestResponse } from "@/types/api.types";
 import { ProductServiceType } from "@/types/product-service.types";
 
+export async function getAllProductServices({ companyId }: { companyId: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/product_service/${companyId}`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<ProductServiceType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
 export async function all({ companyId, filter }: { companyId: string, filter?: $Enums.ProductServiceType }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/product_service/${companyId}`, {

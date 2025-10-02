@@ -25,6 +25,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
     const updateItem = useItemStore.use.updateItem();
     const removeItem = useItemStore.use.removeItem();
     const editItemField = useItemStore.use.editItemField();
+    const itemQuantities = useItemStore.use.itemQuantity();
 
     const discount: number = item.discount != null
         ? String(item.discount).includes("%")
@@ -40,12 +41,17 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                 (item) => item.locationDate
             )
         }
-
         return updatedExclusion.map(
             (item) => item.locationDate
         )
     }
 
+    function getMaxQuantity() {
+        if (item.itemType !== "billboard") {
+            return itemQuantities.find(i => item.productServiceId && i.id === item.productServiceId)?.quantity || Infinity;
+        }
+        return Infinity
+    }
 
     return (
         <div
@@ -69,7 +75,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                             <TextInput
                                 type="number"
                                 min={0}
-                                max={item.maxQuantity ?? 0}
+                                max={getMaxQuantity()}
                                 value={item.quantity}
                                 handleChange={(e) => {
                                     if (

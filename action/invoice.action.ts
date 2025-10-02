@@ -79,7 +79,6 @@ export async function unique({ id }: { id: string }) {
 }
 
 export async function create(data: InvoiceSchemaType) {
-    console.log({ data })
     try {
         const formData = new FormData();
         formData.append("clientId", data.clientId);

@@ -86,6 +86,8 @@ export default function ProductServiceTab() {
         discountType: "purcent",
         discount: client?.discount || defaultDiscount,
         quantity: 1,
+        locationStart: new Date(),
+        locationEnd: new Date(),
         maxQuantity: productService.quantity,
         currency: productService.company.currency,
         itemType: productService.type === "PRODUCT" ? "product" : "service",
@@ -97,12 +99,12 @@ export default function ProductServiceTab() {
   }
 
   function currentQuantity(productServiceId: string, quantity: number) {
-    const item = items.find(item => item.id === productServiceId);
+    const productServiceItem = items.filter(p => p.itemType !== "billboard");
+    const item = productServiceItem.find(item => item.productServiceId && item.productServiceId === productServiceId);
     if (item?.lastQuantity) {
-      return (quantity + item.lastQuantity || 0) - item.quantity;
+      return (quantity + item.lastQuantity) - Math.abs(item.quantity - item.lastQuantity);
     }
     return quantity - Number(item?.quantity ?? 0)
-
   }
 
   return (

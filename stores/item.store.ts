@@ -1,14 +1,20 @@
 import { create } from "zustand";
 import { createSelectors } from "@/lib/store";
 
+
+export type ItemQuantity = {
+    id: string;
+    quantity: number;
+}
+
 export type ItemType = {
     id: string;
     name: string;
     description?: string;
     quantity: number;
     maxQuantity?: number;
-    locationStart?: Date;
-    locationEnd?: Date;
+    locationStart: Date;
+    locationEnd: Date;
     price: string;
     updatedPrice: string;
     billboardId?: string;
@@ -31,7 +37,9 @@ export type LocationBillboardDateType = {
 
 type ItemStore = {
     items: ItemType[];
+    itemQuantity: ItemQuantity[];
     locationBillboardDate: LocationBillboardDateType[];
+    setItemQuantity: (items: ItemQuantity[]) => void;
     addItem: (item: ItemType) => void;
     addLocationBillboard: (item: LocationBillboardDateType) => void;
     setLocationBillboard: (itemLocation: LocationBillboardDateType[]) => void;
@@ -50,6 +58,12 @@ const useItemStore = createSelectors(
     create<ItemStore>()((set, get) => ({
         items: [],
         locationBillboardDate: [],
+        itemQuantity: [],
+
+
+        setItemQuantity(items) {
+            set({ itemQuantity: items })
+        },
 
         setLocationBillboard(itemLocation) {
             set({ locationBillboardDate: itemLocation })

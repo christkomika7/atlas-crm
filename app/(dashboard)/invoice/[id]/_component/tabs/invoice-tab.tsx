@@ -43,9 +43,11 @@ import { useCalculateTaxe } from "@/hook/useCalculateTaxe";
 import ItemList from "../../../create/_component/item-list";
 import InvoiceInfo from "../../../create/_component/invoice-info";
 import { INVOICE_PREFIX } from "@/config/constant";
-import { downloadFile } from "@/lib/utils";
+import { downloadFile, generateAmaId } from "@/lib/utils";
 import { DiscountType } from "@/types/tax.type";
 import ItemModal from "../../../create/_component/item-modal";
+import { getAllProductServices } from "@/action/product-service.action";
+import { ProductServiceType } from "@/types/product-service.types";
 
 
 export default function InvoiceTab() {
@@ -67,6 +69,7 @@ export default function InvoiceTab() {
   const updateDiscount = useItemStore.use.updateDiscount();
   const clearItem = useItemStore.use.clearItem();
   const setItems = useItemStore.use.setItems();
+  const setItemQuantities = useItemStore.use.setItemQuantity();
 
   const locationBillboardDate = useItemStore.use.locationBillboardDate();
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
@@ -105,7 +108,6 @@ export default function InvoiceTab() {
 
   const {
     mutate: mutateGetItemLocations,
-    isPending: isGettingItemLOcations,
   } = useQueryAction<{ companyId: string }, RequestResponse<LocationBillboardDateType[]>>(
     getBillboardItemLocations,
     () => { },
@@ -150,6 +152,12 @@ export default function InvoiceTab() {
     "projects"
   );
 
+  const { mutate: mutateGetProductService } = useQueryAction<
+    { companyId: string; },
+    RequestResponse<ProductServiceType[]>
+  >(getAllProductServices, () => { }, "product-services");
+
+
   useEffect(() => {
     clearItem();
   }, []);
@@ -157,6 +165,17 @@ export default function InvoiceTab() {
 
   useEffect(() => {
     if (companyId) {
+      mutateGetProductService({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            const mapped = data.data.map(p => ({
+              id: p.id,
+              quantity: p.quantity
+            }))
+            setItemQuantities(mapped);
+          }
+        },
+      })
       mutateGetItemLocations({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -196,15 +215,13 @@ export default function InvoiceTab() {
               discount: item.discount,
               description: item.description ?? "",
               currency: item.currency,
+              locationStart: new Date(item.locationStart),
+              locationEnd: new Date(item.locationEnd),
               lastUploadFiles: invoice.files.filter((file) => Boolean(file)) ?? [],
               ...item.itemType === "billboard" ? {
                 billboardId: item.billboardId || undefined,
-                locationStart: item.locationStart,
-                locationEnd: item.locationEnd,
               } : { productServiceId: item.productServiceId || undefined, lastQuantity: item.quantity }
-            }))]
-
-            console.log({ mappedItems });
+            }))];
 
             form.reset({
               id: invoice.id,
@@ -239,7 +256,10 @@ export default function InvoiceTab() {
                   id: productService.id,
                   name: productService.name,
                   quantity: productService.quantity,
+                  lastQuantity: productService.quantity,
                   price: productService.price,
+                  locationStart: new Date(productService.locationStart),
+                  locationEnd: new Date(productService.locationEnd),
                   itemType: productService.itemType as "product" | "service",
                   updatedPrice: productService.updatedPrice,
                   discountType: productService.discountType as "purcent" | "money",
@@ -331,8 +351,8 @@ export default function InvoiceTab() {
                 taxes: company?.vatRates ?? [],
               }).totalWithoutTaxes
             ),
-            locationStart: item.locationStart && new Date(item.locationStart),
-            locationEnd: item.locationEnd && new Date(item.locationEnd),
+            locationStart: new Date(item.locationStart),
+            locationEnd: new Date(item.locationEnd),
             discountType: item.discountType,
             description: item.description,
             discount: item.discount,
@@ -352,6 +372,8 @@ export default function InvoiceTab() {
                 taxes: company?.vatRates ?? [],
               }).totalWithoutTaxes
             ),
+            locationStart: new Date(item.locationStart),
+            locationEnd: new Date(item.locationEnd),
             itemType: item.itemType,
             discountType: item.discountType,
             description: item.description,
@@ -632,7 +654,7 @@ export default function InvoiceTab() {
         </div>
         <div className="space-y-4.5 max-w-full">
           <InvoiceInfo isGettingDocument={isGettingDocument} isGettingInvoiceNumber={isGettingInvoice}
-            reference={`${documentData?.data?.invoicesPrefix || INVOICE_PREFIX}-${invoiceNumber}`}
+            reference={`${documentData?.data?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoiceNumber, false)}`}
             discount={clientDiscount}
             setDiscount={setClientDiscount}
             currency={currency}

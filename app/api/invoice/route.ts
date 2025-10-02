@@ -63,16 +63,11 @@ export async function POST(req: NextRequest) {
         files,
     }) as InvoiceSchemaType;
 
-    const [companyExist, clientExist, projectExist, document, lastInvoice] = await prisma.$transaction([
+    const [companyExist, clientExist, projectExist, document] = await prisma.$transaction([
         prisma.company.findUnique({ where: { id: data.companyId } }),
         prisma.client.findUnique({ where: { id: data.clientId } }),
         prisma.project.findUnique({ where: { id: data.projectId } }),
         prisma.documentModel.findFirst({ where: { companyId: data.companyId } }),
-        prisma.invoice.findFirst({
-            where: { companyId: data.companyId },
-            orderBy: { invoiceNumber: "desc" },
-            select: { invoiceNumber: true },
-        })
     ]);
 
     if (!companyExist) {
@@ -112,7 +107,7 @@ export async function POST(req: NextRequest) {
     }
 
     const key = generateId();
-    const invoiceNumber = `${document?.invoicesPrefix ?? "Facture"}-${lastInvoice?.invoiceNumber ? lastInvoice.invoiceNumber + 1 : 1}`;
+    const invoiceNumber = `${document?.invoicesPrefix ?? "Facture"}-${data.invoiceNumber}`;
     const folderFile = createFolder([companyExist.companyName, "invoice", `${invoiceNumber}_----${key}/files`]);
 
     let savedFilePaths: string[] = [];

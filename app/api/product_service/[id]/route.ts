@@ -8,6 +8,25 @@ import { editProductServiceSchema, EditProductServiceSchemaType } from "@/lib/zo
 
 import prisma from "@/lib/prisma";
 
+export async function GET(req: NextRequest) {
+    await checkAccess(["INVOICES"], "MODIFY");
+
+    const id = getIdFromUrl(req.url, "last") as string;
+
+    const productServices = await prisma.productService.findMany({
+        where: { companyId: id }
+    });
+
+    console.log({ productServices })
+
+    return NextResponse.json(
+        {
+            state: "success",
+            data: productServices,
+        },
+        { status: 200 }
+    );
+}
 
 export async function POST(req: NextRequest) {
     await checkAccess(["PRODUCT_SERVICES"], "READ");

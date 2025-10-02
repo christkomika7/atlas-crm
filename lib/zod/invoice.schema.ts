@@ -6,6 +6,7 @@ export const itemSchema = z.object({
     description: z.string().optional(),
     quantity: z
         .number({ error: "La quantité doit être au moins égale à 1." }),
+    lastQuantity: z.number().optional(),
     locationStart: z.date(),
     locationEnd: z.date(),
     status: z.enum(["available", "non-available"]).optional(),
@@ -38,6 +39,7 @@ export const invoiceSchema = z
         clientId: z.string({ error: "Le client est requis" }),
         projectId: z.string({ error: "Le projet est requis" }),
         companyId: z.string({ error: "L'entreprise est requise" }),
+        invoiceNumber: z.number({ error: "Le numéro de la facture est obligatoire." }),
         item: z.object({
             productServices: z.array(itemSchema).optional(),
             billboards: z.array(itemSchema).optional(),
@@ -94,7 +96,7 @@ export const invoiceUpdateSchema = z
         clientId: z.string({ error: "Le client est requis" }),
         projectId: z.string({ error: "Le projet est requis" }),
         companyId: z.string({ error: "L'entreprise est requise" }),
-        invoiceNumber: z.number().min(1, { message: "Le numéro de facture est requis" }),
+        invoiceNumber: z.number({ error: "Le numéro de facture est requis." }),
         item: z.object({
             productServices: z.array(itemSchema).optional(),
             billboards: z.array(itemSchema).optional(),

@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
                 select: {
                     id: true,
                     locationStart: true,
-                    locationEnd: true
+                    locationEnd: true,
+                    billboardId: true
                 }
             }
         }
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
             .map(item => ({
                 id: item.id,
                 isNew: false,
+                billboardReference: item.billboardId,
                 locationDate: [item.locationStart, item.locationEnd]
             }))
     );

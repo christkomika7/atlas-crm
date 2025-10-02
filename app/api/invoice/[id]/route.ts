@@ -100,7 +100,21 @@ export async function PUT(req: NextRequest) {
   const data = parseData<InvoiceUpdateSchemaType>(invoiceUpdateSchema, {
     ...rawData,
     item: {
-      productServices: productServicesParse,
+      productServices: productServicesParse?.map((b: { id: string; name: string; quantity: number; locationStart: string; locationEnd: string; status: string; price: string; updatedPrice: string; discount: string; currency: string; discountType: any; itemType: any; productServiceId: string; }) => ({
+        id: b.id,
+        name: b.name,
+        quantity: b.quantity,
+        locationStart: new Date(b.locationStart),
+        locationEnd: new Date(b.locationEnd),
+        status: b.status,
+        price: b.price,
+        updatedPrice: b.updatedPrice,
+        currency: b.currency,
+        discount: b.discount,
+        discountType: b.discountType,
+        itemType: b.itemType,
+        productServiceId: b.productServiceId
+      })) ?? [],
       billboards: billboardsParse?.map((b: any) => ({
         id: b.id,
         name: b.name,
@@ -122,9 +136,10 @@ export async function PUT(req: NextRequest) {
     invoiceNumber: parseInt(rawData.invoiceNumber)
   }) as InvoiceUpdateSchemaType;
 
+
   const [invoiceExist, companyExist, clientExist, projectExist] =
     await prisma.$transaction([
-      prisma.invoice.findUnique({ where: { id }, include: { items: true, productsServices: true, billboards: true } }),
+      prisma.invoice.findUnique({ where: { id }, include: { items: true, productsServices: true, billboards: true, } }),
       prisma.company.findUnique({ where: { id: data.companyId } }),
       prisma.client.findUnique({ where: { id: data.clientId } }),
       prisma.project.findUnique({ where: { id: data.projectId } }),
@@ -158,61 +173,63 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  const key = invoiceExist.pathFiles.split("/")[2].split("_----")[1];
-  const invoiceNumber = invoiceExist.pathFiles.split("/")[2].split("_----")[0];
 
-  const folderFile = createFolder([
-    companyExist.companyName,
-    "invoice",
-    `${invoiceNumber}_----${key}/files`,
-  ]);
+  const billboards = data.item.billboards ?? [];
+  const excludeBillboardIds = invoiceExist.items.filter(item => item.itemType === "billboard").map(item => item.billboardId).filter(b => b !== null);
 
-  // const billboards = data.item.billboards ?? [];
-  // const excludeBillboardIds = invoiceExist.items.filter(item => item.itemType === "billboard").map(item => item.id)
+  const conflictResult = await checkBillboardConflicts(billboards, excludeBillboardIds);
 
-  // const conflictResult = await checkBillboardConflicts(billboards, excludeBillboardIds);
-
-  // if (conflictResult.hasConflict) {
-  //   return NextResponse.json({
-  //     status: "error",
-  //     message: "Conflit de dates détecté pour au moins un panneau.",
-  //   }, { status: 404 });
-  // }
-
-  if (Number(invoiceExist.payee) === 0 || !invoiceExist.isPaid) {
-    const oldBillboardItems = invoiceExist.items.filter(item => item.itemType === "billboard");
-    const newBillboardItems = data.item.billboards;
-
-    if (newBillboardItems) {
-      await updateBilloardItem(oldBillboardItems, newBillboardItems, invoiceExist.id);
-    }
+  if (conflictResult.hasConflict) {
+    return NextResponse.json({
+      status: "error",
+      message: "Conflit de dates détecté pour au moins un panneau.",
+    }, { status: 404 });
   }
 
-  return
+  if (invoiceExist.isPaid) {
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "La facture a déjà été réglée",
+      },
+      { status: 400 }
+    );
+  }
 
-  // if (invoiceExist.isPaid) {
-  //   return NextResponse.json(
-  //     {
-  //       status: "error",
-  //       message: "La facture a déjà été réglée",
-  //     },
-  //     { status: 400 }
-  //   );
-  // }
 
-  // const savedFilePaths = await updateFiles({
-  //   folder: folderFile,
-  //   outdatedData: {
-  //     id: invoiceExist.id,
-  //     path: invoiceExist.pathFiles,
-  //     files: invoiceExist.files,
-  //   },
-  //   updatedData: {
-  //     id: data.id,
-  //     lastUploadDocuments: data.lastUploadFiles,
-  //   },
-  //   files,
-  // });
+
+  if (Number(invoiceExist.payee) === 0) {
+    await rollbackInvoice(invoiceExist as unknown as InvoiceType);
+  }
+
+
+  const savedFilePaths = await updateFiles({
+    folder: invoiceExist.pathFiles,
+    outdatedData: {
+      id: invoiceExist.id,
+      path: invoiceExist.pathFiles,
+      files: invoiceExist.files,
+    },
+    updatedData: {
+      id: data.id,
+      lastUploadDocuments: data.lastUploadFiles,
+    },
+    files,
+  });
+
+
+  if (invoiceExist.clientId !== data.clientId) {
+    // update client
+
+  }
+
+  if (invoiceExist.projectId !== data.projectId) {
+
+  }
+
+
+  // update project
+  // update invoice
 
   // try {
   //   // Vérifier que tous les billboards existent et sont disponibles

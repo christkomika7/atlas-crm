@@ -5,6 +5,7 @@ import { productServiceSchema, ProductServiceSchemaType } from "@/lib/zod/produc
 import { User } from "better-auth";
 import { NextResponse, type NextRequest } from "next/server";
 
+
 export async function POST(req: NextRequest) {
     await checkAccess(["PRODUCT_SERVICES"], "CREATE") as User;
 

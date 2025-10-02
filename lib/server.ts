@@ -303,17 +303,17 @@ function parseDate(date: Date | undefined | null): Date | null {
 
 export async function checkBillboardConflicts(
     billboards: BillboardItem[],
-    excludeInvoiceIds?: string[]
+    excludeBillboardIds: string[] = []
 ): Promise<ConflictResult> {
 
-    // Filtrer UNIQUEMENT les items de type billboard avec des IDs et dates valides
     const validBillboards = billboards.filter(
         (item): item is BillboardItem & { billboardId: string } =>
-            item.itemType === "billboard" && // IMPORTANT : vérifier le type
+            item.itemType === "billboard" &&
             item.billboardId !== undefined &&
             item.billboardId !== null &&
             item.locationStart !== undefined &&
-            item.locationEnd !== undefined
+            item.locationEnd !== undefined &&
+            !excludeBillboardIds.includes(item.billboardId)
     );
 
     if (validBillboards.length === 0) {
@@ -328,9 +328,6 @@ export async function checkBillboardConflicts(
         where: {
             billboardId: { in: billboardIds },
             itemType: "billboard",
-            ...(excludeInvoiceIds && excludeInvoiceIds.length > 0 && {
-                invoiceId: { notIn: excludeInvoiceIds }
-            })
         },
         include: {
             invoice: {
