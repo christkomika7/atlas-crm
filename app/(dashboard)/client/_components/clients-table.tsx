@@ -24,6 +24,7 @@ import Spinner from "@/components/ui/spinner";
 import { ClientType } from "@/types/client.types";
 import { dropdownMenu } from "./table";
 import TableActionButton from "./table-action-button";
+import { formatNumber } from "@/lib/utils";
 
 type ClientsTableProps = {
   selectedClientIds: string[];
@@ -41,7 +42,7 @@ const ClientsTable = forwardRef<ClientsTableRef, ClientsTableProps>(
     const { mutate, isPending, data } = useQueryAction<
       { id: string },
       RequestResponse<ClientType[]>
-    >(all, () => {}, "clients");
+    >(all, () => { }, "clients");
 
     const toggleSelection = (clientId: string, checked: boolean) => {
       setSelectedClientIds((prev) =>
@@ -95,9 +96,8 @@ const ClientsTable = forwardRef<ClientsTableRef, ClientsTableProps>(
               data.data.map((client) => (
                 <TableRow
                   key={client.id}
-                  className={`h-16 transition-colors ${
-                    isSelected(client.id) ? "bg-neutral-100" : ""
-                  }`}
+                  className={`h-16 transition-colors ${isSelected(client.id) ? "bg-neutral-100" : ""
+                    }`}
                 >
                   <TableCell className="text-neutral-600">
                     <div className="flex justify-center items-center">
@@ -120,11 +120,10 @@ const ClientsTable = forwardRef<ClientsTableRef, ClientsTableProps>(
                     {`${client.firstname} ${client.lastname}`}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {client.paidAmount} {client.company?.currency}
+                    {formatNumber(client.paidAmount)} {client.company?.currency}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {client.due} {client.company?.currency}
-                  </TableCell>
+                    {formatNumber(client.due)} {client.company?.currency}                  </TableCell>
                   <TableCell className="text-center">
                     <TableActionButton
                       menus={dropdownMenu}

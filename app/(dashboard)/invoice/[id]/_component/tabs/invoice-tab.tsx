@@ -268,7 +268,8 @@ export default function InvoiceTab() {
                   productServiceId: productService.productServiceId || undefined,
                   currency: productService.currency,
                 })),
-              }
+              },
+              lastUploadFiles: [],
             });
 
             setItems(mappedItems)
@@ -394,6 +395,7 @@ export default function InvoiceTab() {
     form.setValue("paymentLimit", paymentLimit);
   }, [paymentLimit])
 
+
   const totals = useMemo(() => {
     const HTPrice = calculate({
       items: items,
@@ -438,12 +440,8 @@ export default function InvoiceTab() {
     })
   }, [form.watch])
 
-  function removeLastUpload(name: string, type: "file") {
-    switch (type) {
-      case "file":
-        setLastUploadFiles((prev) => prev.filter((d) => d !== name));
-        break;
-    }
+  function removeLastUpload(name: string) {
+    setLastUploadFiles((prev) => prev.filter((d) => d !== name));
   }
 
   const submit = useCallback(
@@ -452,7 +450,7 @@ export default function InvoiceTab() {
       if (!success) return;
       mutateUpdateInvoice({ ...data, lastUploadFiles });
     },
-    [mutateUpdateInvoice, form]
+    [mutateUpdateInvoice, form, lastUploadFiles]
   );
 
   return (
@@ -569,7 +567,7 @@ export default function InvoiceTab() {
                                     </span>{" "}
                                     <span
                                       onClick={() =>
-                                        removeLastUpload(file, "file")
+                                        removeLastUpload(file)
                                       }
                                       className="text-red cursor-pointer"
                                     >

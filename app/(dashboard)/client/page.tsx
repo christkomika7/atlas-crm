@@ -19,7 +19,7 @@ export default function ClientPage() {
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },
     RequestResponse<ClientType[]>
-  >(removeMany, () => {}, "clients");
+  >(removeMany, () => { }, "clients");
 
   const handleClientAdded = () => {
     clientsTableRef.current?.refreshClients();

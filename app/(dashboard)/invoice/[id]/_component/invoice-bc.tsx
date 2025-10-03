@@ -4,7 +4,7 @@ import { useCalculateTaxe } from "@/hook/useCalculateTaxe";
 import { formatDateToDashModel } from "@/lib/date";
 import { getCountryFrenchName } from "@/lib/helper";
 import { calculateTaxes } from "@/lib/price";
-import { cn, formatNumber, resolveImageSrc } from "@/lib/utils";
+import { cn, formatNumber, generateAmaId, resolveImageSrc } from "@/lib/utils";
 import { ItemType } from "@/stores/item.store";
 import { InvoiceType } from "@/types/invoice.types";
 import Image from "next/image";
@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type DocumentPreviewProps = {
+  id: string;
   firstColor: string;
   secondColor: string;
   logo?: File;
@@ -23,7 +24,7 @@ type DocumentPreviewProps = {
   isLoading?: boolean;
 };
 
-export default function Contract({
+export default function InvoiceBC({
   firstColor,
   secondColor,
   logo,
@@ -33,6 +34,7 @@ export default function Contract({
   orderNote,
   isLoading,
   invoice,
+  id
 }: DocumentPreviewProps) {
   const [logoURL, setLogoURL] = useState<string | null>(null);
 
@@ -49,9 +51,9 @@ export default function Contract({
   if (isLoading && !invoice) return <Spinner />;
 
   return (
-    <div>
+    <div id={id} className="py-8">
       <div
-        className="flex w-full h-[200px]"
+        className="flex w-full h-[250px] px-8"
         style={{
           justifyContent:
             logoPosition === "Left"
@@ -84,28 +86,29 @@ export default function Contract({
         </div>
       </div>
       <div
-        className="w-full h-2"
+        className="w-full h-2 px-8"
         style={{
           backgroundColor: firstColor,
         }}
       ></div>
       <div
-        className="relative flex justify-between gap-x-2 mb-9 p-6"
+        className="relative flex justify-between gap-x-2 mb-9 py-6 px-8"
         style={{
           backgroundColor: secondColor,
         }}
       >
-        <span
-          className="-bottom-3 left-1/2 absolute w-6 h-6 rotate-45 -translate-x-1/2"
+        <div
+          className="-bottom-3 left-1/2 absolute w-6 h-6 -translate-x-1/2"
           style={{
             backgroundColor: secondColor,
+            transform: 'rotate(45deg)',
           }}
-        />
+        ></div>
 
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           <p className="gap-x-2 grid grid-cols-[60px_1fr] text-neutral-600 text-sm">
             <span className="font-semibold">BC N° :</span>
-            <span className="font-medium">{orderValue}-{invoice?.invoiceNumber}</span>
+            <span className="font-medium">{orderValue}-{generateAmaId(invoice?.invoiceNumber ?? 1, false)}</span>
           </p>
           <p className="gap-x-2 grid grid-cols-[60px_1fr] text-neutral-600 text-sm">
             <span className="font-semibold">Date :</span>
@@ -125,7 +128,7 @@ export default function Contract({
           <h2 className="font-semibold text-neutral-700 text-xl text-right">
             Bon de commande
           </h2>
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <p className="text-neutral-600 text-sm text-right">
               {invoice?.company.registeredAddress}
             </p>
@@ -155,7 +158,7 @@ export default function Contract({
         </div>
       </div>
 
-      <table className="w-full">
+      <table className="w-full px-8">
         <thead className="h-10">
           <tr className="border-y w-full">
             <td className="px-3 font-semibold text-sm">Article</td>
@@ -214,6 +217,7 @@ export default function Contract({
               <td className="pr-3 text-right">  {formatNumber(tax.totalTax)} {invoice?.company?.currency}</td>
             </tr>
           ))}
+          <tr className="h-4"></tr>
           <tr className="text-sm">
             <td></td>
             <td></td>
@@ -237,7 +241,7 @@ export default function Contract({
         </tfoot>
       </table>
 
-      <div className="p-3">
+      <div className="py-3 px-8">
         <h3 className="mb-1 font-semibold text-sm">Message / remarques</h3>
         <p className="mb-2 text-sm">Campagne : {invoice?.company.companyName}</p>
 

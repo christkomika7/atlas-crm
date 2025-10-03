@@ -39,7 +39,6 @@ import AreaModal from "../../../_component/area-modal";
 import useBillboardTypeStore from "@/stores/billboard-type.store";
 import { BillboardTypeType } from "@/types/billboard-type.types";
 import BillboardTypeModal from "../../../_component/billboard-type-modal";
-import { DatePicker } from "@/components/ui/date-picker";
 
 type BillboardInfoTabProps = {
   form: UseFormReturn<EditBillboardSchemaFormType>;

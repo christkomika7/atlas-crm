@@ -9,7 +9,6 @@ import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { ModelDocumentType } from "@/types/document.types";
 import { useEffect, useState } from "react";
-import Contract from "../contract";
 import Spinner from "@/components/ui/spinner";
 import ModalContainer from "@/components/modal/modal-container";
 import PaymentForm from "../../../_component/payment-form";
@@ -17,7 +16,10 @@ import RecurrenceForm from "../../../_component/recurrence-form";
 import { InvoiceType } from "@/types/invoice.types";
 import { unique } from "@/action/invoice.action";
 import { useParams, useRouter } from "next/navigation";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, generateAmaId } from "@/lib/utils";
+import InvoiceContract from "../invoice-contract";
+import InvoiceBC from "../invoice-bc";
+import { downloadComponentAsPDF, downloadInvisibleComponentAsPDF } from "@/lib/pdf";
 
 export default function PreviewTab() {
   const param = useParams();
@@ -92,12 +94,20 @@ export default function PreviewTab() {
           ) : (
             <>
               <div className="flex justify-end">
-                <Button variant="primary" className="max-w-xs">
+                <Button variant="primary" className="max-w-xs"
+                  onClick={() => downloadComponentAsPDF("invoice-bc", "facture.pdf", {
+                    padding: 0,
+                    margin: 0,
+                    quality: 0.98,
+                    scale: 4
+                  })}
+                >
                   Télécharger
                 </Button>
               </div>
               <div className="bg-neutral-50">
-                <Contract
+                <InvoiceBC
+                  id="invoice-bc"
                   firstColor={document?.primaryColor || "#fbbf24"}
                   secondColor={document?.secondaryColor || "#fef3c7"}
                   logo={document?.logo}
@@ -131,7 +141,7 @@ export default function PreviewTab() {
               <div className="flex justify-between items-center mt-4">
                 <h2 className="font-semibold">Facture</h2>
                 <p className="text-sm">
-                  N° {document?.invoicesPrefix}-{invoice?.invoiceNumber}
+                  N° {document?.invoicesPrefix}-{(generateAmaId(invoice?.invoiceNumber ?? 1, false))}
                 </p>
               </div>
               <Badge variant="secondary">Non Envoyé</Badge>
@@ -178,7 +188,21 @@ export default function PreviewTab() {
               >
                 <PaymentForm invoiceId={invoice?.id as string} closeModal={() => setOpen({ ...open, payment: false })} />
               </ModalContainer>
-              <Button variant="primary">Générer un contrat</Button>
+              <Button variant="primary"
+                onClick={() =>
+                  downloadInvisibleComponentAsPDF(
+                    <InvoiceContract id="contract-invoice" />,
+                    "contrat-facture.pdf", {
+                    padding: 20,
+                    margin: 0,
+                    quality: 0.98,
+                    scale: 4
+                  }
+                  )
+                }
+              >
+                Générer un contrat
+              </Button>
               <Button
                 onClick={close}
                 variant="primary"

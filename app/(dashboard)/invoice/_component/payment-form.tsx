@@ -21,6 +21,7 @@ import { InvoiceType } from "@/types/invoice.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 type PaymentFormProps = {
   invoiceId: string;
@@ -75,6 +76,7 @@ export default function PaymentForm({ invoiceId, closeModal }: PaymentFormProps)
   function submit(formData: PaymentSchemaType) {
     const { success, data } = paymentSchema.safeParse(formData);
     if (success) {
+      if (data.amount === 0) return toast.error("Veuillez saisir un montant supérieur à zéro")
       mutateCreatePayment(data, {
         onSuccess() {
           closeModal()

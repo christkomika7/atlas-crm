@@ -75,6 +75,7 @@ export async function PUT(req: NextRequest) {
   await checkAccess(["INVOICES"], "MODIFY");
   const id = getIdFromUrl(req.url, "last") as string;
 
+
   if (!id) {
     return NextResponse.json({
       status: "error",
@@ -85,6 +86,7 @@ export async function PUT(req: NextRequest) {
   const formData = await req.formData();
   const rawData: any = {};
   const files: File[] = [];
+
 
   formData.forEach((value, key) => {
     if (key === "files" && value instanceof File) {
@@ -133,11 +135,10 @@ export async function PUT(req: NextRequest) {
         billboardId: b.billboardId
       })) ?? []
     },
-    lastUploadFiles: JSON.parse(rawData.lastUploadFiles || "[]"),
+    lastUploadFiles: JSON.parse(rawData.lastUploadFiles),
     files,
     invoiceNumber: parseInt(rawData.invoiceNumber)
   }) as InvoiceUpdateSchemaType;
-
 
   const [invoiceExist, companyExist, clientExist, projectExist] =
     await prisma.$transaction([
@@ -229,10 +230,23 @@ export async function PUT(req: NextRequest) {
               ]
             }
           }
-        })
-
+        }),
+        prisma.client.update({
+          where: { id: data.clientId },
+          data: {
+            due: {
+              increment: new Decimal(data.totalTTC)
+            },
+            billboards: {
+              connect: [
+                ...data.item.billboards?.map(billboard => ({
+                  id: billboard.billboardId
+                })) ?? []
+              ]
+            }
+          }
+        }),
       ]
-
       )
     }
 
@@ -254,14 +268,23 @@ export async function PUT(req: NextRequest) {
             status: "BLOCKED",
             amount: 0
           }
-        })]
+        }),
+        prisma.project.update({
+          where: {
+            id: projectExist.id
+          },
+          data: { status: "TODO", amount: new Decimal(data.totalTTC) }
+        }),
+      ]
       )
     }
   }
 
+  // Update file
   const key = generateId();
   const invoiceReference = `${companyExist.documentModel?.invoicesPrefix ?? INVOICE_PREFIX}-${data.invoiceNumber}`;
   const folder = createFolder([companyExist.companyName, "invoice", `${invoiceReference}_----${key}/files`]);
+  const oldPath = invoiceExist.pathFiles;
 
   const savedFilePaths = await updateFiles({
     folder: folder,
@@ -354,27 +377,6 @@ export async function PUT(req: NextRequest) {
           },
         },
       }),
-      prisma.project.update({
-        where: {
-          id: projectExist.id
-        },
-        data: { status: "TODO", amount: new Decimal(data.totalTTC) }
-      }),
-      prisma.client.update({
-        where: { id: data.clientId },
-        data: {
-          due: {
-            increment: new Decimal(data.totalTTC)
-          },
-          billboards: {
-            connect: [
-              ...data.item.billboards?.map(billboard => ({
-                id: billboard.billboardId
-              })) ?? []
-            ]
-          }
-        }
-      }),
       ...(data.item.productServices?.map(productService => (
         prisma.productService.update({
           where: {
@@ -388,6 +390,12 @@ export async function PUT(req: NextRequest) {
         })
       )) ?? [])
     ])
+
+    console.log("==================================================");
+    console.log({ oldPath });
+    console.log("==================================================");
+
+    await removePath([oldPath]);
 
     return NextResponse.json({
       status: "success",
