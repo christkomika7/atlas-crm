@@ -216,8 +216,8 @@ model Client {
   website                    String?
   address                    String
   path                       String?
-  paidAmount                 String   @default("0")
-  due                        String   @default("0")
+  paidAmount                 Decimal  @default(0) @db.Decimal(15, 2)
+  due                        Decimal  @default(0) @db.Decimal(15, 2)
   businessSector             String
   businessRegistrationNumber String
   taxIdentificationNumber    String
@@ -319,7 +319,7 @@ model Billboard {
   signedLeaseContract String[]
   files               String[]
 
-  revenueGenerate String @default("0")
+  revenueGenerate Decimal @default(0) @db.Decimal(15, 2)
 
   pathPhoto    String
   pathBrochure String
@@ -428,8 +428,8 @@ model Project {
   name               String        @unique
   deadline           DateTime
   projectInformation String?
-  amount             String        @default("0")
-  balance            String        @default("0")
+  amount             Decimal       @default(0) @db.Decimal(15, 2)
+  balance            Decimal       @default(0) @db.Decimal(15, 2)
   files              String[]
   path               String
   status             ProjectStatus @default(BLOCKED)

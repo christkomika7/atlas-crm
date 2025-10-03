@@ -6,6 +6,7 @@ import { checkBillboardConflicts } from "@/lib/server";
 import { generateId } from "@/lib/utils";
 import { invoiceSchema, InvoiceSchemaType } from "@/lib/zod/invoice.schema";
 import { NextResponse, type NextRequest } from "next/server";
+import { Decimal } from "@prisma/client/runtime/library";
 
 export async function POST(req: NextRequest) {
     await checkAccess(["INVOICES"], "CREATE");
@@ -167,7 +168,8 @@ export async function POST(req: NextRequest) {
                     project: {
                         connect: {
                             id: data.projectId
-                        }
+                        },
+
                     },
                     client: {
                         connect: {
@@ -195,11 +197,14 @@ export async function POST(req: NextRequest) {
                 where: {
                     id: projectExist.id
                 },
-                data: { status: "TODO", amount: data.totalTTC }
+                data: { status: "TODO", amount: new Decimal(data.totalTTC) }
             }),
             prisma.client.update({
                 where: { id: data.clientId },
                 data: {
+                    due: {
+                        increment: new Decimal(data.totalTTC)
+                    },
                     billboards: {
                         connect: [
                             ...data.item.billboards?.map(billboard => ({

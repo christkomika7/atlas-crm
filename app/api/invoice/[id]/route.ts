@@ -1,11 +1,13 @@
+import { INVOICE_PREFIX } from "@/config/constant";
 import { checkAccess } from "@/lib/access";
 import { createFolder, removePath, updateFiles } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { checkBillboardConflicts, rollbackInvoice, updateBilloardItem } from "@/lib/server";
-import { getIdFromUrl } from "@/lib/utils";
+import { generateId, getIdFromUrl } from "@/lib/utils";
 import { invoiceUpdateSchema, InvoiceUpdateSchemaType } from "@/lib/zod/invoice.schema";
 import { InvoiceType } from "@/types/invoice.types";
+import { Decimal } from "@prisma/client/runtime/library";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -140,7 +142,7 @@ export async function PUT(req: NextRequest) {
   const [invoiceExist, companyExist, clientExist, projectExist] =
     await prisma.$transaction([
       prisma.invoice.findUnique({ where: { id }, include: { items: true, productsServices: true, billboards: true, } }),
-      prisma.company.findUnique({ where: { id: data.companyId } }),
+      prisma.company.findUnique({ where: { id: data.companyId }, include: { documentModel: true } }),
       prisma.client.findUnique({ where: { id: data.clientId } }),
       prisma.project.findUnique({ where: { id: data.projectId } }),
     ]);
@@ -200,11 +202,69 @@ export async function PUT(req: NextRequest) {
 
   if (Number(invoiceExist.payee) === 0) {
     await rollbackInvoice(invoiceExist as unknown as InvoiceType);
+
+    if (invoiceExist.clientId !== data.clientId) {
+      await prisma.$transaction([
+        prisma.invoice.update({
+          where: { id: invoiceExist.id },
+          data: {
+            client: {
+              disconnect: {
+                id: invoiceExist.clientId as string
+              }
+            }
+          }
+        }),
+        prisma.client.update({
+          where: { id: invoiceExist.clientId as string },
+          data: {
+            due: {
+              decrement: new Decimal(invoiceExist.totalTTC)
+            },
+            billboards: {
+              disconnect: [
+                ...invoiceExist.items.filter(b => b.itemType === "billboard" && Boolean(b.billboardId)).map(b => ({
+                  id: b.billboardId as string
+                }))
+              ]
+            }
+          }
+        })
+
+      ]
+
+      )
+    }
+
+    if (invoiceExist.projectId !== data.projectId) {
+      await prisma.$transaction([
+        prisma.invoice.update({
+          where: { id: invoiceExist.id },
+          data: {
+            project: {
+              disconnect: {
+                id: invoiceExist.projectId as string
+              }
+            }
+          }
+        }),
+        prisma.project.update({
+          where: { id: invoiceExist.projectId as string },
+          data: {
+            status: "BLOCKED",
+            amount: 0
+          }
+        })]
+      )
+    }
   }
 
+  const key = generateId();
+  const invoiceReference = `${companyExist.documentModel?.invoicesPrefix ?? INVOICE_PREFIX}-${data.invoiceNumber}`;
+  const folder = createFolder([companyExist.companyName, "invoice", `${invoiceReference}_----${key}/files`]);
 
   const savedFilePaths = await updateFiles({
-    folder: invoiceExist.pathFiles,
+    folder: folder,
     outdatedData: {
       id: invoiceExist.id,
       path: invoiceExist.pathFiles,
@@ -217,193 +277,134 @@ export async function PUT(req: NextRequest) {
     files,
   });
 
+  try {
 
-  if (invoiceExist.clientId !== data.clientId) {
-    // update client
+    const [updatedInvoice] = await prisma.$transaction([
+      prisma.invoice.update({
+        where: { id: invoiceExist.id },
+        data: {
+          totalHT: data.totalHT,
+          discount: data.discount!,
+          pathFiles: folder,
+          discountType: data.discountType,
+          paymentLimit: data.paymentLimit,
+          totalTTC: data.totalTTC,
+          payee: data.payee!,
+          note: data.note!,
+          files: savedFilePaths,
+          items: {
+            createMany: {
+              data: [
+                ...data.item.billboards?.map(billboard => ({
+                  name: billboard.name,
+                  description: billboard.description ?? "",
+                  quantity: billboard.quantity,
+                  price: billboard.price,
+                  updatedPrice: billboard.updatedPrice,
+                  discount: billboard.discount ?? "0",
+                  locationStart: billboard.locationStart ?? new Date(),
+                  locationEnd: billboard.locationEnd ?? projectExist.deadline,
+                  discountType: billboard.discountType as string,
+                  currency: billboard.currency!,
+                  billboardId: billboard.billboardId,
+                  itemType: billboard.itemType ?? "billboard"
+                })) ?? [],
+                ...data.item.productServices?.map(productService => ({
+                  name: productService.name,
+                  description: productService.description ?? "",
+                  quantity: productService.quantity,
+                  price: productService.price,
+                  updatedPrice: productService.updatedPrice,
+                  locationStart: new Date(),
+                  locationEnd: projectExist.deadline,
+                  discount: productService.discount ?? "0",
+                  discountType: productService.discountType as string,
+                  currency: productService.currency!,
+                  productServiceId: productService.productServiceId,
+                  itemType: productService.itemType ?? "product"
+                })) ?? []
+              ]
+            },
+          },
+          project: {
+            connect: {
+              id: data.projectId
+            },
 
+          },
+          client: {
+            connect: {
+              id: data.clientId
+            }
+          },
+          company: {
+            connect: {
+              id: data.companyId
+            }
+          },
+          billboards: {
+            connect: data.item.billboards?.map(billboard => ({
+              id: billboard.billboardId
+            })) ?? []
+          },
+          productsServices: {
+            connect: data.item.productServices?.map(productService => ({
+              id: productService.productServiceId
+            })) ?? []
+          },
+        },
+      }),
+      prisma.project.update({
+        where: {
+          id: projectExist.id
+        },
+        data: { status: "TODO", amount: new Decimal(data.totalTTC) }
+      }),
+      prisma.client.update({
+        where: { id: data.clientId },
+        data: {
+          due: {
+            increment: new Decimal(data.totalTTC)
+          },
+          billboards: {
+            connect: [
+              ...data.item.billboards?.map(billboard => ({
+                id: billboard.billboardId
+              })) ?? []
+            ]
+          }
+        }
+      }),
+      ...(data.item.productServices?.map(productService => (
+        prisma.productService.update({
+          where: {
+            id: productService.productServiceId
+          },
+          data: {
+            quantity: {
+              decrement: productService.quantity
+            },
+          }
+        })
+      )) ?? [])
+    ])
+
+    return NextResponse.json({
+      status: "success",
+      message: "Facture modifiée avec succès.",
+      data: updatedInvoice,
+    });
+
+  } catch (error) {
+    await removePath([...savedFilePaths])
+    console.log({ error });
+
+    return NextResponse.json({
+      status: "error",
+      message: "Erreur lors de la modification de la facture.",
+    }, { status: 500 });
   }
 
-  if (invoiceExist.projectId !== data.projectId) {
-
-  }
-
-
-  // update project
-  // update invoice
-
-  // try {
-  //   // Vérifier que tous les billboards existent et sont disponibles
-  //   const billboardIds = data.item.billboards?.map(b => b.billboardId).filter(b => b !== undefined) ?? [];
-
-  //   if (billboardIds.length > 0) {
-  //     const existingBillboards = await prisma.billboard.findMany({
-  //       where: { id: { in: billboardIds } },
-  //       select: { id: true }
-  //     });
-
-  //     if (existingBillboards.length !== billboardIds.length) {
-  //       return NextResponse.json({
-  //         status: "error",
-  //         message: "Un ou plusieurs panneaux sont introuvables.",
-  //       }, { status: 404 });
-  //     }
-  //   }
-
-  //   const result = await prisma.$transaction([
-  //     // 1. Déconnecter l'ancienne facture du client
-  //     prisma.client.update({
-  //       where: { id: invoiceExist.clientId as string },
-  //       data: {
-  //         invoices: {
-  //           disconnect: { id: invoiceExist.id }
-  //         }
-  //       }
-  //     }),
-
-  //     // 2. Déconnecter l'ancienne facture du projet et réinitialiser
-  //     prisma.project.update({
-  //       where: { id: invoiceExist.projectId as string },
-  //       data: {
-  //         invoices: {
-  //           disconnect: { id: invoiceExist.id }
-  //         },
-  //         status: "BLOCKED",
-  //         amount: "0",
-  //         balance: "0"
-  //       }
-  //     }),
-
-  //     // 3. Supprimer l'ancienne facture (cela libère les billboards)
-  //     prisma.invoice.delete({ where: { id: invoiceExist.id } }),
-
-  //     // 4. Créer la nouvelle facture avec les items et connexions
-  //     prisma.invoice.create({
-  //       data: {
-  //         totalHT: data.totalHT,
-  //         discount: data.discount!,
-  //         discountType: data.discountType,
-  //         pathFiles: folderFile,
-  //         paymentLimit: data.paymentLimit,
-  //         totalTTC: data.totalTTC,
-  //         payee: data.payee!,
-  //         note: data.note!,
-  //         files: savedFilePaths,
-  //         items: {
-  //           create: [
-  //             ...data.item.billboards?.map(billboard => ({
-  //               name: billboard.name,
-  //               description: billboard.description ?? "",
-  //               quantity: billboard.quantity,
-  //               price: billboard.price,
-  //               updatedPrice: billboard.updatedPrice,
-  //               discount: billboard.discount!,
-  //               locationStart: billboard.locationStart ?? new Date(),
-  //               locationEnd: billboard.locationEnd ?? projectExist.deadline,
-  //               discountType: billboard.discountType as string,
-  //               currency: billboard.currency!,
-  //               itemType: billboard.itemType ?? "billboard",
-  //               billboard: {
-  //                 connect: { id: billboard.billboardId }
-  //               }
-  //             })) ?? [],
-  //             ...data.item.productServices?.map(productService => ({
-  //               name: productService.name,
-  //               description: productService.description ?? "",
-  //               quantity: productService.quantity,
-  //               price: productService.price,
-  //               updatedPrice: productService.updatedPrice,
-  //               locationStart: new Date(),
-  //               locationEnd: projectExist.deadline,
-  //               discount: productService.discount!,
-  //               discountType: productService.discountType as string,
-  //               currency: productService.currency!,
-  //               itemType: productService.itemType ?? "product",
-  //               productService: {
-  //                 connect: { id: productService.productServiceId }
-  //               }
-  //             })) ?? []
-  //           ]
-  //         },
-  //         project: {
-  //           connect: { id: data.projectId }
-  //         },
-  //         client: {
-  //           connect: { id: data.clientId }
-  //         },
-  //         company: {
-  //           connect: { id: data.companyId }
-  //         },
-  //         billboards: {
-  //           connect: data.item.billboards?.map(billboard => ({
-  //             id: billboard.billboardId
-  //           })) ?? []
-  //         },
-  //         productsServices: {
-  //           connect: data.item.productServices?.map(productService => ({
-  //             id: productService.productServiceId
-  //           })) ?? []
-  //         },
-  //       },
-  //     }),
-
-  //     // 5. Mettre à jour le statut du projet
-  //     prisma.project.update({
-  //       where: { id: projectExist.id },
-  //       data: {
-  //         status: "TODO",
-  //         amount: data.totalTTC
-  //       }
-  //     }),
-
-  //     // 6. Mettre à jour les dates de location des billboards
-  //     ...data.item.billboards?.map(billboard => (
-  //       prisma.billboard.update({
-  //         where: { id: billboard.billboardId },
-  //         data: {
-  //           locationStart: billboard.locationStart ?? new Date(),
-  //           locationEnd: billboard.locationEnd ?? projectExist.deadline,
-  //           client: {
-  //             connect: { id: data.clientId }
-  //           }
-  //         }
-  //       })
-  //     )) ?? [],
-
-  //     // 7. Décrémenter les quantités des produits/services
-  //     ...data.item.productServices?.map(productService => (
-  //       prisma.productService.update({
-  //         where: { id: productService.productServiceId },
-  //         data: {
-  //           quantity: {
-  //             decrement: productService.quantity
-  //           },
-  //         }
-  //       })
-  //     )) ?? []
-  //   ]);
-
-  //   // La nouvelle facture créée est à l'index 3 (après les 3 premières opérations)
-  //   const updatedInvoice = result[3];
-
-  //   // Réponse succès
-  //   return NextResponse.json({
-  //     status: "success",
-  //     message: "Facture modifiée avec succès.",
-  //     data: updatedInvoice,
-  //   });
-
-  // } catch (error) {
-  //   // En cas d'erreur, suppression des fichiers enregistrés pendant ce processus
-  //   await removePath([...savedFilePaths]);
-  //   console.error("Erreur mise à jour facture :", error);
-  //   return NextResponse.json(
-  //     {
-  //       status: "error",
-  //       message: "Erreur lors de la modification de la facture.",
-  //     },
-  //     { status: 500 }
-  //   );
-  // }
 }
 
 export async function DELETE(req: NextRequest) {
