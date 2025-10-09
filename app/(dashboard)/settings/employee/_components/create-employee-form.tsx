@@ -24,6 +24,7 @@ import { RequestResponse } from "@/types/api.types";
 import { hasEmail } from "@/action/user.action";
 import Spinner from "@/components/ui/spinner";
 import { setFile } from "@/lib/file-storage";
+import { Decimal } from "decimal.js";
 
 export default function CreateEmployeeForm() {
   const [resetKey, setResetKey] = useState(0);
@@ -39,7 +40,7 @@ export default function CreateEmployeeForm() {
       email: "",
       phone: "",
       job: "",
-      salary: "",
+      salary: new Decimal(0),
       password: "",
       dashboard: { create: false, edit: false, read: false },
       clients: { create: false, edit: false, read: false },
@@ -61,15 +62,14 @@ export default function CreateEmployeeForm() {
   const { mutate, isPending } = useQueryAction<
     { id: string; email: string },
     RequestResponse<undefined>
-  >(hasEmail, () => {}, "employee");
+  >(hasEmail, () => { }, "employee");
 
   async function submit(userData: UserSchemaType) {
     const { success, data } = userSchema.safeParse(userData);
     if (!success) return;
 
-    const path = `${crypto.randomUUID()}_${data.firstname}_${
-      data.lastname
-    }`.toLowerCase();
+    const path = `${crypto.randomUUID()}_${data.firstname}_${data.lastname
+      }`.toLowerCase();
 
     const newUser = {
       ...data,
@@ -225,8 +225,8 @@ export default function CreateEmployeeForm() {
                       type="number"
                       design="float"
                       label="Salaire"
-                      value={field.value}
-                      handleChange={(e) => field.onChange(String(e))}
+                      value={field.value.toString()}
+                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
                     />
                   </FormControl>
                   <FormMessage />

@@ -1,11 +1,6 @@
 import prisma from "@/lib/prisma";
-import { existsSync } from "fs";
-import { mkdir, writeFile } from "fs/promises";
 import { NextResponse, type NextRequest } from "next/server";
-import path from "path";
-import crypto from "crypto";
-import { getSession } from "@/lib/auth";
-import { getIdFromUrl, hasPermission } from "@/lib/utils";
+import { getIdFromUrl } from "@/lib/utils";
 import { checkAccess } from "@/lib/access";
 import { createFile, removePath } from "@/lib/file";
 

@@ -32,8 +32,8 @@ import { UserType } from "@/types/user.types";
 import { useEmployeeStore } from "@/stores/employee.store";
 import useCompanyStore from "@/stores/company.store";
 import { getFileByType } from "@/lib/file-storage";
-import CompanyFormErrors from "@/components/errors/edit-company-form-errors";
 import EditCompanyFormErrors from "@/components/errors/edit-company-form-errors";
+import { Decimal } from "decimal.js";
 
 type UpdateCompanyFormProps = {
   id: string;
@@ -58,7 +58,7 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
       website: "",
       businessRegistrationNumber: "",
       taxIdentificationNumber: "",
-      capitalAmount: "",
+      capitalAmount: new Decimal(0),
       vatRate: [],
       currency: "",
       employees: [],
@@ -123,7 +123,7 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
         website: formData.website ?? "",
         businessRegistrationNumber: formData.businessRegistrationNumber ?? "",
         taxIdentificationNumber: formData.taxIdentificationNumber ?? "",
-        capitalAmount: formData.capitalAmount ?? "",
+        capitalAmount: formData.capitalAmount ? new Decimal(formData.capitalAmount as Decimal) : new Decimal(0),
         currency: formData.currency ?? "",
         fiscal:
           formData && formData.fiscal?.from && formData.fiscal.to
@@ -360,8 +360,8 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
                       type="number"
                       design="float"
                       label="Montant du capital"
-                      value={field.value}
-                      handleChange={(e) => field.onChange(String(e))}
+                      value={field.value.toString()}
+                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
                     />
                   </FormControl>
                   <FormMessage />

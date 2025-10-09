@@ -3,11 +3,12 @@ import { checkIfExists, createEmployee, initializeCurrentCompany } from "@/lib/d
 import { removePath } from "@/lib/file";
 import { extractCompanyData } from "@/lib/utils";
 import { companySchema, CompanySchemaType } from "@/lib/zod/company.schema";
-import { DatabaseCompanyType } from "@/types/company.types";
 import { NextRequest, NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
 import { parseData } from "@/lib/parse";
+import { Decimal } from "decimal.js";
+import { Company } from "@/lib/generated/prisma";
 
 
 export async function GET() {
@@ -31,7 +32,10 @@ export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         const companyData = extractCompanyData(formData);
-        const data = parseData<CompanySchemaType>(companySchema, companyData) as CompanySchemaType
+        const data = parseData<CompanySchemaType>(companySchema, {
+            ...companyData,
+            capitalAmount: new Decimal(companyData.capitalAmount)
+        }) as CompanySchemaType
 
         await checkIfExists(prisma.company, { where: { companyName: data.companyName } }, "entreprise", data.companyName);
         await checkIfExists(prisma.company, { where: { email: data.email } }, "entreprise", data.email);
@@ -42,7 +46,7 @@ export async function POST(req: NextRequest) {
             })
         );
 
-        let company: DatabaseCompanyType | null = null
+        let company: Company | null = null
         try {
             company = await prisma.company.create({
                 data: {
@@ -56,7 +60,7 @@ export async function POST(req: NextRequest) {
                     website: data.website,
                     businessRegistrationNumber: data.businessRegistrationNumber,
                     taxIdentificationNumber: data.taxIdentificationNumber,
-                    capitalAmount: data.capitalAmount,
+                    capitalAmount: data.capitalAmount as Decimal,
                     currency: data.currency,
                     bankAccountDetails: data.bankAccountDetails,
                     businessActivityType: data.businessActivityType,
@@ -68,21 +72,22 @@ export async function POST(req: NextRequest) {
                     },
                 },
             });
-            await initializeCurrentCompany(company.id, createdUserIds)
-
-            await prisma.documentModel.create({
-                data: {
-                    position: "Center",
-                    size: "Medium",
-                    primaryColor: "#fbbf24",
-                    secondaryColor: "#fef3c7",
-                    company: {
-                        connect: {
-                            id: company.id
+            if (company) {
+                await initializeCurrentCompany(company.id, createdUserIds)
+                await prisma.documentModel.create({
+                    data: {
+                        position: "Center",
+                        size: "Medium",
+                        primaryColor: "#fbbf24",
+                        secondaryColor: "#fef3c7",
+                        company: {
+                            connect: {
+                                id: company.id
+                            }
                         }
                     }
-                }
-            })
+                })
+            }
 
         } catch (err) {
             await prisma.user.deleteMany({ where: { id: { in: createdUserIds.filter(v => Boolean(v)) } } });

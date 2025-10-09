@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { Action, Resource, Role } from "@/lib/generated/prisma";
 import crypto from 'crypto';
 import prisma from "@/lib/prisma";
+import Decimal from "decimal.js";
 
 export async function main() {
   const existingUser = await prisma.user.findUnique({
@@ -50,7 +51,7 @@ export async function main() {
               lastname: process.env.USER_LASTNAME!,
               phone: "",
               job: "",
-              salary: "",
+              salary: new Decimal(0),
             }
           },
           permissions: {

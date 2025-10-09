@@ -1,4 +1,5 @@
 import { $Enums, Action, Resource } from "@/lib/generated/prisma";
+import { Decimal } from "decimal.js";
 
 export type ProfileType<F = string> = {
     id: string;
@@ -8,7 +9,7 @@ export type ProfileType<F = string> = {
     firstname: string;
     phone: string | null;
     job: string;
-    salary: string;
+    salary: Decimal;
     userId: string;
     key: string;
     internalRegulations: F | null;

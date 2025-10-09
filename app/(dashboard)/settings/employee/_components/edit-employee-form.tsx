@@ -23,6 +23,7 @@ import { useUploadProfile } from "@/hook/useUploadProfile";
 import TextInput from "@/components/ui/text-input";
 import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
+import { Decimal } from "decimal.js";
 
 export default function EditEmployeeForm() {
   const param = useParams();
@@ -37,7 +38,7 @@ export default function EditEmployeeForm() {
       email: "",
       phone: "",
       job: "",
-      salary: "",
+      salary: new Decimal(0),
       password: "",
       dashboard: {
         create: false,
@@ -98,14 +99,14 @@ export default function EditEmployeeForm() {
     data: employeeData,
   } = useQueryAction<{ id: string }, RequestResponse<UserType>>(
     unique,
-    () => {},
+    () => { },
     "employee"
   );
 
   const { mutate: mutateEditEmployee, isPending: isPendingEditEmployee } =
     useQueryAction<UserEditSchemaType, RequestResponse<UserType>>(
       edit,
-      () => {},
+      () => { },
       "employee"
     );
 
@@ -124,7 +125,7 @@ export default function EditEmployeeForm() {
         email: employee.email,
         phone: employee.profile.phone ?? "",
         job: employee.profile.job,
-        salary: employee.profile.salary,
+        salary: new Decimal(employee.profile.salary),
         password: "",
         dashboard: { create: false, edit: false, read: false },
         clients: { create: false, edit: false, read: false },
@@ -315,8 +316,8 @@ export default function EditEmployeeForm() {
                       type="number"
                       design="float"
                       label="Salaire"
-                      value={field.value}
-                      handleChange={(e) => field.onChange(String(e))}
+                      value={field.value.toString()}
+                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
                     />
                   </FormControl>
                   <FormMessage />

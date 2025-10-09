@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { userEditSchema, userSchema } from "./user.schema";
+import { Decimal } from "decimal.js";
 
 export const taxSchema = z.object({
     taxName: z.string().min(1, {
@@ -61,9 +62,7 @@ export const companySchema = z.object({
     taxIdentificationNumber: z.string().min(1, {
         message: "Le numéro d'identification fiscale (NIF) est obligatoire."
     }),
-    capitalAmount: z.string().min(1, {
-        message: "Le montant du capital est obligatoire."
-    }),
+    capitalAmount: z.instanceof(Decimal, { error: "Le montant du capital est obligatoire." }),
     vatRate: z.array(taxSchema).min(1, {
         message: "Veuillez ajouter au moins une taxe."
     }),
@@ -117,9 +116,7 @@ export const editCompanySchema = z.object({
     taxIdentificationNumber: z.string().min(1, {
         message: "Le numéro d'identification fiscale (NIF) est obligatoire."
     }),
-    capitalAmount: z.string().min(1, {
-        message: "Le montant du capital est obligatoire."
-    }),
+    capitalAmount: z.instanceof(Decimal, { error: "Le montant du capital est obligatoire." }),
     vatRate: z.array(taxSchema).min(1, {
         message: "Veuillez ajouter au moins une taxe."
     }),

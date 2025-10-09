@@ -31,6 +31,7 @@ import { UserType } from "@/types/user.types";
 import { clearAllFiles, clearFiles, getFileByType } from "@/lib/file-storage";
 import useTaxStore from "@/stores/tax.store";
 import { useDataStore } from "@/stores/data.store";
+import { Decimal } from "decimal.js";
 
 export default function CreateCompanyForm() {
   const router = useRouter();
@@ -60,7 +61,7 @@ export default function CreateCompanyForm() {
       website: "",
       businessRegistrationNumber: "",
       taxIdentificationNumber: "",
-      capitalAmount: "",
+      capitalAmount: new Decimal(0),
       vatRate: [],
       currency: "",
       employees: [],
@@ -106,7 +107,7 @@ export default function CreateCompanyForm() {
       codePostal: company?.codePostal ?? "",
       businessRegistrationNumber: company?.businessRegistrationNumber ?? "",
       taxIdentificationNumber: company?.taxIdentificationNumber ?? "",
-      capitalAmount: company?.capitalAmount ?? "",
+      capitalAmount: company ? new Decimal(company.capitalAmount) : new Decimal(0),
       vatRate: taxs.length > 0 ? taxs : [],
       currency: company?.currency ?? "",
       fiscal:
@@ -163,7 +164,7 @@ export default function CreateCompanyForm() {
         codePostal: formData.codePostal,
         businessRegistrationNumber: formData.businessRegistrationNumber ?? "",
         taxIdentificationNumber: formData.taxIdentificationNumber ?? "",
-        capitalAmount: formData.capitalAmount ?? "",
+        capitalAmount: formData.capitalAmount ? new Decimal(formData.capitalAmount as Decimal) : new Decimal(0),
         currency: formData.currency ?? "",
         fiscal:
           formData.fiscal?.from && formData.fiscal?.to
@@ -402,8 +403,8 @@ export default function CreateCompanyForm() {
                       type="number"
                       design="float"
                       label="Montant du capital"
-                      value={field.value}
-                      handleChange={(e) => field.onChange(String(e))}
+                      value={field.value.toString()}
+                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
                     />
                   </FormControl>
                   <FormMessage />

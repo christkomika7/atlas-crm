@@ -8,6 +8,7 @@ import { parseData } from "@/lib/parse";
 import { checkIfExists, createUser } from "@/lib/database";
 import { User } from "better-auth";
 import { createPermissionsData } from "@/lib/utils";
+import { Decimal } from "decimal.js";
 
 export async function POST(req: NextRequest) {
     await checkAccess(["DASHBOARD"], "CREATE");
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
                             lastname: data.lastname,
                             phone: data.phone,
                             job: data.job,
-                            salary: data.salary,
+                            salary: new Decimal(data.salary),
                         }
                     },
                     permissions: {

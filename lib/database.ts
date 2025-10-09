@@ -6,6 +6,7 @@ import { UserEditSchemaType } from "./zod/user.schema";
 import { createFile, createFolder, moveTo, removePath } from "./file";
 import prisma from "./prisma";
 import { createPermissionsData } from "./utils";
+import { Decimal } from "decimal.js";
 
 type User = {
     name: string;
@@ -103,6 +104,9 @@ export async function createEmployee(employee: UserEditSchemaType, companyName: 
     let passportPath = "";
     let documentPath = "";
 
+
+    console.log({ employee })
+
     // Crée le dossier upload basé sur companyName et user
     const folder = createFolder([companyName, "user", `${employee.firstname}_${employee.lastname}`]);
 
@@ -139,7 +143,7 @@ export async function createEmployee(employee: UserEditSchemaType, companyName: 
                         firstname: employee.firstname,
                         phone: employee.phone,
                         job: employee.job,
-                        salary: employee.salary,
+                        salary: new Decimal(employee.salary),
                         passport: passportPath,
                         internalRegulations: documentPath,
                     },
@@ -198,7 +202,7 @@ export async function updateEmployee(employee: UserEditSchemaType, companyName: 
                         firstname: employee.firstname,
                         phone: employee.phone,
                         job: employee.job,
-                        salary: employee.salary,
+                        salary: new Decimal(employee.salary),
                         passport: passportPath,
                         internalRegulations: documentPath
                     },

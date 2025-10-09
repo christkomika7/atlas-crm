@@ -7,6 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getIdFromUrl } from "@/lib/utils";
 import { checkAccess } from "@/lib/access";
 import { parseData } from "@/lib/parse";
+import { Decimal } from "decimal.js";
 
 export async function GET(req: NextRequest) {
     await checkAccess(["DASHBOARD"], "READ");
@@ -71,7 +72,7 @@ export async function PUT(req: NextRequest) {
                     profile: {
                         update: {
                             where: { userId: id },
-                            data: { lastname: data.lastname, firstname: data.firstname, phone: data.phone, job: data.job, salary: data.salary },
+                            data: { lastname: data.lastname, firstname: data.firstname, phone: data.phone, job: data.job, salary: new Decimal(data.salary) },
                         },
                     },
                 },

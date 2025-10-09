@@ -1,6 +1,7 @@
 import { ACCEPTED_FILES_TYPES, ACCEPTED_IMAGE_TYPES, IMAGE_TYPES, MAX_FILE_SIZE } from "@/config/constant";
 import { z } from "zod";
 import { validateMimeType } from "../utils";
+import { Decimal } from "decimal.js";
 
 export const userSchema = z.object({
     id: z.string().optional(),
@@ -34,9 +35,7 @@ export const userSchema = z.object({
     job: z.string().min(1, {
         message: "Le poste est obligatoire."
     }),
-    salary: z.string().min(1, {
-        message: "Le salaire est obligatoire."
-    }),
+    salary: z.instanceof(Decimal, { error: "Le salaire est obligatoire." }),
     password: z.string().min(1, {
         message: "Le mot de passe est obligatoire."
     }),
@@ -168,9 +167,7 @@ export const userEditSchema = z.object({
     job: z.string().min(1, {
         message: "Le poste est obligatoire."
     }),
-    salary: z.string().min(1, {
-        message: "Le salaire est obligatoire."
-    }),
+    salary: z.instanceof(Decimal, { error: "Le salaire est obligatoire." }),
     password: z.string().optional(),
 
     passport: z

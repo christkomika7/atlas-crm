@@ -245,6 +245,8 @@ export function extractCompanyData(formData: FormData) {
 
       const parsed = JSON.parse(employeeJson.toString());
 
+      console.log({ parsed })
+
       const image = formData.get(`images[${index}]`);
       if (image instanceof File) {
         parsed.image = image;
@@ -260,7 +262,7 @@ export function extractCompanyData(formData: FormData) {
         parsed.document = document;
       }
 
-      employees.push(parsed);
+      employees.push({ ...parsed, salary: new Decimal(parsed.salary) });
       index++;
     }
 

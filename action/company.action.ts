@@ -97,7 +97,7 @@ export async function create(data: CompanySchemaType) {
         formData.append("website", data.website ?? "");
         formData.append("businessRegistrationNumber", data.businessRegistrationNumber);
         formData.append("taxIdentificationNumber", data.taxIdentificationNumber);
-        formData.append("capitalAmount", data.capitalAmount);
+        formData.append("capitalAmount", data.capitalAmount.toString());
         formData.append("currency", data.currency);
         formData.append("bankAccountDetails", data.bankAccountDetails);
         formData.append("businessActivityType", data.businessActivityType);
@@ -154,7 +154,7 @@ export async function update(data: EditCompanySchemaType) {
         formData.append("website", data.website ?? "");
         formData.append("businessRegistrationNumber", data.businessRegistrationNumber);
         formData.append("taxIdentificationNumber", data.taxIdentificationNumber);
-        formData.append("capitalAmount", data.capitalAmount);
+        formData.append("capitalAmount", data.capitalAmount.toString());
         formData.append("currency", data.currency);
         formData.append("bankAccountDetails", data.bankAccountDetails);
         formData.append("businessActivityType", data.businessActivityType);

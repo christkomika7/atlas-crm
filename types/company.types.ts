@@ -1,5 +1,6 @@
 import { JsonValue } from "@prisma/client/runtime/library";
 import { ModelDocumentType } from "./document.types";
+import { Decimal } from "decimal.js";
 
 export type TaxType = {
     name: string;
@@ -54,23 +55,3 @@ export type CompanyCountriesType = {
     currency: string
 }
 
-export type DatabaseCompanyType = {
-    companyName: string;
-    country: string;
-    registeredAddress: string;
-    phoneNumber: string;
-    email: string;
-    website: string | null;
-    businessRegistrationNumber: string;
-    taxIdentificationNumber: string;
-    capitalAmount: string;
-    id: string;
-    currency: string;
-    bankAccountDetails: string;
-    businessActivityType: string;
-    createdAt: Date;
-    updatedAt: Date;
-    fiscalYearStart: Date;
-    fiscalYearEnd: Date;
-    vatRates: JsonValue;
-}
