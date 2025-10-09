@@ -95,7 +95,7 @@ model Company {
   website                    String?
   businessRegistrationNumber String
   taxIdentificationNumber    String
-  capitalAmount              Decimal               @default(0) @db.Decimal(15, 2)
+  capitalAmount              String
   currency                   String
   bankAccountDetails         String
   businessActivityType       String
@@ -203,7 +203,7 @@ model Profile {
   phone String?
 
   job    String
-  salary Decimal @default(0) @db.Decimal(15, 2)
+  salary String
 
   internalRegulations String?
   passport            String?
