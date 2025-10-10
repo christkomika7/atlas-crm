@@ -22,7 +22,6 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { ProjectType } from "@/types/project.types";
 import ItemModal from "./item-modal";
 import useProjectStore from "@/stores/project.store";
-import ProjectModal from "../../_component/project-modal";
 import { unique } from "@/action/document.action";
 import { ModelDocumentType } from "@/types/document.types";
 import { useRouter } from "next/navigation";
@@ -447,7 +446,6 @@ export default function PurchaseOrderForm() {
                       placeholder="Sélectionner un projet"
                       searchMessage="Rechercher un projet"
                       noResultsMessage="Aucun projet trouvé."
-                      addElement={<ProjectModal />}
                     />
                   </FormControl>
                   <FormMessage />

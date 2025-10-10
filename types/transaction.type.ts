@@ -2,6 +2,7 @@ import { $Enums } from "@/lib/generated/prisma";
 import { InvoiceType } from "./invoice.types";
 import { ClientType } from "./client.types";
 import { CompanyType } from "./company.types";
+import { SupplierType } from "./supplier.types";
 
 export type TransactionType = {
   id: string;
@@ -27,6 +28,12 @@ export type TransactionType = {
 
   allocationId: string;
   allocation: AllocationType;
+
+  clientId: string;
+  client: ClientType;
+
+  supplierId: string;
+  supplier: SupplierType
 
   sourceId: string;
   source: SourceType;

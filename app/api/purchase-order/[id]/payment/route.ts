@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
             }
 
             if (purchaseExist.isPaid) {
-                throw new Error("Ce bon de ommande est déjà réglé et ne peut pas recevoir de nouveau paiement.");
+                throw new Error("Ce bon de commande est déjà réglé et ne peut pas recevoir de nouveau paiement.");
             }
 
             const total =
@@ -82,47 +82,56 @@ export async function POST(req: NextRequest) {
                         }
                     },
                     supplier: true,
-
                 },
             });
 
             return { payment, purchaseOrder };
         });
 
+        // Vérifier et récupérer ou créer la catégorie, nature et source
         let categoryId: string = '';
         let natureId: string = '';
         let sourceId: string = '';
 
-        const [categorie, nature, source] = await prisma.$transaction([
-            prisma.transactionCategory.findUnique({
-                where: {
-                    name: "Règlement client"
-                }
-            }),
-            prisma.transactionNature.findUnique({
-                where: { name: "Règlement facture client" }
-            }),
-            prisma.source.findUnique({
-                where: { name: "BGFIBank" }
-            })
-        ]);
+        // Vérifier si la catégorie existe
+        let category = await prisma.transactionCategory.findFirst({
+            where: {
+                name: "Règlement fournisseur",
+                companyId: purchaseOrder.companyId
+            }
+        });
 
-        if (!categorie) {
-            const createdCategory = await prisma.transactionCategory.create({
+        // Si la catégorie n'existe pas, la créer
+        if (!category) {
+            category = await prisma.transactionCategory.create({
                 data: {
                     company: {
                         connect: {
                             id: purchaseOrder.companyId
                         }
                     },
-                    name: "Règlement client",
+                    name: "Règlement fournisseur",
                 },
             });
-            const createdNature = await prisma.transactionNature.create({
+        }
+        categoryId = category.id;
+
+        // Vérifier si la nature existe
+        let nature = await prisma.transactionNature.findFirst({
+            where: {
+                name: "Règlement facture fournisseur",
+                companyId: purchaseOrder.companyId,
+                categoryId: category.id
+            }
+        });
+
+        // Si la nature n'existe pas, la créer
+        if (!nature) {
+            nature = await prisma.transactionNature.create({
                 data: {
                     category: {
                         connect: {
-                            id: createdCategory.id
+                            id: category.id
                         }
                     },
                     company: {
@@ -130,35 +139,23 @@ export async function POST(req: NextRequest) {
                             id: purchaseOrder.companyId
                         }
                     },
-                    name: "Règlement facture client",
+                    name: "Règlement facture fournisseur",
                 },
             });
-            categoryId = createdCategory.id;
-            natureId = createdNature.id;
         }
+        natureId = nature.id;
 
-        if (categorie && !nature) {
-            const createdNature = await prisma.transactionNature.create({
-                data: {
-                    category: {
-                        connect: {
-                            id: categorie.id
-                        }
-                    },
-                    company: {
-                        connect: {
-                            id: purchaseOrder.companyId
-                        }
-                    },
-                    name: "Règlement facture client",
-                },
-            });
-            categoryId = categorie.id;
-            natureId = createdNature.id;
-        }
+        // Vérifier si la source existe
+        let source = await prisma.source.findFirst({
+            where: {
+                name: "BGFIBank",
+                companyId: purchaseOrder.companyId
+            }
+        });
 
+        // Si la source n'existe pas, la créer
         if (!source) {
-            const createdSource = await prisma.source.create({
+            source = await prisma.source.create({
                 data: {
                     company: {
                         connect: {
@@ -168,19 +165,23 @@ export async function POST(req: NextRequest) {
                     name: "BGFIBank",
                 },
             });
-            sourceId = createdSource.id;
         }
+        sourceId = source.id;
 
-
-
-        await prisma.receipt.create({
+        // Créer le disbursement avec les IDs récupérés ou créés
+        await prisma.dibursement.create({
             data: {
                 date: payment.createdAt,
                 amount: new Decimal(data.amount),
                 amountType: "HT",
-                description: `Paiement facture ${purchaseOrder.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX} ${generateAmaId(purchaseOrder.purchaseOrderNumber, false)} ${new Date().getFullYear()}`,
+                description: `Paiement bon de commande ${purchaseOrder.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX} ${generateAmaId(purchaseOrder.purchaseOrderNumber, false)} ${new Date().getFullYear()}`,
                 checkNumber: '2345678',
                 paymentType: 'check',
+                supplier: {
+                    connect: {
+                        id: purchaseOrder.supplierId as string
+                    }
+                },
                 referencePurchaseOrder: {
                     connect: {
                         id: purchaseOrder.id

@@ -24,6 +24,7 @@ import { getMonthsAndDaysDifference } from "@/lib/date";
 import { formatNumber, generateAmaId, getPrefix } from "@/lib/utils";
 import { unique as getUniqueBillboard } from "@/action/billboard.action";
 import { BillboardType } from "@/types/billboard.types";
+import { Decimal } from "decimal.js";
 
 export default function InfoTab() {
   const param = useParams();
@@ -79,7 +80,7 @@ export default function InfoTab() {
                   invoideNumber: billboardItem.invoice.invoiceNumber,
                   itemInvoiceType: billboardItem.itemInvoiceType,
                   currency: billboardItem.currency,
-                  amount: billboardItem.updatedPrice,
+                  amount: new Decimal(billboardItem.updatedPrice),
                   createdAt: billboardItem.createdAt,
                 })),
               ]);
@@ -146,7 +147,7 @@ export default function InfoTab() {
               id: item.id,
               startDate: item.startDate,
               endDate: item.endDate,
-              amount: parseFloat(item.amount),
+              amount: item.amount,
             }))}
           />
         </div>

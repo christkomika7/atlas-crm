@@ -61,7 +61,7 @@ export default function DocumentTab() {
   const { mutate: mutateDocument, isPending: isDocumentPending } =
     useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
       unique,
-      () => {},
+      () => { },
       ["model-document"]
     );
 
@@ -69,7 +69,7 @@ export default function DocumentTab() {
     useQueryAction<
       DocumentSchemaType & { id: string },
       RequestResponse<ModelDocumentType<string>>
-    >(update, () => {}, ["model-document"]);
+    >(update, () => { }, ["model-document"]);
 
   useEffect(() => {
     if (idCompany) {
@@ -79,6 +79,7 @@ export default function DocumentTab() {
           onSuccess(data) {
             if (data.data) {
               const doc = data.data;
+              console.log({ doc })
               setDocumentId(doc?.id || "");
 
               setQuotes({

@@ -14,6 +14,7 @@ export type PurchaseItemType = {
     selectedQuantity: number;
     price: Decimal;
     updatedPrice: Decimal;
+    lastSelectedQuantity?: number;
     itemType: "product" | "service";
     discountType: "purcent" | "money";
     discount: string;

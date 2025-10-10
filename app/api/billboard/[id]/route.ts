@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { generateId, getIdFromUrl } from "@/lib/utils";
 import { editBillboardFormSchema, EditBillboardSchemaFormType, EditBillboardSchemaType, EditLessorSchemaType } from "@/lib/zod/billboard.schema";
 import { BillboardType } from "@/types/billboard.types";
+import { Decimal } from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -19,7 +20,11 @@ export async function GET(req: NextRequest) {
         include: {
             company: true,
             type: true,
-            items: true
+            items: {
+                where: {
+                    state: "APPROVED"
+                }
+            }
         }
     });
 
@@ -269,12 +274,16 @@ export async function PUT(req: NextRequest) {
         billboard: {
             ...(billboardData as EditBillboardSchemaType),
             lastImageFiles: billboardData.lastImageFiles ? billboardData.lastImageFiles.split(";") : [],
-            lastBrochureFiles: billboardData.lastBrochureFiles ? billboardData.lastBrochureFiles.split(";") : []
+            lastBrochureFiles: billboardData.lastBrochureFiles ? billboardData.lastBrochureFiles.split(";") : [],
+            rentalPrice: new Decimal(billboardData.rentalPrice),
+            installationCost: new Decimal(billboardData.installationCost),
+            maintenance: new Decimal(billboardData.maintenance),
         },
         lessor: {
             ...(lessorData as EditLessorSchemaType),
             lastSignedLeaseContract: lessorData.lastSignedLeaseContract ? lessorData.lastSignedLeaseContract.split(";") : [],
-            lastFiles: lessorData.lastFiles ? lessorData.lastFiles.split(";") : []
+            lastFiles: lessorData.lastFiles ? lessorData.lastFiles.split(";") : [],
+            capital: new Decimal(lessorData.capital || 0)
         }
     };
 

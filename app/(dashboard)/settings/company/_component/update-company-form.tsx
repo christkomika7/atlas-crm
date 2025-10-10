@@ -58,7 +58,7 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
       website: "",
       businessRegistrationNumber: "",
       taxIdentificationNumber: "",
-      capitalAmount: new Decimal(0),
+      capitalAmount: "",
       vatRate: [],
       currency: "",
       employees: [],
@@ -123,7 +123,7 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
         website: formData.website ?? "",
         businessRegistrationNumber: formData.businessRegistrationNumber ?? "",
         taxIdentificationNumber: formData.taxIdentificationNumber ?? "",
-        capitalAmount: formData.capitalAmount ? new Decimal(formData.capitalAmount as Decimal) : new Decimal(0),
+        capitalAmount: formData.capitalAmount ? formData.capitalAmount : "",
         currency: formData.currency ?? "",
         fiscal:
           formData && formData.fiscal?.from && formData.fiscal.to
@@ -360,8 +360,8 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
                       type="number"
                       design="float"
                       label="Montant du capital"
-                      value={field.value.toString()}
-                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
+                      value={field.value}
+                      handleChange={(e) => field.onChange(String(e))}
                     />
                   </FormControl>
                   <FormMessage />

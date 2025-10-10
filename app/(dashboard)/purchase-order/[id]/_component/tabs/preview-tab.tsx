@@ -203,12 +203,6 @@ export default function PreviewTab() {
                   </span>
                 </p>
               </div>
-              <p className="flex justify-between items-center gap-x-2 pb-4 text-sm">
-                <span className="font-semibold">Convertir depuis le devis</span>
-                <span className="font-medium text-blue underline">
-                  AC-D-023
-                </span>
-              </p>
               <ModalContainer
                 action={<Button variant="primary" disabled={purchaseOrder.isPaid}>Ajouter un paiement</Button>}
                 title="Enregistrer un paiement"

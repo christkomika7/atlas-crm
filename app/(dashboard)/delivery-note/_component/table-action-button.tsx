@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useTabStore from "@/stores/tab.store";
-import { removeDeliveryNote } from "@/action/delivery-note.action";
+import { completeDeliveryNote, convertDeliveryNoteToQuote, duplicateDeliveryNote, removeDeliveryNote } from "@/action/delivery-note.action";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
+import Spinner from "@/components/ui/spinner";
 
 type TableActionButtonProps = {
   id: string;
@@ -37,7 +38,23 @@ export default function TableActionButton({
     RequestResponse<DeliveryNoteType[]>
   >(removeDeliveryNote, () => { }, "delivery-notes");
 
-  function goTo(id: string, action: "update" | "preview" | "send") {
+  const { mutate: mutateCompleteDeliveryNote, isPending: isCompletedDeliveryNote } = useQueryAction<
+    { id: string },
+    RequestResponse<null>
+  >(completeDeliveryNote, () => { }, "delivery-notes");
+
+  const { mutate: mutateDuplicateDeliveryNote, isPending: isDuplicateDeliveryNote } = useQueryAction<
+    { id: string },
+    RequestResponse<null>
+  >(duplicateDeliveryNote, () => { }, "delivery-notes");
+
+  const { mutate: mutateConvertDeliveryNote, isPending: isConvertedDeliveryNote } = useQueryAction<
+    { id: string },
+    RequestResponse<string>
+  >(convertDeliveryNoteToQuote, () => { }, "delivery-notes");
+
+
+  function goTo(id: string, action: "update" | "preview" | "send" | "complete" | "duplicate" | "convert") {
     switch (action) {
       case "update":
         setTab("action-delivery-note-tab", 0);
@@ -46,6 +63,29 @@ export default function TableActionButton({
       case "preview":
         setTab("action-delivery-note-tab", 1);
         router.push(`/delivery-note/${id}`);
+        break;
+      case "complete":
+        mutateCompleteDeliveryNote({ id }, {
+          onSuccess() {
+            refreshDeliveryNote()
+          },
+        })
+        break;
+      case "duplicate":
+        mutateDuplicateDeliveryNote({ id }, {
+          onSuccess() {
+            refreshDeliveryNote()
+          },
+        })
+        break;
+      case "convert":
+        mutateConvertDeliveryNote({ id }, {
+          onSuccess(data) {
+            if (data.data) {
+              router.push(`/quote/${data.data}`);
+            }
+          },
+        })
         break;
       case "send":
         setTab("action-delivery-note-tab", 2);
@@ -95,11 +135,20 @@ export default function TableActionButton({
                     <button
                       className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
                       onClick={() =>
-                        goTo(id, menu.id as "update" | "preview" | "send")
+                        goTo(id, menu.id as "update" | "preview" | "send" | "complete" | "duplicate" | "convert")
                       }
                     >
                       <menu.icon className="w-4 h-4" />
-                      {menu.title}
+                      <span className=" flex gap-x-2 items-center">
+                        {menu.title}
+
+                        <span>
+                          {menu.id === "complete" && isCompletedDeliveryNote && <Spinner size={15} />}
+                          {menu.id === "duplicate" && isDuplicateDeliveryNote && <Spinner size={15} />}
+                          {menu.id === "convert" && isConvertedDeliveryNote && <Spinner size={15} />}
+                        </span>
+
+                      </span>
                     </button>
                   </li>
                 );

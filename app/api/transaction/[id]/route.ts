@@ -153,6 +153,8 @@ export async function GET(req: NextRequest) {
       orderBy,
       select: {
         ...commonSelect,
+        supplier: true,
+        client: true,
         referenceInvoiceId: true,
         referenceInvoice: {
           select: {
@@ -171,6 +173,8 @@ export async function GET(req: NextRequest) {
       orderBy,
       select: {
         ...commonSelect,
+        supplier: true,
+        client: true,
         allocation: {
           select: {
             id: true,
@@ -219,10 +223,10 @@ export async function GET(req: NextRequest) {
       // Normalisation du payOnBehalfOf avec profile
       payOnBehalfOf: disbursement.payOnBehalfOf
         ? {
-            id: disbursement.payOnBehalfOf.id,
-            firstname: disbursement.payOnBehalfOf.profile?.firstname || "",
-            lastname: disbursement.payOnBehalfOf.profile?.lastname || "",
-          }
+          id: disbursement.payOnBehalfOf.id,
+          firstname: disbursement.payOnBehalfOf.profile?.firstname || "",
+          lastname: disbursement.payOnBehalfOf.profile?.lastname || "",
+        }
         : null,
     }));
 
@@ -320,9 +324,9 @@ export async function GET(req: NextRequest) {
       // Formater payOnBehalfOf avec le champ name pour le frontend
       payOnBehalfOf: transaction.payOnBehalfOf
         ? {
-            ...transaction.payOnBehalfOf,
-            name: `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`.trim(),
-          }
+          ...transaction.payOnBehalfOf,
+          name: `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`.trim(),
+        }
         : null,
     }));
 

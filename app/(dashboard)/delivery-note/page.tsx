@@ -6,12 +6,12 @@ import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
 import Spinner from "@/components/ui/spinner";
 import { Tabs } from "@/components/ui/tabs";
-import UnpaidTab from "./_component/tabs/unpaid-tab";
-import PaidTab from "./_component/tabs/paid-tab";
 import Link from "next/link";
 import { DeliveryNoteTableRef } from "./_component/delivery-note-table";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 import { removeManyDeliveryNotes } from "@/action/delivery-note.action";
+import ProgressTab from "./_component/tabs/progress-tab";
+import CompleteTab from "./_component/tabs/complete-tab";
 
 export default function DeliveryNotePage() {
   const [selectedDeliveryNoteIds, setSelectedDeliveryNoteIds] = useState<string[]>([]);
@@ -73,7 +73,7 @@ export default function DeliveryNotePage() {
             id: 1,
             title: "En cour",
             content: (
-              <UnpaidTab
+              <ProgressTab
                 deliveryNoteTableRef={deliveryNoteTableRef}
                 selectedDeliveryNoteIds={selectedDeliveryNoteIds}
                 setSelectedDeliveryNoteIds={setSelectedDeliveryNoteIds}
@@ -84,7 +84,7 @@ export default function DeliveryNotePage() {
             id: 2,
             title: "Terminé",
             content: (
-              <PaidTab
+              <CompleteTab
                 deliveryNoteTableRef={deliveryNoteTableRef}
                 selectedDeliveryNoteIds={selectedDeliveryNoteIds}
                 setSelectedDeliveryNoteIds={setSelectedDeliveryNoteIds}

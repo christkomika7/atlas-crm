@@ -28,15 +28,14 @@ import { useParams } from "next/navigation";
 import { CompanyType } from "@/types/company.types";
 
 import { all as getSuppliers, unique as getSupplier } from "@/action/supplier.action";
-import { allByClient, getallByCompany } from "@/action/project.action";
+import { getallByCompany } from "@/action/project.action";
 import { unique as getDocument } from "@/action/document.action";
-import ProjectModal from "../../../_component/project-modal";
 import { DownloadIcon, XIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalculateTaxe } from "@/hook/useCalculateTaxe";
 import ItemList from "../../../create/_component/item-list";
 import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
-import { cn, downloadFile, generateAmaId, parseItem, parseItems, parsePurchaseItem, parsePurchaseItems } from "@/lib/utils";
+import { cn, downloadFile, generateAmaId, parsePurchaseItem, parsePurchaseItems } from "@/lib/utils";
 import { DiscountType } from "@/types/tax.type";
 import ItemModal from "../../../create/_component/item-modal";
 import { getAllProductServices } from "@/action/product-service.action";
@@ -311,6 +310,7 @@ export default function PurchaseOrderTab() {
             id: item.id,
             name: item.name,
             quantity: Number(item.quantity),
+            lastSelectedQuantity: Number(item.quantity),
             selectedQuantity: Number(item.quantity),
             price: new Decimal(item.price),
             updatedPrice: new Decimal(item.updatedPrice),
@@ -322,7 +322,6 @@ export default function PurchaseOrderTab() {
             productServiceId: item.productServiceId,
           }))];
 
-          console.log({ mappedItems })
 
           form.reset({
             id: purchaseOrder.id,
@@ -603,7 +602,6 @@ export default function PurchaseOrderTab() {
                       placeholder="Sélectionner un projet"
                       searchMessage="Rechercher un projet"
                       noResultsMessage="Aucun projet trouvé."
-                      addElement={<ProjectModal />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -648,6 +646,7 @@ export default function PurchaseOrderTab() {
             TTCPrice={totals.TTCPrice}
             isPaid={isPaid}
             amountPaid={amountPaid}
+
           />
 
           <div className="flex justify-center pt-2">

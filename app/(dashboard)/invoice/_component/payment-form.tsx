@@ -19,6 +19,7 @@ import { paymentSchema, PaymentSchemaType } from "@/lib/zod/payment.schema";
 import { RequestResponse } from "@/types/api.types";
 import { InvoiceType } from "@/types/invoice.types";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Decimal } from "decimal.js";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -36,7 +37,6 @@ export default function PaymentForm({ invoiceId, closeModal, refresh }: PaymentF
   const form = useForm<PaymentSchemaType>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      invoiceId,
       isPaid: false,
       amount: 0,
       date: new Date()
@@ -64,13 +64,23 @@ export default function PaymentForm({ invoiceId, closeModal, refresh }: PaymentF
           }
         },
       })
+
+      form.setValue("recordId", invoiceId)
     }
   }, [invoiceId])
 
 
   useEffect(() => {
     if (isPaid && invoice) {
-      return form.setValue('amount', Number(invoice.totalTTC) ?? 0);
+      const amountType = invoice.amountType;
+      const ttc = invoice.totalTTC ? new Decimal(invoice.totalTTC) : new Decimal(0);
+      const ht = invoice.totalHT ? new Decimal(invoice.totalHT) : new Decimal(0);
+      const payee = invoice.payee ? new Decimal(invoice.payee) : new Decimal(0);
+      if (amountType === "TTC") {
+        return form.setValue('amount', ttc.minus(payee).toNumber());
+      }
+      return form.setValue('amount', ht.minus(payee).toNumber());
+
     }
     form.setValue("amount", 0);
   }, [isPaid])
@@ -207,6 +217,10 @@ export default function PaymentForm({ invoiceId, closeModal, refresh }: PaymentF
 
           </Button>
           <Button
+            onClick={(e) => {
+              e.preventDefault()
+              closeModal()
+            }}
             type="submit"
             variant="primary"
             className="justify-center bg-neutral-100 max-w-xs text-black"

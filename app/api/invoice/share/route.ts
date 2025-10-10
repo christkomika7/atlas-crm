@@ -60,8 +60,6 @@ export async function POST(req: NextRequest) {
         { status: 404 }
     );
 
-
-
     try {
         const filename = `facture-${format(new Date(), "yyyy-MM-dd")}.pdf`;
         const invoiceBuffer = await invoiceBlob.arrayBuffer()
@@ -105,8 +103,8 @@ export async function POST(req: NextRequest) {
                 <p style="color: #000">
                 <span>Cordialement,</span><br>                
                 <span>Service Comptabilité</span><br>
-                <span>${company.companyName}</span><br>
-                <span>${company.phoneNumber}</span>
+                <span style="color: #000;">${company.companyName}</span><br>
+                <span style="color: #000;">${company.phoneNumber}</span>
                 </p>
             </div>
         `,

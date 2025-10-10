@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "company" ALTER COLUMN "capitalAmount" DROP DEFAULT,
+ALTER COLUMN "capitalAmount" SET DATA TYPE TEXT;
+
+-- AlterTable
+ALTER TABLE "profile" ALTER COLUMN "salary" DROP DEFAULT,
+ALTER COLUMN "salary" SET DATA TYPE TEXT;

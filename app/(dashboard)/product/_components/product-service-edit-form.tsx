@@ -70,8 +70,8 @@ export default function ProductServiceUpdatedForm({
         designation: productServiceData.data.designation,
         category: productServiceData.data.category,
         description: productServiceData.data.description,
-        unitPrice: productServiceData.data.unitPrice,
-        cost: productServiceData.data.cost,
+        unitPrice: productServiceData.data.unitPrice.toString(),
+        cost: productServiceData.data.cost.toString(),
         quantity: String(productServiceData.data.quantity),
         unitType: productServiceData.data.unitType,
       };

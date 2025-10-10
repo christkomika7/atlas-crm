@@ -3,10 +3,11 @@ import { BillboardType } from "./billboard.types";
 import { InvoiceType } from "./invoice.types";
 import Decimal from "decimal.js";
 
-export type OmitItemType = "billboard" | 'itemInvoiceType' | "invoiceId" | "invoice" | "createdAt" | "updatedAt";
+export type OmitItemType = "state" | "billboard" | 'itemInvoiceType' | "invoiceId" | "invoice" | "createdAt" | "updatedAt";
 
 export type ItemType = {
     id: string;
+    state: $Enums.ItemState,
     billboardId?: string;
     billboard: BillboardType;
     name: string;
@@ -38,7 +39,7 @@ export type ItemInfos = {
     itemInvoiceType: $Enums.ItemInvoiceType;
     client: string;
     currency: string;
-    amount: string;
+    amount: Decimal;
     createdAt: Date;
 
 }
@@ -53,7 +54,7 @@ export type BillboardInfo = {
 
 export type Sale = {
     id: string;
-    amount: number;
+    amount: Decimal;
     startDate: Date;
     endDate: Date;
 };

@@ -262,7 +262,7 @@ export function extractCompanyData(formData: FormData) {
         parsed.document = document;
       }
 
-      employees.push({ ...parsed, salary: new Decimal(parsed.salary) });
+      employees.push({ ...parsed, salary: parsed.salary });
       index++;
     }
 

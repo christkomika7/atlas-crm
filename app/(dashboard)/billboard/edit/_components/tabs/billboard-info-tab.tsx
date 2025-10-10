@@ -39,6 +39,7 @@ import AreaModal from "../../../_component/area-modal";
 import useBillboardTypeStore from "@/stores/billboard-type.store";
 import { BillboardTypeType } from "@/types/billboard-type.types";
 import BillboardTypeModal from "../../../_component/billboard-type-modal";
+import { Decimal } from "decimal.js";
 
 type BillboardInfoTabProps = {
   form: UseFormReturn<EditBillboardSchemaFormType>;
@@ -437,8 +438,8 @@ export default function BillboardInfoTab({
                       type="number"
                       design="float"
                       label="Coût de location"
-                      value={field.value}
-                      handleChange={(e) => field.onChange(String(e))}
+                      value={field.value?.toString()}
+                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
                     />
                   </FormControl>
                   <FormMessage />
@@ -455,8 +456,8 @@ export default function BillboardInfoTab({
                       type="number"
                       design="float"
                       label="Le coût d'installation"
-                      value={field.value}
-                      handleChange={(e) => field.onChange(String(e))}
+                      value={field.value?.toString()}
+                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
                     />
                   </FormControl>
                   <FormMessage />
@@ -473,8 +474,8 @@ export default function BillboardInfoTab({
                       type="number"
                       design="float"
                       label="Le coût d'entretien"
-                      value={field.value}
-                      handleChange={(e) => field.onChange(String(e))}
+                      value={field.value?.toString()}
+                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
                     />
                   </FormControl>
                   <FormMessage />

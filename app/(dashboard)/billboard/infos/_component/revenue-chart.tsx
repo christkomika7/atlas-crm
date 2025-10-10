@@ -18,6 +18,7 @@ import {
 import { Sale } from "@/types/item.type";
 import { getTotalDuration } from "@/lib/date";
 import { useDataStore } from "@/stores/data.store";
+import { Decimal } from "decimal.js";
 
 type RevenueChartProps = {
   sales: Sale[];
@@ -52,17 +53,17 @@ export function RevenueChart({ sales }: RevenueChartProps) {
   const currency = useDataStore.use.currency();
 
   // Transformer les données pour le chart par mois
-  const monthMap: Record<string, number> = {};
+  const monthMap: Record<string, Decimal> = {};
 
   for (const sale of sales) {
     const start = new Date(sale.startDate);
     const end = new Date(sale.endDate);
 
     const months = getMonthsBetween(start, end);
-    const amountPerMonth = sale.amount / months.length;
+    const amountPerMonth = sale.amount.div(months.length);
 
     for (const m of months) {
-      monthMap[m] = (monthMap[m] || 0) + amountPerMonth;
+      monthMap[m] = amountPerMonth.plus((monthMap[m] || 0));
     }
   }
 
@@ -74,7 +75,7 @@ export function RevenueChart({ sales }: RevenueChartProps) {
       amount,
     }));
 
-  const totalAmount = chartData.reduce((acc, curr) => acc + curr.amount, 0);
+  const totalAmount = chartData.reduce((acc, curr) => acc + curr.amount.toNumber(), 0);
   const totalDuration = getTotalDuration(sales);
 
   return (

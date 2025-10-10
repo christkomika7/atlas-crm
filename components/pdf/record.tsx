@@ -6,6 +6,7 @@ import { getCountryFrenchName } from "@/lib/helper";
 import { cn, formatNumber, parseItem, parseItems, resolveImageSrc } from "@/lib/utils";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 import { InvoiceType } from "@/types/invoice.types";
+import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { QuoteType } from "@/types/quote.types";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,15 +23,20 @@ type DocumentPreviewProps = {
     logoPosition?: string;
     orderValue: string;
     orderNote: string;
-    record?: InvoiceType | QuoteType | DeliveryNoteType;
+    record?: InvoiceType | QuoteType | DeliveryNoteType | PurchaseOrderType;
     isLoading?: boolean;
-    recordNumber: string
+    recordNumber: string;
     supplier?: {
         companyName: string;
         email: string;
         address: string;
-    }
+    };
 };
+
+// Type guard pour vérifier si c'est un PurchaseOrder
+function isPurchaseOrder(record: any): record is PurchaseOrderType {
+    return record && 'supplier' in record && !('client' in record);
+}
 
 export default function RecordDocument({
     title,
@@ -60,7 +66,36 @@ export default function RecordDocument({
         }
     }, [logo]);
 
+    // Fonction pour récupérer les infos du destinataire
+    const getRecipientInfo = () => {
+        if (supplier) {
+            return {
+                companyName: supplier.companyName,
+                email: supplier.email,
+                address: supplier.address,
+            };
+        }
 
+        if (record) {
+            if (isPurchaseOrder(record)) {
+                return {
+                    companyName: record.supplier.companyName,
+                    email: record.supplier.email,
+                    address: record.supplier.address,
+                };
+            } else {
+                return {
+                    companyName: record.client.companyName,
+                    email: record.client.email,
+                    address: record.client.address,
+                };
+            }
+        }
+
+        return { companyName: '', email: '', address: '' };
+    };
+
+    const recipientInfo = getRecipientInfo();
 
     if (isLoading && !record) return <Spinner />;
 
@@ -100,13 +135,13 @@ export default function RecordDocument({
                 </div>
             </div>
             <div
-                className="w-full h-2 px-8"
+                className="w-full h-2"
                 style={{
                     backgroundColor: firstColor,
                 }}
             ></div>
             <div
-                className="relative flex justify-between gap-x-2 mb-9 py-6 px-8"
+                className="relative flex justify-between gap-x-2 mb-9 py-6 px-3"
                 style={{
                     backgroundColor: secondColor,
                 }}
@@ -135,13 +170,12 @@ export default function RecordDocument({
                     <p style={{ display: "grid", gridTemplateColumns: "80px 1fr", columnGap: "8px", color: "#000", fontSize: "0.875rem" }}>
                         <span style={{ fontWeight: 600 }}>À :</span>
                         <span style={{ fontWeight: 500 }}>
-                            {supplier ? supplier.companyName : record?.client?.companyName} <br />
-                            {supplier ? supplier.email : record?.client.email} <br />
-                            {supplier ? supplier.address : record?.client.address}
+                            {recipientInfo.companyName} <br />
+                            {recipientInfo.email} <br />
+                            {recipientInfo.address}
                         </span>
                     </p>
                 </div>
-
 
                 <div className="space-y-1.5">
                     <h2 className="font-semibold text-black text-xl text-right">
@@ -178,7 +212,6 @@ export default function RecordDocument({
                             NIF: {record?.company.taxIdentificationNumber}
                         </p>
                     </div>
-
                 </div>
             </div>
 
@@ -265,7 +298,7 @@ export default function RecordDocument({
                 </tfoot>
             </table>
 
-            <div style={{ padding: "12px 32px" }}>
+            <div style={{ padding: "12px 10px" }}>
                 <h3 style={{ marginBottom: "1px", fontWeight: 600, fontSize: "0.875rem" }}>
                     Message / remarques
                 </h3>

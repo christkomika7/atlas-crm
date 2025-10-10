@@ -109,8 +109,8 @@ export async function POST(req: NextRequest) {
                 <p style="color: #000">
                 <span>Cordialement,</span><br>                
                 <span>Service Commercial</span><br>
-                <span>${company.companyName}</span><br>
-                <span>${company.phoneNumber}</span>
+                <span style="color: #000;">${company.companyName}</span><br>
+                <span style="color: #000;">${company.phoneNumber}</span>
                 </p>
             </div>
         `,

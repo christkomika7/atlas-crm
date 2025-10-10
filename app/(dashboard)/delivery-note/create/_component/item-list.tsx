@@ -19,9 +19,10 @@ export type ItemListProps = {
         items: TaxItem[];
         taxes: VatRateType[];
         taxOperation?: "cumul" | "sequence";
-    }): CalculateTaxesResult
+    }): CalculateTaxesResult;
+    isCompleted: boolean;
 }
-export default function ItemList({ item, taxes, calculate }: ItemListProps) {
+export default function ItemList({ item, taxes, calculate, isCompleted }: ItemListProps) {
     const updateItem = useItemStore.use.updateItem();
     const removeItem = useItemStore.use.removeItem();
     const editItemField = useItemStore.use.editItemField();
@@ -60,6 +61,7 @@ export default function ItemList({ item, taxes, calculate }: ItemListProps) {
                     {item.itemType === "billboard" ? item.quantity :
                         <span>
                             <TextInput
+                                disabled={isCompleted}
                                 type="number"
                                 min={0}
                                 max={getMaxQuantity()}
@@ -88,6 +90,7 @@ export default function ItemList({ item, taxes, calculate }: ItemListProps) {
                     {" x "}
                     <span className="flex items-center gap-x-1">
                         <TextInput
+                            disabled={isCompleted}
                             type="number"
                             min={0}
                             value={item.price.toString()}
@@ -102,6 +105,7 @@ export default function ItemList({ item, taxes, calculate }: ItemListProps) {
 
                 <div className="flex items-center gap-x-2 max-w-[150px]">
                     <TextInput
+                        disabled={isCompleted}
                         type="number"
                         min={0}
                         value={discount}
@@ -111,6 +115,7 @@ export default function ItemList({ item, taxes, calculate }: ItemListProps) {
                         }
                     />
                     <ToggleGroup
+                        disabled={isCompleted}
                         type="single"
                         value={item.discountType}
                         onValueChange={(e) => {
@@ -130,6 +135,7 @@ export default function ItemList({ item, taxes, calculate }: ItemListProps) {
                     <div className="flex mt-3 flex-col">
                         <label htmlFor="" className="text-xs font-medium">Durée de la location<span className="text-red-500">*</span></label>
                         <DatePicker
+                            disabled={isCompleted}
                             className="flex w-[300px]"
                             label=""
                             mode="range"
@@ -153,7 +159,8 @@ export default function ItemList({ item, taxes, calculate }: ItemListProps) {
                                         'quantity',
                                         duration < 0.5 ? 0.5 : duration
                                     );
-                                    editItemField(item.id, "locationEnd", range.to);
+                                    editItemField(item.id, "locationStart", new Date(range.from))
+                                    editItemField(item.id, "locationEnd", new Date(range.to));
                                     return;
                                 }
                                 editItemField(item.id, 'quantity', 1);

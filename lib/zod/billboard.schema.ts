@@ -1,5 +1,4 @@
-import { error } from "console";
-import Decimal from "decimal.js";
+import { Decimal } from "decimal.js";
 import { z } from "zod";
 
 export const billboardSchema = z.object({
@@ -119,7 +118,7 @@ export const lessorSchemaBase = z.object({
     lessorEmail: z.string().optional(),
     lessorPhone: z.string().optional(),
     lessorJob: z.string().optional(),
-    capital: z.instanceof(Decimal).optional(),
+    capital: z.instanceof(Decimal, { error: "La valeur inserer est invalide" }).optional(),
     rccm: z.string().optional(),
     taxIdentificationNumber: z.string().optional(),
     lessorAddress: z.string().optional(),
@@ -320,7 +319,7 @@ export const editLessorSchemaBase = z.object({
     lessorEmail: z.string().optional(),
     lessorPhone: z.string().optional(),
     lessorJob: z.string().optional(),
-    capital: z.instanceof(Decimal).optional(),
+    capital: z.instanceof(Decimal, { error: "La valeur inserer est invalide" }).optional(),
     rccm: z.string().optional(),
     taxIdentificationNumber: z.string().optional(),
     lessorAddress: z.string().optional(),

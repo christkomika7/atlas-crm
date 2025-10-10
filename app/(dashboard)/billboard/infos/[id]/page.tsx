@@ -16,7 +16,7 @@ export default function BillboardInfoPage() {
   const { mutate, isPending, data } = useQueryAction<
     { id: string },
     RequestResponse<BillboardType>
-  >(unique, () => {}, "billboard");
+  >(unique, () => { }, "billboard");
 
   useEffect(() => {
     if (param.id) {

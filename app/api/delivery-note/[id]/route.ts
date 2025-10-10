@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   await checkAccess(["DELIVERY_NOTES"], "READ");
   const id = getIdFromUrl(req.url, "last") as string;
-  const { data }: { data: "unpaid" | "paid" } = await req.json();
+  const { data }: { data: "complete" | "progress" } = await req.json();
 
   if (!id) {
     return NextResponse.json({
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
   const deliveryNotes = await prisma.deliveryNote.findMany({
     where: {
       companyId: id,
+      isCompleted: data === "complete" ? true : false
     },
     include: {
       client: true,
@@ -241,7 +242,6 @@ export async function PUT(req: NextRequest) {
   }
 
 
-  // Update file
   const key = generateId();
   const reference = `${companyExist.documentModel?.deliveryNotesPrefix ?? DELIVERY_NOTE_PREFIX}-${data.deliveryNoteNumber}`;
   const folder = createFolder([companyExist.companyName, "delivery-note", `${reference}_----${key}/files`]);

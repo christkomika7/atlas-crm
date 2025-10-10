@@ -96,7 +96,7 @@ export default function TableActionButton({
                       setOpen={setOpen}
                       onClose={() => setOpen(false)}
                     >
-                      <PaymentForm closeModal={() => setOpen(false)} invoiceId={id} />
+                      <PaymentForm closeModal={() => setOpen(false)} invoiceId={id} refresh={refreshInvoices} />
                     </ModalContainer>
                   </li>
                 );

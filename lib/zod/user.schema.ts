@@ -35,7 +35,7 @@ export const userSchema = z.object({
     job: z.string().min(1, {
         message: "Le poste est obligatoire."
     }),
-    salary: z.instanceof(Decimal, { error: "Le salaire est obligatoire." }),
+    salary: z.string({ error: "Le salaire est obligatoire." }),
     password: z.string().min(1, {
         message: "Le mot de passe est obligatoire."
     }),
@@ -167,7 +167,7 @@ export const userEditSchema = z.object({
     job: z.string().min(1, {
         message: "Le poste est obligatoire."
     }),
-    salary: z.instanceof(Decimal, { error: "Le salaire est obligatoire." }),
+    salary: z.string({ error: "Le salaire est obligatoire." }),
     password: z.string().optional(),
 
     passport: z

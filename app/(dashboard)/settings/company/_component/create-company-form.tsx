@@ -61,7 +61,7 @@ export default function CreateCompanyForm() {
       website: "",
       businessRegistrationNumber: "",
       taxIdentificationNumber: "",
-      capitalAmount: new Decimal(0),
+      capitalAmount: "",
       vatRate: [],
       currency: "",
       employees: [],
@@ -107,7 +107,7 @@ export default function CreateCompanyForm() {
       codePostal: company?.codePostal ?? "",
       businessRegistrationNumber: company?.businessRegistrationNumber ?? "",
       taxIdentificationNumber: company?.taxIdentificationNumber ?? "",
-      capitalAmount: company ? new Decimal(company.capitalAmount) : new Decimal(0),
+      capitalAmount: company ? company.capitalAmount : "",
       vatRate: taxs.length > 0 ? taxs : [],
       currency: company?.currency ?? "",
       fiscal:
@@ -164,7 +164,7 @@ export default function CreateCompanyForm() {
         codePostal: formData.codePostal,
         businessRegistrationNumber: formData.businessRegistrationNumber ?? "",
         taxIdentificationNumber: formData.taxIdentificationNumber ?? "",
-        capitalAmount: formData.capitalAmount ? new Decimal(formData.capitalAmount as Decimal) : new Decimal(0),
+        capitalAmount: formData.capitalAmount ? formData.capitalAmount : "",
         currency: formData.currency ?? "",
         fiscal:
           formData.fiscal?.from && formData.fiscal?.to
@@ -403,8 +403,8 @@ export default function CreateCompanyForm() {
                       type="number"
                       design="float"
                       label="Montant du capital"
-                      value={field.value.toString()}
-                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
+                      value={field.value}
+                      handleChange={(e) => field.onChange(String(e))}
                     />
                   </FormControl>
                   <FormMessage />

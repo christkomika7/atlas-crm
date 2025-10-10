@@ -158,6 +158,8 @@ model Supplier {
   updatedAt      DateTime        @updatedAt
   billboards     Billboard[]
   purchaseOrders PurchaseOrder[]
+  receipts       Receipt[]
+  ribursements   Dibursement[]
 
   @@map("supplier")
 }
@@ -251,6 +253,8 @@ model Client {
   billboards    Billboard[]
   quotes        Quote[]
   deliveryNotes DeliveryNote[]
+  receipts      Receipt[]
+  dibursements  Dibursement[]
 
   @@map("client")
 }
@@ -377,11 +381,17 @@ model Invoice {
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
-  productsServices ProductService[]
+  fromRecordReference String @default("")
+  fromRecordId        String @default("")
+  fromRecordName      String @default("")
 
-  billboards Billboard[]
-  items      Item[]
-  receipts   Receipt[]
+  productsServices ProductService[]
+  billboards       Billboard[]
+  items            Item[]
+  receipts         Receipt[]
+  dibursements     Dibursement[]
+  payments         Payment[]
+  recurrences      Recurrence[]
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -389,11 +399,8 @@ model Invoice {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  dibursements Dibursement[]
-  payments     Payment[]
-  recurrences  Recurrence[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("invoice")
 }
@@ -446,6 +453,11 @@ model Quote {
   discountType String
   paymentLimit String
   totalTTC     Decimal    @default(0) @db.Decimal(15, 2)
+  isCompleted  Boolean    @default(false)
+
+  fromRecordReference String @default("")
+  fromRecordId        String @default("")
+  fromRecordName      String @default("")
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -478,6 +490,11 @@ model DeliveryNote {
   discountType       String
   paymentLimit       String
   totalTTC           Decimal    @default(0) @db.Decimal(15, 2)
+  isCompleted        Boolean    @default(false)
+
+  fromRecordReference String @default("")
+  fromRecordId        String @default("")
+  fromRecordName      String @default("")
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -723,6 +740,12 @@ model Receipt {
   description String?
   comment     String?
 
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
@@ -771,6 +794,12 @@ model Dibursement {
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())

@@ -67,7 +67,7 @@ export default function ShareTab() {
     useQueryAction<RecordEmailSchemaType, RequestResponse<null>>(
       share,
       () => { },
-      "share-purchase-",
+      "share-purchase-order",
     );
 
   useEffect(() => {
@@ -124,6 +124,7 @@ export default function ShareTab() {
             orderNote={document?.purchaseOrderInfo || ""}
             record={purchaseOrder as unknown as InvoiceType}
             recordNumber={`${generateAmaId(purchaseOrder?.purchaseOrderNumber ?? 1, false)}`}
+            supplier={purchaseOrder?.supplier}
             isLoading={false}
           />
           , {
@@ -133,6 +134,7 @@ export default function ShareTab() {
             scale: 4
           })
         const blob = new Blob([pdfData], { type: "application/pdf" });
+        console.log({ blob });
         form.setValue("blob", blob);
       }
 
@@ -277,7 +279,7 @@ export default function ShareTab() {
                 {new Decimal(purchaseOrder.payee).gt(0) && purchaseOrder.isPaid &&
                   <Badge variant="DONE" className="rounded-sm h-6">Payé</Badge>
                 }
-                <Button variant="primary">{isSharingPurchaseOrder ? <Spinner /> : "Partger"}</Button>
+                <Button variant="primary" disabled={isSharingPurchaseOrder}>{isSharingPurchaseOrder ? <Spinner /> : "Partger"}</Button>
               </div>
             </div>
           </form>

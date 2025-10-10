@@ -1,5 +1,5 @@
 import { TableActionButtonType } from "@/types/table.types";
-import { EditIcon, FilesIcon, PlusIcon, ScanEyeIcon, SendHorizonalIcon, Trash2Icon } from "lucide-react";
+import { CheckCheckIcon, CopyIcon, EditIcon, FilesIcon, PlusIcon, ScanEyeIcon, SendHorizonalIcon, Trash2Icon } from "lucide-react";
 
 export const dropdownMenu: TableActionButtonType[] = [
     {
@@ -13,14 +13,19 @@ export const dropdownMenu: TableActionButtonType[] = [
         title: "Modifier",
     },
     {
-        id: "add",
-        icon: PlusIcon,
-        title: "Ajouter  paiement",
+        id: "complete",
+        icon: CheckCheckIcon,
+        title: "Compléter",
     },
     {
         id: "preview",
         icon: ScanEyeIcon,
         title: "Aperçu",
+    },
+    {
+        id: "duplicate",
+        icon: CopyIcon,
+        title: "Dupliquer",
     },
     {
         id: "convert",

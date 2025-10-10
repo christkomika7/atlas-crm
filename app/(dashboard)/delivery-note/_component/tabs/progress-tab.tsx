@@ -1,21 +1,21 @@
 import { Dispatch, RefObject, SetStateAction } from "react";
 import DeliveryNoteTable, { DeliveryNoteTableRef } from "../delivery-note-table";
 
-type UnpaidTabProps = {
+type ProgressTabProps = {
   deliveryNoteTableRef: RefObject<DeliveryNoteTableRef | null>;
   selectedDeliveryNoteIds: string[];
   setSelectedDeliveryNoteIds: Dispatch<SetStateAction<string[]>>;
 };
 
-export default function UnpaidTab({
+export default function ProgressTab({
   deliveryNoteTableRef,
   selectedDeliveryNoteIds,
   setSelectedDeliveryNoteIds,
-}: UnpaidTabProps) {
+}: ProgressTabProps) {
   return (
     <div className="pt-4">
       <DeliveryNoteTable
-        filter="unpaid"
+        filter="progress"
         ref={deliveryNoteTableRef}
         selectedDeleveryNoteIds={selectedDeliveryNoteIds}
         setSelectedDeliveryNoteIds={setSelectedDeliveryNoteIds}

@@ -10,6 +10,7 @@ export type DeliveryNoteType = {
     id: string,
     deliveryNoteNumber: number,
     note: string,
+    isComplete: boolean;
     photos: string[],
     files: string[],
     totalHT: Decimal,

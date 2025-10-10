@@ -15,7 +15,7 @@ export default function PlanningTab() {
   const { mutate, isPending } = useQueryAction<
     { billboardId: string },
     RequestResponse<ItemType[]>
-  >(allBillboardItem, () => {}, "items");
+  >(allBillboardItem, () => { }, "items");
 
   useEffect(() => {
     if (param.id) {

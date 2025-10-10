@@ -51,7 +51,7 @@ export async function main() {
               lastname: process.env.USER_LASTNAME!,
               phone: "",
               job: "",
-              salary: new Decimal(0),
+              salary: "",
             }
           },
           permissions: {

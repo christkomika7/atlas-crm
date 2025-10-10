@@ -28,7 +28,7 @@ import { getAllDeliveryNote } from "@/action/delivery-note.action";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 
 type DeliveryNoteTableProps = {
-  filter: "unpaid" | "paid";
+  filter: "progress" | "complete";
   selectedDeleveryNoteIds: string[];
   setSelectedDeliveryNoteIds: Dispatch<SetStateAction<string[]>>;
 };
@@ -43,7 +43,7 @@ const DeliveryNoteTable = forwardRef<DeliveryNoteTableRef, DeliveryNoteTableProp
     const currency = useDataStore.use.currency();
 
     const { mutate, isPending, data } = useQueryAction<
-      { companyId: string; filter: "unpaid" | "paid" },
+      { companyId: string; filter: "progress" | "complete" },
       RequestResponse<DeliveryNoteType[]>
     >(getAllDeliveryNote, () => { }, "delivery-notes");
 

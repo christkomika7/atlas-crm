@@ -32,9 +32,10 @@ type DeliveryNoteInfoProps = {
     paymentLimit: string;
     setPaymentLimit: Dispatch<SetStateAction<string>>;
     TTCPrice: Decimal;
+    isCompleted: boolean;
 }
 
-export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryNoteNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit }: DeliveryNoteInfoProps) {
+export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryNoteNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit, isCompleted }: DeliveryNoteInfoProps) {
     return (
         <>
             <div className="space-y-2">
@@ -59,6 +60,7 @@ export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryN
                     <h2>Condition</h2>
                     <p>
                         <Combobox
+                            disabled={isCompleted}
                             datas={paymentTerms}
                             value={paymentLimit}
                             setValue={setPaymentLimit}
@@ -109,6 +111,7 @@ export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryN
                     <h2>Réduction</h2>
                     <div className="flex items-center gap-x-2 max-w-[150px]">
                         <TextInput
+                            disabled={isCompleted}
                             type="number"
                             value={
                                 discount?.discount != null
@@ -125,6 +128,7 @@ export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryN
                             }}
                         />
                         <ToggleGroup
+                            disabled={isCompleted}
                             type="single"
                             value={discount.discountType}
                             onValueChange={(e) =>

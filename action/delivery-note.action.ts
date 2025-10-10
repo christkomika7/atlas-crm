@@ -1,6 +1,5 @@
 import { DeliveryNoteSchemaType, DeliveryNoteUpdateSchemaType } from "@/lib/zod/delivery-note.schema";
 import { RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
-import { LocationBillboardDateType } from "@/stores/item.store";
 import { RequestResponse } from "@/types/api.types";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 
@@ -21,7 +20,7 @@ export async function deliveryNoteNumber({ companyId }: { companyId: string }) {
     }
 }
 
-export async function getAllDeliveryNote({ companyId, filter }: { companyId: string, filter: "unpaid" | "paid" }) {
+export async function getAllDeliveryNote({ companyId, filter }: { companyId: string, filter: "complete" | "progress" }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/delivery-note/${companyId}`, {
             method: 'POST',
@@ -97,7 +96,6 @@ export async function createDeliveryNote(data: DeliveryNoteSchemaType) {
         throw error;
     }
 }
-
 
 export async function updateDeliveryNote(data: DeliveryNoteUpdateSchemaType) {
     try {
@@ -210,6 +208,57 @@ export async function shareDeliveryNote(data: RecordEmailSchemaType) {
         return res;
     } catch (error) {
         console.error("Erreur dans la fonction share:", error);
+        throw error;
+    }
+}
+
+export async function completeDeliveryNote({ id }: { id: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/delivery-note/${id}/complete`, {
+            method: 'POST',
+        });
+
+        const res: RequestResponse<null> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function duplicateDeliveryNote({ id }: { id: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/delivery-note/${id}/duplicate`, {
+            method: 'POST',
+        });
+
+        const res: RequestResponse<null> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function convertDeliveryNoteToQuote({ id }: { id: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/delivery-note/${id}/convert`, {
+            method: 'POST',
+        });
+
+        const res: RequestResponse<string> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
         throw error;
     }
 }

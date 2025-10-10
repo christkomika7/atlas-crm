@@ -38,7 +38,7 @@ export default function EditEmployeeForm() {
       email: "",
       phone: "",
       job: "",
-      salary: new Decimal(0),
+      salary: "",
       password: "",
       dashboard: {
         create: false,
@@ -125,7 +125,7 @@ export default function EditEmployeeForm() {
         email: employee.email,
         phone: employee.profile.phone ?? "",
         job: employee.profile.job,
-        salary: new Decimal(employee.profile.salary),
+        salary: employee.profile.salary,
         password: "",
         dashboard: { create: false, edit: false, read: false },
         clients: { create: false, edit: false, read: false },
@@ -316,8 +316,8 @@ export default function EditEmployeeForm() {
                       type="number"
                       design="float"
                       label="Salaire"
-                      value={field.value.toString()}
-                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
+                      value={field.value}
+                      handleChange={(e) => field.onChange(String(e))}
                     />
                   </FormControl>
                   <FormMessage />

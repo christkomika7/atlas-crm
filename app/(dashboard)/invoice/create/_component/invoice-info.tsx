@@ -123,7 +123,7 @@ export default function InvoiceInfo({ isGettingDocument, isGettingInvoiceNumber,
                     <div className="flex items-center gap-x-2 max-w-[150px]">
                         <TextInput
                             type="number"
-                            disabled={isPaid}
+                            disabled={amountPaid?.gt(0)}
                             value={
                                 discount?.discount != null
                                     ? Number(String(discount.discount).replace("%", ""))
@@ -140,7 +140,7 @@ export default function InvoiceInfo({ isGettingDocument, isGettingInvoiceNumber,
                         />
                         <ToggleGroup
                             type="single"
-                            disabled={isPaid}
+                            disabled={amountPaid?.gt(0)}
                             value={discount.discountType}
                             onValueChange={(e) =>
                                 setDiscount({

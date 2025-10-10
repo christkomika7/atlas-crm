@@ -143,7 +143,7 @@ export async function createEmployee(employee: UserEditSchemaType, companyName: 
                         firstname: employee.firstname,
                         phone: employee.phone,
                         job: employee.job,
-                        salary: new Decimal(employee.salary),
+                        salary: employee.salary,
                         passport: passportPath,
                         internalRegulations: documentPath,
                     },
@@ -202,7 +202,7 @@ export async function updateEmployee(employee: UserEditSchemaType, companyName: 
                         firstname: employee.firstname,
                         phone: employee.phone,
                         job: employee.job,
-                        salary: new Decimal(employee.salary),
+                        salary: employee.salary,
                         passport: passportPath,
                         internalRegulations: documentPath
                     },

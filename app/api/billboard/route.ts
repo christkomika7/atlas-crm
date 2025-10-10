@@ -4,6 +4,7 @@ import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { generateId } from "@/lib/utils";
 import { billboardFormSchema, BillboardSchemaFormType } from "@/lib/zod/billboard.schema";
+import { Decimal } from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
 
@@ -73,8 +74,16 @@ export async function POST(req: NextRequest) {
     lessorData.files = filesMap["files"] ?? [];
 
     const dataToValidate = {
-        billboard: billboardData,
-        lessor: lessorData,
+        billboard: {
+            ...billboardData,
+            rentalPrice: new Decimal(billboardData.rentalPrice),
+            installationCost: new Decimal(billboardData.installationCost),
+            maintenance: new Decimal(billboardData.maintenance),
+        },
+        lessor: {
+            ...lessorData,
+            capital: new Decimal(lessorData.capital || 0)
+        },
     };
 
     const data = parseData<BillboardSchemaFormType>(

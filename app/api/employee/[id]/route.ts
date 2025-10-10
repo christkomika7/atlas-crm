@@ -72,7 +72,7 @@ export async function PUT(req: NextRequest) {
                     profile: {
                         update: {
                             where: { userId: id },
-                            data: { lastname: data.lastname, firstname: data.firstname, phone: data.phone, job: data.job, salary: new Decimal(data.salary) },
+                            data: { lastname: data.lastname, firstname: data.firstname, phone: data.phone, job: data.job, salary: data.salary },
                         },
                     },
                 },

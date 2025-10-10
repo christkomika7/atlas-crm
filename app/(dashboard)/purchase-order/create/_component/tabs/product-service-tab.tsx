@@ -28,7 +28,6 @@ export default function ProductServiceTab() {
   const items = usePurchaseItemStore.use.items();
   const addItem = usePurchaseItemStore.use.addItem();
   const removeItem = usePurchaseItemStore.use.removeItem();
-  const editItemField = usePurchaseItemStore.use.editItemField();
   const companyId = useDataStore.use.currentCompany();
 
   const { mutate: mutateSupplier } = useQueryAction<
@@ -104,6 +103,14 @@ export default function ProductServiceTab() {
     return item?.selectedQuantity ?? 0;
   }
 
+  function getCurrentQuantity(productServiceId: string, quantity: number) {
+    const lastSelectedQuantity = items.find(i => i.productServiceId === productServiceId)?.lastSelectedQuantity;
+
+    if (lastSelectedQuantity) return quantity - lastSelectedQuantity;
+    return quantity
+
+  }
+
   return (
     <div className="pt-2">
       <Table>
@@ -164,7 +171,7 @@ export default function ProductServiceTab() {
                     {cutText(productService.designation)}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {productService.quantity}
+                    {getCurrentQuantity(productService.id, productService.quantity)}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {isItemSelected ? (

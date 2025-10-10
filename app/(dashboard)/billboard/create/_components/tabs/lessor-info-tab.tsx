@@ -20,6 +20,7 @@ import useBillboardStore from "@/stores/billboard.store";
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { SupplierType } from "@/types/supplier.types";
+import { Decimal } from "decimal.js";
 import { useEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 
@@ -229,8 +230,8 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
                           type="number"
                           design="float"
                           label="Capital du bailleur"
-                          value={field.value}
-                          handleChange={(e) => field.onChange(String(e))}
+                          value={field.value?.toString()}
+                          handleChange={(e) => field.onChange(new Decimal(String(e)))}
                         />
                       </FormControl>
                       <FormMessage />

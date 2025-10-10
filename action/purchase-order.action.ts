@@ -102,7 +102,7 @@ export async function create(data: PurchaseOrderSchemaType) {
 
 export async function createdPayment(data: PaymentSchemaType) {
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/purchase-order/${data.invoiceId}/payment`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/purchase-order/${data.recordId}/payment`, {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',

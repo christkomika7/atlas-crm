@@ -1,21 +1,21 @@
 import { Dispatch, RefObject, SetStateAction } from "react";
 import DeliveryNoteTable, { DeliveryNoteTableRef } from "../delivery-note-table";
 
-type PaidTabProps = {
+type CompleteTabProps = {
   deliveryNoteTableRef: RefObject<DeliveryNoteTableRef | null>;
   selectedDeliveryNoteIds: string[];
   setSelectedDeliveryNoteIds: Dispatch<SetStateAction<string[]>>;
 };
 
-export default function PaidTab({
+export default function CompleteTab({
   deliveryNoteTableRef,
   selectedDeliveryNoteIds,
   setSelectedDeliveryNoteIds,
-}: PaidTabProps) {
+}: CompleteTabProps) {
   return (
     <div className="pt-4">
       <DeliveryNoteTable
-        filter="paid"
+        filter="complete"
         ref={deliveryNoteTableRef}
         selectedDeleveryNoteIds={selectedDeliveryNoteIds}
         setSelectedDeliveryNoteIds={setSelectedDeliveryNoteIds}

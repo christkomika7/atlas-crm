@@ -9,7 +9,7 @@ export type ProfileType<F = string> = {
     firstname: string;
     phone: string | null;
     job: string;
-    salary: Decimal;
+    salary: string;
     userId: string;
     key: string;
     internalRegulations: F | null;

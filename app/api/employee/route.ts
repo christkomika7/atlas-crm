@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
                             lastname: data.lastname,
                             phone: data.phone,
                             job: data.job,
-                            salary: new Decimal(data.salary),
+                            salary: data.salary,
                         }
                     },
                     permissions: {

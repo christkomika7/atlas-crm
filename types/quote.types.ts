@@ -19,6 +19,9 @@ export type QuoteType = {
     totalTTC: Decimal,
     clientId: string,
     client: ClientType,
+    fromRecordId: string;
+    fromRecordName: string;
+    fromRecordReference: string;
     productsServices: ProductServiceType[],
     billboards: BillboardType[],
     projectId: string,

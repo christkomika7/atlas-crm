@@ -7,7 +7,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
 import { parseData } from "@/lib/parse";
-import { Decimal } from "decimal.js";
 import { Company } from "@/lib/generated/prisma";
 
 
@@ -34,7 +33,6 @@ export async function POST(req: NextRequest) {
         const companyData = extractCompanyData(formData);
         const data = parseData<CompanySchemaType>(companySchema, {
             ...companyData,
-            capitalAmount: new Decimal(companyData.capitalAmount)
         }) as CompanySchemaType
 
         await checkIfExists(prisma.company, { where: { companyName: data.companyName } }, "entreprise", data.companyName);
@@ -60,7 +58,7 @@ export async function POST(req: NextRequest) {
                     website: data.website,
                     businessRegistrationNumber: data.businessRegistrationNumber,
                     taxIdentificationNumber: data.taxIdentificationNumber,
-                    capitalAmount: data.capitalAmount as Decimal,
+                    capitalAmount: data.capitalAmount,
                     currency: data.currency,
                     bankAccountDetails: data.bankAccountDetails,
                     businessActivityType: data.businessActivityType,
@@ -116,6 +114,7 @@ export async function POST(req: NextRequest) {
             { status: 200 }
         );
     } catch (error) {
+        console.log({ error })
         await prisma.user.deleteMany({ where: { id: { in: createdUserIds.filter(v => Boolean(v)) } } });
         await removePath([...uploadedPaths, ...uploadedPassportPaths, ...uploadedDocumentPaths]);
 

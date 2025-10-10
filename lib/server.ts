@@ -269,7 +269,7 @@ export async function rollbackPurchaseOrder(
 
     await prisma.$transaction([
         // supprimer les items liés à la facture
-        prisma.item.deleteMany({ where: { invoiceId: purchaseOrderExist.id } }),
+        prisma.item.deleteMany({ where: { purchaseOrderId: purchaseOrderExist.id } }),
 
         // déconnecter les relations avec la facture
         prisma.purchaseOrder.update({
@@ -294,7 +294,7 @@ export async function rollbackDeliveryNote(
 
     await prisma.$transaction([
         // supprimer les items liés à la facture
-        prisma.item.deleteMany({ where: { invoiceId: deliveryNote.id } }),
+        prisma.item.deleteMany({ where: { deliveryNoteId: deliveryNote.id } }),
 
         // déconnecter les relations avec la facture
         prisma.deliveryNote.update({

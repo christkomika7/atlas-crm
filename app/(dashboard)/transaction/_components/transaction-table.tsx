@@ -457,6 +457,9 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                 </span>
               </TableHead>
               <TableHead className="font-medium text-center">
+                Payeur
+              </TableHead>
+              <TableHead className="font-medium text-center">
                 Commentaire
               </TableHead>
             </TableRow>
@@ -534,6 +537,10 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                           `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`,
                         )
                         : "-"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {transaction.client && `${transaction.client.lastname} ${transaction.client.firstname}`}
+                      {transaction.supplier && `${transaction.supplier.lastname} ${transaction.supplier.firstname}`}
                     </TableCell>
                     <TableCell className="text-center">
                       {transaction.comment || "-"}

@@ -21,7 +21,7 @@ import { useDataStore } from "@/stores/data.store";
 import { ClientType } from "@/types/client.types";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { ProjectType } from "@/types/project.types";
-import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
+import useItemStore from "@/stores/item.store";
 import useProjectStore from "@/stores/project.store";
 import useClientIdStore from "@/stores/client-id.store";
 
@@ -72,10 +72,6 @@ export default function DeliveryNoteTab() {
   const setItems = useItemStore.use.setItems();
   const setItemQuantities = useItemStore.use.setItemQuantity();
 
-  const locationBillboardDate = useItemStore.use.locationBillboardDate();
-  const setLocationBillboard = useItemStore.use.setLocationBillboard();
-
-
   const setProject = useProjectStore.use.setProject();
   const projects = useProjectStore.use.projects();
 
@@ -86,6 +82,7 @@ export default function DeliveryNoteTab() {
   const [client, setClient] = useState<ClientType>();
   const [deliveryNoteNumber, setDeliverNoteNumber] = useState(0);
   const [lastUploadFiles, setLastUploadFiles] = useState<string[]>([]);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   const form = useForm<DeliveryNoteUpdateSchemaType>({
     resolver: zodResolver(deliveryNoteUpdateSchema),
@@ -181,7 +178,7 @@ export default function DeliveryNoteTab() {
               discount: Number(deliveryNote.discount),
               discountType: deliveryNote.discountType as "purcent" | "money"
             });
-
+            setIsCompleted(deliveryNote.isComplete);
 
             const mappedItems = [...deliveryNote.items.map(item => ({
               id: item.id,
@@ -444,6 +441,7 @@ export default function DeliveryNoteTab() {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      disabled={isCompleted}
                       isLoading={isGettingClients}
                       datas={
                         clientDatas?.data?.map((client) => ({
@@ -473,21 +471,23 @@ export default function DeliveryNoteTab() {
             </h2>
             <div className="space-y-2">
               {items.map((item) => (
-                <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} />
+                <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} isCompleted={isCompleted} />
               ))}
             </div>
-            <FormField
-              control={form.control}
-              name="item"
-              render={() => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <ItemModal />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {!isCompleted &&
+              <FormField
+                control={form.control}
+                name="item"
+                render={() => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <ItemModal />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            }
           </div>
           <div className="space-y-2">
             <h2 className="font-semibold">Pièce jointe</h2>
@@ -499,6 +499,7 @@ export default function DeliveryNoteTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <TextInput
+                        disabled={isCompleted}
                         type="file"
                         multiple={true}
                         design="float"
@@ -540,14 +541,17 @@ export default function DeliveryNoteTab() {
                                     >
                                       <DownloadIcon className="w-4 h-4" />
                                     </span>{" "}
-                                    <span
-                                      onClick={() =>
-                                        removeLastUpload(file)
-                                      }
-                                      className="text-red cursor-pointer"
-                                    >
-                                      <XIcon className="w-4 h-4" />
-                                    </span>{" "}
+                                    {!isCompleted &&
+
+                                      <span
+                                        onClick={() =>
+                                          removeLastUpload(file)
+                                        }
+                                        className="text-red cursor-pointer"
+                                      >
+                                        <XIcon className="w-4 h-4" />
+                                      </span>
+                                    }
                                   </span>
                                 </li>
                               );
@@ -573,6 +577,7 @@ export default function DeliveryNoteTab() {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      disabled={isCompleted}
                       isLoading={isGettingProject}
                       datas={projects.map(({ id, name, status }) => ({
                         id: id,
@@ -608,10 +613,12 @@ export default function DeliveryNoteTab() {
             <FormField
               control={form.control}
               name="note"
+
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      disabled={isCompleted}
                       design="text-area"
                       required={false}
                       label="Note"
@@ -637,10 +644,11 @@ export default function DeliveryNoteTab() {
             paymentLimit={paymentLimit}
             setPaymentLimit={setPaymentLimit}
             TTCPrice={totals.TTCPrice}
+            isCompleted={isCompleted}
           />
 
           <div className="flex justify-center pt-2">
-            <Button type="submit" variant="primary" className="justify-center">
+            <Button disabled={isCompleted || isUpdatinDelivertNote} type="submit" variant="primary" className="justify-center">
               {isUpdatinDelivertNote ? <Spinner /> : "Valider"}
             </Button>
           </div>

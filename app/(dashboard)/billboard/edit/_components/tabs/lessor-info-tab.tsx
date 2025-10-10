@@ -25,7 +25,7 @@ import { SupplierType } from "@/types/supplier.types";
 import { DownloadIcon, XIcon } from "lucide-react";
 import { Dispatch, RefObject, SetStateAction, useEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-
+import { Decimal } from "decimal.js"
 type LessorInfoTabProps = {
   form: UseFormReturn<EditBillboardSchemaFormType>;
   lastContracts: string[];
@@ -257,8 +257,8 @@ export default function LessorInfoTab({
                         type="number"
                         design="float"
                         label="Capital du bailleur"
-                        value={field.value}
-                        handleChange={(e) => field.onChange(String(e))}
+                        value={field.value?.toString()}
+                        handleChange={(e) => field.onChange(new Decimal(String(e)))}
                       />
                     </FormControl>
                     <FormMessage />

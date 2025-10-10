@@ -19,6 +19,7 @@ import { paymentSchema, PaymentSchemaType } from "@/lib/zod/payment.schema";
 import { RequestResponse } from "@/types/api.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Decimal } from "decimal.js";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -36,7 +37,6 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
   const form = useForm<PaymentSchemaType>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      invoiceId: purchaseOrderId,
       isPaid: false,
       amount: 0,
       date: new Date()
@@ -64,13 +64,23 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
           }
         },
       })
+
+      form.setValue("recordId", purchaseOrderId);
     }
   }, [purchaseOrderId])
 
 
   useEffect(() => {
     if (isPaid && purchaseOrder) {
-      return form.setValue('amount', Number(purchaseOrder.totalTTC) ?? 0);
+      const amountType = purchaseOrder.amountType;
+      const ttc = purchaseOrder.totalTTC ? new Decimal(purchaseOrder.totalTTC) : new Decimal(0);
+      const ht = purchaseOrder.totalHT ? new Decimal(purchaseOrder.totalHT) : new Decimal(0);
+      const payee = purchaseOrder.payee ? new Decimal(purchaseOrder.payee) : new Decimal(0);
+      if (amountType === "TTC") {
+        return form.setValue('amount', ttc.minus(payee).toNumber());
+      }
+      return form.setValue('amount', ht.minus(payee).toNumber());
+
     }
     form.setValue("amount", 0);
   }, [isPaid])
@@ -207,6 +217,10 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
 
           </Button>
           <Button
+            onClick={(e) => {
+              e.preventDefault()
+              closeModal()
+            }}
             type="submit"
             variant="primary"
             className="justify-center bg-neutral-100 max-w-xs text-black"

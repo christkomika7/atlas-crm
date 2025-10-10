@@ -168,12 +168,14 @@ export default function PreviewTab() {
                   </span>
                 </p>
               </div>
-              <p className="flex justify-between items-center gap-x-2 pb-4 text-sm">
-                <span className="font-semibold">Convertir depuis le devis</span>
-                <span className="font-medium text-blue underline">
-                  AC-D-023
-                </span>
-              </p>
+              {quote?.fromRecordId && quote.fromRecordName && quote.fromRecordReference &&
+                <p className="flex justify-between items-center gap-x-2 pb-4 text-sm">
+                  <span className="font-semibold">Convertir depuis le {quote.fromRecordName.toLocaleLowerCase()}</span>
+                  <span className="font-medium text-blue underline">
+                    {quote.fromRecordReference}
+                  </span>
+                </p>
+              }
               <Button
                 onClick={close}
                 variant="primary"

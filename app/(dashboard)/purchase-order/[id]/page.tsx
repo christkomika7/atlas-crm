@@ -5,7 +5,7 @@ import PreviewTab from "./_component/tabs/preview-tab";
 import ShareTab from "./_component/tabs/share-tab";
 import PurchaseOrderTab from "./_component/tabs/purchase-order-tab";
 
-export default function CreateInvoice() {
+export default function UpdatePurchaseOrder() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header back={1} title="Créer un bon de commande" />

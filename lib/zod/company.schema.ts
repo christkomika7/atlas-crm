@@ -62,7 +62,7 @@ export const companySchema = z.object({
     taxIdentificationNumber: z.string().min(1, {
         message: "Le numéro d'identification fiscale (NIF) est obligatoire."
     }),
-    capitalAmount: z.instanceof(Decimal, { error: "Le montant du capital est obligatoire." }),
+    capitalAmount: z.string({ error: "Le montant du capital est obligatoire." }),
     vatRate: z.array(taxSchema).min(1, {
         message: "Veuillez ajouter au moins une taxe."
     }),
@@ -116,7 +116,7 @@ export const editCompanySchema = z.object({
     taxIdentificationNumber: z.string().min(1, {
         message: "Le numéro d'identification fiscale (NIF) est obligatoire."
     }),
-    capitalAmount: z.instanceof(Decimal, { error: "Le montant du capital est obligatoire." }),
+    capitalAmount: z.string({ error: "Le montant du capital est obligatoire." }),
     vatRate: z.array(taxSchema).min(1, {
         message: "Veuillez ajouter au moins une taxe."
     }),
