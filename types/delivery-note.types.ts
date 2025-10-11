@@ -22,6 +22,9 @@ export type DeliveryNoteType = {
     client: ClientType,
     productsServices: ProductServiceType[],
     billboards: BillboardType[],
+    fromRecordId: string;
+    fromRecordName: string;
+    fromRecordReference: string;
     projectId: string,
     project: ProjectType,
     items: ItemType[],

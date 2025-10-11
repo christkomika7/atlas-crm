@@ -1,21 +1,21 @@
 import { Dispatch, RefObject, SetStateAction } from "react";
 import QuoteTable, { QuoteTableRef } from "../quote-table";
 
-type PaidTabProps = {
+type ProgressTabProps = {
   quoteTableRef: RefObject<QuoteTableRef | null>;
   selectedQuoteIds: string[];
   setSelectedQuoteIds: Dispatch<SetStateAction<string[]>>;
 };
 
-export default function PaidTab({
+export default function ProgressTab({
   quoteTableRef,
   selectedQuoteIds,
   setSelectedQuoteIds,
-}: PaidTabProps) {
+}: ProgressTabProps) {
   return (
     <div className="pt-4">
       <QuoteTable
-        filter="paid"
+        filter="progress"
         ref={quoteTableRef}
         selectedQuoteIds={selectedQuoteIds}
         setSelectedQuoteIds={setSelectedQuoteIds}

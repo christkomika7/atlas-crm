@@ -20,6 +20,9 @@ export type InvoiceType = {
     paymentLimit: string;
     discount: string,
     discountType: string,
+    fromRecordId: string;
+    fromRecordName: string;
+    fromRecordReference: string;
     isPaid: boolean;
     clientId: string,
     client: ClientType,

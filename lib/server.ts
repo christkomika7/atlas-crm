@@ -320,7 +320,7 @@ export async function rollbackQuote(
 
     await prisma.$transaction([
         // supprimer les items liés à la facture
-        prisma.item.deleteMany({ where: { invoiceId: quoteExist.id } }),
+        prisma.item.deleteMany({ where: { quoteId: quoteExist.id } }),
 
         // déconnecter les relations avec la facture
         prisma.quote.update({
@@ -429,6 +429,7 @@ export async function checkBillboardConflicts(
         where: {
             billboardId: { in: billboardIds },
             itemType: "billboard",
+            state: "APPROVED",
         },
         include: {
             invoice: {

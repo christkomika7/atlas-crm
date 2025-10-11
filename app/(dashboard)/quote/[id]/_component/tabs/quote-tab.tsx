@@ -21,7 +21,7 @@ import { useDataStore } from "@/stores/data.store";
 import { ClientType } from "@/types/client.types";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { ProjectType } from "@/types/project.types";
-import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
+import useItemStore from "@/stores/item.store";
 import useProjectStore from "@/stores/project.store";
 import useClientIdStore from "@/stores/client-id.store";
 
@@ -43,12 +43,12 @@ import { DiscountType } from "@/types/tax.type";
 import ItemModal from "../../../create/_component/item-modal";
 import { getAllProductServices } from "@/action/product-service.action";
 import { ProductServiceType } from "@/types/product-service.types";
+import Decimal from "decimal.js";
 import { quoteUpdateSchema, QuoteUpdateSchemaType } from "@/lib/zod/quote.schema";
 import { QuoteType } from "@/types/quote.types";
-import { getBillboardItemLocations, getUniqueQuote, updateQuote } from "@/action/quote.action";
+import { getUniqueQuote, updateQuote } from "@/action/quote.action";
 import QuoteInfo from "../../../create/_component/quote-info";
 import { QUOTE_PREFIX } from "@/config/constant";
-import Decimal from "decimal.js";
 
 
 export default function QuoteTab() {
@@ -72,29 +72,23 @@ export default function QuoteTab() {
   const setItems = useItemStore.use.setItems();
   const setItemQuantities = useItemStore.use.setItemQuantity();
 
-  const locationBillboardDate = useItemStore.use.locationBillboardDate();
-  const setLocationBillboard = useItemStore.use.setLocationBillboard();
-
-
   const setProject = useProjectStore.use.setProject();
   const projects = useProjectStore.use.projects();
 
   const [paymentLimit, setPaymentLimit] = useState("");
 
-  // STATE
   const [company, setCompany] = useState<CompanyType<string>>();
   const [clientDiscount, setClientDiscount] = useState<DiscountType>({ discount: 0, discountType: "purcent" });
   const [client, setClient] = useState<ClientType>();
   const [quoteNumber, setQuoteNumber] = useState(0);
   const [lastUploadFiles, setLastUploadFiles] = useState<string[]>([]);
+  const [isCompleted, setIsCompleted] = useState(false);
 
-  // FORM
   const form = useForm<QuoteUpdateSchemaType>({
     resolver: zodResolver(quoteUpdateSchema),
     defaultValues: {},
   });
 
-  // QUOTE ACTION
   const { mutate: mutateGetQuote, isPending: isGettingQuote } = useQueryAction<
     { id: string },
     RequestResponse<QuoteType>
@@ -107,16 +101,6 @@ export default function QuoteTab() {
   >(updateQuote, () => { }, "quote");
 
 
-  const {
-    mutate: mutateGetItemLocations,
-  } = useQueryAction<{ companyId: string }, RequestResponse<LocationBillboardDateType[]>>(
-    getBillboardItemLocations,
-    () => { },
-    "item-locations"
-  );
-
-
-  // CLIENT ACTION
   const {
     mutate: mutateGetClients,
     isPending: isGettingClients,
@@ -132,7 +116,6 @@ export default function QuoteTab() {
     RequestResponse<ClientType>
   >(getClient, () => { }, "client");
 
-  // DOCUMENT ACTION
   const {
     mutate: mutateGetDocument,
     isPending: isGettingDocument,
@@ -143,7 +126,6 @@ export default function QuoteTab() {
     "document"
   );
 
-  // PROJECT ACTION
   const {
     mutate: mutateGetProject,
     isPending: isGettingProject,
@@ -177,13 +159,6 @@ export default function QuoteTab() {
           }
         },
       })
-      mutateGetItemLocations({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setLocationBillboard(data.data);
-          }
-        },
-      })
     }
   }, [companyId])
 
@@ -203,7 +178,7 @@ export default function QuoteTab() {
               discount: Number(quote.discount),
               discountType: quote.discountType as "purcent" | "money"
             });
-
+            setIsCompleted(quote.isComplete);
 
             const mappedItems = [...quote.items.map(item => ({
               id: item.id,
@@ -466,6 +441,7 @@ export default function QuoteTab() {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      disabled={isCompleted}
                       isLoading={isGettingClients}
                       datas={
                         clientDatas?.data?.map((client) => ({
@@ -495,21 +471,23 @@ export default function QuoteTab() {
             </h2>
             <div className="space-y-2">
               {items.map((item) => (
-                <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} />
+                <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} isCompleted={isCompleted} />
               ))}
             </div>
-            <FormField
-              control={form.control}
-              name="item"
-              render={() => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <ItemModal />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {!isCompleted &&
+              <FormField
+                control={form.control}
+                name="item"
+                render={() => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <ItemModal />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            }
           </div>
           <div className="space-y-2">
             <h2 className="font-semibold">Pièce jointe</h2>
@@ -521,6 +499,7 @@ export default function QuoteTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <TextInput
+                        disabled={isCompleted}
                         type="file"
                         multiple={true}
                         design="float"
@@ -562,14 +541,17 @@ export default function QuoteTab() {
                                     >
                                       <DownloadIcon className="w-4 h-4" />
                                     </span>{" "}
-                                    <span
-                                      onClick={() =>
-                                        removeLastUpload(file)
-                                      }
-                                      className="text-red cursor-pointer"
-                                    >
-                                      <XIcon className="w-4 h-4" />
-                                    </span>{" "}
+                                    {!isCompleted &&
+
+                                      <span
+                                        onClick={() =>
+                                          removeLastUpload(file)
+                                        }
+                                        className="text-red cursor-pointer"
+                                      >
+                                        <XIcon className="w-4 h-4" />
+                                      </span>
+                                    }
                                   </span>
                                 </li>
                               );
@@ -595,6 +577,7 @@ export default function QuoteTab() {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      disabled={isCompleted}
                       isLoading={isGettingProject}
                       datas={projects.map(({ id, name, status }) => ({
                         id: id,
@@ -608,7 +591,6 @@ export default function QuoteTab() {
                               : status === "IN_PROGRESS"
                                 ? "bg-blue"
                                 : "bg-emerald-500",
-                        disabled: status !== "BLOCKED",
                       }))}
                       value={field.value ?? ""}
                       setValue={(e) => {
@@ -630,10 +612,12 @@ export default function QuoteTab() {
             <FormField
               control={form.control}
               name="note"
+
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      disabled={isCompleted}
                       design="text-area"
                       required={false}
                       label="Note"
@@ -659,10 +643,11 @@ export default function QuoteTab() {
             paymentLimit={paymentLimit}
             setPaymentLimit={setPaymentLimit}
             TTCPrice={totals.TTCPrice}
+            isCompleted={isCompleted}
           />
 
           <div className="flex justify-center pt-2">
-            <Button type="submit" variant="primary" className="justify-center">
+            <Button disabled={isCompleted || isUpdatinQuote} type="submit" variant="primary" className="justify-center">
               {isUpdatinQuote ? <Spinner /> : "Valider"}
             </Button>
           </div>

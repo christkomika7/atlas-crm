@@ -27,11 +27,6 @@ export default function PreviewTab() {
   const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
     undefined,
   );
-  const [open, setOpen] = useState({
-    payment: false,
-    recurrence: false,
-  });
-
   const idCompany = useDataStore.use.currentCompany();
 
   const { mutate: mutateGetDeliveryNote, isPending: isGettingDeliveryNote } =
@@ -168,12 +163,14 @@ export default function PreviewTab() {
                   </span>
                 </p>
               </div>
-              <p className="flex justify-between items-center gap-x-2 pb-4 text-sm">
-                <span className="font-semibold">Convertir depuis le devis</span>
-                <span className="font-medium text-blue underline">
-                  AC-D-023
-                </span>
-              </p>
+              {deliveryNote?.fromRecordId && deliveryNote.fromRecordName && deliveryNote.fromRecordReference &&
+                <p className="flex justify-between items-center gap-x-2 pb-4 text-sm">
+                  <span className="font-semibold">Convertir depuis le {deliveryNote.fromRecordName.toLocaleLowerCase()}</span>
+                  <span className="font-medium text-blue underline">
+                    {deliveryNote.fromRecordReference}
+                  </span>
+                </p>
+              }
               <Button
                 onClick={close}
                 variant="primary"

@@ -98,7 +98,7 @@ export default function DeliveryNoteTab() {
   const { mutate: mutateUpdateDeliveryNote, isPending: isUpdatinDelivertNote } = useQueryAction<
     DeliveryNoteUpdateSchemaType,
     RequestResponse<DeliveryNoteType>
-  >(updateDeliveryNote, () => { }, "elivery-note");
+  >(updateDeliveryNote, () => { }, "delivery-note");
 
 
   const {
@@ -591,7 +591,6 @@ export default function DeliveryNoteTab() {
                               : status === "IN_PROGRESS"
                                 ? "bg-blue"
                                 : "bg-emerald-500",
-                        disabled: status !== "BLOCKED",
                       }))}
                       value={field.value ?? ""}
                       setValue={(e) => {

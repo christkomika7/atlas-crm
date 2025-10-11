@@ -6,12 +6,12 @@ import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
 import Spinner from "@/components/ui/spinner";
 import { Tabs } from "@/components/ui/tabs";
-import UnpaidTab from "./_component/tabs/unpaid-tab";
-import PaidTab from "./_component/tabs/paid-tab";
 import Link from "next/link";
 import { removeManyQuotes } from "@/action/quote.action";
 import { QuoteType } from "@/types/quote.types";
 import { QuoteTableRef } from "./_component/quote-table";
+import ProgressTab from "./_component/tabs/progress-tab";
+import CompleteTab from "./_component/tabs/complete-tab";
 
 export default function QuotePage() {
   const [selectedQuoteIds, setSelectedQuoteIds] = useState<string[]>([]);
@@ -73,7 +73,7 @@ export default function QuotePage() {
             id: 1,
             title: "En cour",
             content: (
-              <UnpaidTab
+              <ProgressTab
                 quoteTableRef={quoteTableRef}
                 selectedQuoteIds={selectedQuoteIds}
                 setSelectedQuoteIds={setSelectedQuoteIds}
@@ -84,7 +84,7 @@ export default function QuotePage() {
             id: 2,
             title: "Terminé",
             content: (
-              <PaidTab
+              <CompleteTab
                 quoteTableRef={quoteTableRef}
                 selectedQuoteIds={selectedQuoteIds}
                 setSelectedQuoteIds={setSelectedQuoteIds}

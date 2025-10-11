@@ -28,7 +28,7 @@ import { getAllQuotes } from "@/action/quote.action";
 import { QUOTE_PREFIX } from "@/config/constant";
 
 type QuoteTableProps = {
-  filter: "unpaid" | "paid";
+  filter: "progress" | "complete";
   selectedQuoteIds: string[];
   setSelectedQuoteIds: Dispatch<SetStateAction<string[]>>;
 };
@@ -42,7 +42,7 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
     const id = useDataStore.use.currentCompany();
     const currency = useDataStore.use.currency();
     const { mutate, isPending, data } = useQueryAction<
-      { companyId: string; filter: "unpaid" | "paid" },
+      { companyId: string; filter: "progress" | "complete" },
       RequestResponse<QuoteType[]>
     >(getAllQuotes, () => { }, "quotes");
 

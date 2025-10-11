@@ -1,6 +1,5 @@
 import { all } from "@/action/billboard.action";
 import { unique } from "@/action/client.action";
-import { allBillboardItem } from "@/action/item.action";
 import BillboardStatus from "@/app/(dashboard)/billboard/_component/billboard-status";
 import { Checkbox } from "@/components/ui/checkbox";
 import Spinner from "@/components/ui/spinner";
@@ -45,8 +44,6 @@ export default function BillboardTab() {
 
   const {
     mutate: mutateClient,
-    isPending: isLoadingClient,
-    data: clientData,
   } = useQueryAction<{ id: string }, RequestResponse<ClientType>>(
     unique,
     () => { },
@@ -97,7 +94,7 @@ export default function BillboardTab() {
     if (check) {
       addLocationBillboard({
         id: billboard.id,
-        billboardReference: reference,
+        billboardReference: billboard.id,
         isNew: true,
         locationDate: [new Date(), new Date()],
       });

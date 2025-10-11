@@ -307,6 +307,19 @@ export const leasedSpace = [
     },
 ]
 
+export const convert = [
+    {
+        id: 1,
+        label: "Facture",
+        value: "invoice"
+    },
+    {
+        id: 2,
+        label: "Bon de livraison",
+        value: "delivery-note"
+    },
+]
+
 export const acceptPayment = [
     {
         id: 1,

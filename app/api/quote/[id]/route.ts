@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   await checkAccess(["QUOTES"], "READ");
   const id = getIdFromUrl(req.url, "last") as string;
-  const { data }: { data: "unpaid" | "paid" } = await req.json();
+  const { data }: { data: "progress" | "complete" } = await req.json();
 
   if (!id) {
     return NextResponse.json({
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
   const quotes = await prisma.quote.findMany({
     where: {
       companyId: id,
+      isCompleted: data === "complete" ? true : false
     },
     include: {
       client: true,

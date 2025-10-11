@@ -76,7 +76,7 @@ export function Combobox({
             id="country"
             value={getDisplayValue()}
             onChange={() => { }} // Ajout d'un onChange vide pour éviter l'erreur
-            readOnly // Ajout de readOnly car l'input n'est pas éditable directement
+            // readOnly // Ajout de readOnly car l'input n'est pas éditable directement
             required={required}
             className={inputClassName}
           />

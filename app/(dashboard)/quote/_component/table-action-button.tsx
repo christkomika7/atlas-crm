@@ -12,8 +12,11 @@ import { ChevronDownIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useTabStore from "@/stores/tab.store";
 import { useState } from "react";
-import { removeQuote } from "@/action/quote.action";
+import { duplicateQuote, removeQuote } from "@/action/quote.action";
 import { QuoteType } from "@/types/quote.types";
+import Spinner from "@/components/ui/spinner";
+import ModalContainer from "@/components/modal/modal-container";
+import ConvertForm from "./convert-form";
 
 type TableActionButtonProps = {
   id: string;
@@ -31,18 +34,30 @@ export default function TableActionButton({
   refreshQuotes,
 }: TableActionButtonProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const setTab = useTabStore.use.setTab();
+  const [open, setOpen] = useState(false)
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<QuoteType[]>
   >(removeQuote, () => { }, "quotes");
 
-  function goTo(id: string, action: "update" | "preview" | "send") {
+  const { mutate: mutateDuplicateQuote, isPending: isDuplicateQuote } = useQueryAction<
+    { id: string },
+    RequestResponse<null>
+  >(duplicateQuote, () => { }, "quotes");
+
+  function goTo(id: string, action: "update" | "preview" | "send" | "duplicate") {
     switch (action) {
       case "update":
         setTab("action-quote-tab", 0);
         router.push(`/quote/${id}`);
+        break;
+      case "duplicate":
+        mutateDuplicateQuote({ id }, {
+          onSuccess() {
+            refreshQuotes()
+          },
+        })
         break;
       case "preview":
         setTab("action-quote-tab", 1);
@@ -90,17 +105,50 @@ export default function TableActionButton({
                     loading={isPending}
                   />
                 );
+              case "convert":
+                return (
+                  <ModalContainer
+                    size="sm"
+                    action={
+                      <li key={menu.id}>
+                        <button
+                          className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+
+                        >
+                          <menu.icon className="w-4 h-4" />
+                          {menu.title}
+
+                        </button>
+                      </li>
+                    }
+                    title="Convertir le devis"
+                    open={open}
+                    setOpen={(value) =>
+                      setOpen(true)
+                    }
+                    onClose={() => setOpen(false)}
+                  >
+                    <ConvertForm closeModal={() => setOpen(false)} id={id} />
+                  </ModalContainer>
+                )
               default:
                 return (
                   <li key={menu.id}>
                     <button
                       className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
                       onClick={() =>
-                        goTo(id, menu.id as "update" | "preview" | "send")
+                        goTo(id, menu.id as "update" | "preview" | "send" | "duplicate")
                       }
                     >
                       <menu.icon className="w-4 h-4" />
-                      {menu.title}
+                      <span className=" flex gap-x-2 items-center">
+                        {menu.title}
+
+                        <span>
+                          {menu.id === "duplicate" && isDuplicateQuote && <Spinner size={15} />}
+                        </span>
+
+                      </span>
                     </button>
                   </li>
                 );

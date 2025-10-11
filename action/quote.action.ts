@@ -21,7 +21,7 @@ export async function quoteNumber({ companyId }: { companyId: string }) {
     }
 }
 
-export async function getAllQuotes({ companyId, filter }: { companyId: string, filter: "unpaid" | "paid" }) {
+export async function getAllQuotes({ companyId, filter }: { companyId: string, filter: "progress" | "complete" }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/quote/${companyId}`, {
             method: 'POST',
@@ -228,6 +228,45 @@ export async function shareQuote(data: RecordEmailSchemaType) {
         return res;
     } catch (error) {
         console.error("Erreur dans la fonction share:", error);
+        throw error;
+    }
+}
+
+
+export async function duplicateQuote({ id }: { id: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/quote/${id}/duplicate`, {
+            method: 'POST',
+        });
+
+        const res: RequestResponse<null> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function convertQuote({ id, convertTo }: { id: string, convertTo: "delivery-note" | "invoice" }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/quote/${id}/convert`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ convertTo }),
+        });
+
+        const res: RequestResponse<string> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
         throw error;
     }
 }

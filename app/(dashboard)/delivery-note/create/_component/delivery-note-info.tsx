@@ -32,7 +32,7 @@ type DeliveryNoteInfoProps = {
     paymentLimit: string;
     setPaymentLimit: Dispatch<SetStateAction<string>>;
     TTCPrice: Decimal;
-    isCompleted: boolean;
+    isCompleted?: boolean;
 }
 
 export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryNoteNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit, isCompleted }: DeliveryNoteInfoProps) {

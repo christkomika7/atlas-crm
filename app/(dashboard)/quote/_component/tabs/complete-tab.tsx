@@ -1,21 +1,21 @@
 import { Dispatch, RefObject, SetStateAction } from "react";
 import QuoteTable, { QuoteTableRef } from "../quote-table";
 
-type UnpaidTabProps = {
+type CompleteTabProps = {
   quoteTableRef: RefObject<QuoteTableRef | null>;
   selectedQuoteIds: string[];
   setSelectedQuoteIds: Dispatch<SetStateAction<string[]>>;
 };
 
-export default function UnpaidTab({
+export default function CompleteTab({
   quoteTableRef,
   selectedQuoteIds,
   setSelectedQuoteIds,
-}: UnpaidTabProps) {
+}: CompleteTabProps) {
   return (
     <div className="pt-4">
       <QuoteTable
-        filter="unpaid"
+        filter="complete"
         ref={quoteTableRef}
         selectedQuoteIds={selectedQuoteIds}
         setSelectedQuoteIds={setSelectedQuoteIds}

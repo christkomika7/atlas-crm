@@ -12,6 +12,7 @@ export type QuoteType = {
     note: string,
     photos: string[],
     files: string[],
+    isComplete: boolean;
     totalHT: Decimal,
     paymentLimit: string;
     discount: string,

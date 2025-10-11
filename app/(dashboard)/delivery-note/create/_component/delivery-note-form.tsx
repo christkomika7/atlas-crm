@@ -22,7 +22,7 @@ import { ClientType } from "@/types/client.types";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { ProjectType } from "@/types/project.types";
 import ItemModal from "./item-modal";
-import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
+import useItemStore from "@/stores/item.store";
 import useProjectStore from "@/stores/project.store";
 import ProjectModal from "../../_component/project-modal";
 import useClientIdStore from "@/stores/client-id.store";
@@ -432,7 +432,6 @@ export default function DeliveryNoteForm() {
                               : status === "IN_PROGRESS"
                                 ? "bg-blue"
                                 : "bg-emerald-500",
-                        disabled: status !== "BLOCKED",
                       }))}
                       value={field.value ?? ""}
                       setValue={(e) => {

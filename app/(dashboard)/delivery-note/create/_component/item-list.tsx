@@ -20,7 +20,7 @@ export type ItemListProps = {
         taxes: VatRateType[];
         taxOperation?: "cumul" | "sequence";
     }): CalculateTaxesResult;
-    isCompleted: boolean;
+    isCompleted?: boolean;
 }
 export default function ItemList({ item, taxes, calculate, isCompleted }: ItemListProps) {
     const updateItem = useItemStore.use.updateItem();

@@ -22,7 +22,7 @@ import { ClientType } from "@/types/client.types";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { ProjectType } from "@/types/project.types";
 import ItemModal from "./item-modal";
-import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
+import useItemStore from "@/stores/item.store";
 import useProjectStore from "@/stores/project.store";
 import ProjectModal from "../../_component/project-modal";
 import useClientIdStore from "@/stores/client-id.store";
@@ -38,12 +38,12 @@ import { generateAmaId, parseItem, parseItems } from "@/lib/utils";
 import { toast } from "sonner";
 import { ProductServiceType } from "@/types/product-service.types";
 import { getAllProductServices } from "@/action/product-service.action";
-import { quoteSchema, QuoteSchemaType } from "@/lib/zod/quote.schema";
-import { createQuote, getBillboardItemLocations, quoteNumber } from "@/action/quote.action";
-import { QuoteType } from "@/types/quote.types";
-import QuoteInfo from "./quote-info";
-import { QUOTE_PREFIX } from "@/config/constant";
 import Decimal from "decimal.js";
+import { quoteSchema, QuoteSchemaType } from "@/lib/zod/quote.schema";
+import { createQuote, quoteNumber } from "@/action/quote.action";
+import { QuoteType } from "@/types/quote.types";
+import { QUOTE_PREFIX } from "@/config/constant";
+import QuoteInfo from "./quote-info";
 
 export default function QuoteForm() {
   const router = useRouter();
@@ -68,10 +68,6 @@ export default function QuoteForm() {
   const clearItem = useItemStore.use.clearItem();
 
   const setItemQuantities = useItemStore.use.setItemQuantity();
-
-  const locationBillboardDate = useItemStore.use.locationBillboardDate();
-  const setLocationBillboard = useItemStore.use.setLocationBillboard();
-
 
   const setProject = useProjectStore.use.setProject();
   const projects = useProjectStore.use.projects();
@@ -99,12 +95,12 @@ export default function QuoteForm() {
   const { mutate, isPending } = useQueryAction<
     QuoteSchemaType,
     RequestResponse<QuoteType>
-  >(createQuote, () => { }, "quotes");
+  >(createQuote, () => { }, "quote-note");
 
   const {
     mutate: mutateGetQuoteNumber,
     isPending: isGettingQuoteNumber,
-    data: quoteNumberData,
+    data: quoteeNumberData,
   } = useQueryAction<{ companyId: string }, RequestResponse<number>>(
     quoteNumber,
     () => { },
@@ -119,14 +115,6 @@ export default function QuoteForm() {
     unique,
     () => { },
     "document"
-  );
-
-  const {
-    mutate: mutateGetItemLocations,
-  } = useQueryAction<{ companyId: string }, RequestResponse<LocationBillboardDateType[]>>(
-    getBillboardItemLocations,
-    () => { },
-    "item-locations"
   );
 
   const {
@@ -185,13 +173,6 @@ export default function QuoteForm() {
           },
         }
       );
-      mutateGetItemLocations({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setLocationBillboard(data.data);
-          }
-        },
-      })
     }
   }, [companyId]);
 
@@ -451,7 +432,6 @@ export default function QuoteForm() {
                               : status === "IN_PROGRESS"
                                 ? "bg-blue"
                                 : "bg-emerald-500",
-                        disabled: status !== "BLOCKED",
                       }))}
                       value={field.value ?? ""}
                       setValue={(e) => {
@@ -492,7 +472,7 @@ export default function QuoteForm() {
         </div>
         <div className="space-y-4.5 max-w-full">
           <QuoteInfo isGettingDocument={isGettingDocument} isGettingQuoteNumber={isGettingQuoteNumber}
-            reference={`${documentData?.data?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(Number(quoteNumberData?.data || 0), false)}`}
+            reference={`${documentData?.data?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(Number(quoteeNumberData?.data || 0), false)}`}
             discount={clientDiscount}
             setDiscount={setClientDiscount}
             currency={currency}

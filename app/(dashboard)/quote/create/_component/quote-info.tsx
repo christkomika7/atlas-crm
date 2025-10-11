@@ -13,9 +13,6 @@ import { VatRateType } from '@/types/company.types';
 import { CalculateTaxesResult, DiscountType, TaxItem } from '@/types/tax.type';
 import Decimal from 'decimal.js';
 import { Dispatch, SetStateAction } from 'react';
-import { toast } from 'sonner';
-
-
 
 type QuoteInfoProps = {
     isGettingQuoteNumber: boolean;
@@ -35,14 +32,15 @@ type QuoteInfoProps = {
     paymentLimit: string;
     setPaymentLimit: Dispatch<SetStateAction<string>>;
     TTCPrice: Decimal;
+    isCompleted?: boolean;
 }
 
-export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit }: QuoteInfoProps) {
+export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit, isCompleted }: QuoteInfoProps) {
     return (
         <>
             <div className="space-y-2">
                 <div className="flex justify-between gap-x-2">
-                    <h2 className="font-semibold">Devis</h2>
+                    <h2 className="font-semibold">Bon de livraison</h2>
                     {isGettingQuoteNumber && isGettingDocument ? (
                         <Spinner size={10} />
                     ) : (
@@ -51,9 +49,6 @@ export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, ref
                         </p>
                     )}
                 </div>
-                <Badge variant="secondary" className="px-3 py-2">
-                    Non envoyé
-                </Badge>
             </div>
 
             <div className="space-y-2 pb-4 border-neutral-200 border-b">
@@ -65,6 +60,7 @@ export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, ref
                     <h2>Condition</h2>
                     <p>
                         <Combobox
+                            disabled={isCompleted}
                             datas={paymentTerms}
                             value={paymentLimit}
                             setValue={setPaymentLimit}
@@ -115,6 +111,7 @@ export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, ref
                     <h2>Réduction</h2>
                     <div className="flex items-center gap-x-2 max-w-[150px]">
                         <TextInput
+                            disabled={isCompleted}
                             type="number"
                             value={
                                 discount?.discount != null
@@ -131,6 +128,7 @@ export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, ref
                             }}
                         />
                         <ToggleGroup
+                            disabled={isCompleted}
                             type="single"
                             value={discount.discountType}
                             onValueChange={(e) =>
