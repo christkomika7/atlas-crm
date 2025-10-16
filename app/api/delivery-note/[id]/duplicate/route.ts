@@ -46,6 +46,50 @@ export async function POST(req: NextRequest) {
         let savedPaths: string[] = await copyTo(deliveryNote.files, folderFile);
 
         try {
+
+            const itemForCreate = [
+                ...deliveryNote.items.filter(it => it.itemType === "billboard")?.map(billboard => ({
+                    state: $Enums.ItemState.IGNORE,
+                    name: billboard.name,
+                    description: billboard.description ?? "",
+                    quantity: billboard.quantity,
+                    price: billboard.price,
+                    updatedPrice: billboard.updatedPrice,
+                    discount: billboard.discount ?? "0",
+                    locationStart: billboard.locationStart,
+                    locationEnd: billboard.locationEnd,
+                    discountType: billboard.discountType as string,
+                    currency: billboard.currency!,
+                    company: {
+                        connect: { id: deliveryNote.companyId }
+                    },
+                    billboard: {
+                        connect: { id: billboard.billboardId as string },
+                    },
+                    itemType: billboard.itemType ?? "billboard"
+                })) ?? [],
+                ...deliveryNote.items.filter(it => it.itemType !== "billboard")?.map(productService => ({
+                    state: $Enums.ItemState.IGNORE,
+                    name: productService.name,
+                    description: productService.description ?? "",
+                    quantity: productService.quantity,
+                    price: productService.price,
+                    updatedPrice: productService.updatedPrice,
+                    locationStart: new Date(),
+                    locationEnd: new Date(),
+                    discount: productService.discount ?? "0",
+                    discountType: productService.discountType as string,
+                    currency: productService.currency!,
+                    company: {
+                        connect: { id: deliveryNote.companyId }
+                    },
+                    productService: {
+                        connect: { id: productService.productServiceId as string },
+                    },
+                    itemType: productService.itemType ?? "product"
+                })) ?? []
+            ]
+
             const [createdDeliveryNote] = await prisma.$transaction([
                 prisma.deliveryNote.create({
                     data: {
@@ -58,40 +102,7 @@ export async function POST(req: NextRequest) {
                         note: deliveryNote.note!,
                         files: savedPaths,
                         items: {
-                            createMany: {
-                                data: [
-                                    ...deliveryNote.items.filter(it => it.itemType === "billboard")?.map(billboard => ({
-                                        state: $Enums.ItemState.IGNORE,
-                                        name: billboard.name,
-                                        description: billboard.description ?? "",
-                                        quantity: billboard.quantity,
-                                        price: billboard.price,
-                                        updatedPrice: billboard.updatedPrice,
-                                        discount: billboard.discount ?? "0",
-                                        locationStart: billboard.locationStart,
-                                        locationEnd: billboard.locationEnd,
-                                        discountType: billboard.discountType as string,
-                                        currency: billboard.currency!,
-                                        billboardId: billboard.billboardId as string,
-                                        itemType: billboard.itemType ?? "billboard"
-                                    })) ?? [],
-                                    ...deliveryNote.items.filter(it => it.itemType !== "billboard")?.map(productService => ({
-                                        state: $Enums.ItemState.IGNORE,
-                                        name: productService.name,
-                                        description: productService.description ?? "",
-                                        quantity: productService.quantity,
-                                        price: productService.price,
-                                        updatedPrice: productService.updatedPrice,
-                                        locationStart: new Date(),
-                                        locationEnd: new Date(),
-                                        discount: productService.discount ?? "0",
-                                        discountType: productService.discountType as string,
-                                        currency: productService.currency!,
-                                        productServiceId: productService.productServiceId as string,
-                                        itemType: productService.itemType ?? "product"
-                                    })) ?? []
-                                ]
-                            },
+                            create: itemForCreate
                         },
                         project: {
                             connect: {
@@ -146,6 +157,50 @@ export async function POST(req: NextRequest) {
         let savedPaths: string[] = await copyTo(deliveryNote.files, folderFile);
 
         try {
+
+            const itemForCreate = [
+                ...deliveryNote.items.filter(it => it.itemType === "billboard")?.map(billboard => ({
+                    state: $Enums.ItemState.IGNORE,
+                    name: billboard.name,
+                    description: billboard.description ?? "",
+                    quantity: billboard.quantity,
+                    price: billboard.price,
+                    updatedPrice: billboard.updatedPrice,
+                    discount: billboard.discount ?? "0",
+                    locationStart: billboard.locationStart,
+                    locationEnd: billboard.locationEnd,
+                    discountType: billboard.discountType as string,
+                    currency: billboard.currency!,
+                    company: {
+                        connect: { id: deliveryNote.companyId }
+                    },
+                    billboard: {
+                        connect: { id: billboard.billboardId as string },
+                    },
+                    itemType: billboard.itemType ?? "billboard"
+                })) ?? [],
+                ...deliveryNote.items.filter(it => it.itemType !== "billboard")?.map(productService => ({
+                    state: $Enums.ItemState.IGNORE,
+                    name: productService.name,
+                    description: productService.description ?? "",
+                    quantity: productService.quantity,
+                    price: productService.price,
+                    updatedPrice: productService.updatedPrice,
+                    locationStart: new Date(),
+                    locationEnd: new Date(),
+                    discount: productService.discount ?? "0",
+                    discountType: productService.discountType as string,
+                    currency: productService.currency!,
+                    company: {
+                        connect: { id: deliveryNote.companyId }
+                    },
+                    productService: {
+                        connect: { id: productService.productServiceId as string },
+                    },
+                    itemType: productService.itemType ?? "product"
+                })) ?? []
+            ]
+
             const [createdDeliveryNote] = await prisma.$transaction([
                 prisma.quote.create({
                     data: {
@@ -161,40 +216,7 @@ export async function POST(req: NextRequest) {
                         fromRecordName: "Devis",
                         fromRecordReference: `${deliveryNote.company.documentModel?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(deliveryNote.deliveryNoteNumber, false)}`,
                         items: {
-                            createMany: {
-                                data: [
-                                    ...deliveryNote.items.filter(it => it.itemType === "billboard")?.map(billboard => ({
-                                        state: $Enums.ItemState.IGNORE,
-                                        name: billboard.name,
-                                        description: billboard.description ?? "",
-                                        quantity: billboard.quantity,
-                                        price: billboard.price,
-                                        updatedPrice: billboard.updatedPrice,
-                                        discount: billboard.discount ?? "0",
-                                        locationStart: billboard.locationStart,
-                                        locationEnd: billboard.locationEnd,
-                                        discountType: billboard.discountType as string,
-                                        currency: billboard.currency!,
-                                        billboardId: billboard.billboardId as string,
-                                        itemType: billboard.itemType ?? "billboard"
-                                    })) ?? [],
-                                    ...deliveryNote.items.filter(it => it.itemType !== "billboard")?.map(productService => ({
-                                        state: $Enums.ItemState.IGNORE,
-                                        name: productService.name,
-                                        description: productService.description ?? "",
-                                        quantity: productService.quantity,
-                                        price: productService.price,
-                                        updatedPrice: productService.updatedPrice,
-                                        locationStart: new Date(),
-                                        locationEnd: new Date(),
-                                        discount: productService.discount ?? "0",
-                                        discountType: productService.discountType as string,
-                                        currency: productService.currency!,
-                                        productServiceId: productService.productServiceId as string,
-                                        itemType: productService.itemType ?? "product"
-                                    })) ?? []
-                                ]
-                            },
+                            create: itemForCreate
                         },
                         project: {
                             connect: {

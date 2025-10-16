@@ -57,6 +57,49 @@ export async function POST(req: NextRequest) {
     try {
         const amount = quote.amountType === "TTC" ? quote.totalTTC : quote.totalHT;
 
+        const itemForCreate = [
+            ...quote.items.filter(it => it.itemType === "billboard").map(billboard => ({
+                state: $Enums.ItemState.APPROVED,
+                name: billboard.name,
+                description: billboard.description ?? "",
+                quantity: billboard.quantity,
+                price: billboard.price,
+                updatedPrice: billboard.updatedPrice,
+                discount: billboard.discount ?? "0",
+                locationStart: billboard.locationStart,
+                locationEnd: billboard.locationEnd,
+                discountType: billboard.discountType as string,
+                currency: billboard.currency!,
+                company: {
+                    connect: { id: quote.companyId }
+                },
+                billboard: {
+                    connect: { id: billboard.billboardId as string },
+                },
+                itemType: billboard.itemType ?? "billboard"
+            })) ?? [],
+            ...quote.items.filter(it => it.itemType !== "billboard").map(productService => ({
+                state: $Enums.ItemState.APPROVED,
+                name: productService.name,
+                description: productService.description ?? "",
+                quantity: productService.quantity,
+                price: productService.price,
+                updatedPrice: productService.updatedPrice,
+                locationStart: new Date(),
+                locationEnd: new Date(),
+                discount: productService.discount ?? "0",
+                discountType: productService.discountType as string,
+                currency: productService.currency!,
+                company: {
+                    connect: { id: quote.companyId }
+                },
+                productService: {
+                    connect: { id: productService.productServiceId as string },
+                },
+                itemType: productService.itemType ?? "product"
+            })) ?? []
+        ];
+
         const [invoice] = await prisma.$transaction([
             prisma.invoice.create({
                 data: {
@@ -74,40 +117,7 @@ export async function POST(req: NextRequest) {
                     note: quote.note!,
                     files: savedPaths,
                     items: {
-                        createMany: {
-                            data: [
-                                ...quote.items.filter(it => it.itemType === "billboard").map(billboard => ({
-                                    state: $Enums.ItemState.APPROVED,
-                                    name: billboard.name,
-                                    description: billboard.description ?? "",
-                                    quantity: billboard.quantity,
-                                    price: billboard.price,
-                                    updatedPrice: billboard.updatedPrice,
-                                    discount: billboard.discount ?? "0",
-                                    locationStart: billboard.locationStart,
-                                    locationEnd: billboard.locationEnd,
-                                    discountType: billboard.discountType as string,
-                                    currency: billboard.currency!,
-                                    billboardId: billboard.billboardId,
-                                    itemType: billboard.itemType ?? "billboard"
-                                })) ?? [],
-                                ...quote.items.filter(it => it.itemType !== "billboard").map(productService => ({
-                                    state: $Enums.ItemState.APPROVED,
-                                    name: productService.name,
-                                    description: productService.description ?? "",
-                                    quantity: productService.quantity,
-                                    price: productService.price,
-                                    updatedPrice: productService.updatedPrice,
-                                    locationStart: new Date(),
-                                    locationEnd: new Date(),
-                                    discount: productService.discount ?? "0",
-                                    discountType: productService.discountType as string,
-                                    currency: productService.currency!,
-                                    productServiceId: productService.productServiceId,
-                                    itemType: productService.itemType ?? "product"
-                                })) ?? []
-                            ]
-                        },
+                        create: itemForCreate
                     },
                     project: {
                         connect: {
