@@ -39,6 +39,47 @@ export async function notifyRecurrence(data: NotifyRecurrenceProps) {
             const folderFile = createFolder([invoice.company.companyName, "invoice", `${invoiceNumber}_----${key}/files`]);
             let savedFilePaths: string[] = await copyTo(invoice.files, folderFile);
 
+            const itemForCreate = [
+                ...invoice.items.filter(i => i.itemType === "billboard").map(billboard => ({
+                    name: billboard.name,
+                    description: billboard.description ?? "",
+                    quantity: billboard.quantity,
+                    price: billboard.price,
+                    updatedPrice: billboard.updatedPrice,
+                    discount: billboard.discount ?? "0",
+                    locationStart: billboard.locationStart ?? new Date(),
+                    locationEnd: billboard.locationEnd,
+                    discountType: billboard.discountType as string,
+                    currency: billboard.currency!,
+                    company: {
+                        connect: { id: invoice.companyId }
+                    },
+                    billboard: {
+                        connect: { id: billboard.billboardId as string },
+                    },
+                    itemType: billboard.itemType ?? "billboard"
+                })) ?? [],
+                ...invoice.items.filter(i => i.itemType !== "billboard")?.map(productService => ({
+                    name: productService.name,
+                    description: productService.description ?? "",
+                    quantity: productService.quantity,
+                    price: productService.price,
+                    updatedPrice: productService.updatedPrice,
+                    locationStart: productService.locationStart,
+                    locationEnd: productService.locationEnd,
+                    discount: productService.discount ?? "0",
+                    discountType: productService.discountType as string,
+                    currency: productService.currency!,
+                    company: {
+                        connect: { id: invoice.companyId }
+                    },
+                    productService: {
+                        connect: { id: productService.productServiceId as string },
+                    },
+                    itemType: productService.itemType ?? "product"
+                })) ?? []
+            ]
+
             await prisma.$transaction([
                 prisma.invoice.create({
                     data: {
@@ -52,38 +93,7 @@ export async function notifyRecurrence(data: NotifyRecurrenceProps) {
                         payee: invoice.payee,
                         note: invoice.note,
                         items: {
-                            createMany: {
-                                data: [
-                                    ...invoice.items.filter(i => i.itemType === "billboard").map(billboard => ({
-                                        name: billboard.name,
-                                        description: billboard.description ?? "",
-                                        quantity: billboard.quantity,
-                                        price: billboard.price,
-                                        updatedPrice: billboard.updatedPrice,
-                                        discount: billboard.discount ?? "0",
-                                        locationStart: billboard.locationStart ?? new Date(),
-                                        locationEnd: billboard.locationEnd,
-                                        discountType: billboard.discountType as string,
-                                        currency: billboard.currency!,
-                                        billboardId: billboard.billboardId,
-                                        itemType: billboard.itemType ?? "billboard"
-                                    })) ?? [],
-                                    ...invoice.items.filter(i => i.itemType !== "billboard")?.map(productService => ({
-                                        name: productService.name,
-                                        description: productService.description ?? "",
-                                        quantity: productService.quantity,
-                                        price: productService.price,
-                                        updatedPrice: productService.updatedPrice,
-                                        locationStart: productService.locationStart,
-                                        locationEnd: productService.locationEnd,
-                                        discount: productService.discount ?? "0",
-                                        discountType: productService.discountType as string,
-                                        currency: productService.currency!,
-                                        productServiceId: productService.productServiceId,
-                                        itemType: productService.itemType ?? "product"
-                                    })) ?? []
-                                ]
-                            },
+                            create: itemForCreate
                         },
                         project: {
                             connect: {
