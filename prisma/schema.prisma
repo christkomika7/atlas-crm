@@ -1,0 +1,966 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum Resource {
+  DASHBOARD
+  CLIENTS
+  SUPPLIERS
+  INVOICES
+  QUOTES
+  DELIVERY_NOTES
+  PURCHASE_ORDER
+  CREDIT_NOTES
+  PRODUCT_SERVICES
+  BILLBOARDS
+  PROJECTS
+  APPOINTMENT
+  TRANSACTION
+  SETTING
+}
+
+enum ItemState {
+  IGNORE
+  APPROVED
+  PURCHASE
+}
+
+enum TransactionType {
+  RECEIPT
+  DISBURSEMENT
+}
+
+enum Action {
+  READ
+  CREATE
+  MODIFY
+}
+
+enum Priority {
+  URGENT
+  NORMAL
+  RELAX
+}
+
+enum ProjectStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  BLOCKED
+}
+
+enum ProductServiceType {
+  PRODUCT
+  SERVICE
+}
+
+enum BankTransaction {
+  INFLOWS
+  OUTFLOWS
+}
+
+enum AmountType {
+  HT
+  TTC
+}
+
+enum ItemInvoiceType {
+  INVOICES
+  QUOTES
+  DELIVERY_NOTES
+  PURCHASE_ORDERS
+  CREDIT_NOTES
+}
+
+model Company {
+  id                         String                @id @default(uuid())
+  companyName                String                @unique
+  country                    String
+  city                       String
+  codePostal                 String
+  registeredAddress          String
+  phoneNumber                String
+  email                      String
+  website                    String?
+  businessRegistrationNumber String
+  taxIdentificationNumber    String
+  capitalAmount              String
+  currency                   String
+  bankAccountDetails         String
+  businessActivityType       String
+  fiscalYearStart            DateTime
+  fiscalYearEnd              DateTime
+  vatRates                   Json
+  createdAt                  DateTime              @default(now())
+  updatedAt                  DateTime              @updatedAt
+  documentModel              DocumentModel?
+  employees                  User[]
+  clients                    Client[]
+  appointments               Appointment[]
+  projects                   Project[]
+  suppliers                  Supplier[]
+  productsServices           ProductService[]
+  billboards                 Billboard[]
+  cities                     City[]
+  areas                      Area[]
+  invoices                   Invoice[]
+  billboardTypes             BillboardType[]
+  transactionCategories      TransactionCategory[]
+  transactionNatures         TransactionNature[]
+  allocations                Allocation[]
+  sources                    Source[]
+  receipts                   Receipt[]
+  dibursements               Dibursement[]
+  quotes                     Quote[]
+  recurrences                Recurrence[]
+  purchaseOrders             PurchaseOrder[]
+  deliveryNotes              DeliveryNote[]
+  items                      Item[]
+
+  @@unique([email])
+  @@map("company")
+}
+
+model Supplier {
+  id                         String   @id @default(uuid())
+  companyName                String   @unique
+  firstname                  String
+  lastname                   String
+  phone                      String
+  email                      String
+  businessSector             String
+  website                    String?
+  paidAmount                 Decimal  @default(0) @db.Decimal(15, 2)
+  due                        Decimal  @default(0) @db.Decimal(15, 2)
+  address                    String
+  businessRegistrationNumber String
+  taxIdentificationNumber    String
+  discount                   String
+  paymentTerms               String
+  information                String?
+  path                       String
+  uploadDocuments            String[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  billboards     Billboard[]
+  purchaseOrders PurchaseOrder[]
+  receipts       Receipt[]
+  ribursements   Dibursement[]
+
+  @@map("supplier")
+}
+
+model User {
+  id             String   @id
+  key            Int      @default(autoincrement())
+  name           String
+  email          String
+  role           Role?    @default(USER)
+  currentCompany String?
+  emailVerified  Boolean
+  image          String?
+  path           String?
+  createdAt      DateTime
+  updatedAt      DateTime
+  companyId      String?
+
+  sessions    Session[]
+  accounts    Account[]
+  permissions Permission[]
+  company     Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  profile     Profile?
+
+  banned     Boolean?
+  banReason  String?
+  banExpires DateTime?
+
+  appointments Appointment[]
+  projects     Project[]     @relation("project_collaborators")
+  tasks        Task[]        @relation("task_users")
+  dibursements Dibursement[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Profile {
+  id        String @id @default(uuid())
+  firstname String
+  lastname  String
+
+  phone String?
+
+  job    String
+  salary String
+
+  internalRegulations String?
+  passport            String?
+
+  userId String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profile")
+}
+
+model Client {
+  id                         String   @id @default(uuid())
+  companyName                String
+  lastname                   String
+  firstname                  String
+  email                      String
+  phone                      String
+  website                    String?
+  address                    String
+  path                       String?
+  paidAmount                 Decimal  @default(0) @db.Decimal(15, 2)
+  due                        Decimal  @default(0) @db.Decimal(15, 2)
+  businessSector             String
+  businessRegistrationNumber String
+  taxIdentificationNumber    String
+  discount                   String
+  paymentTerms               String
+  information                String?
+  uploadDocuments            String[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments Appointment[]
+
+  projects      Project[]
+  invoices      Invoice[]
+  billboards    Billboard[]
+  quotes        Quote[]
+  deliveryNotes DeliveryNote[]
+  receipts      Receipt[]
+  dibursements  Dibursement[]
+
+  @@map("client")
+}
+
+model Appointment {
+  id             String   @id @default(uuid())
+  subject        String
+  address        String
+  date           DateTime
+  time           String
+  notify         Boolean  @default(false)
+  email          String
+  path           String
+  documents      String[]
+  teamMemberName String
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  teamMemberId String?
+  teamMember   User?   @relation(fields: [teamMemberId], references: [id], onDelete: SetNull)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("appointment")
+}
+
+model Billboard {
+  id        String @id @default(uuid())
+  reference String @unique
+
+  typeId String
+  type   BillboardType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+
+  name      String
+  dimension String
+  areaId    String
+  area      Area   @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+  placement           String
+  cityId              String
+  city                City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  orientation         String
+  information         String?
+  address             String
+  gmaps               String
+  zone                String
+  rentalPrice         Decimal  @default(0) @db.Decimal(15, 2)
+  installationCost    Decimal  @default(0) @db.Decimal(15, 2)
+  maintenance         Decimal  @default(0) @db.Decimal(15, 2)
+  imageFiles          String[]
+  brochureFiles       String[]
+  structure           String
+  decorativeElement   String
+  foundations         String
+  technicalVisibility String
+  note                String
+
+  lessorType       String
+  lessorSpaceType  String
+  lessorSupplierId String?
+  lessorSupplier   Supplier? @relation(fields: [lessorSupplierId], references: [id], onDelete: SetNull)
+
+  lessorName              String?
+  lessorEmail             String?
+  lessorPhone             String?
+  lessorJob               String?
+  capital                 Decimal? @default(0) @db.Decimal(15, 2)
+  rccm                    String?
+  taxIdentificationNumber String?
+  lessorAddress           String?
+
+  representativeName     String?
+  representativeContract String?
+
+  leasedSpace         String?
+  contractStart       DateTime?
+  contractEnd         DateTime?
+  paymentMethod       String?
+  specificCondition   String?
+  signedLeaseContract String[]
+  files               String[]
+
+  pathPhoto    String
+  pathBrochure String
+  pathContract String
+  pathFile     String
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  invoices      Invoice[]
+  items         Item[]
+  quotes        Quote[]
+  deliveryNotes DeliveryNote[]
+
+  @@map("billboard")
+}
+
+model Invoice {
+  id            String     @id @default(uuid())
+  invoiceNumber Int        @default(autoincrement())
+  note          String
+  files         String[]
+  pathFiles     String
+  totalHT       Decimal    @default(0) @db.Decimal(15, 2)
+  discount      String
+  discountType  String
+  paymentLimit  String
+  totalTTC      Decimal    @default(0) @db.Decimal(15, 2)
+  payee         Decimal    @default(0) @db.Decimal(15, 2)
+  isPaid        Boolean    @default(false)
+  amountType    AmountType @default(TTC)
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  fromRecordReference String @default("")
+  fromRecordId        String @default("")
+  fromRecordName      String @default("")
+
+  productsServices ProductService[]
+  billboards       Billboard[]
+  items            Item[]
+  receipts         Receipt[]
+  dibursements     Dibursement[]
+  payments         Payment[]
+  recurrences      Recurrence[]
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("invoice")
+}
+
+model PurchaseOrder {
+  id                  String     @id @default(uuid())
+  purchaseOrderNumber Int        @default(autoincrement())
+  note                String
+  files               String[]
+  pathFiles           String
+  totalHT             Decimal    @default(0) @db.Decimal(15, 2)
+  discount            String
+  discountType        String
+  paymentLimit        String
+  totalTTC            Decimal    @default(0) @db.Decimal(15, 2)
+  payee               Decimal    @default(0) @db.Decimal(15, 2)
+  isPaid              Boolean    @default(false)
+  amountType          AmountType @default(TTC)
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  productsServices ProductService[]
+  items            Item[]
+  dibursements     Dibursement[]
+  payments         Payment[]
+  recurrences      Recurrence[]
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("purchase_order")
+}
+
+model Quote {
+  id           String     @id @default(uuid())
+  quoteNumber  Int        @default(autoincrement())
+  note         String
+  files        String[]
+  pathFiles    String
+  amountType   AmountType @default(TTC)
+  totalHT      Decimal    @default(0) @db.Decimal(15, 2)
+  discount     String
+  discountType String
+  paymentLimit String
+  totalTTC     Decimal    @default(0) @db.Decimal(15, 2)
+  isCompleted  Boolean    @default(false)
+
+  fromRecordReference String @default("")
+  fromRecordId        String @default("")
+  fromRecordName      String @default("")
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  productsServices ProductService[]
+  billboards       Billboard[]
+  items            Item[]
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("quote")
+}
+
+model DeliveryNote {
+  id                 String     @id @default(uuid())
+  deliveryNoteNumber Int        @default(autoincrement())
+  note               String
+  files              String[]
+  pathFiles          String
+  amountType         AmountType @default(TTC)
+  totalHT            Decimal    @default(0) @db.Decimal(15, 2)
+  discount           String
+  discountType       String
+  paymentLimit       String
+  totalTTC           Decimal    @default(0) @db.Decimal(15, 2)
+  isCompleted        Boolean    @default(false)
+
+  fromRecordReference String @default("")
+  fromRecordId        String @default("")
+  fromRecordName      String @default("")
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  productsServices ProductService[]
+  billboards       Billboard[]
+  items            Item[]
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("delivery_note")
+}
+
+model Recurrence {
+  id     String @id @default(uuid())
+  repeat String
+
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("recurrence")
+}
+
+model Payment {
+  id          String  @id @default(uuid())
+  amount      Decimal @default(0) @db.Decimal(15, 2)
+  paymentMode String
+  infos       String?
+
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+
+  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime     @default(now())
+  receipt     Receipt?
+  dibursement Dibursement?
+
+  @@map("payment")
+}
+
+model Item {
+  id              String          @id @default(uuid())
+  state           ItemState       @default(APPROVED)
+  name            String
+  description     String?
+  quantity        Float
+  price           Decimal         @default(0) @db.Decimal(15, 2)
+  updatedPrice    Decimal         @default(0) @db.Decimal(15, 2)
+  discount        String
+  discountType    String
+  currency        String
+  itemType        String
+  locationStart   DateTime
+  locationEnd     DateTime
+  itemInvoiceType ItemInvoiceType @default(INVOICES)
+
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  quoteId String?
+  quote   Quote?  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  billboardId String?
+  billboard   Billboard? @relation(fields: [billboardId], references: [id], onDelete: SetNull)
+
+  productServiceId String?
+  productService   ProductService? @relation(fields: [productServiceId], references: [id], onDelete: SetNull)
+
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId String?
+
+  deliveryNoteId String?
+  deliveryNote   DeliveryNote? @relation(fields: [deliveryNoteId], references: [id])
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("item")
+}
+
+model Project {
+  id                 String          @id @default(uuid())
+  name               String          @unique
+  deadline           DateTime
+  projectInformation String?
+  amount             Decimal         @default(0) @db.Decimal(15, 2)
+  balance            Decimal         @default(0) @db.Decimal(15, 2)
+  files              String[]
+  path               String
+  status             ProjectStatus   @default(BLOCKED)
+  clientId           String
+  client             Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  companyId          String
+  company            Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  collaborators      User[]          @relation("project_collaborators")
+  tasks              Task[]
+  invoices           Invoice[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  quotes             Quote[]
+  purchaseOrders     PurchaseOrder[]
+  deliveryNotes      DeliveryNote[]
+
+  @@map("project")
+}
+
+model Task {
+  id        String        @id @default(uuid())
+  taskName  String
+  desc      String
+  path      String?
+  time      DateTime
+  priority  Priority      @default(NORMAL)
+  comment   String
+  file      String[]
+  status    ProjectStatus @default(TODO)
+  projectId String
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  users     User[]        @relation("task_users")
+  steps     TaskStep[]
+
+  @@map("task")
+}
+
+model TaskStep {
+  id       String  @id @default(uuid())
+  stepName String
+  check    Boolean @default(false)
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("task_step")
+}
+
+model City {
+  id   String @id @default(uuid())
+  name String @unique
+
+  billboards Billboard[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  areas     Area[]
+
+  @@map("city")
+}
+
+model Area {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  billboards Billboard[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  cityId String
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@map("area")
+}
+
+model BillboardType {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  billboards Billboard[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("billboard_type")
+}
+
+model DocumentModel {
+  id             String  @id @default(uuid())
+  logo           String?
+  position       String
+  size           String
+  primaryColor   String
+  secondaryColor String
+
+  quotesPrefix        String?
+  invoicesPrefix      String?
+  deliveryNotesPrefix String?
+  purchaseOrderPrefix String?
+
+  quotesInfo        String?
+  invoicesInfo      String?
+  deliveryNotesInfo String?
+  purchaseOrderInfo String?
+
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("company_documents")
+}
+
+model Receipt {
+  id        String          @id @default(uuid())
+  type      TransactionType @default(RECEIPT)
+  reference Int             @default(autoincrement())
+  date      DateTime
+  movement  BankTransaction @default(INFLOWS)
+
+  categoryId String
+  category   TransactionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  natureId String
+  nature   TransactionNature @relation(fields: [natureId], references: [id], onDelete: Cascade)
+
+  amount     Decimal    @default(0) @db.Decimal(15, 2)
+  amountType AmountType @default(HT)
+
+  paymentType String
+  checkNumber String
+
+  referenceInvoiceId String?
+  referenceInvoice   Invoice? @relation(fields: [referenceInvoiceId], references: [id], onDelete: SetNull)
+
+  sourceId String?
+  source   Source? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  description String?
+  comment     String?
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  paymentId String?  @unique
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("receipt")
+}
+
+model Dibursement {
+  id        String          @id @default(uuid())
+  type      TransactionType @default(DISBURSEMENT)
+  reference Int             @default(autoincrement())
+  date      DateTime
+  movement  BankTransaction @default(OUTFLOWS)
+
+  categoryId String
+  category   TransactionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  natureId String
+  nature   TransactionNature @relation(fields: [natureId], references: [id], onDelete: Cascade)
+
+  amount     Decimal    @default(0) @db.Decimal(15, 2)
+  amountType AmountType @default(HT)
+
+  paymentType String
+  checkNumber String
+
+  referenceInvoiceId String?
+  referenceInvoice   Invoice? @relation(fields: [referenceInvoiceId], references: [id], onDelete: SetNull)
+
+  referencePurchaseOrderId String?
+  referencePurchaseOrder   PurchaseOrder? @relation(fields: [referencePurchaseOrderId], references: [id])
+
+  allocationId String?
+  allocation   Allocation? @relation(fields: [allocationId], references: [id], onDelete: Cascade)
+
+  sourceId String?
+  source   Source? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  payOnBehalfOfId String?
+  payOnBehalfOf   User?   @relation(fields: [payOnBehalfOfId], references: [id], onDelete: SetNull)
+
+  description String?
+  comment     String?
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  paymentId String?  @unique
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("dibursement")
+}
+
+model Source {
+  id   String @id @default(ulid())
+  name String @unique
+
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  receipts     Receipt[]
+  dibursements Dibursement[]
+
+  @@map("source")
+}
+
+model Allocation {
+  id   String @id @default(ulid())
+  name String @unique
+
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  dibursements Dibursement[]
+
+  @@map("allocation")
+}
+
+model TransactionCategory {
+  id           String              @id @default(ulid())
+  name         String              @unique
+  natures      TransactionNature[]
+  receipts     Receipt[]
+  dibursements Dibursement[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("transaction_category")
+}
+
+model TransactionNature {
+  id   String @id @default(uuid())
+  name String @unique
+
+  categoryId String
+  category   TransactionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  receipts Receipt[]
+
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  dibursements Dibursement[]
+
+  @@map("transaction_nature")
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  resource  Resource
+  actions   Action[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, resource])
+  @@map("permission")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String
+  createdAt      DateTime
+  updatedAt      DateTime
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+model RateLimit {
+  id          String  @id
+  key         String?
+  count       Int?
+  lastRequest BigInt?
+
+  @@map("rateLimit")
+}
+
+model ProductService {
+  id          String             @id @default(uuid())
+  type        ProductServiceType @default(PRODUCT)
+  reference   String
+  category    String
+  designation String
+  description String
+  unitPrice   Decimal            @default(0) @db.Decimal(15, 2)
+  cost        Decimal            @default(0) @db.Decimal(15, 2)
+  unitType    String
+  quantity    Int                @default(0)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  invoices       Invoice[]
+  items          Item[]
+  quotes         Quote[]
+  purchaseOrders PurchaseOrder[]
+  deliveryNotes  DeliveryNote[]
+
+  @@map("product_service")
+}
