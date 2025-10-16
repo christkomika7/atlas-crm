@@ -41,7 +41,6 @@ export const quoteSchema = z
 
             return data.item.billboards.every((billboard) => {
                 if (
-                    billboard.status === "non-available" &&
                     billboard.itemType === "billboard"
                 ) {
                     return billboard.locationStart !== undefined && billboard.locationEnd !== undefined;
@@ -96,7 +95,6 @@ export const quoteUpdateSchema = z
 
             return data.item.billboards.every((billboard) => {
                 if (
-                    billboard.status === "non-available" &&
                     billboard.itemType === "billboard"
                 ) {
                     return billboard.locationStart !== undefined && billboard.locationEnd !== undefined;
