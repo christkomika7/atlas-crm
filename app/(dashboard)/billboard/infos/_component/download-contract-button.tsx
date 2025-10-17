@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import useTabStore from "@/stores/tab.store";
 import { DownloadIcon } from "lucide-react";
-import BillboardCreateContractModal from "../../_component/billboard-create-contract-modal";
+import BillboardCreateContractModal from "../../_component/billboard-create-brochure-modal";
 
 export default function DownloadContractButton() {
   const tabs = useTabStore.use.tabs();

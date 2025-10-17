@@ -1,5 +1,5 @@
 "use client";
-import BoardRentContract from "../_component/board-rent-contract";
+import BoardRentContract from "../_component/brochure-pdf";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function BilloardRentContractPage() {

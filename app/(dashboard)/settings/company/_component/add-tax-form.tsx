@@ -10,16 +10,11 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import MultipleSelector from "@/components/ui/multi-selector";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Switch } from "@/components/ui/switch";
 import TextInput from "@/components/ui/text-input";
 import { cn } from "@/lib/utils";
 import { taxSchema, TaxSchemaType } from "@/lib/zod/company.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
 
 type AddTaxFormProps = {
   setOpen: (open: boolean) => void;
@@ -32,24 +27,18 @@ export default function AddTaxForm({
   taxs,
   setTaxs,
 }: AddTaxFormProps) {
-  const [check, setCheck] = useState<"TTC" | "HT">("TTC");
 
   const form = useForm<TaxSchemaType>({
     resolver: zodResolver(taxSchema),
     defaultValues: {
       taxName: "",
-      taxValue: [],
-      taxType: "TTC",
       cumul: [],
-      hasApplicableToAll: false,
     },
   });
 
   function resetForm() {
     form.reset();
-    setCheck("TTC");
   }
-
 
   function handleClose() {
     resetForm();
@@ -105,55 +94,12 @@ export default function AddTaxForm({
           render={({ field }) => (
             <FormItem className="-space-y-2">
               <FormControl>
-                <MultipleSelector
-                  value={field.value.map((v) => ({ label: v, value: v }))}
-                  placeholder="Ajouter des taux (ex: 10%)"
-                  onChange={(options) =>
-                    field.onChange(options.map((opt) => opt.value))
-                  }
-                  creatable
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Type de taxe */}
-        <FormField
-          control={form.control}
-          name="taxType"
-          render={({ field }) => (
-            <FormItem className="space-y-0.5">
-              <FormLabel>Type de taxe</FormLabel>
-              <FormControl>
-                <RadioGroup
+                <TextInput
+                  design="float"
+                  label="Valeur de la taxe"
                   value={field.value}
-                  onValueChange={(val: "TTC" | "HT") => {
-                    setCheck(val);
-                    field.onChange(val);
-                  }}
-                  className="flex bg-neutral-50 rounded-lg w-fit h-12 overflow-hidden"
-                >
-                  <div className={cn(check === "TTC" && "bg-blue text-white")}>
-                    <RadioGroupItem value="TTC" id="TTC" className="hidden" />
-                    <Label
-                      htmlFor="TTC"
-                      className="flex items-center p-3 w-28 h-full cursor-pointer"
-                    >
-                      Comprise(s)
-                    </Label>
-                  </div>
-                  <div className={cn(check === "HT" && "bg-blue text-white")}>
-                    <RadioGroupItem value="HT" id="HT" className="hidden" />
-                    <Label
-                      htmlFor="HT"
-                      className="flex items-center p-3 w-28 h-full cursor-pointer"
-                    >
-                      Hors taxe
-                    </Label>
-                  </div>
-                </RadioGroup>
+                  handleChange={field.onChange}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -219,29 +165,6 @@ export default function AddTaxForm({
               </FormItem>
             );
           }}
-        />
-
-        {/* Appliquer à tous */}
-        <FormField
-          control={form.control}
-          name="hasApplicableToAll"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="hasApplicableToAll"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                  <Label htmlFor="hasApplicableToAll">
-                    Appliquer cette taxe à tous les articles
-                  </Label>
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
         />
 
         {/* Actions */}

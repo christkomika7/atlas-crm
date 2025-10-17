@@ -25,18 +25,6 @@ export async function POST(req: NextRequest) {
 
         const referenceDocument = {};
 
-        switch (data.documentRefType) {
-            case 'invoice':
-                Object.assign(referenceDocument, {
-                    referenceInvoice: {
-                        connect: {
-                            id: data.documentRef
-                        }
-                    }
-                });
-                break;
-        }
-
         const createdReceipt = await prisma.receipt.create({
             data: {
                 type: "RECEIPT",
@@ -45,7 +33,7 @@ export async function POST(req: NextRequest) {
                 amount: String(data.amount),
                 amountType: data.amountType,
                 paymentType: data.paymentMode,
-                checkNumber: data.checkNumber,
+                checkNumber: data.checkNumber || "",
                 description: data.description,
                 comment: data.comment,
                 category: {
@@ -66,6 +54,11 @@ export async function POST(req: NextRequest) {
                 company: {
                     connect: {
                         id: data.companyId
+                    }
+                },
+                referenceInvoice: {
+                    connect: {
+                        id: data.documentRef
                     }
                 },
                 ...referenceDocument,

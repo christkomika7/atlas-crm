@@ -230,6 +230,7 @@ export default function PurchaseOrderForm() {
         productServices: items
           .map((item) => ({
             name: item.name,
+            hasTax: item.hasTax,
             quantity: item.quantity,
             selectedQuantity: item.selectedQuantity,
             price: item.price,

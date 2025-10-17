@@ -23,6 +23,7 @@ import { toast } from "sonner";
 
 type NatureModalProps = {
     categoryId: string;
+
 }
 
 export default function NatureModal({ categoryId }: NatureModalProps) {

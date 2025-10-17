@@ -38,8 +38,6 @@ export async function GET(req: NextRequest) {
         locationDate: [item.locationStart, item.locationEnd]
     }))
 
-    console.log({ transformedItems });
-
     return NextResponse.json({
         state: "success",
         data: transformedItems,

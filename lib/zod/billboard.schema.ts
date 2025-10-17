@@ -8,6 +8,7 @@ export const billboardSchema = z.object({
 
     // Section General Information
     reference: z.string().min(1, { message: "La référence unique du panneau publicitaire est requise." }),
+    hasTax: z.boolean(),
     type: z.string().min(1, {
         message: "Le type du panneau publicitaire est requis.",
     }),
@@ -231,6 +232,7 @@ export const editBillboardSchema = z.object({
     reference: z.string().min(1, {
         message: "La référence unique du panneau publicitaire est requise.",
     }),
+    hasTax: z.boolean(),
     type: z.string().min(1, {
         message: "Le type du panneau publicitaire est requis.",
     }),

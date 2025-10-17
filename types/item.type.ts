@@ -7,6 +7,7 @@ export type OmitItemType = "state" | "billboard" | 'itemInvoiceType' | "invoiceI
 
 export type ItemType = {
     id: string;
+    hasTax: boolean;
     state: $Enums.ItemState,
     billboardId?: string;
     billboard: BillboardType;

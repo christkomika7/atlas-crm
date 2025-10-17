@@ -85,10 +85,17 @@ export async function getTransactions(params: GetTransactionsParams) {
   }
 }
 
-export async function getCategories({ companyId }: { companyId: string }) {
+export async function getCategories({ companyId, type }: { companyId: string, type: "receipt" | "dibursement" }) {
+  const params = new URLSearchParams();
+  params.append("type", type);
+
+  const queryString = params.toString();
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/category/${companyId}${queryString ? `?${queryString}` : ""
+    }`;
+
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/category/${companyId}`,
+      url,
       {
         method: "GET",
       },
@@ -162,10 +169,17 @@ export async function getNatures({ categoryId }: { categoryId: string }) {
   }
 }
 
-export async function getDocuments({ companyId }: { companyId: string }) {
+export async function getDocuments({ companyId, type }: { companyId: string, type: "receipt" | "dibursement" }) {
+  const params = new URLSearchParams();
+  params.append("type", type);
+
+  const queryString = params.toString();
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${companyId}/document${queryString ? `?${queryString}` : ""
+    }`;
+
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${companyId}/document`,
+      url,
       {
         method: "GET",
       },
@@ -199,7 +213,7 @@ export async function createCategory(data: CategorySchemaType) {
     if (!response.ok) {
       throw new Error(
         res.message ||
-          "Erreur lors de la création de la catégorie de la transaction",
+        "Erreur lors de la création de la catégorie de la transaction",
       );
     }
 
@@ -228,7 +242,7 @@ export async function createNature(data: NatureSchemaType) {
     if (!response.ok) {
       throw new Error(
         res.message ||
-          "Erreur lors de la création de la nature de la transaction",
+        "Erreur lors de la création de la nature de la transaction",
       );
     }
 
@@ -257,7 +271,7 @@ export async function createSource(data: SourceSchemaType) {
     if (!response.ok) {
       throw new Error(
         res.message ||
-          "Erreur lors de la création de la source de la transaction",
+        "Erreur lors de la création de la source de la transaction",
       );
     }
 

@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
                 name: b.name,
                 description: b.description,
                 quantity: b.quantity,
+                hasTax: b.hasTax,
                 locationStart: toUtcDateOnly(b.locationStart),
                 locationEnd: toUtcDateOnly(b.locationEnd),
                 price: new Decimal(b.price),
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
                 name: b.name,
                 description: b.description,
                 quantity: b.quantity,
+                hasTax: b.hasTax,
                 locationStart: toUtcDateOnly(b.locationStart),
                 locationEnd: toUtcDateOnly(b.locationEnd),
                 price: new Decimal(b.price),
@@ -122,6 +124,7 @@ export async function POST(req: NextRequest) {
             ...data.item.billboards?.map(billboard => ({
                 state: $Enums.ItemState.IGNORE,
                 name: billboard.name,
+                hasTax: billboard.hasTax,
                 description: billboard.description,
                 quantity: billboard.quantity,
                 price: billboard.price,
@@ -146,6 +149,7 @@ export async function POST(req: NextRequest) {
             ...data.item.productServices?.map(productService => ({
                 state: $Enums.ItemState.IGNORE,
                 name: productService.name,
+                hasTax: productService.hasTax,
                 description: productService.description,
                 quantity: productService.quantity,
                 price: productService.price,

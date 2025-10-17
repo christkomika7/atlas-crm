@@ -14,33 +14,28 @@ export async function GET(req: NextRequest) {
         }, { status: 404 });
     }
 
-    const quotes = await prisma.invoice.findMany({
-        where: { companyId },
+    const items = await prisma.item.findMany({
+        where: {
+            companyId,
+            itemType: "billboard",
+            state: "APPROVED"
+        },
         select: {
-            items: {
-                where: { itemType: "billboard", state: "APPROVED" },
-                select: {
-                    id: true,
-                    locationStart: true,
-                    locationEnd: true,
-                    billboardId: true
-                }
-            }
+            id: true,
+            locationStart: true,
+            locationEnd: true,
+            billboardId: true,
+            invoiceId: true
         }
     });
 
-    console.log({ quotes })
-
-    const transformedItems = quotes.flatMap(quote =>
-        quote.items
-            .filter(item => item.locationStart && item.locationEnd)
-            .map(item => ({
-                id: item.id,
-                isNew: false,
-                billboardReference: item.billboardId,
-                locationDate: [item.locationStart, item.locationEnd]
-            }))
-    );
+    const transformedItems = items.filter(item => item.locationStart && item.locationEnd).map(item => ({
+        id: item.id,
+        invoiceId: item.invoiceId,
+        isNew: false,
+        billboardReference: item.billboardId,
+        locationDate: [item.locationStart, item.locationEnd]
+    }))
 
     return NextResponse.json({
         state: "success",

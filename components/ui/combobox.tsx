@@ -140,7 +140,7 @@ export function Combobox({
                         <span className="text-sm">{data.label}</span>
                         {data.more && (
                           <span className="text-neutral-500 text-xs">
-                            ( {data.more.type} de {data.more.price} )
+                            ( {data.more.type} : {data.more.price} )
                           </span>
                         )}
                       </CommandItem>

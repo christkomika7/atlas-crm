@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
             ...quote.items.filter(it => it.itemType === "billboard")?.map(billboard => ({
                 state: $Enums.ItemState.IGNORE,
                 name: billboard.name,
+                hasTax: billboard.hasTax,
                 description: billboard.description ?? "",
                 quantity: billboard.quantity,
                 price: billboard.price,
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
             ...quote.items.filter(it => it.itemType !== "billboard")?.map(productService => ({
                 state: $Enums.ItemState.IGNORE,
                 name: productService.name,
+                hasTax: productService.hasTax,
                 description: productService.description ?? "",
                 quantity: productService.quantity,
                 price: productService.price,
@@ -160,6 +162,7 @@ export async function POST(req: NextRequest) {
                 description: billboard.description ?? "",
                 quantity: billboard.quantity,
                 price: billboard.price,
+                hasTax: billboard.hasTax,
                 updatedPrice: billboard.updatedPrice,
                 discount: billboard.discount ?? "0",
                 locationStart: billboard.locationStart,
@@ -180,6 +183,7 @@ export async function POST(req: NextRequest) {
                 description: productService.description ?? "",
                 quantity: productService.quantity,
                 price: productService.price,
+                hasTax: productService.hasTax,
                 updatedPrice: productService.updatedPrice,
                 locationStart: new Date(),
                 locationEnd: new Date(),

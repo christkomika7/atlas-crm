@@ -12,7 +12,7 @@ import { ChevronDownIcon } from "lucide-react";
 import { duplicateBillboard, remove } from "@/action/billboard.action";
 import { useRouter } from "next/navigation";
 import { BillboardType } from "@/types/billboard.types";
-import BillboardCreateContractModal from "./billboard-create-contract-modal";
+import BillboardCreateContractModal from "./billboard-create-brochure-modal";
 
 type TableActionButtonProps = {
   id: string;
@@ -93,17 +93,6 @@ export default function TableActionButton({
                   loading={isPending}
                 />
               );
-
-            if (menu.action === "send") {
-              return (
-                <BillboardCreateContractModal key={menu.id}>
-                  <button className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer">
-                    <menu.icon className="w-4 h-4" />
-                    {menu.title}
-                  </button>
-                </BillboardCreateContractModal>
-              );
-            }
             return (
               <li key={menu.id}>
                 <button

@@ -15,6 +15,7 @@ type TextInputProps = {
   type?: "text" | "password" | "email" | "time" | "file" | "number" | "search";
   design?: "default" | "float" | "text-area";
   multiple?: boolean;
+  height?: string;
   label?: string;
   placeholder?: string;
   icon?: React.JSX.Element;
@@ -36,6 +37,7 @@ export default function TextInput({
   type = "text",
   design = "default",
   icon,
+  height,
   value = "",
   handleChange,
   disabled = false,
@@ -75,7 +77,7 @@ export default function TextInput({
   };
 
   return (
-    <div className="relative">
+    <div className={cn("relative", height)}>
       {design === "default" && (
         <>
           {icon && (

@@ -25,16 +25,25 @@ export async function POST(req: NextRequest) {
 
         const referenceDocument = {};
 
-        switch (data.documentRefType) {
-            case 'invoice':
-                Object.assign(referenceDocument, {
-                    referenceInvoice: {
-                        connect: {
-                            id: data.documentRef
-                        }
+
+        if (data.project) {
+            Object.assign(referenceDocument, {
+                project: {
+                    connect: {
+                        id: data.project
                     }
-                });
-                break;
+                }
+            });
+        }
+
+        if (data.payOnBehalfOf) {
+            Object.assign(referenceDocument, {
+                payOnBehalfOf: {
+                    connect: {
+                        id: data.payOnBehalfOf
+                    }
+                },
+            });
         }
 
         const createdDibursement = await prisma.dibursement.create({
@@ -68,21 +77,19 @@ export async function POST(req: NextRequest) {
                         id: data.allocation
                     }
                 },
-
-                payOnBehalfOf: {
-                    connect: {
-                        id: data.payOnBehalfOf
-                    }
-                },
                 company: {
                     connect: {
                         id: data.companyId
                     }
                 },
+                referencePurchaseOrder: {
+                    connect: {
+                        id: data.documentRef
+                    }
+                },
                 ...referenceDocument,
             }
         });
-
 
         return NextResponse.json({
             status: "success",

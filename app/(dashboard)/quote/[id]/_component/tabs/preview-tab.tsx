@@ -10,10 +10,9 @@ import { ModelDocumentType } from "@/types/document.types";
 import { useEffect, useState } from "react";
 import Spinner from "@/components/ui/spinner";
 import { useParams, useRouter } from "next/navigation";
-import { formatNumber, generateAmaId } from "@/lib/utils";
+import { generateAmaId } from "@/lib/utils";
 import { downloadComponentAsPDF } from "@/lib/pdf";
 import { QUOTE_PREFIX } from "@/config/constant";
-import { Decimal } from "decimal.js";
 import { QuoteType } from "@/types/quote.types";
 import { getUniqueQuote } from "@/action/quote.action";
 import RecordDocument from "@/components/pdf/record";
@@ -23,14 +22,11 @@ export default function PreviewTab() {
   const param = useParams();
   const router = useRouter();
 
+  const [filename, setFilename] = useState("");
   const [quote, setQuote] = useState<QuoteType | undefined>(undefined);
   const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
     undefined,
   );
-  const [open, setOpen] = useState({
-    payment: false,
-    recurrence: false,
-  });
 
   const idCompany = useDataStore.use.currentCompany();
 
@@ -86,6 +82,8 @@ export default function PreviewTab() {
           onSuccess(data) {
             if (data.data) {
               setQuote(data.data);
+              setFilename(`Devis ${data.data.company.documentModel?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(data.data.quoteNumber, false)}.pdf`)
+
             }
           },
         },
@@ -109,7 +107,7 @@ export default function PreviewTab() {
             <>
               <div className="flex justify-end">
                 <Button variant="primary" className="max-w-xs"
-                  onClick={() => downloadComponentAsPDF("quote-bc", "facture.pdf", {
+                  onClick={() => downloadComponentAsPDF("quote-bc", filename, {
                     padding: 0,
                     margin: 0,
                     quality: 0.98,

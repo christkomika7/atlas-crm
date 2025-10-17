@@ -21,7 +21,7 @@ import {
 import { Combobox } from "@/components/ui/combobox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { cn, formatNumber } from "@/lib/utils";
+import { cn, cutText, formatNumber } from "@/lib/utils";
 import useTransactionStore from "@/stores/transaction.store";
 import { AllocationType, SourceType, TransactionCategoryType, TransactionDocument, TransactionNatureType, TransactionType } from "@/types/transaction.type";
 import useQueryAction from "@/hook/useQueryAction";
@@ -34,6 +34,8 @@ import SourceModal from "../../../../components/modal/source-modal";
 import AllocationModal from "../../../../components/modal/allocation-modal";
 import { getCollaborators } from "@/action/user.action";
 import { UserType } from "@/types/user.types";
+import { ProjectType } from "@/types/project.types";
+import { getallByCompany } from "@/action/project.action";
 
 type DibursementFormProps = {
   refreshTransaction: () => void
@@ -54,8 +56,8 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
 
   const [categoryId, setCategoryId] = useState("");
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
-  const [documentType, setDocumentType] = useState<"invoice" | "quote">();
   const [collaborators, setCollaborators] = useState<UserType[]>([]);
+  const [projects, setProjects] = useState<ProjectType[]>([]);
 
 
   const form = useForm<DibursementSchemaType>({
@@ -67,7 +69,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const {
     mutate: mutateGetCategories,
     isPending: isGettingCategories,
-  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionCategoryType[]>>(
+  } = useQueryAction<{ companyId: string, type: "receipt" | "dibursement" }, RequestResponse<TransactionCategoryType[]>>(
     getCategories,
     () => { },
     "categories"
@@ -91,8 +93,6 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
     "sources"
   );
 
-
-
   const {
     mutate: mutateGetAllocations,
     isPending: isGettingAllocations,
@@ -106,7 +106,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const {
     mutate: mutateGetDocuments,
     isPending: isGettingDocuments,
-  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionDocument[]>>(
+  } = useQueryAction<{ companyId: string, type: "receipt" | "dibursement" }, RequestResponse<TransactionDocument[]>>(
     getDocuments,
     () => { },
     "documents"
@@ -122,22 +122,39 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   );
 
 
+  const {
+    mutate: mutateGetProjects,
+    isPending: isGettingProjects,
+  } = useQueryAction<{ companyId: string, projectStatus?: "loading" | "stop" }, RequestResponse<ProjectType[]>>(
+    getallByCompany,
+    () => { },
+    "projects"
+  );
+
+
   const { mutate: mutateCreateDibursement, isPending: isCreatingDibursement } = useQueryAction<
     DibursementSchemaType,
     RequestResponse<TransactionType>
   >(createDibursement, () => { }, "dibursement");
 
 
-
   useEffect(() => {
     if (companyId) {
-      mutateGetCategories({ companyId }, {
+      mutateGetCategories({ companyId, type: "dibursement" }, {
         onSuccess(data) {
           if (data.data) {
             setCategories(data.data)
           }
         },
-      })
+      });
+
+      mutateGetProjects({ companyId, projectStatus: "loading" }, {
+        onSuccess(data) {
+          if (data.data) {
+            setProjects(data.data);
+          }
+        },
+      });
 
       mutateGetSources({ companyId }, {
         onSuccess(data) {
@@ -156,7 +173,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
       });
 
 
-      mutateGetDocuments({ companyId }, {
+      mutateGetDocuments({ companyId, type: "dibursement" }, {
         onSuccess(data) {
           if (data.data) {
             setDocuments(data.data)
@@ -193,24 +210,6 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   }, [categoryId])
 
 
-
-  useEffect(() => {
-    if (documentType) {
-      form.setValue('documentRefType', documentType);
-    }
-  }, [documentType])
-
-
-  function getDocumentType(id: string) {
-    const type = documents.find(document => document.id === id)?.type;
-
-    switch (type) {
-      case "Facture":
-        return "invoice";
-      case "Devis":
-        return "quote"
-    }
-  }
 
   async function submit(dibursementData: DibursementSchemaType) {
     const { success, data } = dibursementSchema.safeParse(dibursementData);
@@ -271,7 +270,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                       placeholder="Catégorie"
                       searchMessage="Rechercher une catégorie"
                       noResultsMessage="Aucune catégorie trouvée."
-                      addElement={<CategoryModal />}
+                      addElement={<CategoryModal type="dibursement" />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -279,7 +278,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               )}
             />
           </div>
-          <div className="gap-4.5 grid grid-cols-2">
+          <div className="gap-4.5 grid grid-cols-3">
             <FormField
               control={form.control}
               name="nature"
@@ -299,6 +298,32 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                       searchMessage="Rechercher une nature"
                       noResultsMessage="Aucune nature trouvée."
                       addElement={<NatureModal categoryId={categoryId} />}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="project"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      isLoading={isGettingProjects}
+                      datas={projects.map(project => ({
+                        id: project.id,
+                        label: `${cutText(project.client.firstname + " " + project.client.lastname)} - ${project.name}`,
+                        value: project.id
+                      }))}
+                      value={field.value}
+                      setValue={e => {
+                        field.onChange(e)
+                      }}
+                      placeholder="Projet"
+                      searchMessage="Rechercher un projet"
+                      noResultsMessage="Aucun projet trouvé."
                     />
                   </FormControl>
                   <FormMessage />
@@ -337,7 +362,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                         onValueChange={field.onChange}
                         className="flex -space-x-2"
                       >
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center max-h-11 space-x-2">
                           <RadioGroupItem
                             value="HT"
                             id="HT"
@@ -353,7 +378,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                             HT
                           </Label>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex max-h-11 items-center space-x-2">
                           <RadioGroupItem
                             value="TTC"
                             id="TTC"
@@ -377,7 +402,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               />
             </div>
           </div>
-          <div className="gap-4.5 grid grid-cols-3">
+          <div className="gap-4.5 grid grid-cols-[1fr_1fr_1.5fr]">
             <FormField
               control={form.control}
               name="paymentMode"
@@ -404,6 +429,8 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      required={false}
+                      height="h-11"
                       type="text"
                       design="float"
                       label="Numéro de chèque"
@@ -423,18 +450,17 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                   <FormControl>
                     <Combobox
                       isLoading={isGettingDocuments}
-                      datas={documents.map(category => ({
-                        id: category.id,
-                        label: category.reference,
+                      datas={documents.map(document => ({
+                        id: document.id,
+                        label: `${document.reference}`,
                         more: {
-                          type: category.type,
-                          price: `${formatNumber(category.price)} ${category.currency}`
+                          type: document.type,
+                          price: `${formatNumber(document.price)} ${document.currency}`
                         },
-                        value: category.id
+                        value: document.id
                       }))}
                       value={field.value}
                       setValue={e => {
-                        setDocumentType(getDocumentType(e as string));
                         field.onChange(e)
                       }}
                       placeholder="Référence du document"
@@ -505,13 +531,15 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      className="h-11"
+                      required={false}
                       isLoading={isGettingCollaborators}
                       datas={collaborators.map(collaborator => ({
                         id: collaborator.id,
                         label: collaborator.name,
                         value: collaborator.id
                       }))}
-                      value={field.value}
+                      value={field.value ?? ""}
                       setValue={field.onChange}
                       placeholder="Sélectionner un tiers payeur"
                       searchMessage="Rechercher un tiers payeur..."

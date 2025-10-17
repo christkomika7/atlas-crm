@@ -44,6 +44,7 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
     if (check) {
       addItem({
         id: randomUUID,
+        hasTax: productService.hasTax,
         name: productService.designation,
         description: productService.description,
         price: new Decimal(productService.unitPrice),

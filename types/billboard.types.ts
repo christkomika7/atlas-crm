@@ -10,6 +10,7 @@ import Decimal from "decimal.js";
 export type BillboardType = {
     id: string;
     reference: string;
+    hasTax: boolean;
     pathBrochure: string;
     pathContract: string;
     pathFile: string;

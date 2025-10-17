@@ -114,6 +114,7 @@ export async function PUT(req: NextRequest) {
       productServices: productServicesParse?.map((b: ItemPurchaseOrderSchemaType) => ({
         id: b.id,
         name: b.name,
+        hasTax: b.hasTax,
         quantity: b.quantity,
         selectedQuantity: b.selectedQuantity,
         status: b.status,
@@ -266,6 +267,7 @@ export async function PUT(req: NextRequest) {
         }
       },
       name: productService.name,
+      hasTax: productService.hasTax,
       description: productService.description,
       quantity: productService.selectedQuantity,
       price: productService.price,

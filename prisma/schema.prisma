@@ -291,6 +291,8 @@ model Billboard {
   id        String @id @default(uuid())
   reference String @unique
 
+  hasTax Boolean @default(false)
+
   typeId String
   type   BillboardType @relation(fields: [typeId], references: [id], onDelete: Cascade)
 
@@ -558,6 +560,7 @@ model Payment {
 model Item {
   id              String          @id @default(uuid())
   state           ItemState       @default(APPROVED)
+  hasTax          Boolean         @default(false)
   name            String
   description     String?
   quantity        Float
@@ -620,6 +623,7 @@ model Project {
   quotes             Quote[]
   purchaseOrders     PurchaseOrder[]
   deliveryNotes      DeliveryNote[]
+  Dibursement        Dibursement[]
 
   @@map("project")
 }
@@ -735,7 +739,7 @@ model Receipt {
   amountType AmountType @default(HT)
 
   paymentType String
-  checkNumber String
+  checkNumber String?
 
   referenceInvoiceId String?
   referenceInvoice   Invoice? @relation(fields: [referenceInvoiceId], references: [id], onDelete: SetNull)
@@ -781,7 +785,7 @@ model Dibursement {
   amountType AmountType @default(HT)
 
   paymentType String
-  checkNumber String
+  checkNumber String?
 
   referenceInvoiceId String?
   referenceInvoice   Invoice? @relation(fields: [referenceInvoiceId], references: [id], onDelete: SetNull)
@@ -806,6 +810,9 @@ model Dibursement {
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   supplierId String?
   supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
@@ -845,6 +852,7 @@ model Allocation {
 model TransactionCategory {
   id           String              @id @default(ulid())
   name         String              @unique
+  type         TransactionType     @default(RECEIPT)
   natures      TransactionNature[]
   receipts     Receipt[]
   dibursements Dibursement[]
@@ -942,6 +950,7 @@ model RateLimit {
 model ProductService {
   id          String             @id @default(uuid())
   type        ProductServiceType @default(PRODUCT)
+  hasTax      Boolean            @default(false)
   reference   String
   category    String
   designation String

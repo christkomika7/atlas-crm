@@ -114,6 +114,7 @@ export async function create(data: BillboardSchemaFormType) {
         // BILLBOARD - Général
         formData.append("companyId", data.billboard.companyId);
         formData.append("reference", data.billboard.reference);
+        formData.append("hasTax", JSON.stringify(data.billboard.hasTax));
         formData.append("type", data.billboard.type);
         formData.append("name", data.billboard.name);
         formData.append("dimension", data.billboard.dimension);
@@ -225,6 +226,7 @@ export async function update(data: EditBillboardSchemaFormType) {
         formData.append("id", data.billboard.id);
         formData.append("companyId", data.billboard.companyId);
         formData.append("reference", data.billboard.reference);
+        formData.append("hasTax", JSON.stringify(data.billboard.hasTax));
         formData.append("type", data.billboard.type);
         formData.append("name", data.billboard.name);
         formData.append("dimension", data.billboard.dimension);

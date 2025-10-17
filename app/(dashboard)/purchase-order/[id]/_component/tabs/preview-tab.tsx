@@ -30,7 +30,7 @@ export default function PreviewTab() {
   const router = useRouter();
 
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrderType | undefined>(undefined);
-
+  const [filename, setFilename] = useState("");
   const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
     undefined,
   );
@@ -78,6 +78,8 @@ export default function PreviewTab() {
           onSuccess(data) {
             if (data.data) {
               setPurchaseOrder(data.data);
+              setFilename(`Bon de commande ${data.data.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(data.data.purchaseOrderNumber, false)}.pdf`)
+
             }
           },
         },
@@ -117,7 +119,7 @@ export default function PreviewTab() {
             <>
               <div className="flex justify-end">
                 <Button variant="primary" className="max-w-xs"
-                  onClick={() => downloadComponentAsPDF("purchase-order", "bon-de-commande.pdf", {
+                  onClick={() => downloadComponentAsPDF("purchase-order", filename, {
                     padding: 0,
                     margin: 0,
                     quality: 0.98,

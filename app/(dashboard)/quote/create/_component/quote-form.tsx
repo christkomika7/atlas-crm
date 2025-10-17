@@ -255,6 +255,7 @@ export default function QuoteForm() {
           .filter((item) => item.itemType === "billboard")
           .map((item) => ({
             id: item.id,
+            hasTax: item.hasTax,
             name: item.name,
             quantity: item.quantity,
             price: new Decimal(item.price),
@@ -275,6 +276,7 @@ export default function QuoteForm() {
         productServices: items
           .filter((item) => item.itemType !== "billboard")
           .map((item) => ({
+            hasTax: item.hasTax,
             name: item.name,
             quantity: item.quantity,
             price: new Decimal(item.price),

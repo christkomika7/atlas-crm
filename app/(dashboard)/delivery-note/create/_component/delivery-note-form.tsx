@@ -251,6 +251,7 @@ export default function DeliveryNoteForm() {
           .map((item) => ({
             id: item.id,
             name: item.name,
+            hasTax: item.hasTax,
             quantity: item.quantity,
             price: new Decimal(item.price),
             status: item.status,
@@ -271,6 +272,7 @@ export default function DeliveryNoteForm() {
           .filter((item) => item.itemType !== "billboard")
           .map((item) => ({
             name: item.name,
+            hasTax: item.hasTax,
             quantity: item.quantity,
             price: new Decimal(item.price),
             updatedPrice:

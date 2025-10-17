@@ -66,7 +66,7 @@ export async function notifyAppointment() {
       </div>
                     `
         }
-        const n = await sendMail(mailOptions);
+        await sendMail(mailOptions);
         await prisma.appointment.update({
             where: { id: appointment.id },
             data: {

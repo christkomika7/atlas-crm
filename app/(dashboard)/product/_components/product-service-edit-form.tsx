@@ -4,6 +4,7 @@ import {
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,6 +28,7 @@ import {
   productServiceItemTypes,
   productServiceUnitTypes,
 } from "@/lib/data";
+import { Switch } from "@/components/ui/switch";
 
 type ProductServiceEditFormProps = {
   closeModal: React.Dispatch<React.SetStateAction<boolean>>;
@@ -67,6 +69,7 @@ export default function ProductServiceUpdatedForm({
         companyId: productServiceData.data.companyId,
         itemType: productServiceData.data.type,
         reference: productServiceData.data.reference,
+        hasTax: productServiceData.data.hasTax,
         designation: productServiceData.data.designation,
         category: productServiceData.data.category,
         description: productServiceData.data.description,
@@ -150,20 +153,18 @@ export default function ProductServiceUpdatedForm({
               />
               <FormField
                 control={form.control}
-                name="category"
+                name="hasTax"
                 render={({ field }) => (
-                  <FormItem className="-space-y-2">
+                  <FormItem className="flex h-11 flex-row items-center bg-gray justify-between rounded-lg  p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel>Article taxable</FormLabel>
+                    </div>
                     <FormControl>
-                      <Combobox
-                        datas={productServiceCategories}
-                        value={field.value}
-                        setValue={field.onChange}
-                        placeholder="Sélectionner une catégorie"
-                        searchMessage="Rechercher une catégorie"
-                        noResultsMessage="Aucune catégorie trouvée."
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -224,7 +225,26 @@ export default function ProductServiceUpdatedForm({
                 )}
               />
             </div>
-            <div className="gap-x-2 grid grid-cols-2 w-full">
+            <div className="gap-x-2 grid grid-cols-3 w-full">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <Combobox
+                        datas={productServiceCategories}
+                        value={field.value}
+                        setValue={field.onChange}
+                        placeholder="Sélectionner une catégorie"
+                        searchMessage="Rechercher une catégorie"
+                        noResultsMessage="Aucune catégorie trouvée."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="designation"

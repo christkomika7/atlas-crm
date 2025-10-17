@@ -726,6 +726,7 @@ export function getDocumentRef(transaction: TransactionType) {
 
 export function parsePurchaseItem(item: Omit<PurchaseItemType, OmitItemType>): TaxItem {
   return {
+    hasTax: item.hasTax,
     name: item.name as string,
     price: new Decimal(item.price),
     discountType: item.discountType as "purcent" | "money",
@@ -737,6 +738,7 @@ export function parsePurchaseItem(item: Omit<PurchaseItemType, OmitItemType>): T
 
 export function parsePurchaseItems(items: Omit<PurchaseItemType, OmitItemType>[]): TaxItem[] {
   return items.map(item => ({
+    hasTax: item.hasTax,
     name: item.name as string,
     price: new Decimal(item.price),
     discountType: item.discountType as "purcent" | "money",
@@ -749,6 +751,7 @@ export function parsePurchaseItems(items: Omit<PurchaseItemType, OmitItemType>[]
 export function parseItem(item: Omit<ItemType, OmitItemType>): TaxItem {
   return {
     name: item.name as string,
+    hasTax: item.hasTax,
     price: new Decimal(item.price),
     discountType: item.discountType as "purcent" | "money",
     discount: Number(String(item.discount ?? 0).replace("%", "")),
@@ -759,6 +762,7 @@ export function parseItem(item: Omit<ItemType, OmitItemType>): TaxItem {
 export function parseItems(items: Omit<ItemType, OmitItemType>[]): TaxItem[] {
   return items.map(item => ({
     name: item.name as string,
+    hasTax: item.hasTax,
     price: new Decimal(item.price),
     discountType: item.discountType as "purcent" | "money",
     discount: Number(String(item.discount ?? 0).replace("%", "")),

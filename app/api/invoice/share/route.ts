@@ -5,9 +5,9 @@ import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { recordEmailSchema, RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
 import { NextResponse, type NextRequest } from "next/server";
-import { INVOICE_PREFIX } from "@/config/constant";
 import { formatNumber, generateAmaId } from "@/lib/utils";
 import { formatDateToDashModel } from "@/lib/date";
+import { INVOICE_PREFIX } from "@/config/constant";
 
 export async function POST(req: NextRequest) {
     await checkAccess(["INVOICES"], "MODIFY");
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     );
 
     try {
-        const filename = `facture-${format(new Date(), "yyyy-MM-dd")}.pdf`;
+        const filename = `Facture ${company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}.pdf`;
         const invoiceBuffer = await invoiceBlob.arrayBuffer()
         const buffer = Buffer.from(invoiceBuffer);
 

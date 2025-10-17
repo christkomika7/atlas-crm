@@ -15,6 +15,7 @@ export type CumulType = {
 export type TaxItem = {
     name: string;
     price: Decimal;
+    hasTax: boolean;
     discountType: "purcent" | "money";
     discount: number;
     quantity: number;
@@ -23,13 +24,12 @@ export type TaxItem = {
 export type TaxInput = {
     taxName: string;
     taxValue: string[];
-    hasApplicableToAll: boolean;
-    taxType?: "HT" | "TTC";
     cumul?: CumulType[];
 };
 
 export type Item = {
     name: string;
+    hasTax: boolean;
     price: Decimal;
     discountType: "purcent" | "money";
     discount: number;
@@ -41,7 +41,6 @@ export type TaxResult = {
     appliedRates: number[];
     totalTax: Decimal;
     taxPrice: Decimal;
-    taxType?: "HT" | "TTC";
 };
 
 export type CalculateTaxesResult = {

@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
                 type: data.itemType,
                 reference: data.reference,
                 category: data.category,
+                hasTax: data.hasTax,
                 description: data.description ?? "",
                 designation: data.designation,
                 unitPrice: data.unitPrice,

@@ -29,6 +29,7 @@ export default function PreviewTab() {
   const router = useRouter();
 
   const [invoice, setInvoice] = useState<InvoiceType | undefined>(undefined);
+  const [filename, setFilename] = useState("");
   const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
     undefined,
   );
@@ -76,6 +77,7 @@ export default function PreviewTab() {
           onSuccess(data) {
             if (data.data) {
               setInvoice(data.data);
+              setFilename(`Facture ${data.data.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(data.data.invoiceNumber, false)}.pdf`)
             }
           },
         },
@@ -115,7 +117,7 @@ export default function PreviewTab() {
             <>
               <div className="flex justify-end">
                 <Button variant="primary" className="max-w-xs"
-                  onClick={() => downloadComponentAsPDF("invoice-bc", "facture.pdf", {
+                  onClick={() => downloadComponentAsPDF("invoice-bc", filename, {
                     padding: 0,
                     margin: 0,
                     quality: 0.98,

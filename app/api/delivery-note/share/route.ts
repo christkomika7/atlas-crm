@@ -5,10 +5,10 @@ import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { recordEmailSchema, RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
 import { NextResponse, type NextRequest } from "next/server";
-import { DELIVERY_NOTE_PREFIX } from "@/config/constant";
 import { generateAmaId } from "@/lib/utils";
 import { paymentTerms } from "@/lib/data";
 import { formatDateToDashModel } from "@/lib/date";
+import { DELIVERY_NOTE_PREFIX } from "@/config/constant";
 
 export async function POST(req: NextRequest) {
     await checkAccess(["DELIVERY_NOTES"], "MODIFY");
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
 
     try {
-        const filename = `bon-de-livraison-${format(new Date(), "yyyy-MM-dd")}.pdf`;
+        const filename = `Bon de livraison ${company.documentModel?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(deliveryNote.deliveryNoteNumber, false)}.pdf`;
         const deliveryNoteBuffer = await blob.arrayBuffer()
         const buffer = Buffer.from(deliveryNoteBuffer);
 

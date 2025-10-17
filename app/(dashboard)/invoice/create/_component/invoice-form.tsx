@@ -254,6 +254,7 @@ export default function InvoiceForm() {
           .map((item) => ({
             id: item.id,
             name: item.name,
+            hasTax: item.hasTax,
             quantity: item.quantity,
             price: item.price,
             status: item.status,
@@ -276,6 +277,7 @@ export default function InvoiceForm() {
           .map((item) => ({
             name: item.name,
             quantity: item.quantity,
+            hasTax: item.hasTax,
             price: item.price,
             updatedPrice: calculate({
               items: [parseItem(item)],

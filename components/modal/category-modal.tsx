@@ -1,4 +1,3 @@
-import { create, remove } from "@/action/billboard-type.action";
 import { createCategory, deleteCategory } from "@/action/transaction.action";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +21,11 @@ import { PlusCircle, XIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export default function CategoryModal() {
+type CategoryModalProps = {
+    type: "receipt" | "dibursement";
+}
+
+export default function CategoryModal({ type }: CategoryModalProps) {
     const companyId = useDataStore.use.currentCompany();
 
     const categories = useTransactionStore.use.categories();
@@ -76,7 +79,7 @@ export default function CategoryModal() {
         if (!companyId) return toast.error("Aucune entreprise trouvée.");
         if (!name) return toast.error("Aucune catégorie insérée.");
         muatateCreateCategory(
-            { name, companyId },
+            { name, companyId, type },
             {
                 onSuccess(data) {
                     if (data.data) {

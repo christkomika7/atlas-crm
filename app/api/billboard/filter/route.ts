@@ -24,12 +24,6 @@ export async function POST(req: NextRequest) {
             areaId: {
                 in: data.area,
             },
-            // locationStart: {
-            //     gte: data.range.from,
-            // },
-            // locationEnd: {
-            //     lte: data.range.to,
-            // },
         },
     });
 

@@ -23,6 +23,7 @@ export default function PreviewTab() {
   const param = useParams();
   const router = useRouter();
 
+  const [filename, setFilename] = useState("");
   const [deliveryNote, setDeliverNote] = useState<DeliveryNoteType | undefined>(undefined);
   const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
     undefined,
@@ -65,6 +66,8 @@ export default function PreviewTab() {
           onSuccess(data) {
             if (data.data) {
               setDeliverNote(data.data);
+              setFilename(`Bon de livraison ${data.data.company.documentModel?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(data.data.deliveryNoteNumber, false)}.pdf`)
+
             }
           },
         },
@@ -104,7 +107,7 @@ export default function PreviewTab() {
             <>
               <div className="flex justify-end">
                 <Button variant="primary" className="max-w-xs"
-                  onClick={() => downloadComponentAsPDF("delivery-note-bc", "facture.pdf", {
+                  onClick={() => downloadComponentAsPDF("delivery-note-bc", filename, {
                     padding: 0,
                     margin: 0,
                     quality: 0.98,

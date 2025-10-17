@@ -7,30 +7,10 @@ import {
 import { CirclePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
-import BrochurePDF from "./brochure";
-import { pdf } from "@react-pdf/renderer";
+import BillboardBrochureModal from "./billboard-create-brochure-modal";
 
 export default function HeaderMenu() {
   const router = useRouter();
-
-  async function downloadPdf(
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) {
-    e.preventDefault();
-    const doc = <BrochurePDF />;
-
-    const asBlob = await pdf(doc).toBlob();
-    const url = URL.createObjectURL(asBlob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "contrat.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
-  }
 
   return (
     <Popover>
@@ -50,14 +30,17 @@ export default function HeaderMenu() {
               Nouveau panneau
             </Button>
           </li>
+
           <li>
-            <Button
-              onClick={(e) => downloadPdf(e)}
-              variant="primary"
-              className="bg-white hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
-            >
-              Brochure
-            </Button>
+            <BillboardBrochureModal>
+              <Button
+                variant="primary"
+                className="bg-white hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
+              >
+                Brochure
+              </Button>
+            </BillboardBrochureModal>
+
           </li>
         </ul>
       </PopoverContent>

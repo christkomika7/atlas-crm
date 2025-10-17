@@ -1,4 +1,5 @@
 import { checkAccess } from "@/lib/access";
+import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { categorySchema, CategorySchemaType } from "@/lib/zod/transaction.schema";
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
         const createdCategory = await prisma.transactionCategory.create({
             data: {
                 name: data.name,
+                type: data.type === "receipt" ? $Enums.TransactionType.RECEIPT : $Enums.TransactionType.DISBURSEMENT,
                 company: {
                     connect: {
                         id: data.companyId

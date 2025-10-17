@@ -10,24 +10,18 @@ export const dropdownMenu: TableActionButtonType[] = [
     },
     {
         id: 2,
-        action: "send",
-        icon: FileTextIcon,
-        title: "Génerer un contrat",
-    },
-    {
-        id: 3,
         action: "duplicate",
         icon: Layers2Icon,
         title: "Dupliquer",
     },
     {
-        id: 4,
+        id: 3,
         action: "update",
         icon: EditIcon,
         title: "Modifier",
     },
     {
-        id: 5,
+        id: 4,
         action: "delete",
         icon: Trash2Icon,
         title: "Supprimer",

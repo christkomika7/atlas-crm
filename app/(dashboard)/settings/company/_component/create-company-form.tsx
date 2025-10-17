@@ -31,7 +31,6 @@ import { UserType } from "@/types/user.types";
 import { clearAllFiles, clearFiles, getFileByType } from "@/lib/file-storage";
 import useTaxStore from "@/stores/tax.store";
 import { useDataStore } from "@/stores/data.store";
-import { Decimal } from "decimal.js";
 
 export default function CreateCompanyForm() {
   const router = useRouter();
@@ -78,7 +77,6 @@ export default function CreateCompanyForm() {
   >(create, () => { }, ["companies", "countries"]);
 
   useEffect(() => {
-    console.log("HELLO WORLD");
     router.refresh();
     const company = getCompany();
     const employees = getEmployees();
@@ -135,11 +133,7 @@ export default function CreateCompanyForm() {
           )
           .map((item) => ({
             taxName: item.taxName!,
-            taxValue: item.taxValue!.filter(
-              (v): v is string => typeof v === "string"
-            ),
-            hasApplicableToAll: item.hasApplicableToAll ?? false,
-            taxType: item.taxType,
+            taxValue: item.taxValue!,
             cumul: Array.isArray(item.cumul)
               ? item.cumul.filter(
                 (c): c is { id: number; name: string; check: boolean } =>

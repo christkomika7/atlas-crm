@@ -245,6 +245,7 @@ export default function InvoiceTab() {
             id: item.id,
             name: item.name,
             quantity: item.quantity,
+            hasTax: item.hasTax,
             price: item.price,
             status: item.status,
             itemType: item.itemType,
@@ -266,6 +267,7 @@ export default function InvoiceTab() {
           .map((item) => ({
             id: item.id,
             name: item.name,
+            hasTax: item.hasTax,
             quantity: item.quantity,
             price: item.price,
             updatedPrice:
@@ -366,6 +368,7 @@ export default function InvoiceTab() {
           const mappedItems = [...invoice.items.map(item => ({
             id: item.id,
             name: item.name,
+            hasTax: item.hasTax,
             quantity: item.quantity,
             price: new Decimal(item.price),
             itemType: item.itemType as "billboard" | "product" | "service",
@@ -400,6 +403,7 @@ export default function InvoiceTab() {
               billboards: invoice.items.filter(item => item.itemType === "billboard").map(billboard => ({
                 id: billboard.id,
                 name: billboard.name,
+                hasTax: billboard.hasTax,
                 quantity: billboard.quantity,
                 price: billboard.price.toString(),
                 itemType: 'billboard',
@@ -415,6 +419,7 @@ export default function InvoiceTab() {
               productServices: invoice.items.filter(item => item.itemType !== "billboard").map(productService => ({
                 id: productService.id,
                 name: productService.name,
+                hasTax: productService.hasTax,
                 quantity: productService.quantity,
                 lastQuantity: productService.quantity,
                 price: productService.price.toString(),

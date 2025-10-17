@@ -14,10 +14,11 @@ export async function GET(req: NextRequest) {
     const id = getIdFromUrl(req.url, "last") as string;
 
     const productServices = await prisma.productService.findMany({
-        where: { companyId: id }
+        where: { companyId: id },
+        orderBy: {
+            createdAt: "desc"
+        }
     });
-
-    console.log({ productServices })
 
     return NextResponse.json(
         {
@@ -56,7 +57,23 @@ export async function POST(req: NextRequest) {
     }
 
     if (search) {
-        where.OR = [{ designation: { contains: search, mode: "insensitive" } }];
+        const searchTerms = search.split(/\s+/).filter(Boolean);
+        where.OR = [
+            {
+                designation: {
+                    contains: search,
+                    mode: "insensitive",
+                },
+            },
+            {
+                OR: searchTerms.map((term) => ({
+                    description: {
+                        contains: term,
+                        mode: "insensitive",
+                    },
+                })),
+            },
+        ];
     }
 
     try {
@@ -112,6 +129,7 @@ export async function PUT(req: NextRequest) {
     const updateData: Prisma.ProductServiceUpdateInput = {
         type: data.itemType,
         reference: data.reference,
+        hasTax: data.hasTax,
         category: data.category,
         description: data.description ?? "",
         designation: data.designation,

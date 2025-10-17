@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const categorySchema = z.object({
     name: z.string({ error: "Le nom de la catégorie est obligatoire." }),
+    type: z.enum(["receipt", "dibursement"]),
     companyId: z.string({ error: "Aucune entreprise sélectionnée." })
 });
 
@@ -21,9 +22,6 @@ export const allocationSchema = z.object({
     name: z.string({ error: "Le nom de l'allocation est obligatoire." }),
     companyId: z.string({ error: "Aucune entreprise sélectionnée." })
 });
-
-
-
 
 export type CategorySchemaType = z.infer<typeof categorySchema>;
 export type NatureSchemaType = z.infer<typeof natureSchema>;

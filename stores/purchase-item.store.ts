@@ -9,6 +9,7 @@ export type ItemQuantity = {
 
 export type PurchaseItemType = {
     id: string;
+    hasTax: boolean;
     name: string;
     quantity: number;
     selectedQuantity: number;

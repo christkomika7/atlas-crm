@@ -237,12 +237,10 @@ export default function RecordDocument({
                 </thead>
                 <tbody>
                     {record?.items.map((item) => (
-                        <tr className={cn("text-sm h-full")} key={item.id}>
-                            <td className="px-3 py-2">
-                                <div className="flex flex-col space-y-2">
-                                    <span>{item.name}</span>
-                                    <pre className={`${generalSans.className} whitespace-pre-wrap mb-2 leading-tight text-sm`}>{item.description}</pre>
-                                </div>
+                        <tr className="text-sm" key={item.id}>
+                            <td className="px-3 py-2 align-top">
+                                <p className="mb-1 font-semibold">{item.name}</p>
+                                <p className={`whitespace-pre-wrap mb-2 leading-tight text-sm`}>{item.description}</p>
                             </td>
                             <td className="py-2 text-right align-top">
                                 {item.quantity}

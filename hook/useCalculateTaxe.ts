@@ -29,6 +29,7 @@ export function useCalculateTaxe(): UseCalculateTaxeReturn {
         return calculateTaxes({
             items: items.map((item) => ({
                 name: item.name as string,
+                hasTax: item.hasTax,
                 price: item.price,
                 discountType: item.discountType as "purcent" | "money",
                 discount: Number(String(item.discount ?? 0).replace("%", "")),

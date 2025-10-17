@@ -33,7 +33,6 @@ import { useEmployeeStore } from "@/stores/employee.store";
 import useCompanyStore from "@/stores/company.store";
 import { getFileByType } from "@/lib/file-storage";
 import EditCompanyFormErrors from "@/components/errors/edit-company-form-errors";
-import { Decimal } from "decimal.js";
 
 type UpdateCompanyFormProps = {
   id: string;

@@ -55,6 +55,7 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
         const randomUUID = crypto.randomUUID();
         addItem({
           id: randomUUID,
+          hasTax: productService.hasTax,
           name: productService.designation,
           description: productService.description,
           price: new Decimal(productService.cost),

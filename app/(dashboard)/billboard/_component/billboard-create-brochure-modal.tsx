@@ -1,5 +1,3 @@
-// BillboardCreateContractModal.tsx
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,16 +7,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import React, { useState } from "react";
-import BillboardCreateContractForm from "./billboard-create-contract-form";
 import BillboardSendEmailModal from "./billboard-send-email-modal";
+import BillboardCreateBrochureForm from "./billboard-create-brochure-form";
 
-type BillboardCreateContractModalProps = {
+type BillboardBrochureModalProps = {
   children: React.ReactNode;
 };
 
-export default function BillboardCreateContractModal({
+export default function BillboardBrochureModal({
   children,
-}: BillboardCreateContractModalProps) {
+}: BillboardBrochureModalProps) {
   const [contractModalOpen, setContractModalOpen] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
 
@@ -28,7 +26,6 @@ export default function BillboardCreateContractModal({
 
   return (
     <>
-      {/* Modal de sélection des critères */}
       <Dialog open={contractModalOpen} onOpenChange={setContractModalOpen}>
         <DialogTrigger asChild>{children}</DialogTrigger>
         <DialogContent className="min-w-[950px]">
@@ -36,14 +33,13 @@ export default function BillboardCreateContractModal({
             <DialogTitle>Selectionner les critères</DialogTitle>
             <DialogDescription></DialogDescription>
           </DialogHeader>
-          <BillboardCreateContractForm
+          <BillboardCreateBrochureForm
             close={() => setContractModalOpen(false)}
             onSendEmail={handleSendEmail}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Modal d'envoi d'email */}
       <BillboardSendEmailModal
         open={emailModalOpen}
         onOpenChange={setEmailModalOpen}

@@ -14,7 +14,7 @@ export const productServiceSchema = z.object({
             error: "La référence est requise.",
         })
         .min(1, "La référence ne peut pas être vide."),
-
+    hasTax: z.boolean(),
     category: z
         .string({
             error: "La catégorie est requise.",
@@ -78,6 +78,7 @@ export const editProductServiceSchema = z.object({
     itemType: z.enum(["PRODUCT", "SERVICE"], {
         error: "Le type d’élément est requis.",
     }),
+    hasTax: z.boolean(),
     reference: z
         .string({
             error: "La référence est requise.",

@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { PlusCircle } from "lucide-react";
 import React, { useState } from "react";
-import ProductServiceTab from "./tabs/product-service-tab";
 import ItemForm from "./item-form";
 
 export default function ItemModal() {

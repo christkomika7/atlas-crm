@@ -2,7 +2,7 @@ import { EditProjectSchemaType, ProjectSchemaType } from "@/lib/zod/project.sche
 import { RequestResponse } from "@/types/api.types";
 import { ProjectType } from "@/types/project.types";
 
-export async function getallByCompany({ companyId }: { companyId: string }) {
+export async function getallByCompany({ companyId, projectStatus }: { companyId: string, projectStatus?: "loading" | "stop" }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/project/${companyId}/company`, {
             method: 'GET',

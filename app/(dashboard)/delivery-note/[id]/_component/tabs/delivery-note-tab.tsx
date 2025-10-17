@@ -211,6 +211,7 @@ export default function DeliveryNoteTab() {
             const mappedItems = [...deliveryNote.items.map(item => ({
               id: item.id,
               name: item.name,
+              hasTax: item.hasTax,
               quantity: item.quantity,
               price: item.price,
               itemType: item.itemType as "billboard" | "product" | "service",
@@ -243,6 +244,7 @@ export default function DeliveryNoteTab() {
                 billboards: deliveryNote.items.filter(item => item.itemType === "billboard").map(billboard => ({
                   id: billboard.id,
                   name: billboard.name,
+                  hasTax: billboard.hasTax,
                   quantity: billboard.quantity,
                   price: new Decimal(billboard.price),
                   itemType: 'billboard',
@@ -258,6 +260,7 @@ export default function DeliveryNoteTab() {
                 productServices: deliveryNote.items.filter(item => item.itemType !== "billboard").map(productService => ({
                   id: productService.id,
                   name: productService.name,
+                  hasTax: productService.hasTax,
                   quantity: productService.quantity,
                   lastQuantity: productService.quantity,
                   price: new Decimal(productService.price),
@@ -345,6 +348,7 @@ export default function DeliveryNoteTab() {
           .map((item) => ({
             id: item.id,
             name: item.name,
+            hasTax: item.hasTax,
             quantity: item.quantity,
             price: new Decimal(item.price),
             status: item.status,
@@ -366,6 +370,7 @@ export default function DeliveryNoteTab() {
           .map((item) => ({
             id: item.id,
             name: item.name,
+            hasTax: item.hasTax,
             quantity: item.quantity,
             price: new Decimal(item.price),
             updatedPrice:

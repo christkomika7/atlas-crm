@@ -138,7 +138,6 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
             appliedRates: [],
             totalTax: new Decimal(0),
             taxPrice: new Decimal(0),
-            taxType: tax.taxType
         });
     }
 
@@ -173,16 +172,7 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
             const itemTaxAmount = basePriceHT.mul(taxRate).div(100);
 
             // Application de la quantité et hasApplicableToAll pour la taxe
-            let finalTaxAmount: Decimal;
-            if (tax.hasApplicableToAll) {
-                // Taxe appliquée sur chaque unité
-                finalTaxAmount = itemTaxAmount.mul(quantity);
-            } else {
-                // Taxe appliquée une seule fois peu importe la quantité
-                finalTaxAmount = itemTaxAmount;
-            }
-
-            console.log({ basePriceHT: basePriceHT.toNumber() })
+            let finalTaxAmount: Decimal = itemTaxAmount;
 
             // Mise à jour des résultats avec arrondissement
             const roundedTax = roundToOneDecimal(finalTaxAmount);
@@ -195,11 +185,6 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
 
         // Calcul du prix HT avec réduction (pour le total sans taxes)
         let itemBasePriceHT = new Decimal(basePrice);
-        const ttcTax = taxes.find(t => t.taxType === "TTC");
-        if (ttcTax) {
-            const { total: ttcTaxRate } = calculateTaxRates(ttcTax.taxValue, taxOperation);
-            itemBasePriceHT = calculateHTFromTTC(basePrice, ttcTaxRate);
-        }
 
         const discountedPriceHT = applyDiscount(
             itemBasePriceHT,

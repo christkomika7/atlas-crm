@@ -4,6 +4,7 @@ import { z } from "zod";
 export const itemSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, { message: "Le nom de l'article est obligatoire." }),
+    hasTax: z.boolean(),
     description: z.string().optional(),
     quantity: z
         .number({ error: "La quantité doit être au moins égale à 1." }),
@@ -37,6 +38,7 @@ export const itemSchema = z.object({
 
 export const itemPurchaseOrderSchema = z.object({
     id: z.string().optional(),
+    hasTax: z.boolean(),
     name: z.string().min(1, { message: "Le nom de l'article est obligatoire." }),
     description: z.string().optional(),
     quantity: z

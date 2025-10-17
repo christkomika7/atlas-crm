@@ -1,36 +1,26 @@
 import { z } from "zod";
 import { userEditSchema, userSchema } from "./user.schema";
-import { Decimal } from "decimal.js";
 
 export const taxSchema = z.object({
-    taxName: z.string().min(1, {
-        message: "Le nom de la taxe est obligatoire."
+    taxName: z.string({
+        error: "Le nom de la taxe est obligatoire."
     }),
-    taxValue: z
-        .array(z.string())
-        .min(1, {
-            message: "Au minimum une valeur de taxe doit être ajoutée.",
-        })
-        .refine(
-            (values) =>
-                values.every((val) => /^(\d+([.]\d+)?)%$/.test(val)),
-            {
-                message:
-                    "Chaque valeur de taxe doit être un nombre (entier ou décimal) suivi du symbole '%' (ex: 10% ou 0.9%).",
-            }
-        ),
-
-    taxType: z.enum(["HT", "TTC"]).default("TTC").optional(),
+    taxValue: z.string({ error: "La valeur de la taxe est obligatoire." }).refine(
+        (value) =>
+            /^(\d+([.]\d+)?)%$/.test(value),
+        {
+            message: "Chaque valeur de taxe doit être un nombre (entier ou décimal) suivi du symbole '%' (ex: 10% ou 0.9%)."
+        }
+    ),
     cumul: z.array(z.object({
         id: z
             .number()
             .int(),
-        name: z.string().min(1, {
-            message: "Le nom de la taxe cumulée est obligatoire."
+        name: z.string({
+            error: "Le nom de la taxe cumulée est obligatoire."
         }),
         check: z.boolean()
     })).optional(),
-    hasApplicableToAll: z.boolean()
 });
 
 export const companySchema = z.object({

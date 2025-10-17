@@ -1,4 +1,5 @@
 import { checkAccess } from "@/lib/access";
+import { $Enums } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
 import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
@@ -6,6 +7,9 @@ import { type NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
     await checkAccess(["TRANSACTION"], "CREATE");
     const id = getIdFromUrl(req.url, "last") as string;
+
+    const type = req.nextUrl.searchParams.get("type")?.trim() ?? "";
+
 
     if (!id) {
         return NextResponse.json({
@@ -16,12 +20,14 @@ export async function GET(req: NextRequest) {
 
     const categories = await prisma.transactionCategory.findMany({
         where: {
+            type: type === "receipt" ? $Enums.TransactionType.RECEIPT : $Enums.TransactionType.DISBURSEMENT,
             companyId: id
         },
         include: {
             natures: true
         }
     });
+
 
     return NextResponse.json({
         state: "success",

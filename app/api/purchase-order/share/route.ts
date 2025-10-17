@@ -4,9 +4,9 @@ import { AttachementProps, sendMail } from "@/lib/email";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { NextResponse, type NextRequest } from "next/server";
-import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
 import { generateAmaId } from "@/lib/utils";
 import { recordEmailSchema, RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
+import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
 
 export async function POST(req: NextRequest) {
     await checkAccess(["PURCHASE_ORDER"], "MODIFY");
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 
 
     try {
-        const filename = `bon-de-commande-${format(new Date(), "yyyy-MM-dd")}.pdf`;
+        const filename = `Bon de commande ${company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrder.purchaseOrderNumber, false)}.pdf`;
         const blobBuffer = await blob.arrayBuffer()
         const buffer = Buffer.from(blobBuffer);
 

@@ -119,6 +119,7 @@ export async function PUT(req: NextRequest) {
     item: {
       productServices: productServicesParse?.map((b: ItemType) => ({
         id: b.id,
+        hasTax: b.hasTax,
         name: b.name,
         description: b.description,
         quantity: b.quantity,
@@ -135,6 +136,7 @@ export async function PUT(req: NextRequest) {
       billboards: billboardsParse?.map((b: ItemType) => ({
         id: b.id,
         name: b.name,
+        hasTax: b.hasTax,
         description: b.description,
         quantity: b.quantity,
         locationStart: toUtcDateOnly(b.locationStart),
@@ -279,6 +281,7 @@ export async function PUT(req: NextRequest) {
       },
       state: $Enums.ItemState.IGNORE,
       name: billboard.name,
+      hasTax: billboard.hasTax,
       description: billboard.description,
       quantity: billboard.quantity,
       price: billboard.price,
@@ -303,6 +306,7 @@ export async function PUT(req: NextRequest) {
       },
       state: $Enums.ItemState.IGNORE,
       name: productService.name,
+      hasTax: productService.hasTax,
       description: productService.description,
       quantity: productService.quantity,
       price: productService.price,

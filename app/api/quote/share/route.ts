@@ -8,6 +8,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { generateAmaId } from "@/lib/utils";
 import { paymentTerms } from "@/lib/data";
 import { formatDateToDashModel } from "@/lib/date";
+import { QUOTE_PREFIX } from "@/config/constant";
 
 export async function POST(req: NextRequest) {
     await checkAccess(["QUOTES"], "MODIFY");
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
 
 
     try {
-        const filename = `facture-${format(new Date(), "yyyy-MM-dd")}.pdf`;
+        const filename = `Devis ${company.documentModel?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(quote.quoteNumber, false)}.pdf`;
         const quoteBuffer = await blob.arrayBuffer()
         const buffer = Buffer.from(quoteBuffer);
 
@@ -70,9 +71,6 @@ export async function POST(req: NextRequest) {
 
         const paymentLimit = paymentTerms.find(p => p.value === quote.paymentLimit)?.data ?? 0;
         const validityDate = addDays(new Date(quote.createdAt), paymentLimit);
-
-
-
 
         for (const uploadedFile of data.file ?? []) {
             const fileBuffer = await uploadedFile.arrayBuffer();

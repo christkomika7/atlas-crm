@@ -6,6 +6,7 @@ export type ProductServiceType = {
     id: string;
     type: $Enums.ProductServiceType,
     reference: string;
+    hasTax: boolean;
     category: string;
     designation: string;
     description?: string;

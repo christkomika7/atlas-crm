@@ -5,7 +5,6 @@ import Spinner from '@/components/ui/spinner';
 import useQueryAction from '@/hook/useQueryAction';
 import { convert } from '@/lib/data';
 import { RequestResponse } from '@/types/api.types';
-import { useRouter } from 'next/navigation';
 import React, { useState } from 'react'
 import { toast } from 'sonner';
 
@@ -16,7 +15,6 @@ type DuplicateFormProps = {
 }
 
 export default function DuplicateForm({ id, closeModal, refreshDeliveryNote }: DuplicateFormProps) {
-    const router = useRouter();
     const [filter, setFilter] = useState("");
 
 

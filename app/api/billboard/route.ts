@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         "companyId", "reference", "type", "name", "dimension", "city", "area", "placement",
         "orientation", "information", "address", "gmaps", "zone",
         "rentalPrice", "installationCost", "maintenance", "structure", "decorativeElement",
-        "foundations", "technicalVisibility", "note",
+        "foundations", "technicalVisibility", "note", "hasTax"
     ];
 
     const lessorFields = [
@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
     const dataToValidate = {
         billboard: {
             ...billboardData,
+            hasTax: JSON.parse(billboardData.hasTax),
             rentalPrice: new Decimal(billboardData.rentalPrice),
             installationCost: new Decimal(billboardData.installationCost),
             maintenance: new Decimal(billboardData.maintenance),
@@ -152,6 +153,7 @@ export async function POST(req: NextRequest) {
             const createdBillboard = await prisma.billboard.create({
                 data: {
                     reference: data.billboard.reference,
+                    hasTax: data.billboard.hasTax,
                     pathBrochure: folderBrochure,
                     pathContract: folderContract,
                     pathFile: folderOther,

@@ -12,6 +12,7 @@ export type ItemType = {
     id: string;
     name: string;
     description?: string;
+    hasTax: boolean;
     quantity: number;
     maxQuantity?: number;
     locationStart: Date;
@@ -74,8 +75,6 @@ const useItemStore = createSelectors(
         addLocationBillboard(item) {
             set((state) => {
                 const exists = state.locationBillboardDate.some((i) => i.id === item.id);
-                console.log({ old: state.locationBillboardDate, exists });
-                console.log({ data: [...state.locationBillboardDate, item] })
                 if (exists) return state;
                 return { locationBillboardDate: [...state.locationBillboardDate, item] };
             });

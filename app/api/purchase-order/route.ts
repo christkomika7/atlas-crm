@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
             productServices: productServicesParse?.map((b: ItemPurchaseOrderSchemaType) => ({
                 id: "",
                 name: b.name,
+                hasTax: b.hasTax,
                 quantity: b.quantity,
                 description: b.description,
                 selectedQuantity: b.selectedQuantity,
@@ -103,6 +104,7 @@ export async function POST(req: NextRequest) {
                     id: data.companyId
                 }
             },
+            hasTax: productService.hasTax,
             state: $Enums.ItemState.PURCHASE,
             name: productService.name,
             description: productService.description,

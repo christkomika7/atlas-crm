@@ -31,7 +31,23 @@ export async function GET(req: NextRequest) {
         const baseWhere: any = { companyId: id };
 
         if (search) {
-            baseWhere.OR = [{ name: { contains: search, mode: "insensitive" } }];
+            const searchTerms = search.split(/\s+/).filter(Boolean);
+            baseWhere.OR = [
+                {
+                    name: {
+                        contains: search,
+                        mode: "insensitive",
+                    },
+                },
+                {
+                    OR: searchTerms.map((term) => ({
+                        information: {
+                            contains: term,
+                            mode: "insensitive",
+                        },
+                    })),
+                },
+            ];
         }
 
         const billboards = await prisma.billboard.findMany({
@@ -42,7 +58,7 @@ export async function GET(req: NextRequest) {
                 items: { where: { state: "APPROVED" } },
             },
             take: limit,
-            orderBy: { createdAt: "asc" },
+            orderBy: { createdAt: "desc" },
         });
 
         return NextResponse.json(
@@ -261,7 +277,7 @@ export async function PUT(req: NextRequest) {
         "id", "companyId", "reference", "type", "name", "dimension", "placement", "city", "area",
         "orientation", "information", "address", "gmaps", "zone",
         "rentalPrice", "installationCost", "maintenance", "structure", "decorativeElement",
-        "foundations", "technicalVisibility", "note", "lastImageFiles", "lastBrochureFiles",
+        "foundations", "technicalVisibility", "note", "lastImageFiles", "lastBrochureFiles", "hasTax"
     ];
 
     const lessorFields = [
@@ -297,6 +313,7 @@ export async function PUT(req: NextRequest) {
     const dataToValidate = {
         billboard: {
             ...(billboardData as EditBillboardSchemaType),
+            hasTax: JSON.parse(billboardData.hasTax),
             lastImageFiles: billboardData.lastImageFiles ? billboardData.lastImageFiles.split(";") : [],
             lastBrochureFiles: billboardData.lastBrochureFiles ? billboardData.lastBrochureFiles.split(";") : [],
             rentalPrice: new Decimal(billboardData.rentalPrice),
@@ -354,6 +371,7 @@ export async function PUT(req: NextRequest) {
                 pathFile: folderOther,
                 pathPhoto: folderPhoto,
                 reference: data.billboard.reference,
+                hasTax: data.billboard.hasTax,
                 type: {
                     connect: {
                         id: data.billboard.type

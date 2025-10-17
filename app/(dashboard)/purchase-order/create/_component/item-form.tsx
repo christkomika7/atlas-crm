@@ -2,7 +2,6 @@
 
 import { useDebounce } from "use-debounce";
 import { useEffect, useState } from "react";
-import { Tabs } from "@/components/ui/tabs";
 import ProductServiceTab from "./tabs/product-service-tab";
 import TextInput from "@/components/ui/text-input";
 import { RequestResponse } from "@/types/api.types";

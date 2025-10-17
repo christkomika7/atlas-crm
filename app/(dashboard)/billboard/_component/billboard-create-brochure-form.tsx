@@ -1,4 +1,5 @@
-// BillboardCreateContractForm.tsx
+'use client';
+
 import { all as allAreas } from "@/action/area.action";
 import { all as allBillboardType } from "@/action/billboard-type.action";
 import { filter } from "@/action/billboard.action";
@@ -25,20 +26,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { pdf } from "@react-pdf/renderer";
-import ContractPDF from "./board-rent-contract";
+import ContractPDF from "./brochure-pdf";
 import usePdfStore from "@/stores/pdf.store";
 import { MultipleSelect, Option } from "@/components/ui/multi-select";
 import { BillboardTypeType } from "@/types/billboard-type.types";
+import BrochurePDF from "./brochure-pdf";
 
-type BillboardCreateContractFormProps = {
+type BillboardCreateBrochureFormProps = {
   close: () => void;
-  onSendEmail?: () => void; // Nouvelle prop pour ouvrir le modal email
+  onSendEmail?: () => void;
 };
 
-export default function BillboardCreateContractForm({
+export default function BillboardCreateBrochureForm({
   close,
   onSendEmail,
-}: BillboardCreateContractFormProps) {
+}: BillboardCreateBrochureFormProps) {
   const companyId = useDataStore.use.currentCompany();
   const [action, setAction] = useState<"download" | "send">();
   const setPdf = usePdfStore.use.setPdf();
@@ -99,68 +101,19 @@ export default function BillboardCreateContractForm({
     }
   }, [cityId]);
 
-  async function downloadPdf(data: BillboardType[]) {
-    const doc = (
-      <ContractPDF
-        data={{
-          companyName: "Total Energie (TE)",
-          type: "SA",
-          capital: "5.000.000 Francs CFA",
-          rccm: "12345678902",
-          taxIdentificationNumber: "09876543212",
-          address: "39 rue de la place, à Libreville, Gabon.",
-          AdvertiserName: "Paul Dupin",
-          AdvertiserPost: "Directeur Général",
-          reference: "Contrat AG-LOC-001",
-        }}
-      />
-    );
-
-    const asBlob = await pdf(doc).toBlob();
-    const url = URL.createObjectURL(asBlob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "contrat.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
-  }
-
-  async function getPdfBase64(data: BillboardType[]): Promise<string> {
-    const doc = (
-      <ContractPDF
-        data={{
-          companyName: "Total Energie (TE)",
-          type: "SA",
-          capital: "5.000.000 Francs CFA",
-          rccm: "12345678902",
-          taxIdentificationNumber: "09876543212",
-          address: "39 rue de la place, à Libreville, Gabon.",
-          AdvertiserName: "Paul Dupin",
-          AdvertiserPost: "Directeur Général",
-          reference: "Contrat AG-LOC-001",
-        }}
-      />
-    );
-
-    // Génère un Blob PDF
-    const blob = await pdf(doc).toBlob();
-
-    // Convertit le Blob en ArrayBuffer puis en base64
-    const arrayBuffer = await blob.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-
-    // Convertit en base64
-    const base64String = btoa(
-      uint8Array.reduce((data, byte) => data + String.fromCharCode(byte), "")
-    );
-
-    // Format base64 standard PDF
-    return `data:application/pdf;base64,${base64String}`;
-  }
+  // <BrochurePDF
+  //   data={{
+  //     companyName: "Total Energie (TE)",
+  //     type: "SA",
+  //     capital: "5.000.000 Francs CFA",
+  //     rccm: "12345678902",
+  //     taxIdentificationNumber: "09876543212",
+  //     address: "39 rue de la place, à Libreville, Gabon.",
+  //     AdvertiserName: "Paul Dupin",
+  //     AdvertiserPost: "Directeur Général",
+  //     reference: "Contrat AG-LOC-001",
+  //   }}
+  // />
 
   async function submit(contractData: ContractSchemaType) {
     const { success, data } = contractSchema.safeParse(contractData);
@@ -169,14 +122,16 @@ export default function BillboardCreateContractForm({
     mutateBilboardFilter(data, {
       async onSuccess(data) {
         if (data.data) {
+          const billboards = data.data;
+          console.log({ billboards });
           switch (action) {
             case "download":
-              await downloadPdf(data.data);
+              // await downloadPdf(data.data);
               close(); // Fermer le modal après téléchargement
               break;
             case "send":
-              const document = await getPdfBase64(data.data);
-              setPdf(document);
+              // const document = await getPdfBase64(data.data);
+              // setPdf(document);
               close(); // Fermer le modal actuel
               onSendEmail?.(); // Ouvrir le modal d'envoi email
               break;

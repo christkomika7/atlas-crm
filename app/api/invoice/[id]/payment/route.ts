@@ -1,5 +1,6 @@
 import { checkAccess } from "@/lib/access";
 import { toUtcDateOnly } from "@/lib/date";
+import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { formatNumber, getIdFromUrl } from "@/lib/utils";
@@ -113,6 +114,7 @@ export async function POST(req: NextRequest) {
                             id: invoice.companyId
                         }
                     },
+                    type: $Enums.TransactionType.RECEIPT,
                     name: "Règlement client",
                 },
             });

@@ -46,7 +46,6 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
 
   const [categoryId, setCategoryId] = useState("");
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
-  const [documentType, setDocumentType] = useState<"invoice" | "quote">();
 
 
   const form = useForm<ReceiptSchemaType>({
@@ -58,7 +57,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
   const {
     mutate: mutateGetCategories,
     isPending: isGettingCategories,
-  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionCategoryType[]>>(
+  } = useQueryAction<{ companyId: string, type: "receipt" | "dibursement" }, RequestResponse<TransactionCategoryType[]>>(
     getCategories,
     () => { },
     "categories"
@@ -88,7 +87,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
   const {
     mutate: mutateGetDocuments,
     isPending: isGettingDocuments,
-  } = useQueryAction<{ companyId: string }, RequestResponse<TransactionDocument[]>>(
+  } = useQueryAction<{ companyId: string, type: "receipt" | "dibursement" }, RequestResponse<TransactionDocument[]>>(
     getDocuments,
     () => { },
     "documents"
@@ -103,7 +102,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
 
   useEffect(() => {
     if (companyId) {
-      mutateGetCategories({ companyId }, {
+      mutateGetCategories({ companyId, type: "receipt" }, {
         onSuccess(data) {
           if (data.data) {
             setCategories(data.data)
@@ -120,7 +119,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
       })
 
 
-      mutateGetDocuments({ companyId }, {
+      mutateGetDocuments({ companyId, type: "receipt" }, {
         onSuccess(data) {
           if (data.data) {
             setDocuments(data.data)
@@ -147,25 +146,6 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
       })
     }
   }, [categoryId])
-
-  useEffect(() => {
-    if (documentType) {
-      form.setValue('documentRefType', documentType);
-    }
-  }, [documentType])
-
-
-  function getDocumentType(id: string) {
-    const type = documents.find(document => document.id === id)?.type;
-
-    switch (type) {
-      case "Facture":
-        return "invoice";
-      case "Devis":
-        return "quote"
-    }
-  }
-
 
   async function submit(receiptData: ReceiptSchemaType) {
     const { success, data } = receiptSchema.safeParse(receiptData);
@@ -225,7 +205,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                       placeholder="Catégorie"
                       searchMessage="Rechercher une catégorie"
                       noResultsMessage="Aucune catégorie trouvée."
-                      addElement={<CategoryModal />}
+                      addElement={<CategoryModal type="receipt" />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -358,6 +338,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      required={false}
                       type="text"
                       design="float"
                       label="Numéro de chèque"
@@ -415,7 +396,6 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                       }))}
                       value={field.value}
                       setValue={e => {
-                        setDocumentType(getDocumentType(e as string));
                         field.onChange(e)
                       }}
                       placeholder="Référence du document"

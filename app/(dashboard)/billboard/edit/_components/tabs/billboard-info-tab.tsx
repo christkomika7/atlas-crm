@@ -40,6 +40,7 @@ import useBillboardTypeStore from "@/stores/billboard-type.store";
 import { BillboardTypeType } from "@/types/billboard-type.types";
 import BillboardTypeModal from "../../../_component/billboard-type-modal";
 import { Decimal } from "decimal.js";
+import { Switch } from "@/components/ui/switch";
 
 type BillboardInfoTabProps = {
   form: UseFormReturn<EditBillboardSchemaFormType>;
@@ -197,6 +198,23 @@ export default function BillboardInfoTab({
                     />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="billboard.hasTax"
+              render={({ field }) => (
+                <FormItem className="flex h-11 flex-row items-center bg-gray justify-between rounded-lg  p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>Article taxable</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />
