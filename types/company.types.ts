@@ -1,6 +1,4 @@
-import { JsonValue } from "@prisma/client/runtime/library";
 import { ModelDocumentType } from "./document.types";
-import { Decimal } from "decimal.js";
 
 export type TaxType = {
     name: string;
@@ -16,11 +14,8 @@ export type CumulType = {
 
 export type VatRateType = {
     taxName: string;
-    taxValue: string[];
-    hasApplicableToAll: boolean;
-    taxType?: "HT" | "TTC" | undefined;
+    taxValue: string;
     cumul?: CumulType[] | undefined;
-
 }
 
 

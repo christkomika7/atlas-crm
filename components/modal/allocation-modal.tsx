@@ -21,7 +21,12 @@ import { PlusCircle, XIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export default function AllocationModal() {
+
+type AllocationModalProps = {
+    natureId: string;
+}
+
+export default function AllocationModal({ natureId }: AllocationModalProps) {
     const companyId = useDataStore.use.currentCompany();
 
     const allocations = useTransactionStore.use.allocations();
@@ -74,8 +79,10 @@ export default function AllocationModal() {
 
         if (!companyId) return toast.error("Aucune entreprise trouvée.");
         if (!name) return toast.error("Aucune allocation insérée.");
+        if (!natureId) return toast.error("Aucune nature est trouvée.");
+
         muatateCreateAllocation(
-            { name, companyId },
+            { name, companyId, natureId },
             {
                 onSuccess(data) {
                     if (data.data) {
@@ -109,7 +116,7 @@ export default function AllocationModal() {
                         <ul>
                             {allocations.length === 0 ? (
                                 <li className="bg-neutral-50 p-3 rounded-lg text-sm text-center">
-                                    Aucune catégorie trouvé.
+                                    Aucune allocation trouvée.
                                 </li>
                             ) : (
                                 allocations.map((allocation) => (

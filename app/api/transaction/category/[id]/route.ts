@@ -17,6 +17,22 @@ export async function GET(req: NextRequest) {
             message: "identifiant invalide.",
         }, { status: 404 });
     }
+    if (!type) {
+        const categories = await prisma.transactionCategory.findMany({
+            where: {
+                companyId: id
+            },
+            include: {
+                natures: true
+            }
+        });
+
+        return NextResponse.json({
+            state: "success",
+            data: categories,
+        }, { status: 200 })
+
+    }
 
     const categories = await prisma.transactionCategory.findMany({
         where: {

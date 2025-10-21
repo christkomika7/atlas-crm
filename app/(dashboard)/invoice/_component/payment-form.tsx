@@ -38,6 +38,7 @@ type PaymentFormProps = {
 export default function PaymentForm({ invoiceId, closeModal, refresh }: PaymentFormProps) {
   const companyId = useDataStore.use.currentCompany();
 
+  const [paymentMode, setPaymentMode] = useState<"check" | "cash" | "bank-transfer">();
   const [isPaid, setIsPaid] = useState(false);
   const [invoice, setInvoice] = useState<InvoiceType>();
 
@@ -61,7 +62,7 @@ export default function PaymentForm({ invoiceId, closeModal, refresh }: PaymentF
   const {
     mutate: mutateGetSources,
     isPending: isGettingSources,
-  } = useQueryAction<{ companyId: string }, RequestResponse<SourceType[]>>(
+  } = useQueryAction<{ companyId: string, type?: "cash" | "check" | "bank-transfer" }, RequestResponse<SourceType[]>>(
     getSources,
     () => { },
     "sources"
@@ -74,7 +75,7 @@ export default function PaymentForm({ invoiceId, closeModal, refresh }: PaymentF
 
   useEffect(() => {
     if (companyId) {
-      mutateGetSources({ companyId }, {
+      mutateGetSources({ companyId, type: paymentMode }, {
         onSuccess(data) {
           if (data.data) {
             setSources(data.data)
@@ -83,7 +84,7 @@ export default function PaymentForm({ invoiceId, closeModal, refresh }: PaymentF
       })
 
     }
-  }, [companyId]);
+  }, [companyId, paymentMode]);
 
   useEffect(() => {
     if (invoiceId) {
@@ -190,7 +191,10 @@ export default function PaymentForm({ invoiceId, closeModal, refresh }: PaymentF
                     <Combobox
                       datas={acceptPayment}
                       value={field.value}
-                      setValue={field.onChange}
+                      setValue={e => {
+                        setPaymentMode(e as "check" | "cash" | "bank-transfer")
+                        field.onChange(e)
+                      }}
                       placeholder="Mode de paiement"
                       searchMessage="Rechercher un mode de paiement"
                       noResultsMessage="Aucun mode de paiement trouvé."
@@ -221,7 +225,7 @@ export default function PaymentForm({ invoiceId, closeModal, refresh }: PaymentF
                       placeholder="Source"
                       searchMessage="Rechercher une source"
                       noResultsMessage="Aucune source trouvée."
-                      addElement={<SourceModal />}
+                      addElement={<SourceModal sourceType={paymentMode} />}
                     />
                   </FormControl>
                   <FormMessage />

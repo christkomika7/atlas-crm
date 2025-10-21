@@ -18,6 +18,8 @@ export type TransactionType = {
   natureId: string;
   nature: TransactionNatureType;
 
+  documentReference: string;
+
   amount: string;
   amountType: $Enums.AmountType;
 
@@ -64,10 +66,12 @@ export type TransactionCategoryType = {
 export type TransactionNatureType = {
   id: string;
   name: string;
+  allocations: AllocationType[]
 };
 
 export type SourceType = {
   id: string;
+  sourceType: $Enums.SourceType;
   name: string;
 };
 

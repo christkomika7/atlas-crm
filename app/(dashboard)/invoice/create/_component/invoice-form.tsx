@@ -46,11 +46,13 @@ import { getAllProductServices } from "@/action/product-service.action";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import Decimal from "decimal.js";
+import useAmountTypeStore from "@/stores/amount-type.store";
 
 export default function InvoiceForm() {
   const router = useRouter();
 
-  const [amountType, setAmountType] = useState<"HT" | "TTC">("TTC");
+  const amountType = useAmountTypeStore.use.amountType();
+  const setAmountType = useAmountTypeStore.use.setAmountType();
   const [company, setCompany] = useState<CompanyType<string>>();
   const [paymentLimit, setPaymentLimit] = useState("");
 
@@ -261,7 +263,8 @@ export default function InvoiceForm() {
             itemType: item.itemType,
             updatedPrice: calculate({
               items: [parseItem(item)],
-              taxes: company?.vatRates ?? []
+              taxes: company?.vatRates ?? [],
+              amountType,
             }).totalWithoutTaxes
             ,
             locationStart: item.locationStart ?? new Date(),

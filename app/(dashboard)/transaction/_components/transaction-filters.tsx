@@ -34,21 +34,21 @@ export default function TransactionFilters() {
 
   const { mutate: mutateGetCategories, isPending: isGettingCategories } =
     useQueryAction<
-      { companyId: string },
+      { companyId: string, type?: "receipt" | "dibursement"; },
       RequestResponse<TransactionCategoryType[]>
-    >(getCategories, () => {}, "categories");
+    >(getCategories, () => { }, "categories");
 
   const { mutate: mutateGetSources, isPending: isGettingSources } =
     useQueryAction<{ companyId: string }, RequestResponse<SourceType[]>>(
       getSources,
-      () => {},
+      () => { },
       "sources",
     );
 
   const { mutate: mutateGetCollborators, isPending: isGettingCollaborators } =
     useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
       getCollaborators,
-      () => {},
+      () => { },
       "collaborators",
     );
 

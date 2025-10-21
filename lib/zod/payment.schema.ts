@@ -14,6 +14,8 @@ export const invoicePaymentSchema = z.object({
 export const purchaseOrderPaymentSchema = z.object({
   recordId: z.string({ error: "Aucun enregistrement trouvé." }),
   isPaid: z.boolean(),
+  category: z.string({ error: "La catégorie est requise." }),
+  nature: z.string({ error: "La nature est requise." }),
   source: z.string({ error: "La source est requise." }),
   allocation: z.string({ error: "L'allocation est requise." }),
   checkNumber: z.string().optional(),

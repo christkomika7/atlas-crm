@@ -1,16 +1,16 @@
 import { checkAccess } from "@/lib/access";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { billboardTypeSchema, BillboardTypeSchemaType } from "@/lib/zod/billboard-type.schema";
+import { baseSchema, BaseSchemaType } from "@/lib/zod/base-type.schema";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     await checkAccess(["BILLBOARDS"], "CREATE");
     const formData = await req.json();
 
-    const data = parseData<BillboardTypeSchemaType>(billboardTypeSchema, {
+    const data = parseData<BaseSchemaType>(baseSchema, {
         ...formData,
-    }) as BillboardTypeSchemaType;
+    }) as BaseSchemaType;
 
 
     const billboardTypeExist = await prisma.billboardType.findUnique({

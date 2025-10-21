@@ -58,7 +58,8 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
   const [collaborators, setCollaborators] = useState<UserType[]>([]);
   const [projects, setProjects] = useState<ProjectType[]>([]);
-
+  const [paymentMode, setPaymentMode] = useState<"cash" | "check" | "bank-transfer">();
+  const [natureId, setNatureId] = useState("");
 
   const form = useForm<DibursementSchemaType>({
     resolver: zodResolver(dibursementSchema),
@@ -293,7 +294,10 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                         value: nature.id
                       }))}
                       value={field.value}
-                      setValue={field.onChange}
+                      setValue={e => {
+                        setNatureId(e)
+                        field.onChange(e)
+                      }}
                       placeholder="Nature"
                       searchMessage="Rechercher une nature"
                       noResultsMessage="Aucune nature trouvée."
@@ -412,7 +416,10 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                     <Combobox
                       datas={acceptPayment}
                       value={field.value}
-                      setValue={field.onChange}
+                      setValue={e => {
+                        setPaymentMode(e as "check" | "cash" | "bank-transfer");
+                        field.onChange(e);
+                      }}
                       placeholder="Mode de paiement"
                       searchMessage="Rechercher un mode de paiement"
                       noResultsMessage="Aucun mode de paiement trouvé."
@@ -492,7 +499,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                       placeholder="Allocation"
                       searchMessage="Rechercher une allocation"
                       noResultsMessage="Aucune allocation trouvée."
-                      addElement={<AllocationModal />}
+                      addElement={<AllocationModal natureId={natureId} />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -517,7 +524,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                       placeholder="Source"
                       searchMessage="Rechercher une source"
                       noResultsMessage="Aucune source trouvée."
-                      addElement={<SourceModal />}
+                      addElement={<SourceModal sourceType={paymentMode} />}
                     />
                   </FormControl>
                   <FormMessage />

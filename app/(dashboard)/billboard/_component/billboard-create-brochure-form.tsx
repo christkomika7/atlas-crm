@@ -29,8 +29,7 @@ import { pdf } from "@react-pdf/renderer";
 import ContractPDF from "./brochure-pdf";
 import usePdfStore from "@/stores/pdf.store";
 import { MultipleSelect, Option } from "@/components/ui/multi-select";
-import { BillboardTypeType } from "@/types/billboard-type.types";
-import BrochurePDF from "./brochure-pdf";
+import { BaseType } from "@/types/base.types";
 
 type BillboardCreateBrochureFormProps = {
   close: () => void;
@@ -68,7 +67,7 @@ export default function BillboardCreateBrochureForm({
     data: billboardsType,
   } = useQueryAction<
     { companyId: string },
-    RequestResponse<BillboardTypeType[]>
+    RequestResponse<BaseType[]>
   >(allBillboardType, () => { }, "billboardsType");
 
   const {

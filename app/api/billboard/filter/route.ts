@@ -30,7 +30,6 @@ export async function POST(req: NextRequest) {
     console.log({
         data: billboards.map(billboard => ({
             ...billboard,
-            contractDuration: [billboard?.contractStart, billboard?.contractEnd],
         }))
     })
 
@@ -39,7 +38,6 @@ export async function POST(req: NextRequest) {
             state: "success",
             data: billboards.map(billboard => ({
                 ...billboard,
-                contractDuration: [billboard?.contractStart, billboard?.contractEnd],
             })),
         },
         { status: 200 }

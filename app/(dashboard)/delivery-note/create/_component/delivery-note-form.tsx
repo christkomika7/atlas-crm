@@ -258,7 +258,8 @@ export default function DeliveryNoteForm() {
             itemType: item.itemType,
             updatedPrice: calculate({
               items: [parseItem(item)],
-              taxes: company?.vatRates ?? []
+              taxes: company?.vatRates ?? [],
+              amountType: amountType,
             }).totalWithoutTaxes,
             locationStart: item.locationStart ?? new Date(),
             locationEnd: item.locationEnd ?? new Date(),
@@ -278,7 +279,8 @@ export default function DeliveryNoteForm() {
             updatedPrice:
               calculate({
                 items: [parseItem(item)],
-                taxes: company?.vatRates ?? []
+                taxes: company?.vatRates ?? [],
+                amountType: amountType,
               }).totalWithoutTaxes
             ,
             locationStart: item.locationStart ?? new Date(),
@@ -303,12 +305,14 @@ export default function DeliveryNoteForm() {
     const HTPrice = calculate({
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
+      amountType: amountType,
       discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
+      amountType: amountType,
       discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
     }).totalWithTaxes
 

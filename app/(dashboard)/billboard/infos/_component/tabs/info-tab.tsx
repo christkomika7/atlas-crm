@@ -102,7 +102,7 @@ export default function InfoTab() {
                 category: billboardData.type.name,
                 emplacement: billboardData.city.name,
                 neighbourhood: billboardData.area.name,
-                address: billboardData.placement
+                address: billboardData.address
               });
             }
           },

@@ -528,7 +528,8 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                       {transaction.checkNumber}
                     </TableCell>
                     <TableCell className="text-center">
-                      {getDocumentRef(transaction)}
+                      {transaction.documentReference}
+                      {/* {getDocumentRef(transaction)} */}
                     </TableCell>
                     <TableCell className="text-center">
                       {transaction.allocation?.name || "-"}

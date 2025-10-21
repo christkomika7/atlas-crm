@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import { createSelectors } from "@/lib/store";
-import { BillboardTypeType } from "@/types/billboard-type.types";
+import { BaseType } from "@/types/base.types";
 
 type BillboardTypeStore = {
-    billboardsType: BillboardTypeType[];
-    setBillboardType: (billboardsType: BillboardTypeType[]) => void;
-    addBillboardType: (billboardType: BillboardTypeType) => void;
+    billboardsType: BaseType[];
+    setBillboardType: (billboardsType: BaseType[]) => void;
+    addBillboardType: (billboardType: BaseType) => void;
     removeBillboardType: (id: string) => void;
 };
 

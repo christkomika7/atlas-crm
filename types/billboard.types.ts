@@ -1,73 +1,102 @@
 import { AreaType } from "./area.types";
 import { CompanyType } from "./company.types";
 import { CityType } from "./city.types";
-import { BillboardTypeType } from "./billboard-type.types";
 import { ClientType } from "./client.types";
 import { ItemType } from "./item.type";
 import { SupplierType } from "./supplier.types";
 import Decimal from "decimal.js";
+import { BaseType } from "./base.types";
+
 
 export type BillboardType = {
     id: string;
+
     reference: string;
     hasTax: boolean;
-    pathBrochure: string;
-    pathContract: string;
-    pathFile: string;
-    pathPhoto: string;
     typeId: string;
-    type: BillboardTypeType;
+    type: BaseType;
     name: string;
-    locationDuration: Date[];
-    dimension: string;
-    city: CityType
-    area: AreaType;
-    placement: string;
-    cityId: string;
-    areaId: string;
-    revenueGenerate: Decimal;
-    orientation: string;
-    information?: string;
-    address: string;
-    gmaps: string;
+    locality: string;
     zone: string;
+    areaId: string;
+    area: AreaType;
+    visualMarker: string;
+    displayBoardId: string,
+    displayBoard: BaseType;
+
+    address: string;
+    cityId: string;
+    city: CityType
+    orientation: string;
+    gmaps: string;
+
+    pathPhoto: string;
+    pathBrochure: string;
+    photos: string[]
+    brochures: string[]
+
     rentalPrice: Decimal;
     installationCost: Decimal;
     maintenance: Decimal;
-    imageFiles: string[];
-    brochureFiles: string[];
-    structure: string;
+    revenueGenerate: Decimal;
+
+
+    width: number;
+    height: number;
+    lighting: string;
+    structureTypeId: string;
+    structureType: BaseType;
+    panelCondition: string;
     decorativeElement: string;
     foundations: string;
-    technicalVisibility: string;
+    electricity: string;
+    framework: string;
     note: string;
-    lessorType: string;
+
+
     lessorSpaceType: string;
     lessorSupplierId?: string;
     lessorSupplier?: SupplierType;
+    lessorTypeId: string;
+    lessorType: BaseType;
+
+
     lessorName?: string;
-    lessorEmail?: string;
+    lessorAddress?: string;
+    lessorCity?: string;
     lessorPhone?: string;
-    lessorJob?: string;
+    lessorEmail?: string;
     capital?: Decimal;
     rccm?: string;
     taxIdentificationNumber?: string;
-    lessorAddress?: string;
-    representativeName?: string;
-    representativeContract?: string;
-    leasedSpace?: string;
-    contractDuration: Date[];
-    paymentMethod?: string;
+    bankName?: string;
+    rib?: string;
+    iban?: string;
+    bicSwift?: string;
+
+    representativeFirstName?: string;
+    representativeLastName?: string;
+    representativeJob?: string;
+    representativePhone?: string;
+    representativeEmail?: string;
+
+
+    rentalStartDate?: Date;
+    rentalPeriod?: string;
+    paymentMode?: string;
+    paymentFrequency?: string;
+    electricitySupply?: string;
     specificCondition?: string;
-    signedLeaseContract: string[];
-    files: string[];
+
     companyId: string;
     company: CompanyType<string>;
     clientId: string;
     client: ClientType;
+
+    items: ItemType[]
+
     createdAt: Date;
     updatedAt: Date;
-    items: ItemType[]
 };
 
 export type BillboardItem = {

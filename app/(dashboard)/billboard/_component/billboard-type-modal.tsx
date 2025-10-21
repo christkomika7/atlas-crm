@@ -12,11 +12,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Spinner from "@/components/ui/spinner";
 import TextInput from "@/components/ui/text-input";
 import useQueryAction from "@/hook/useQueryAction";
-import { BillboardTypeSchemaType } from "@/lib/zod/billboard-type.schema";
+import { BaseSchemaType } from "@/lib/zod/base-type.schema";
 import useBillboardTypeStore from "@/stores/billboard-type.store";
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
-import { BillboardTypeType } from "@/types/billboard-type.types";
+import { BaseType } from "@/types/base.types";
 import { PlusCircle, XIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -31,16 +31,16 @@ export default function BillboardTypeModal() {
   const [currentId, setCurrentId] = useState("");
 
   const { mutate, isPending } = useQueryAction<
-    BillboardTypeSchemaType,
-    RequestResponse<BillboardTypeType>
-  >(create, () => {}, "billboardsType");
+    BaseSchemaType,
+    RequestResponse<BaseType>
+  >(create, () => { }, "billboardsType");
 
   const {
     mutate: mutateRemoveBillboardType,
     isPending: isPendingRetrieveBillboardType,
-  } = useQueryAction<{ id: string }, RequestResponse<BillboardTypeType>>(
+  } = useQueryAction<{ id: string }, RequestResponse<BaseType>>(
     remove,
-    () => {},
+    () => { },
     "billboardsType"
   );
 
@@ -71,7 +71,7 @@ export default function BillboardTypeModal() {
     e.preventDefault();
 
     if (!companyId) return toast.error("Aucune entreprise trouvée.");
-    if (!name) return toast.error("Aucun emplacement inséré.");
+    if (!name) return toast.error("Aucun element inséré.");
     mutate(
       { name, companyId },
       {
@@ -93,13 +93,12 @@ export default function BillboardTypeModal() {
           variant="primary"
           className="!h-9 font-medium"
         >
-          <PlusCircle className="fill-white stroke-blue !w-6 !h-6" /> Ajouter un
-          Emplacement
+          <PlusCircle className="fill-white stroke-blue !w-6 !h-6" /> Type de panneau
         </Button>
       </DialogTrigger>
       <DialogContent className="min-w-sm">
         <DialogHeader>
-          <DialogTitle>Ajouter un emplacement</DialogTitle>
+          <DialogTitle>Ajouter un type de panneau</DialogTitle>
           <DialogDescription></DialogDescription>
         </DialogHeader>
         <div className="">
@@ -107,7 +106,7 @@ export default function BillboardTypeModal() {
             <ul>
               {billboardsType.length === 0 ? (
                 <li className="bg-neutral-50 p-3 rounded-lg text-sm text-center">
-                  Aucun type panneau publicitaire trouvé.
+                  Aucun type de panneau publicitaire trouvé.
                 </li>
               ) : (
                 billboardsType.map((billboardType) => (

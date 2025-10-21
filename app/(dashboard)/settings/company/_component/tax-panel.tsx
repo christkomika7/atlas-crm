@@ -38,9 +38,9 @@ export default function TaxPanel({ taxs, setTaxs }: TaxPanelProps) {
             <TextInput
               design="float"
               label={tax.taxName}
-              value={tax.taxValue.join("; ")}
+              value={tax.taxValue}
               disabled
-              handleChange={() => {}}
+              handleChange={() => { }}
             />
             <div className="flex items-center gap-x-1 w-fit">
               <button

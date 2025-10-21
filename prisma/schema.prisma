@@ -13,6 +13,12 @@ enum Role {
   USER
 }
 
+enum SourceType {
+  CHECK
+  CASH
+  BANK_TRANSFERT
+}
+
 enum Resource {
   DASHBOARD
   CLIENTS
@@ -127,6 +133,9 @@ model Company {
   purchaseOrders             PurchaseOrder[]
   deliveryNotes              DeliveryNote[]
   items                      Item[]
+  DisplayBoard               DisplayBoard[]
+  StructureType              StructureType[]
+  LessorType                 LessorType[]
 
   @@unique([email])
   @@map("company")
@@ -288,67 +297,88 @@ model Appointment {
 }
 
 model Billboard {
-  id        String @id @default(uuid())
-  reference String @unique
+  id String @id @default(uuid())
 
-  hasTax Boolean @default(false)
+  reference      String        @unique
+  hasTax         Boolean       @default(false)
+  typeId         String
+  type           BillboardType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  name           String
+  locality       String
+  zone           String
+  areaId         String
+  area           Area          @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  visualMarker   String
+  displayBoardId String
+  displayBoard   DisplayBoard  @relation(fields: [displayBoardId], references: [id])
 
-  typeId String
-  type   BillboardType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  // Emplacement
+  address     String
+  cityId      String
+  city        City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  orientation String
+  gmaps       String
 
-  name      String
-  dimension String
-  areaId    String
-  area      Area   @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  // Brochure
+  pathPhoto    String
+  pathBrochure String
+  photos       String[]
+  brochures    String[]
 
-  placement           String
-  cityId              String
-  city                City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  orientation         String
-  information         String?
-  address             String
-  gmaps               String
-  zone                String
-  rentalPrice         Decimal  @default(0) @db.Decimal(15, 2)
-  installationCost    Decimal  @default(0) @db.Decimal(15, 2)
-  maintenance         Decimal  @default(0) @db.Decimal(15, 2)
-  imageFiles          String[]
-  brochureFiles       String[]
-  structure           String
-  decorativeElement   String
-  foundations         String
-  technicalVisibility String
-  note                String
+  // Donnée financiere
+  rentalPrice      Decimal @default(0) @db.Decimal(15, 2)
+  installationCost Decimal @default(0) @db.Decimal(15, 2)
+  maintenance      Decimal @default(0) @db.Decimal(15, 2)
+  revenueGenerate  Decimal @default(0) @db.Decimal(15, 2)
 
-  lessorType       String
+  // Information technique
+
+  width             Float
+  height            Float
+  lighting          String
+  structureType     StructureType @relation(fields: [structureTypeId], references: [id])
+  structureTypeId   String
+  panelCondition    String
+  decorativeElement String
+  foundations       String
+  electricity       String
+  framework         String
+  note              String
+
+  // Information bailleur
   lessorSpaceType  String
   lessorSupplierId String?
-  lessorSupplier   Supplier? @relation(fields: [lessorSupplierId], references: [id], onDelete: SetNull)
+  lessorSupplier   Supplier?  @relation(fields: [lessorSupplierId], references: [id], onDelete: SetNull)
+  lessorTypeId     String
+  lessorType       LessorType @relation(fields: [lessorTypeId], references: [id])
 
   lessorName              String?
-  lessorEmail             String?
+  lessorAddress           String?
+  lessorCity              String?
   lessorPhone             String?
-  lessorJob               String?
+  lessorEmail             String?
   capital                 Decimal? @default(0) @db.Decimal(15, 2)
   rccm                    String?
   taxIdentificationNumber String?
-  lessorAddress           String?
+  bankName                String?
+  rib                     String?
+  iban                    String?
+  bicSwift                String?
 
-  representativeName     String?
-  representativeContract String?
+  /// Information representant legal
+  representativeFirstName String?
+  representativeLastName  String?
+  representativeJob       String?
+  representativePhone     String?
+  representativeEmail     String?
 
-  leasedSpace         String?
-  contractStart       DateTime?
-  contractEnd         DateTime?
-  paymentMethod       String?
-  specificCondition   String?
-  signedLeaseContract String[]
-  files               String[]
-
-  pathPhoto    String
-  pathBrochure String
-  pathContract String
-  pathFile     String
+  // Detail du contrat
+  rentalStartDate   DateTime?
+  rentalPeriod      String?
+  paymentMode       String?
+  paymentFrequency  String?
+  electricitySupply String?
+  specificCondition String?
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -698,6 +728,39 @@ model BillboardType {
   @@map("billboard_type")
 }
 
+model DisplayBoard {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  billboards Billboard[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("display_board")
+}
+
+model StructureType {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  billboards Billboard[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("structure_type")
+}
+
+model LessorType {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  billboards Billboard[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("lessor_type")
+}
+
 model DocumentModel {
   id             String  @id @default(uuid())
   logo           String?
@@ -830,23 +893,14 @@ model Source {
   id   String @id @default(ulid())
   name String @unique
 
+  sourceType SourceType @default(CHECK)
+
   companyId    String
   company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   receipts     Receipt[]
   dibursements Dibursement[]
 
   @@map("source")
-}
-
-model Allocation {
-  id   String @id @default(ulid())
-  name String @unique
-
-  companyId    String
-  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  dibursements Dibursement[]
-
-  @@map("allocation")
 }
 
 model TransactionCategory {
@@ -870,13 +924,29 @@ model TransactionNature {
   categoryId String
   category   TransactionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  receipts Receipt[]
-
-  companyId    String
-  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  receipts     Receipt[]
   dibursements Dibursement[]
+  allocations  Allocation[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("transaction_nature")
+}
+
+model Allocation {
+  id   String @id @default(ulid())
+  name String @unique
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  natureId String
+  nature   TransactionNature @relation(fields: [natureId], references: [id], onDelete: Cascade)
+
+  dibursements Dibursement[]
+
+  @@map("allocation")
 }
 
 model Permission {

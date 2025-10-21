@@ -21,7 +21,11 @@ import { PlusCircle, XIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export default function SourceModal() {
+type SourceModalProps = {
+    sourceType?: "check" | "cash" | "bank-transfer"
+}
+
+export default function SourceModal({ sourceType }: SourceModalProps) {
     const companyId = useDataStore.use.currentCompany();
 
     const sources = useTransactionStore.use.sources();
@@ -74,8 +78,9 @@ export default function SourceModal() {
 
         if (!companyId) return toast.error("Aucune entreprise trouvée.");
         if (!name) return toast.error("Aucune source insérée.");
+        if (!sourceType) return toast.error("Veuillez sélectionner le mode de paiement avant.");
         mutateCreateSource(
-            { name, companyId },
+            { name, companyId, sourceType },
             {
                 onSuccess(data) {
                     if (data.data) {
@@ -95,8 +100,7 @@ export default function SourceModal() {
                     variant="primary"
                     className="!h-9 font-medium"
                 >
-                    <PlusCircle className="fill-white stroke-blue !w-6 !h-6" /> Ajouter un
-                    Source
+                    <PlusCircle className="fill-white stroke-blue !w-6 !h-6" />Source
                 </Button>
             </DialogTrigger>
             <DialogContent className="min-w-sm">
@@ -109,7 +113,7 @@ export default function SourceModal() {
                         <ul>
                             {sources.length === 0 ? (
                                 <li className="bg-neutral-50 p-3 rounded-lg text-sm text-center">
-                                    Aucune catégorie trouvé.
+                                    Aucune source trouvée.
                                 </li>
                             ) : (
                                 sources.map((source) => (

@@ -1,4 +1,5 @@
 import { checkAccess } from "@/lib/access";
+import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { sourceSchema, SourceSchemaType } from "@/lib/zod/transaction.schema";
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
         const createdSource = await prisma.source.create({
             data: {
                 name: data.name,
+                sourceType: data.sourceType === "check" ? $Enums.SourceType.CHECK : data.sourceType === "cash" ? $Enums.SourceType.CASH : $Enums.SourceType.BANK_TRANSFERT,
                 company: {
                     connect: {
                         id: data.companyId

@@ -239,7 +239,7 @@ export default function RecordDocument({
                     {record?.items.map((item) => (
                         <tr className="text-sm" key={item.id}>
                             <td className="px-3 py-2 align-top">
-                                <p className="mb-1 font-semibold">{item.name}</p>
+                                <p className="mb-1 font-semibold">{item.name} {item.hasTax && <span className="text-blue">*</span>}</p>
                                 <p className={`whitespace-pre-wrap mb-2 leading-tight text-sm`}>{item.description}</p>
                             </td>
                             <td className="py-2 text-right align-top">
@@ -251,7 +251,8 @@ export default function RecordDocument({
                                         {formatNumber(
                                             calculate({
                                                 items: [parseItem(item)],
-                                                taxes: record.company?.vatRates ?? []
+                                                taxes: record.company?.vatRates ?? [],
+                                                amountType: record.amountType,
                                             }).totalWithoutTaxes
                                         )}{" "}
                                         {item.currency}
@@ -264,6 +265,7 @@ export default function RecordDocument({
                                         calculate({
                                             items: [parseItem(item)],
                                             taxes: record.company?.vatRates ?? [],
+                                            amountType: record.amountType,
                                         }).totalWithoutTaxes
                                     )}
                                     {" "}
@@ -280,7 +282,14 @@ export default function RecordDocument({
                             <td colSpan={3} className="text-right">
                                 Sous-total
                             </td>
-                            <td className="pr-3 text-right">{formatNumber(getAmountPrice(record!.amountType, record?.totalTTC, record?.totalHT))} {record?.company.currency}</td>
+                            <td className="pr-3 text-right">
+                                {formatNumber(calculate({
+                                    items: (record ? (parseItems(record.items)) : []),
+                                    taxes: record?.company?.vatRates ?? [],
+                                    amountType: record?.amountType || "TTC",
+                                }).subtotal)}
+                                {record?.company.currency}
+                            </td>
                         </tr>
                         <tr className="text-sm">
                             <td colSpan={3} className="text-right">
@@ -294,6 +303,7 @@ export default function RecordDocument({
                         {calculate({
                             items: (record ? (parseItems(record.items)) : []),
                             taxes: record?.company?.vatRates ?? [],
+                            amountType: record?.amountType || "TTC",
                         }).taxes.map((tax) => (
                             <tr key={tax.taxName} className="text-sm">
                                 <td colSpan={3} className="text-right">
@@ -310,7 +320,7 @@ export default function RecordDocument({
                             </tr>
                         }
 
-                        <tr className="h-4"></tr>
+                        <tr className="h-5"></tr>
                         {payee &&
                             <tr className="text-sm">
                                 <td colSpan={3} className="text-right">
@@ -322,12 +332,16 @@ export default function RecordDocument({
                         <tr className="h-1"></tr>
                         <tr className="text-sm">
                             <td></td>
-                            <td></td>
                             <td
                                 style={{
                                     backgroundColor: secondColor,
                                 }}
-                                className="py-3 font-semibold text-right"
+                            ></td>
+                            <td
+                                style={{
+                                    backgroundColor: secondColor,
+                                }}
+                                className="py-3 text-2xl font-semibold text-right"
                             >
                                 Net à payer
                             </td>
@@ -335,7 +349,7 @@ export default function RecordDocument({
                                 style={{
                                     backgroundColor: secondColor,
                                 }}
-                                className="pr-3 font-semibold text-right"
+                                className="pr-3 text-2xl font-semibold text-right"
                             >
                                 {formatNumber(
                                     record && payee ? new Decimal(getAmountPrice(record!.amountType, record?.totalTTC, record?.totalHT)).minus(payee) : 0

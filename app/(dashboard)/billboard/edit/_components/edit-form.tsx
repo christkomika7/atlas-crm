@@ -24,14 +24,13 @@ import useBillboardStore from "@/stores/billboard.store";
 import Decimal from "decimal.js";
 
 export default function EditForm() {
-  const [lastContracts, setLastContracts] = useState<string[]>([]);
-  const [lastFiles, setLastFiles] = useState<string[]>([]);
   const [lastPhotos, setLastPhotos] = useState<string[]>([]);
   const [lastBrochures, setLastBrochures] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cityId, setCityId] = useState("");
   const setCurrentSpaceType = useBillboardStore.use.setCurrentSpaceType();
-
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
 
   const param = useParams();
 
@@ -63,12 +62,12 @@ export default function EditForm() {
   useEffect(() => {
     if (data?.data) {
       const billboard = data.data;
-      setLastPhotos(billboard.imageFiles);
-      setLastBrochures(billboard.brochureFiles);
-      setLastContracts(billboard.signedLeaseContract);
-      setLastFiles(billboard.files);
+      setLastPhotos(billboard.photos);
+      setLastBrochures(billboard.brochures);
       setCityId(billboard.cityId);
       setCurrentSpaceType(billboard.lessorSpaceType as "private" | "public");
+      setWidth(billboard.width);
+      setHeight(billboard.height);
       form.reset({
         billboard: {
           id: billboard.id,
@@ -77,59 +76,67 @@ export default function EditForm() {
           hasTax: billboard.hasTax,
           type: billboard.typeId,
           name: billboard.name,
-          dimension: billboard.dimension,
-          city: billboard.cityId,
-          area: billboard.areaId,
-          placement: billboard.placement,
-          orientation: billboard.orientation,
-          information: billboard.information,
-          address: billboard.address,
-          gmaps: billboard.gmaps,
+          locality: billboard.locality,
           zone: billboard.zone,
+          area: billboard.areaId,
+          visualMarker: billboard.visualMarker,
+          displayBoard: billboard.displayBoardId,
+
+          address: billboard.address,
+          city: billboard.cityId,
+          orientation: billboard.orientation,
+          gmaps: billboard.gmaps,
+
+          photos: undefined,
+          brochures: undefined,
+          lastPhotos: billboard.photos,
+          lastBrochures: billboard.brochures,
+
           rentalPrice: new Decimal(billboard.rentalPrice),
           installationCost: new Decimal(billboard.installationCost),
           maintenance: new Decimal(billboard.maintenance),
-          imageFiles: undefined,
-          lastImageFiles: billboard.imageFiles,
-          brochureFiles: undefined,
-          lastBrochureFiles: billboard.brochureFiles,
-          structure: billboard.structure,
+
+          width: billboard.width,
+          height: billboard.height,
+          lighting: billboard.lighting,
+          structureType: billboard.structureTypeId,
+          panelCondition: billboard.panelCondition,
           decorativeElement: billboard.decorativeElement,
           foundations: billboard.foundations,
-          technicalVisibility: billboard.technicalVisibility,
+          electricity: billboard.electricity,
+          framework: billboard.framework,
           note: billboard.note,
         },
         lessor: {
-          lessorType: billboard.lessorType,
+          lessorType: billboard.lessorTypeId,
           lessorSpaceType: billboard.lessorSpaceType,
           ...(billboard.lessorSpaceType === 'private' ? {
             lessorName: billboard.lessorName,
-            lessorEmail: billboard.lessorEmail,
-            lessorJob: billboard.lessorJob,
+            lessorAddress: billboard.lessorAddress,
+            lessorCity: billboard.lessorCity,
             lessorPhone: billboard.lessorPhone,
-            capital: billboard.capital,
+            lessorEmail: billboard.lessorEmail,
+
+            capital: new Decimal(billboard.capital || 0),
             rccm: billboard.rccm,
             taxIdentificationNumber: billboard.taxIdentificationNumber,
-            lessorAddress: billboard.lessorAddress,
-            representativeName: billboard.representativeName,
-            representativeContract: billboard.representativeContract,
-            leasedSpace: billboard.leasedSpace,
-            contractDuration: billboard.contractDuration
-              ? {
-                from: billboard.contractDuration[0]
-                  ? new Date(billboard.contractDuration[0])
-                  : undefined,
-                to: billboard.contractDuration[1]
-                  ? new Date(billboard.contractDuration[1])
-                  : undefined,
-              }
-              : undefined,
-            paymentMethod: billboard.paymentMethod,
+            bankName: billboard.bankName,
+            rib: billboard.rib,
+            iban: billboard.iban,
+            bicSwift: billboard.bicSwift,
+
+            representativeFirstName: billboard.representativeFirstName,
+            representativeLastName: billboard.representativeLastName,
+            representativeJob: billboard.representativeJob,
+            representativePhone: billboard.representativePhone,
+            representativeEmail: billboard.representativeEmail,
+
+            rentalStartDate: billboard.rentalStartDate ? new Date(billboard.rentalStartDate) : undefined,
+            rentalPeriod: billboard.rentalPeriod,
+            paymentMode: billboard.paymentMode ? JSON.parse(billboard.paymentMode) : [],
+            paymentFrequency: billboard.paymentFrequency,
+            electricitySupply: billboard.electricitySupply,
             specificCondition: billboard.specificCondition,
-            lastSignedLeaseContract: billboard.signedLeaseContract,
-            lastFiles: billboard.files,
-            signedLeaseContract: undefined,
-            files: undefined,
           } : {
             lessorCustomer: billboard.lessorSupplierId
           })
@@ -167,57 +174,67 @@ export default function EditForm() {
             hasTax: validateData.data.billboard.hasTax,
             type: validateData.data.billboard.type,
             name: validateData.data.billboard.name,
-            dimension: validateData.data.billboard.dimension,
-            placement: validateData.data.billboard.placement,
-            city: validateData.data.billboard.city,
-            area: validateData.data.billboard.area,
-            orientation: validateData.data.billboard.orientation,
-            information: validateData.data.billboard.information,
-            address: validateData.data.billboard.address,
-            gmaps: validateData.data.billboard.gmaps,
+            locality: validateData.data.billboard.locality,
             zone: validateData.data.billboard.zone,
-            rentalPrice: validateData.data.billboard.rentalPrice,
-            locationDuration: validateData.data.billboard.locationDuration,
-            installationCost: validateData.data.billboard.installationCost,
-            maintenance: validateData.data.billboard.maintenance,
-            imageFiles: validateData.data.billboard.imageFiles,
-            lastImageFiles: lastPhotos,
-            brochureFiles: validateData.data.billboard.brochureFiles,
-            lastBrochureFiles: lastBrochures,
-            structure: validateData.data.billboard.structure,
+            area: validateData.data.billboard.area,
+            visualMarker: validateData.data.billboard.visualMarker,
+            displayBoard: validateData.data.billboard.displayBoard,
+
+            address: validateData.data.billboard.address,
+            city: validateData.data.billboard.city,
+            orientation: validateData.data.billboard.orientation,
+            gmaps: validateData.data.billboard.gmaps,
+
+            photos: validateData.data.billboard.photos,
+            brochures: validateData.data.billboard.brochures,
+            lastPhotos: lastPhotos,
+            lastBrochures: lastBrochures,
+
+            rentalPrice: new Decimal(validateData.data.billboard.rentalPrice),
+            installationCost: new Decimal(validateData.data.billboard.installationCost || "0"),
+            maintenance: new Decimal(validateData.data.billboard.maintenance || "0"),
+
+            width: validateData.data.billboard.width,
+            height: validateData.data.billboard.height,
+            lighting: validateData.data.billboard.lighting,
+            structureType: validateData.data.billboard.structureType,
+            panelCondition: validateData.data.billboard.panelCondition,
             decorativeElement: validateData.data.billboard.decorativeElement,
             foundations: validateData.data.billboard.foundations,
-            technicalVisibility:
-              validateData.data.billboard.technicalVisibility,
+            electricity: validateData.data.billboard.electricity,
+            framework: validateData.data.billboard.framework,
             note: validateData.data.billboard.note,
           },
           lessor: {
             lessorType: validateData.data.lessor.lessorType,
             lessorSpaceType: validateData.data.lessor.lessorSpaceType,
             ...(validateData.data.lessor.lessorSpaceType === "private" ? {
-
               lessorName: validateData.data.lessor.lessorName,
-              lessorJob: validateData.data.lessor.lessorJob,
-              lessorEmail: validateData.data.lessor.lessorEmail,
-              lessorPhone: validateData.data.lessor.lessorPhone,
-
-              capital: validateData.data.lessor.capital,
-              rccm: validateData.data.lessor.rccm,
-              taxIdentificationNumber:
-                validateData.data.lessor.taxIdentificationNumber,
               lessorAddress: validateData.data.lessor.lessorAddress,
-              representativeName: validateData.data.lessor.representativeName,
-              representativeContract:
-                validateData.data.lessor.representativeContract,
-              leasedSpace: validateData.data.lessor.leasedSpace,
-              contractDuration:
-                validateData.data.lessor?.contractDuration ?? undefined,
-              paymentMethod: validateData.data.lessor.paymentMethod,
+              lessorCity: validateData.data.lessor.lessorCity,
+              lessorPhone: validateData.data.lessor.lessorPhone,
+              lessorEmail: validateData.data.lessor.lessorEmail,
+
+              capital: new Decimal(validateData.data.lessor.capital || 0),
+              rccm: validateData.data.lessor.rccm,
+              taxIdentificationNumber: validateData.data.lessor.taxIdentificationNumber,
+              bankName: validateData.data.lessor.bankName,
+              rib: validateData.data.lessor.rib,
+              iban: validateData.data.lessor.iban,
+              bicSwift: validateData.data.lessor.bicSwift,
+
+              representativeFirstName: validateData.data.lessor.representativeFirstName,
+              representativeLastName: validateData.data.lessor.representativeLastName,
+              representativeJob: validateData.data.lessor.representativeJob,
+              representativePhone: validateData.data.lessor.representativePhone,
+              representativeEmail: validateData.data.lessor.representativeEmail,
+
+              rentalStartDate: validateData.data.lessor.rentalStartDate ? new Date(validateData.data.lessor.rentalStartDate) : undefined,
+              rentalPeriod: validateData.data.lessor.rentalPeriod,
+              paymentMode: validateData.data.lessor.paymentMode || [],
+              paymentFrequency: validateData.data.lessor.paymentFrequency,
+              electricitySupply: validateData.data.lessor.electricitySupply,
               specificCondition: validateData.data.lessor.specificCondition,
-              lastSignedLeaseContract: lastContracts,
-              lastFiles: lastFiles,
-              signedLeaseContract: validateData.data.lessor.signedLeaseContract,
-              files: validateData.data.lessor.files,
 
             } : {
               lessorCustomer: validateData.data.lessor.lessorCustomer
@@ -257,6 +274,10 @@ export default function EditForm() {
                     setLastBrochures={setLastBrochures}
                     ref={fileInputRef}
                     cityId={cityId}
+                    width={width}
+                    setWidth={setWidth}
+                    height={height}
+                    setHeight={setHeight}
                   />
                 ),
               },
@@ -266,11 +287,6 @@ export default function EditForm() {
                 content: (
                   <LessorInfoTab
                     form={form}
-                    setLastContracts={setLastContracts}
-                    setLastFiles={setLastFiles}
-                    lastContracts={lastContracts}
-                    lastFiles={lastFiles}
-                    ref={fileInputRef}
                   />
                 ),
               },

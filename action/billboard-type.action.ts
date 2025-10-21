@@ -1,6 +1,6 @@
-import { BillboardTypeSchemaType } from "@/lib/zod/billboard-type.schema";
+import { BaseSchemaType } from "@/lib/zod/base-type.schema";
 import { RequestResponse } from "@/types/api.types";
-import { BillboardTypeType } from "@/types/billboard-type.types";
+import { BaseType } from "@/types/base.types";
 
 export async function all({ companyId }: { companyId: string }) {
     try {
@@ -8,7 +8,7 @@ export async function all({ companyId }: { companyId: string }) {
             method: 'GET',
         });
 
-        const res: RequestResponse<BillboardTypeType[]> = await response.json()
+        const res: RequestResponse<BaseType[]> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }
@@ -20,7 +20,7 @@ export async function all({ companyId }: { companyId: string }) {
 }
 
 
-export async function create(data: BillboardTypeSchemaType) {
+export async function create(data: BaseSchemaType) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard_type`, {
             method: "POST",
@@ -30,7 +30,7 @@ export async function create(data: BillboardTypeSchemaType) {
             body: JSON.stringify(data),
         });
 
-        const res: RequestResponse<BillboardTypeType> = await response.json();
+        const res: RequestResponse<BaseType> = await response.json();
 
         if (!response.ok) {
             throw new Error(res.message || "Erreur lors de la création du type de panneau");
@@ -50,7 +50,7 @@ export async function remove({ id }: { id: string }) {
             method: 'DELETE',
         });
 
-        const res: RequestResponse<BillboardTypeType> = await response.json()
+        const res: RequestResponse<BaseType> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }

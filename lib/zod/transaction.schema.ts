@@ -15,12 +15,15 @@ export const natureSchema = z.object({
 
 export const sourceSchema = z.object({
     name: z.string({ error: "Le nom de la source est obligatoire." }),
-    companyId: z.string({ error: "Aucune entreprise sélectionnée." })
+    sourceType: z.enum(['check', "cash", "bank-transfer"]),
+    companyId: z.string({ error: "Aucune entreprise sélectionnée." }),
 });
 
 export const allocationSchema = z.object({
     name: z.string({ error: "Le nom de l'allocation est obligatoire." }),
-    companyId: z.string({ error: "Aucune entreprise sélectionnée." })
+    companyId: z.string({ error: "Aucune entreprise sélectionnée." }),
+    natureId: z.string({ error: "Aucune nature a été sélectionnée." })
+
 });
 
 export type CategorySchemaType = z.infer<typeof categorySchema>;

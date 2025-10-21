@@ -39,6 +39,7 @@ export default function CreateForm() {
       form.reset({
         billboard: {
           companyId,
+          hasTax: false
         }
       });
     }

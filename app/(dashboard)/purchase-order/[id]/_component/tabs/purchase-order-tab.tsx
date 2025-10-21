@@ -226,6 +226,7 @@ export default function PurchaseOrderTab() {
             updatedPrice:
               calculate({
                 items: [parsePurchaseItem(item)],
+                amountType: amountType,
                 taxes: company?.vatRates ?? [],
               }).totalWithoutTaxes,
             itemType: item.itemType,
@@ -250,12 +251,14 @@ export default function PurchaseOrderTab() {
   const totals = useMemo(() => {
     const HTPrice = calculate({
       items: parsePurchaseItems(items),
+      amountType: amountType,
       taxes: company?.vatRates ?? [],
       discount: supplierDiscount.discount && supplierDiscount.discountType ? [supplierDiscount.discount, supplierDiscount.discountType] : undefined
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
       items: parsePurchaseItems(items),
+      amountType: amountType,
       taxes: company?.vatRates ?? [],
       discount: supplierDiscount.discount && supplierDiscount.discountType ? [supplierDiscount.discount, supplierDiscount.discountType] : undefined
     }).totalWithTaxes

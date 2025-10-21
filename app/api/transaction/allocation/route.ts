@@ -33,6 +33,11 @@ export async function POST(req: NextRequest) {
                     connect: {
                         id: data.companyId
                     }
+                },
+                nature: {
+                    connect: {
+                        id: data.natureId
+                    }
                 }
             }
         });

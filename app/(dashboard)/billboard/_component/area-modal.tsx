@@ -36,12 +36,12 @@ export default function AreaModal({ cityId }: AreaModalProps) {
   const { mutate, isPending } = useQueryAction<
     AreaSchemaType,
     RequestResponse<AreaType>
-  >(create, () => {}, "areas");
+  >(create, () => { }, "areas");
 
   const { mutate: mutateRemoveArea, isPending: isPendingRetrieveArea } =
     useQueryAction<{ id: string }, RequestResponse<AreaType>>(
       remove,
-      () => {},
+      () => { },
       "areas"
     );
 
@@ -74,7 +74,7 @@ export default function AreaModal({ cityId }: AreaModalProps) {
       return toast.error(
         "Séléctionner une ville avant d'ajouter un emplacement."
       );
-    if (!name) return toast.error("Aucun emplacement inséré.");
+    if (!name) return toast.error("Aucun élément inséré.");
     mutate(
       { name, companyId, cityId },
       {
@@ -96,13 +96,12 @@ export default function AreaModal({ cityId }: AreaModalProps) {
           variant="primary"
           className="!h-9 font-medium"
         >
-          <PlusCircle className="fill-white stroke-blue !w-6 !h-6" /> Ajouter un
-          Emplacement
+          <PlusCircle className="fill-white stroke-blue !w-6 !h-6" /> Quartier
         </Button>
       </DialogTrigger>
       <DialogContent className="min-w-sm">
         <DialogHeader>
-          <DialogTitle>Ajouter un emplacement</DialogTitle>
+          <DialogTitle>Ajouter un quartier</DialogTitle>
           <DialogDescription></DialogDescription>
         </DialogHeader>
         <div className="">
@@ -110,7 +109,7 @@ export default function AreaModal({ cityId }: AreaModalProps) {
             <ul>
               {areas.length === 0 ? (
                 <li className="bg-neutral-50 p-3 rounded-lg text-sm text-center">
-                  Aucun emplacement trouvé.
+                  Aucun quartier trouvé.
                 </li>
               ) : (
                 areas.map((area) => (
@@ -138,7 +137,7 @@ export default function AreaModal({ cityId }: AreaModalProps) {
           <div className="items-center gap-x-2 grid grid-cols-[3fr_1fr]">
             <TextInput
               design="float"
-              label="Nom de l'emplacement"
+              label="Quartier"
               value={name}
               handleChange={(e) => setName(e as string)}
             />

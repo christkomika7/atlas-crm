@@ -1,7 +1,9 @@
+import { BaseSchemaType } from "@/lib/zod/base-type.schema";
 import { BillboardSchemaFormType, EditBillboardSchemaFormType } from "@/lib/zod/billboard.schema";
 import { ContractSchemaType } from "@/lib/zod/contract.schema";
 import { EmailSchemaType } from "@/lib/zod/email.schema";
 import { RequestResponse } from "@/types/api.types";
+import { BaseType } from "@/types/base.types";
 import { BillboardType } from "@/types/billboard.types";
 
 export async function all({ companyId, search, limit }: { companyId: string, search?: string, limit?: number }) {
@@ -117,42 +119,47 @@ export async function create(data: BillboardSchemaFormType) {
         formData.append("hasTax", JSON.stringify(data.billboard.hasTax));
         formData.append("type", data.billboard.type);
         formData.append("name", data.billboard.name);
-        formData.append("dimension", data.billboard.dimension);
-        formData.append("city", data.billboard.city);
-        formData.append("area", data.billboard.area);
-        formData.append("placement", data.billboard.placement);
-        formData.append("orientation", data.billboard.orientation);
-        formData.append("information", data.billboard.information ?? "");
-
-        // BILLBOARD - Location
-        formData.append("address", data.billboard.address);
-        formData.append("gmaps", data.billboard.gmaps);
+        formData.append("locality", data.billboard.locality);
         formData.append("zone", data.billboard.zone);
+        formData.append("area", data.billboard.area);
+        formData.append("visualMarker", data.billboard.visualMarker);
+        formData.append("displayBoard", data.billboard.displayBoard);
 
-        // BILLBOARD - Prix
-        formData.append("rentalPrice", data.billboard.rentalPrice.toString());
-        formData.append("installationCost", data.billboard.installationCost.toString());
-        formData.append("maintenance", data.billboard.maintenance.toString());
+
+        formData.append("address", data.billboard.address);
+        formData.append("orientation", data.billboard.orientation);
+        formData.append("city", data.billboard.city);
+        formData.append("gmaps", data.billboard.gmaps);
 
         // BILLBOARD - Photos
-        data.billboard.imageFiles?.forEach((file) => {
+        data.billboard.photos?.forEach((file) => {
             if (file instanceof File) {
-                formData.append("imageFiles", file);
+                formData.append("photos", file);
             }
         });
 
         // BILLBOARD - Brochure
-        data.billboard.brochureFiles?.forEach((file) => {
+        data.billboard.brochures?.forEach((file) => {
             if (file instanceof File) {
-                formData.append("brochureFiles", file);
+                formData.append("brochures", file);
             }
         });
 
+        // BILLBOARD - Prix
+        formData.append("rentalPrice", data.billboard.rentalPrice.toString());
+        formData.append("installationCost", data.billboard.installationCost ? data.billboard.installationCost.toString() : "0");
+        formData.append("maintenance", data.billboard.maintenance ? data.billboard.maintenance.toString() : "0");
+
         // BILLBOARD - Infos techniques
-        formData.append("structure", data.billboard.structure);
+        formData.append("width", data.billboard.width.toString());
+        formData.append("height", data.billboard.height.toString());
+        formData.append("lighting", data.billboard.lighting);
+        formData.append("structureType", data.billboard.structureType);
+        formData.append("panelCondition", data.billboard.panelCondition);
         formData.append("decorativeElement", data.billboard.decorativeElement);
         formData.append("foundations", data.billboard.foundations);
-        formData.append("technicalVisibility", data.billboard.technicalVisibility);
+        formData.append("electricity", data.billboard.electricity);
+        formData.append("framework", data.billboard.framework);
         formData.append("note", data.billboard.note);
 
         // LESSOR - Infos bailleur
@@ -160,37 +167,34 @@ export async function create(data: BillboardSchemaFormType) {
         formData.append("lessorSpaceType", data.lessor.lessorSpaceType);
         if (data.lessor.lessorSpaceType === "private") {
             formData.append("lessorName", data.lessor.lessorName as string);
-            formData.append("lessorJob", data.lessor.lessorJob as string);
+            formData.append("lessorAddress", data.lessor.lessorAddress as string);
+            formData.append("lessorCity", data.lessor.lessorCity as string);
             formData.append("lessorPhone", data.lessor.lessorPhone as string);
             formData.append("lessorEmail", data.lessor.lessorEmail as string);
             formData.append("capital", data.lessor.capital?.toString() || "0");
             formData.append("rccm", data.lessor.rccm as string);
             formData.append("taxIdentificationNumber", data.lessor.taxIdentificationNumber as string);
-            formData.append("lessorAddress", data.lessor.lessorAddress as string);
+            formData.append("bankName", data.lessor.bankName as string);
+            formData.append("rib", data.lessor.rib as string);
+            formData.append("iban", data.lessor.iban as string);
+            formData.append("bicSwift", data.lessor.bicSwift as string);
+
 
             // LESSOR - Représentant légal
-            formData.append("representativeName", data.lessor.representativeName as string);
-            formData.append("representativeContract", data.lessor.representativeContract as string);
+            formData.append("representativeFirstName", data.lessor.representativeFirstName as string);
+            formData.append("representativeLastName", data.lessor.representativeLastName as string);
+            formData.append("representativeJob", data.lessor.representativeJob as string);
+            formData.append("representativePhone", data.lessor.representativePhone as string);
+            formData.append("representativeEmail", data.lessor.representativeEmail as string);
+
 
             // LESSOR - Contrat
-            formData.append("leasedSpace", data.lessor.leasedSpace as string);
-            formData.append("contractFrom", data.lessor.contractDuration?.from?.toISOString() ?? "");
-            formData.append("contractTo", data.lessor.contractDuration?.to?.toISOString() ?? "");
-            formData.append("paymentMethod", data.lessor.paymentMethod as string);
+            formData.append("rentalStartDate", data.lessor.rentalStartDate?.toISOString() ?? "");
+            formData.append("rentalPeriod", data.lessor.rentalPeriod as string);
+            formData.append("paymentMode", JSON.stringify(data.lessor.paymentMode));
+            formData.append("paymentFrequency", data.lessor.paymentFrequency as string);
+            formData.append("electricitySupply", data.lessor.electricitySupply as string);
             formData.append("specificCondition", data.lessor.specificCondition as string);
-
-            // LESSOR - Documents
-            data.lessor.signedLeaseContract?.forEach((file) => {
-                if (file instanceof File) {
-                    formData.append("signedLeaseContract", file);
-                }
-            });
-
-            data.lessor.files?.forEach((file) => {
-                if (file instanceof File) {
-                    formData.append("files", file);
-                }
-            });
 
         } else {
             formData.append("lessorCustomer", data.lessor.lessorCustomer as string)
@@ -229,86 +233,83 @@ export async function update(data: EditBillboardSchemaFormType) {
         formData.append("hasTax", JSON.stringify(data.billboard.hasTax));
         formData.append("type", data.billboard.type);
         formData.append("name", data.billboard.name);
-        formData.append("dimension", data.billboard.dimension);
-        formData.append("city", data.billboard.city);
-        formData.append("area", data.billboard.area);
-        formData.append("placement", data.billboard.placement);
-        formData.append("orientation", data.billboard.orientation);
-        formData.append("information", data.billboard.information ?? "");
-
-        // BILLBOARD - Location
-        formData.append("address", data.billboard.address);
-        formData.append("gmaps", data.billboard.gmaps);
+        formData.append("locality", data.billboard.locality);
         formData.append("zone", data.billboard.zone);
+        formData.append("area", data.billboard.area);
+        formData.append("visualMarker", data.billboard.visualMarker);
+        formData.append("displayBoard", data.billboard.displayBoard);
+
+
+        formData.append("address", data.billboard.address);
+        formData.append("orientation", data.billboard.orientation);
+        formData.append("city", data.billboard.city);
+        formData.append("gmaps", data.billboard.gmaps);
+
+
+        formData.append("lastPhotos", data.billboard.lastPhotos?.join(";") as string)
+        formData.append("lastBrochures", data.billboard.lastBrochures?.join(";") as string)
+        data.billboard.photos?.forEach((file) => {
+            if (file instanceof File) {
+                formData.append("photos", file);
+            }
+        });
+        data.billboard.brochures?.forEach((file) => {
+            if (file instanceof File) {
+                formData.append("brochures", file);
+            }
+        });
 
         // BILLBOARD - Prix
         formData.append("rentalPrice", data.billboard.rentalPrice.toString());
-        formData.append("installationCost", data.billboard.installationCost.toString());
-        formData.append("maintenance", data.billboard.maintenance.toString());
-
-        // BILLBOARD - Photos
-        formData.append("lastImageFiles", data.billboard.lastImageFiles?.join(";") as string)
-        data.billboard.imageFiles?.forEach((file) => {
-            if (file instanceof File) {
-                formData.append("imageFiles", file);
-            }
-        });
-
-
-        // BILLBOARD - Brochure
-        formData.append("lastBrochureFiles", data.billboard.lastBrochureFiles?.join(";") as string)
-        data.billboard.brochureFiles?.forEach((file) => {
-            if (file instanceof File) {
-                formData.append("brochureFiles", file);
-            }
-        });
+        formData.append("installationCost", data.billboard.installationCost ? data.billboard.installationCost.toString() : "0");
+        formData.append("maintenance", data.billboard.maintenance ? data.billboard.maintenance.toString() : "0");
 
         // BILLBOARD - Infos techniques
-        formData.append("structure", data.billboard.structure);
+        formData.append("width", data.billboard.width.toString());
+        formData.append("height", data.billboard.height.toString());
+        formData.append("lighting", data.billboard.lighting);
+        formData.append("structureType", data.billboard.structureType);
+        formData.append("panelCondition", data.billboard.panelCondition);
         formData.append("decorativeElement", data.billboard.decorativeElement);
         formData.append("foundations", data.billboard.foundations);
-        formData.append("technicalVisibility", data.billboard.technicalVisibility);
+        formData.append("electricity", data.billboard.electricity);
+        formData.append("framework", data.billboard.framework);
         formData.append("note", data.billboard.note);
 
         // LESSOR - Infos bailleur
         formData.append("lessorType", data.lessor.lessorType);
         formData.append("lessorSpaceType", data.lessor.lessorSpaceType);
+
         if (data.lessor.lessorSpaceType === "private") {
             formData.append("lessorName", data.lessor.lessorName as string);
-            formData.append("lessorJob", data.lessor.lessorJob as string);
+            formData.append("lessorAddress", data.lessor.lessorAddress as string);
+            formData.append("lessorCity", data.lessor.lessorCity as string);
             formData.append("lessorPhone", data.lessor.lessorPhone as string);
             formData.append("lessorEmail", data.lessor.lessorEmail as string);
             formData.append("capital", data.lessor.capital?.toString() || "0");
             formData.append("rccm", data.lessor.rccm as string);
             formData.append("taxIdentificationNumber", data.lessor.taxIdentificationNumber as string);
-            formData.append("lessorAddress", data.lessor.lessorAddress as string);
+            formData.append("bankName", data.lessor.bankName as string);
+            formData.append("rib", data.lessor.rib as string);
+            formData.append("iban", data.lessor.iban as string);
+            formData.append("bicSwift", data.lessor.bicSwift as string);
+
 
             // LESSOR - Représentant légal
-            formData.append("representativeName", data.lessor.representativeName as string);
-            formData.append("representativeContract", data.lessor.representativeContract as string);
+            formData.append("representativeFirstName", data.lessor.representativeFirstName as string);
+            formData.append("representativeLastName", data.lessor.representativeLastName as string);
+            formData.append("representativeJob", data.lessor.representativeJob as string);
+            formData.append("representativePhone", data.lessor.representativePhone as string);
+            formData.append("representativeEmail", data.lessor.representativeEmail as string);
+
 
             // LESSOR - Contrat
-            formData.append("leasedSpace", data.lessor.leasedSpace as string);
-            formData.append("contractFrom", data.lessor.contractDuration?.from?.toISOString() ?? "");
-            formData.append("contractTo", data.lessor.contractDuration?.to?.toISOString() ?? "");
-            formData.append("paymentMethod", data.lessor.paymentMethod as string);
+            formData.append("rentalStartDate", data.lessor.rentalStartDate?.toISOString() ?? "");
+            formData.append("rentalPeriod", data.lessor.rentalPeriod as string);
+            formData.append("paymentMode", JSON.stringify(data.lessor.paymentMode));
+            formData.append("paymentFrequency", data.lessor.paymentFrequency as string);
+            formData.append("electricitySupply", data.lessor.electricitySupply as string);
             formData.append("specificCondition", data.lessor.specificCondition as string);
-
-            // LESSOR - Documents
-            // LESSOR - Documents
-            formData.append("lastSignedLeaseContract", data.lessor.lastSignedLeaseContract?.join(";") as string)
-            data.lessor.signedLeaseContract?.forEach((file) => {
-                if (file instanceof File) {
-                    formData.append("signedLeaseContract", file);
-                }
-            });
-
-            formData.append("lastFiles", data.lessor.lastFiles?.join(";") as string)
-            data.lessor.files?.forEach((file) => {
-                if (file instanceof File) {
-                    formData.append("files", file);
-                }
-            });
 
         } else {
             formData.append("lessorCustomer", data.lessor.lessorCustomer as string)
@@ -365,6 +366,137 @@ export async function removeMany({ ids }: { ids: string[] }) {
         });
 
         const res: RequestResponse<BillboardType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+export async function getBillboardDisplayBoard({ companyId }: { companyId: string }) {
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/display_board/${companyId}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<BaseType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+export async function getBillboardLessorType({ companyId }: { companyId: string }) {
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/lessor-type/${companyId}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<BaseType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+export async function getBillboardStructureType({ companyId }: { companyId: string }) {
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/structure-type/${companyId}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<BaseType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function createBillboardElement(data: BaseSchemaType & { type: "display-board" | "lessor-type" | "structure-type" }) {
+
+    let url = "";
+
+    switch (data.type) {
+        case "display-board":
+            url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/display_board`;
+            break;
+        case "lessor-type":
+            url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/lessor-type`;
+            break;
+        case "structure-type":
+            url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/structure-type`;
+            break;
+
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ companyId: data.companyId, name: data.name }),
+        });
+
+        const res: RequestResponse<BaseType> = await response.json();
+
+        if (!response.ok) {
+            throw new Error(res.message || "Erreur lors de la création");
+        }
+
+        return res;
+    } catch (error) {
+        console.error("Erreur dans la fonction create:", error);
+        throw error;
+    }
+}
+
+
+export async function removeBillboardElements({ id, type }: { id: string, type: "display-board" | "lessor-type" | "structure-type" }) {
+    let url = "";
+
+    switch (type) {
+        case "display-board":
+            url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/display_board/${id}`;
+            break;
+        case "lessor-type":
+            url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/lessor-type/${id}`;
+            break;
+        case "structure-type":
+            url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/structure-type/${id}`;
+            break;
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: 'DELETE',
+        });
+
+        const res: RequestResponse<BaseType> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }

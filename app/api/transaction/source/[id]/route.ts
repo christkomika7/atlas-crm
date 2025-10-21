@@ -1,4 +1,5 @@
 import { checkAccess } from "@/lib/access";
+import { $Enums } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
 import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
@@ -7,14 +8,26 @@ export async function GET(req: NextRequest) {
     await checkAccess(["TRANSACTION"], "CREATE");
     const id = getIdFromUrl(req.url, "last") as string;
 
+    const type = req.nextUrl.searchParams.get("type")?.trim() ?? "";
+
+
     if (!id) {
         return NextResponse.json({
             status: "error",
             message: "identifiant invalide.",
         }, { status: 404 });
     }
+
+    if (!type) {
+        return NextResponse.json({
+            state: "success",
+            data: [],
+        }, { status: 200 })
+    }
+
     const sources = await prisma.source.findMany({
         where: {
+            sourceType: type === "check" ? $Enums.SourceType.CHECK : type === "cash" ? $Enums.SourceType.CASH : $Enums.SourceType.BANK_TRANSFERT,
             companyId: id
         },
     });

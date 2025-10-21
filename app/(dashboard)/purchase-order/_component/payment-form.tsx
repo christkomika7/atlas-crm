@@ -1,6 +1,8 @@
 import { createdPayment, unique } from "@/action/purchase-order.action";
-import { getAllocations, getSources } from "@/action/transaction.action";
+import { getAllocations, getCategories, getNatures, getSources } from "@/action/transaction.action";
 import AllocationModal from "@/components/modal/allocation-modal";
+import CategoryModal from "@/components/modal/category-modal";
+import NatureModal from "@/components/modal/nature-modal";
 import SourceModal from "@/components/modal/source-modal";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
@@ -23,7 +25,7 @@ import { useDataStore } from "@/stores/data.store";
 import useTransactionStore from "@/stores/transaction.store";
 import { RequestResponse } from "@/types/api.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
-import { AllocationType, SourceType } from "@/types/transaction.type";
+import { AllocationType, SourceType, TransactionCategoryType, TransactionNatureType } from "@/types/transaction.type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Decimal } from "decimal.js";
 import { useEffect, useState } from "react";
@@ -40,8 +42,16 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
   const companyId = useDataStore.use.currentCompany();
 
   const [isPaid, setIsPaid] = useState(false);
+  const [categoryId, setCategoryId] = useState("");
+  const [natureId, setNatureId] = useState("");
+  const [paymentMode, setPaymentMode] = useState<"check" | "cash" | "bank-transfer">();
+
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrderType>();
 
+  const categories = useTransactionStore.use.categories();
+  const setCategories = useTransactionStore.use.setCategories();
+  const natures = useTransactionStore.use.natures();
+  const setNatures = useTransactionStore.use.setNatures();
   const sources = useTransactionStore.use.sources();
   const setSources = useTransactionStore.use.setSources();
 
@@ -62,10 +72,30 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
     RequestResponse<PurchaseOrderType>
   >(unique, () => { }, "purchase-order");
 
+
+  const {
+    mutate: mutateGetCategories,
+    isPending: isGettingCategories,
+  } = useQueryAction<{ companyId: string, type: "receipt" | "dibursement" }, RequestResponse<TransactionCategoryType[]>>(
+    getCategories,
+    () => { },
+    "categories"
+  );
+
+  const {
+    mutate: mutateGetNature,
+    isPending: isGettingNatures,
+  } = useQueryAction<{ categoryId: string }, RequestResponse<TransactionNatureType[]>>(
+    getNatures,
+    () => { },
+    "natures"
+  );
+
+
   const {
     mutate: mutateGetSources,
     isPending: isGettingSources,
-  } = useQueryAction<{ companyId: string }, RequestResponse<SourceType[]>>(
+  } = useQueryAction<{ companyId: string, type?: "cash" | "check" | "bank-transfer" }, RequestResponse<SourceType[]>>(
     getSources,
     () => { },
     "sources"
@@ -80,21 +110,18 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
     "allocations"
   );
 
-
-
-
   const { mutate: mutateCreatePayment, isPending: isCreatingPayment } = useQueryAction<
     PurchaseOrderPaymentSchemaType,
     RequestResponse<null>
   >(createdPayment, () => { }, "payment");
 
-
   useEffect(() => {
     if (companyId) {
-      mutateGetSources({ companyId }, {
+
+      mutateGetCategories({ companyId, type: "dibursement" }, {
         onSuccess(data) {
           if (data.data) {
-            setSources(data.data)
+            setCategories(data.data)
           }
         },
       });
@@ -106,9 +133,30 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
           }
         },
       });
-
     }
   }, [companyId]);
+
+  useEffect(() => {
+    mutateGetSources({ companyId, type: paymentMode }, {
+      onSuccess(data) {
+        if (data.data) {
+          setSources(data.data)
+        }
+      },
+    });
+  }, [paymentMode])
+
+  useEffect(() => {
+    if (categoryId) {
+      mutateGetNature({ categoryId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setNatures(data.data);
+          }
+        },
+      })
+    }
+  }, [categoryId])
 
   useEffect(() => {
     if (purchaseOrderId) {
@@ -188,6 +236,64 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
           <div className="gap-4.5 grid grid-cols-2">
             <FormField
               control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      isLoading={isGettingCategories}
+                      datas={categories.map(category => ({
+                        id: category.id,
+                        label: category.name,
+                        value: category.id
+                      }))}
+                      value={field.value}
+                      setValue={(e) => {
+                        setCategoryId(e)
+                        field.onChange(e)
+                      }}
+                      placeholder="Catégorie"
+                      searchMessage="Rechercher une catégorie"
+                      noResultsMessage="Aucune catégorie trouvée."
+                      addElement={<CategoryModal type="dibursement" />}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="nature"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      isLoading={isGettingNatures}
+                      datas={natures.map(nature => ({
+                        id: nature.id,
+                        label: nature.name,
+                        value: nature.id
+                      }))}
+                      value={field.value}
+                      setValue={e => {
+                        setNatureId(e)
+                        field.onChange(e)
+                      }}
+                      placeholder="Nature"
+                      searchMessage="Rechercher une nature"
+                      noResultsMessage="Aucune nature trouvée."
+                      addElement={<NatureModal categoryId={categoryId} />}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="gap-4.5 grid grid-cols-2">
+            <FormField
+              control={form.control}
               name="amount"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
@@ -214,7 +320,10 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
                     <Combobox
                       datas={acceptPayment}
                       value={field.value}
-                      setValue={field.onChange}
+                      setValue={e => {
+                        setPaymentMode(e as "check" | "cash" | "bank-transfer")
+                        field.onChange(e)
+                      }}
                       placeholder="Mode de paiement"
                       searchMessage="Rechercher un mode de paiement"
                       noResultsMessage="Aucun mode de paiement trouvé."
@@ -245,7 +354,7 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
                       placeholder="Source"
                       searchMessage="Rechercher une source"
                       noResultsMessage="Aucune source trouvée."
-                      addElement={<SourceModal />}
+                      addElement={<SourceModal sourceType={paymentMode} />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -270,7 +379,7 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
                       placeholder="Allocation"
                       searchMessage="Rechercher une allocation"
                       noResultsMessage="Aucune allocation trouvée."
-                      addElement={<AllocationModal />}
+                      addElement={<AllocationModal natureId={natureId} />}
                     />
                   </FormControl>
                   <FormMessage />

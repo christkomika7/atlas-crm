@@ -236,6 +236,7 @@ export default function PurchaseOrderForm() {
             price: item.price,
             updatedPrice: calculate({
               items: [parsePurchaseItem(item)],
+              amountType: amountType,
               taxes: company?.vatRates ?? []
             }).totalWithoutTaxes,
             itemType: item.itemType,
@@ -257,12 +258,14 @@ export default function PurchaseOrderForm() {
     const HTPrice = calculate({
       items: parsePurchaseItems(items),
       taxes: company?.vatRates ?? [],
+      amountType: amountType,
       discount: supplierDiscount.discount && supplierDiscount.discountType ? [supplierDiscount.discount, supplierDiscount.discountType] : undefined
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
       items: parsePurchaseItems(items),
       taxes: company?.vatRates ?? [],
+      amountType: amountType,
       discount: supplierDiscount.discount && supplierDiscount.discountType ? [supplierDiscount.discount, supplierDiscount.discountType] : undefined
     }).totalWithTaxes
 

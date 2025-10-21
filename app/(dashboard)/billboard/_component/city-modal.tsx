@@ -33,12 +33,12 @@ export default function CityModal() {
   const { mutate, isPending } = useQueryAction<
     CitySchemaType,
     RequestResponse<CityType>
-  >(create, () => {}, "cities");
+  >(create, () => { }, "cities");
 
   const { mutate: mutateRemoveCity, isPending: isPendingRetrieveCity } =
     useQueryAction<{ id: string }, RequestResponse<CityType>>(
       remove,
-      () => {},
+      () => { },
       "cities"
     );
 
@@ -69,7 +69,7 @@ export default function CityModal() {
     e.preventDefault();
 
     if (!companyId) return toast.error("Aucune entreprise trouvée.");
-    if (!name) return toast.error("Aucun emplacement inséré.");
+    if (!name) return toast.error("Aucun élélement inséré.");
     mutate(
       { name, companyId },
       {
@@ -91,13 +91,12 @@ export default function CityModal() {
           variant="primary"
           className="!h-9 font-medium"
         >
-          <PlusCircle className="fill-white stroke-blue !w-6 !h-6" /> Ajouter un
-          Emplacement
+          <PlusCircle className="fill-white stroke-blue !w-6 !h-6" /> Ville
         </Button>
       </DialogTrigger>
       <DialogContent className="min-w-sm">
         <DialogHeader>
-          <DialogTitle>Ajouter un emplacement</DialogTitle>
+          <DialogTitle>Ajouter une ville</DialogTitle>
           <DialogDescription></DialogDescription>
         </DialogHeader>
         <div className="">
@@ -133,7 +132,7 @@ export default function CityModal() {
           <div className="items-center gap-x-2 grid grid-cols-[3fr_1fr]">
             <TextInput
               design="float"
-              label="Nom de l'emplacement"
+              label="Ville"
               value={name}
               handleChange={(e) => setName(e as string)}
             />

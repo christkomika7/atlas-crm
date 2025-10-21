@@ -351,6 +351,7 @@ export default function QuoteTab() {
             itemType: item.itemType,
             updatedPrice: calculate({
               items: [parseItem(item)],
+              amountType: amountType,
               taxes: company?.vatRates ?? [],
             }).totalWithoutTaxes,
             locationStart: new Date(item.locationStart),
@@ -372,6 +373,7 @@ export default function QuoteTab() {
             updatedPrice:
               calculate({
                 items: [parseItem(item)],
+                amountType: amountType,
                 taxes: company?.vatRates ?? [],
               }).totalWithoutTaxes,
             locationStart: new Date(item.locationStart),
@@ -401,12 +403,14 @@ export default function QuoteTab() {
     const HTPrice = calculate({
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
+      amountType: amountType,
       discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
+      amountType: amountType,
       discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
     }).totalWithTaxes
 

@@ -1,10 +1,11 @@
+import { INVOICE_PREFIX, PURCHASE_ORDER_PREFIX } from "@/config/constant";
 import { checkAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
-import { getIdFromUrl } from "@/lib/utils";
+import { generateAmaId, getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  checkAccess(["TRANSACTION"], "CREATE");
+  checkAccess(["TRANSACTION"], "READ");
   try {
     const companyId = getIdFromUrl(req.url, 2);
     if (!companyId) {
@@ -192,11 +193,11 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-        referenceInvoiceId: true,
-        referenceInvoice: {
+        referencePurchaseOrderId: true,
+        referencePurchaseOrder: {
           select: {
             id: true,
-            invoiceNumber: true,
+            purchaseOrderNumber: true,
           },
         },
       },
@@ -205,10 +206,9 @@ export async function GET(req: NextRequest) {
     // Normalisation des données pour avoir une structure uniforme
     const normalizedReceipts = receipts.map((receipt) => ({
       ...receipt,
-      // Ajout des champs manquants pour les receipts
       allocation: null,
       payOnBehalfOf: null,
-      // Conversion du type enum en string pour cohérence
+      documentReference: `${receipt.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(receipt.referenceInvoice?.invoiceNumber as number, false)}`,
       type: receipt.type.toString(),
       movement: receipt.movement.toString(),
       amountType: receipt.amountType.toString(),
@@ -220,6 +220,7 @@ export async function GET(req: NextRequest) {
       type: disbursement.type.toString(),
       movement: disbursement.movement.toString(),
       amountType: disbursement.amountType.toString(),
+      documentReference: `${disbursement.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(disbursement.referencePurchaseOrder?.purchaseOrderNumber as number, false)}`,
       // Normalisation du payOnBehalfOf avec profile
       payOnBehalfOf: disbursement.payOnBehalfOf
         ? {

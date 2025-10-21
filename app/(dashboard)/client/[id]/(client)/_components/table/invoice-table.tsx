@@ -19,56 +19,61 @@ import {
 } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
-import { all } from "@/action/client.action";
+import { all, getInvoice } from "@/action/client.action";
 import { useDataStore } from "@/stores/data.store";
 import Spinner from "@/components/ui/spinner";
-import { ClientType } from "@/types/client.types";
+import { InvoiceType } from "@/types/invoice.types";
+import { formatNumber, generateAmaId } from "@/lib/utils";
+import { INVOICE_PREFIX } from "@/config/constant";
+import { formatDateToDashModel } from "@/lib/date";
 
 type InvoiceTableProps = {
-  //   selectedClientIds: string[];
-  //   setSelectedClientIds: Dispatch<SetStateAction<string[]>>;
+  selectedInvoicIds: string[];
+  setSelectedInvoiceIds: Dispatch<SetStateAction<string[]>>;
 };
 
 export interface InvoiceTableRef {
-  //   refreshClients: () => void;
+  refreshInvoices: () => void;
 }
 
 const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
   (
     {
-      // selectedClientIds, setSelectedClientIds
+      selectedInvoicIds, setSelectedInvoiceIds
     },
     ref
   ) => {
-    // const id = useDataStore.use.currentCompany();
+    const currency = useDataStore.use.currency();
+    const clientId = "";
+    const [invoices, setInvoices] = useState<InvoiceType[]>([]);
 
-    // const { mutate, isPending, data } = useQueryAction<
-    //   { id: string },
-    //   RequestResponse<ClientType[]>
-    // >(all, () => {}, "clients");
+    const { mutate: mutateGetInvoice, isPending: isGettingInvoice } = useQueryAction<
+      { id: string },
+      RequestResponse<InvoiceType[]>
+    >(getInvoice, () => { }, "invoices");
 
-    // const toggleSelection = (clientId: string, checked: boolean) => {
-    //   setSelectedClientIds((prev) =>
-    //     checked ? [...prev, clientId] : prev.filter((id) => id !== clientId)
-    //   );
-    // };
+    const toggleSelection = (invoiceId: string, checked: boolean) => {
+      setSelectedInvoiceIds((prev) =>
+        checked ? [...prev, invoiceId] : prev.filter((id) => id !== invoiceId)
+      );
+    };
 
-    // const refreshClients = () => {
-    //   if (id) {
-    //     mutate({ id });
-    //   }
-    // };
+    const refreshInvoices = () => {
+      if (clientId) {
+        mutateGetInvoice({ id: clientId });
+      }
+    };
 
     // Exposer la méthode refreshClients via la ref
-    // useImperativeHandle(ref, () => ({
-    //   refreshClients,
-    // }));
+    useImperativeHandle(ref, () => ({
+      refreshInvoices,
+    }));
 
-    // useEffect(() => {
-    //   refreshClients();
-    // }, [id]);
+    useEffect(() => {
+      refreshInvoices();
+    }, [clientId]);
 
-    // const isSelected = (id: string) => selectedClientIds.includes(id);
+    const isSelected = (id: string) => selectedInvoicIds.includes(id);
 
     return (
       <div className="border border-neutral-200 rounded-xl">
@@ -97,30 +102,7 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow>
-              <TableCell className="text-neutral-600">
-                <div className="flex justify-center items-center">
-                  <Checkbox />
-                </div>
-              </TableCell>
-              <TableCell className="text-neutral-600 text-center">
-                FA513
-              </TableCell>
-              <TableCell className="text-neutral-600 text-center">
-                23/09/2022
-              </TableCell>
-              <TableCell className="text-neutral-600 text-center">
-                $800
-              </TableCell>
-              <TableCell className="text-neutral-600 text-center">
-                $800
-              </TableCell>
-              <TableCell className="text-neutral-600 text-center">
-                $000
-              </TableCell>
-              <TableCell className="text-neutral-600 text-center">X</TableCell>
-            </TableRow>
-            {/* {isPending ? (
+            {isGettingInvoice ? (
               <TableRow>
                 <TableCell colSpan={6}>
                   <div className="flex justify-center items-center py-6 w-full">
@@ -128,42 +110,40 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
                   </div>
                 </TableCell>
               </TableRow>
-            ) : data?.data && data.data.length > 0 ? (
-              data.data.map((client) => (
+            ) : invoices.length > 0 ? (
+              invoices.map((invoice) => (
                 <TableRow
-                  key={client.id}
-                  className={`h-16 transition-colors ${
-                    isSelected(client.id) ? "bg-neutral-100" : ""
-                  }`}
+                  key={invoice.id}
+                  className={`h-16 transition-colors ${isSelected(invoice.id) ? "bg-neutral-100" : ""
+                    }`}
                 >
                   <TableCell className="text-neutral-600">
                     <div className="flex justify-center items-center">
                       <Checkbox
-                        checked={isSelected(client.id)}
+                        checked={isSelected(invoice.id)}
                         onCheckedChange={(checked) =>
-                          toggleSelection(client.id, !!checked)
+                          toggleSelection(invoice.id, !!checked)
                         }
                       />
                     </div>
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {new Date(client.createdAt).toLocaleDateString("fr-FR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
+                    {invoice.company.documentModel.invoicesPrefix || INVOICE_PREFIX}-{generateAmaId(invoice.invoiceNumber, false)}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {`${client.firstname} ${client.lastname}`}
+                    {formatDateToDashModel(invoice.createdAt)}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    0 {client.company?.currency}
+                    {invoice.amountType === "TTC" ? formatNumber(invoice.totalTTC) : formatNumber(invoice.totalHT)} {currency}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    0 {client.company?.currency}
+                    {formatNumber(invoice.payee)} {currency}
+                  </TableCell>
+                  <TableCell className="text-neutral-600 text-center">
+                    {formatNumber(invoice.amountType === "TTC" ? invoice.totalTTC.minus(invoice.payee) : invoice.totalHT.minus(invoice.payee))} {currency}
                   </TableCell>
                   <TableCell className="text-center">
-                    <TableActionButton
+                    {/* <TableActionButton
                       menus={dropdownMenu}
                       id={client.id}
                       refreshClients={refreshClients}
@@ -182,7 +162,8 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
                           Confirmez-vous cette suppression ?
                         </p>
                       }
-                    />
+                    /> */}
+                    X
                   </TableCell>
                 </TableRow>
               ))
@@ -195,7 +176,7 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
                   Aucun client trouvé.
                 </TableCell>
               </TableRow>
-            )} */}
+            )}
           </TableBody>
         </Table>
       </div>

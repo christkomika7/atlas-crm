@@ -6,7 +6,7 @@ type UseCalculateTaxeReturn = {
     calculate: (params: {
         items: TaxItem[];
         taxes: VatRateType[];
-        amountType?: "HT" | "TTC";
+        amountType: "HT" | "TTC";
         taxOperation?: "cumul" | "sequence";
         discount?: [number, "purcent" | "money"]
     }) => CalculateTaxesResult;
@@ -18,7 +18,7 @@ export function useCalculateTaxe(): UseCalculateTaxeReturn {
         taxes,
         taxOperation = "sequence",
         discount,
-        amountType = "TTC"
+        amountType
     }: {
         items: TaxItem[];
         taxes: VatRateType[];

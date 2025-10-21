@@ -45,6 +45,14 @@ export const discount = [
     { id: 10, value: "100%", label: "100%" },
 ];
 
+export const rentalDurations = [
+    { id: 0, value: "6_months", label: "6 mois" },
+    { id: 1, value: "1_year", label: "1 an" },
+    { id: 2, value: "2_years", label: "2 ans" },
+    { id: 3, value: "3_years", label: "3 ans" },
+    { id: 4, value: "5_years", label: "5 ans" },
+]
+
 export const paymentTerms = [
     { id: 1, value: "paiement_7_jours", label: "Paiement sous 7 jours", data: 7 },
     { id: 2, value: "paiement_15_jours", label: "Paiement sous 15 jours", data: 15 },
@@ -181,13 +189,18 @@ export const billboardStrucutures = [
     },
     {
         id: 3,
-        label: "Abimé",
+        label: "Endommagé",
         value: "damaged"
     },
     {
         id: 4,
         label: "Incomplet",
         value: "incomplete"
+    },
+    {
+        id: 5,
+        label: "Repeint",
+        value: "paint"
     },
 ]
 
@@ -217,20 +230,7 @@ export const generalNotes = [
         label: "5",
         value: "five"
     },
-]
-
-export const lessorType = [
-    {
-        id: 1,
-        label: "Personne physique",
-        value: "natural-person"
-    },
-    {
-        id: 2,
-        label: "Personne morale",
-        value: "legal-entity"
-    },
-]
+];
 
 export const lessorSpaceType = [
     {
@@ -243,7 +243,7 @@ export const lessorSpaceType = [
         label: "Public",
         value: "public"
     },
-]
+];
 
 export const recurrences = [
     {
@@ -293,20 +293,6 @@ export const recurrences = [
     },
 ];
 
-
-export const leasedSpace = [
-    {
-        id: 1,
-        label: "Public",
-        value: "public"
-    },
-    {
-        id: 2,
-        label: "Privé",
-        value: "private"
-    },
-]
-
 export const convert = [
     {
         id: 1,
@@ -318,7 +304,22 @@ export const convert = [
         label: "Bon de livraison",
         value: "delivery-note"
     },
-]
+];
+
+export const paymentFrequency = [
+    { id: 0, value: "monthly", label: "Mensuel" },
+    { id: 1, value: "quarterly", label: "Trimestriel" },
+    { id: 2, value: "semiannual", label: "Semestriel" },
+    { id: 3, value: "annual", label: "Annuel" },
+];
+
+
+export const electricitySupply = [
+    { id: 0, value: "yes", label: "Oui" },
+    { id: 1, value: "no", label: "Non" },
+];
+
+
 
 export const acceptPayment = [
     {
@@ -335,6 +336,25 @@ export const acceptPayment = [
         id: 3,
         label: "Virement",
         value: "bank-transfer"
+    },
+]
+
+
+export const lights = [
+    {
+        id: 1,
+        label: "Filaire",
+        value: "Filaire"
+    },
+    {
+        id: 2,
+        label: "Solaire",
+        value: "Solaire"
+    },
+    {
+        id: 3,
+        label: "Non éclairé",
+        value: "Non éclairé"
     },
 ]
 

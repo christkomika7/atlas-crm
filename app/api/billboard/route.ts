@@ -36,19 +36,18 @@ export async function POST(req: NextRequest) {
     });
 
     const billboardFields = [
-        "companyId", "reference", "type", "name", "dimension", "city", "area", "placement",
-        "orientation", "information", "address", "gmaps", "zone",
-        "rentalPrice", "installationCost", "maintenance", "structure", "decorativeElement",
-        "foundations", "technicalVisibility", "note", "hasTax"
+        "companyId", "reference", "hasTax", "type", "name", "locality", "zone", "area", "visualMarker",
+        "displayBoard", "address", "city", "gmaps", "orientation",
+        "rentalPrice", "installationCost", "maintenance", "width", "height", "lighting",
+        "structureType", "panelCondition", "decorativeElement", "foundations", "electricity", "framework", "note"
     ];
 
     const lessorFields = [
-        "lessorType", "lessorName", "lessorJob", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "lessorAddress",
-        "representativeName", "representativeContract", "leasedSpace", "paymentMethod", "specificCondition", "lessorCustomer", "lessorSpaceType"
+        "lessorSpaceType", "lessorType", "lessorCustomer", "lessorName", "lessorAddress", "lessorCity", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "rib", "iban", "bicSwift", "bankName",
+        "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition"
     ];
 
-    const contractFrom = rawData["contractFrom"];
-    const contractTo = rawData["contractTo"];
+    const rentalStartDate = rawData["rentalStartDate"];
 
     const billboardData: Record<string, any> = {};
     const lessorData: Record<string, any> = {};
@@ -61,21 +60,16 @@ export async function POST(req: NextRequest) {
         }
     }
 
-    lessorData.contractDuration = contractFrom && contractTo ? {
-        from: new Date(contractFrom),
-        to: new Date(contractTo),
-    } : undefined;
+    lessorData.rentalStartDate = rentalStartDate ? new Date(rentalStartDate) : undefined;
 
-
-    billboardData.imageFiles = filesMap["imageFiles"] ?? [];
-    billboardData.brochureFiles = filesMap["brochureFiles"] ?? [];
-
-    lessorData.signedLeaseContract = filesMap["signedLeaseContract"] ?? [];
-    lessorData.files = filesMap["files"] ?? [];
+    billboardData.photos = filesMap["photos"] ?? [];
+    billboardData.brochures = filesMap["brochures"] ?? [];
 
     const dataToValidate = {
         billboard: {
             ...billboardData,
+            width: Number(billboardData.width),
+            height: Number(billboardData.height),
             hasTax: JSON.parse(billboardData.hasTax),
             rentalPrice: new Decimal(billboardData.rentalPrice),
             installationCost: new Decimal(billboardData.installationCost),
@@ -83,9 +77,13 @@ export async function POST(req: NextRequest) {
         },
         lessor: {
             ...lessorData,
-            capital: new Decimal(lessorData.capital || 0)
+            capital: new Decimal(lessorData.capital || 0),
+            paymentMode: lessorData.paymentMode ? JSON.parse(lessorData.paymentMode) : []
+
         },
     };
+
+    console.log({ dataToValidate });
 
     const data = parseData<BillboardSchemaFormType>(
         billboardFormSchema,
@@ -111,42 +109,27 @@ export async function POST(req: NextRequest) {
         }, { status: 404 });
     }
 
+    console.log("HI")
+
     const key = generateId();
     const folderPhoto = createFolder([companyExist.companyName, "billboard", "photo", `${data.billboard.name}_----${key}`]);
     const folderBrochure = createFolder([companyExist.companyName, "billboard", "brochure", `${data.billboard.name}_----${key}`]);
-    const folderContract = createFolder([companyExist.companyName, "billboard", "contract", `${data.billboard.name}_----${key}`]);
-    const folderOther = createFolder([companyExist.companyName, "billboard", "other", `${data.billboard.name}_----${key}`]);
-
-
 
     let savedPathsPhoto: string[] = [];
     let savedPathsBrochure: string[] = [];
-    let savedPathsContract: string[] = [];
-    let savedPathsOther: string[] = [];
+
 
     try {
         // Sauvegarde des photos
-        for (const file of billboardData.imageFiles) {
+        for (const file of billboardData.photos) {
             const upload = await createFile(file, folderPhoto);
             savedPathsPhoto.push(upload);
         }
 
         // Sauvegarde des brochures
-        for (const file of billboardData.brochureFiles) {
+        for (const file of billboardData.brochures) {
             const upload = await createFile(file, folderBrochure);
             savedPathsBrochure.push(upload);
-        }
-
-        // Sauvegarde des contrats signés
-        for (const file of lessorData.signedLeaseContract) {
-            const upload = await createFile(file, folderContract);
-            savedPathsContract.push(upload);
-        }
-
-        // Sauvegarde des autres fichiers
-        for (const file of lessorData.files) {
-            const upload = await createFile(file, folderOther);
-            savedPathsOther.push(upload);
         }
 
         if (data.lessor.lessorSpaceType === "private") {
@@ -154,56 +137,72 @@ export async function POST(req: NextRequest) {
                 data: {
                     reference: data.billboard.reference,
                     hasTax: data.billboard.hasTax,
-                    pathBrochure: folderBrochure,
-                    pathContract: folderContract,
-                    pathFile: folderOther,
-                    pathPhoto: folderPhoto,
                     type: {
                         connect: {
                             id: data.billboard.type
                         }
                     },
                     name: data.billboard.name,
-                    dimension: data.billboard.dimension,
-                    city: { connect: { id: data.billboard.city } },
-                    area: { connect: { id: data.billboard.area } },
-                    placement: data.billboard.placement,
-                    orientation: data.billboard.orientation,
-                    information: data.billboard.information,
-                    address: data.billboard.address,
-                    gmaps: data.billboard.gmaps,
+                    locality: data.billboard.locality,
                     zone: data.billboard.zone,
+                    area: { connect: { id: data.billboard.area } },
+                    visualMarker: data.billboard.visualMarker,
+                    displayBoard: { connect: { id: data.billboard.displayBoard } },
+
+                    address: data.billboard.address,
+                    city: { connect: { id: data.billboard.city } },
+                    orientation: data.billboard.orientation,
+                    gmaps: data.billboard.gmaps,
+
+                    pathPhoto: folderPhoto,
+                    pathBrochure: folderBrochure,
+                    photos: savedPathsPhoto,
+                    brochures: savedPathsBrochure,
+
                     rentalPrice: data.billboard.rentalPrice,
                     installationCost: data.billboard.installationCost,
                     maintenance: data.billboard.maintenance,
-                    imageFiles: savedPathsPhoto,
-                    brochureFiles: savedPathsBrochure,
-                    structure: data.billboard.structure,
+
+                    width: data.billboard.width,
+                    height: data.billboard.height,
+                    lighting: data.billboard.lighting,
+                    structureType: { connect: { id: data.billboard.structureType } },
+                    panelCondition: data.billboard.panelCondition,
                     decorativeElement: data.billboard.decorativeElement,
                     foundations: data.billboard.foundations,
-                    technicalVisibility: data.billboard.technicalVisibility,
+                    electricity: data.billboard.electricity,
+                    framework: data.billboard.framework,
                     note: data.billboard.note,
 
-                    lessorType: data.lessor.lessorType,
                     lessorSpaceType: data.lessor.lessorSpaceType,
+                    lessorType: { connect: { id: data.lessor.lessorType } },
+
                     lessorName: data.lessor.lessorName,
-                    lessorEmail: data.lessor.lessorEmail,
-                    lessorJob: data.lessor.lessorJob,
+                    lessorAddress: data.lessor.lessorAddress,
+                    lessorCity: data.lessor.lessorCity,
                     lessorPhone: data.lessor.lessorPhone,
+                    lessorEmail: data.lessor.lessorEmail,
+
                     capital: data.lessor.capital,
                     rccm: data.lessor.rccm,
-
                     taxIdentificationNumber: data.lessor.taxIdentificationNumber,
-                    lessorAddress: data.lessor.lessorAddress,
-                    representativeName: data.lessor.representativeName,
-                    representativeContract: data.lessor.representativeContract,
-                    leasedSpace: data.lessor.leasedSpace,
-                    contractStart: data.lessor.contractDuration?.from ?? null,
-                    contractEnd: data.lessor.contractDuration?.to ?? null,
-                    paymentMethod: data.lessor.paymentMethod,
+                    bankName: data.lessor.bankName,
+                    rib: data.lessor.rib,
+                    iban: data.lessor.iban,
+                    bicSwift: data.lessor.bicSwift,
+
+                    representativeFirstName: data.lessor.representativeFirstName,
+                    representativeLastName: data.lessor.representativeLastName,
+                    representativeJob: data.lessor.representativeJob,
+                    representativePhone: data.lessor.representativePhone,
+                    representativeEmail: data.lessor.representativeEmail,
+
+                    rentalStartDate: data.lessor.rentalStartDate ?? null,
+                    rentalPeriod: data.lessor.rentalPeriod,
+                    paymentMode: JSON.stringify(data.lessor.paymentMode),
+                    paymentFrequency: data.lessor.paymentFrequency,
+                    electricitySupply: data.lessor.electricitySupply,
                     specificCondition: data.lessor.specificCondition,
-                    signedLeaseContract: savedPathsContract,
-                    files: savedPathsOther,
                     company: { connect: { id: data.billboard.companyId } },
                 },
             });
@@ -212,7 +211,6 @@ export async function POST(req: NextRequest) {
                 message: "Panneau ajouté avec succès.",
                 data: {
                     ...createdBillboard,
-                    contractDuration: [createdBillboard?.contractStart, createdBillboard?.contractEnd],
                 },
             });
 
@@ -221,37 +219,45 @@ export async function POST(req: NextRequest) {
             const createdBillboard = await prisma.billboard.create({
                 data: {
                     reference: data.billboard.reference,
-                    pathBrochure: folderBrochure,
-                    pathContract: folderContract,
-                    pathFile: folderOther,
-                    pathPhoto: folderPhoto,
+                    hasTax: data.billboard.hasTax,
                     type: {
                         connect: {
                             id: data.billboard.type
                         }
                     },
                     name: data.billboard.name,
-                    dimension: data.billboard.dimension,
-                    city: { connect: { id: data.billboard.city } },
-                    area: { connect: { id: data.billboard.area } },
-                    placement: data.billboard.placement,
-                    orientation: data.billboard.orientation,
-                    information: data.billboard.information,
-                    address: data.billboard.address,
-                    gmaps: data.billboard.gmaps,
+                    locality: data.billboard.locality,
                     zone: data.billboard.zone,
+                    area: { connect: { id: data.billboard.area } },
+                    visualMarker: data.billboard.visualMarker,
+                    displayBoard: { connect: { id: data.billboard.displayBoard } },
+
+                    address: data.billboard.address,
+                    city: { connect: { id: data.billboard.city } },
+                    orientation: data.billboard.orientation,
+                    gmaps: data.billboard.gmaps,
+
+                    pathPhoto: folderPhoto,
+                    pathBrochure: folderBrochure,
+                    photos: savedPathsPhoto,
+                    brochures: savedPathsBrochure,
+
                     rentalPrice: data.billboard.rentalPrice,
                     installationCost: data.billboard.installationCost,
                     maintenance: data.billboard.maintenance,
-                    imageFiles: savedPathsPhoto,
-                    brochureFiles: savedPathsBrochure,
-                    structure: data.billboard.structure,
+
+                    width: data.billboard.width,
+                    height: data.billboard.height,
+                    lighting: data.billboard.lighting,
+                    structureType: { connect: { id: data.billboard.structureType } },
+                    panelCondition: data.billboard.panelCondition,
                     decorativeElement: data.billboard.decorativeElement,
                     foundations: data.billboard.foundations,
-                    technicalVisibility: data.billboard.technicalVisibility,
+                    electricity: data.billboard.electricity,
+                    framework: data.billboard.framework,
                     note: data.billboard.note,
 
-                    lessorType: data.lessor.lessorType,
+                    lessorType: { connect: { id: data.lessor.lessorType } },
                     lessorSpaceType: data.lessor.lessorSpaceType,
                     lessorSupplier: {
                         connect: {
@@ -261,22 +267,21 @@ export async function POST(req: NextRequest) {
                     company: { connect: { id: data.billboard.companyId } },
                 },
             });
+
             return NextResponse.json({
                 status: "success",
                 message: "Panneau ajouté avec succès.",
                 data: {
                     ...createdBillboard,
-                    contractDuration: [createdBillboard?.contractStart, createdBillboard?.contractEnd],
                 },
             });
         }
 
     } catch (error) {
+        console.log({ error })
         await removePath([
             ...savedPathsPhoto,
             ...savedPathsBrochure,
-            ...savedPathsContract,
-            ...savedPathsOther
         ]);
 
         return NextResponse.json({
@@ -307,10 +312,8 @@ export async function DELETE(req: NextRequest) {
     })
 
     billboards.map(async billboard => {
-        await removePath(billboard.imageFiles)
-        await removePath(billboard.brochureFiles)
-        await removePath(billboard.signedLeaseContract)
-        await removePath(billboard.files)
+        await removePath(billboard.photos)
+        await removePath(billboard.brochures)
     })
     return NextResponse.json({
         state: "success",

@@ -4,7 +4,6 @@ import { parseData } from '@/lib/parse';
 import prisma from '@/lib/prisma';
 import { emailSchema, EmailSchemaType } from '@/lib/zod/email.schema';
 import { NextRequest, NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
 
 
 export async function POST(request: NextRequest) {

@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/form";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import TextInput from "@/components/ui/text-input";
-import { billboardStrucutures, generalNotes } from "@/lib/data";
+import { billboardStrucutures, generalNotes, lights } from "@/lib/data";
 import {
   billboardError,
   BillboardErrorType,
@@ -37,10 +37,14 @@ import { CityType } from "@/types/city.types";
 import CityModal from "../../../_component/city-modal";
 import AreaModal from "../../../_component/area-modal";
 import useBillboardTypeStore from "@/stores/billboard-type.store";
-import { BillboardTypeType } from "@/types/billboard-type.types";
 import BillboardTypeModal from "../../../_component/billboard-type-modal";
 import { Decimal } from "decimal.js";
 import { Switch } from "@/components/ui/switch";
+import useBillboardStore from "@/stores/billboard.store";
+import { getBillboardDisplayBoard, getBillboardStructureType } from "@/action/billboard.action";
+import { BaseType } from "@/types/base.types";
+import StructureTypeModal from "@/components/modal/structure-type-modal";
+import DisplayBoardModal from "@/components/modal/display-board-modal";
 
 type BillboardInfoTabProps = {
   form: UseFormReturn<EditBillboardSchemaFormType>;
@@ -50,6 +54,10 @@ type BillboardInfoTabProps = {
   lastBrochures: string[];
   setLastBrochures: Dispatch<SetStateAction<string[]>>;
   ref: RefObject<HTMLInputElement | null>;
+  width: number;
+  height: number;
+  setWidth: Dispatch<SetStateAction<number>>;
+  setHeight: Dispatch<SetStateAction<number>>;
 };
 
 export default function BillboardInfoTab({
@@ -58,7 +66,10 @@ export default function BillboardInfoTab({
   setLastBrochures,
   lastBrochures,
   setLastPhotos,
-  ref,
+  setHeight,
+  setWidth,
+  width,
+  height,
   cityId: city,
 }: BillboardInfoTabProps) {
   const id = useDataStore.use.currentCompany();
@@ -72,6 +83,31 @@ export default function BillboardInfoTab({
 
   const setBillboardType = useBillboardTypeStore.use.setBillboardType();
   const billboardsType = useBillboardTypeStore.use.billboardsType();
+
+  const displayBoards = useBillboardStore.use.displayBoards();
+  const setDisplayBoards = useBillboardStore.use.setDisplayBoards();
+
+  const structureTypes = useBillboardStore.use.structureTypes();
+  const setStructureType = useBillboardStore.use.setStructureType();
+
+  const {
+    mutate: mutateGetDisplayBoard,
+    isPending: isGettingDisplayBoard,
+  } = useQueryAction<
+    { companyId: string, },
+    RequestResponse<BaseType[]>
+  >(getBillboardDisplayBoard, () => { }, "display-board");
+
+
+  const {
+    mutate: mutateGetStructureType,
+    isPending: isGettingStructureType,
+  } = useQueryAction<
+    { companyId: string, },
+    RequestResponse<BaseType[]>
+  >(getBillboardStructureType, () => { }, "structure-type");
+
+
 
   const {
     mutate: mutateArea,
@@ -89,7 +125,7 @@ export default function BillboardInfoTab({
     data: dataBillboardType,
   } = useQueryAction<
     { companyId: string },
-    RequestResponse<BillboardTypeType[]>
+    RequestResponse<BaseType[]>
   >(allBillboardType, () => { }, "BillboardsType");
 
   const {
@@ -106,6 +142,21 @@ export default function BillboardInfoTab({
     if (id) {
       mutateCity({ companyId: id });
       mutateBillboardType({ companyId: id });
+
+      mutateGetDisplayBoard({ companyId: id }, {
+        onSuccess(data) {
+          if (data.data) {
+            setDisplayBoards(data.data);
+          }
+        },
+      });
+      mutateGetStructureType({ companyId: id }, {
+        onSuccess(data) {
+          if (data.data) {
+            setStructureType(data.data);
+          }
+        },
+      });
     }
   }, [id]);
 
@@ -235,7 +286,7 @@ export default function BillboardInfoTab({
                       setValue={field.onChange}
                       placeholder="Type de panneau publicitaire"
                       searchMessage="Rechercher un type de panneau"
-                      noResultsMessage="Aucune type de panneau trouvé."
+                      noResultsMessage="Aucun type de panneau trouvé."
                       addElement={<BillboardTypeModal />}
                     />
                   </FormControl>
@@ -262,13 +313,13 @@ export default function BillboardInfoTab({
             />
             <FormField
               control={form.control}
-              name="billboard.dimension"
+              name="billboard.locality"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
                       design="float"
-                      label="Dimension du panneau publicitaire"
+                      label="Lieu"
                       value={field.value}
                       handleChange={field.onChange}
                     />
@@ -277,6 +328,25 @@ export default function BillboardInfoTab({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="billboard.zone"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Zone"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="billboard.city"
@@ -305,6 +375,7 @@ export default function BillboardInfoTab({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="billboard.area"
@@ -333,13 +404,13 @@ export default function BillboardInfoTab({
 
             <FormField
               control={form.control}
-              name="billboard.placement"
+              name="billboard.visualMarker"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
                       design="float"
-                      label="Emplacement du panneau publicitaire"
+                      label="Repère visuel"
                       value={field.value}
                       handleChange={field.onChange}
                     />
@@ -351,15 +422,25 @@ export default function BillboardInfoTab({
 
             <FormField
               control={form.control}
-              name="billboard.orientation"
+              name="billboard.displayBoard"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
-                    <TextInput
-                      design="float"
-                      label="Orientation du panneau publicitaire"
+                    <Combobox
+                      isLoading={isGettingDisplayBoard}
+                      datas={displayBoards.map((displayBoard) => ({
+                        id: displayBoard.id,
+                        label: displayBoard.name,
+                        value: displayBoard.id,
+                      }))}
                       value={field.value}
-                      handleChange={field.onChange}
+                      setValue={(e) => {
+                        field.onChange(e);
+                      }}
+                      placeholder="Support d'affichage"
+                      searchMessage="Rechercher un support"
+                      noResultsMessage="Aucun support trouvé."
+                      addElement={<DisplayBoardModal />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -367,29 +448,6 @@ export default function BillboardInfoTab({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="billboard.information"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      required={false}
-                      design="float"
-                      label="Information sur le panneau"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-        <div className="space-y-2.5">
-          <h2 className="font-semibold text-sm">Emplacement</h2>
-          <div className="space-y-4.5">
             <FormField
               control={form.control}
               name="billboard.address"
@@ -407,6 +465,25 @@ export default function BillboardInfoTab({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="billboard.orientation"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Orientation"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="billboard.gmaps"
@@ -424,86 +501,14 @@ export default function BillboardInfoTab({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="billboard.zone"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      design="float"
-                      label="Zone"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </div>
         </div>
         <div className="space-y-2.5">
-          <h2 className="font-semibold text-sm">Photos et brochures</h2>
+          <h2 className="font-semibold text-sm">Brochure</h2>
           <div className="space-y-4.5">
             <FormField
               control={form.control}
-              name="billboard.rentalPrice"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      type="number"
-                      design="float"
-                      label="Coût de location"
-                      value={field.value?.toString()}
-                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="billboard.installationCost"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      type="number"
-                      design="float"
-                      label="Le coût d'installation"
-                      value={field.value?.toString()}
-                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="billboard.maintenance"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      type="number"
-                      design="float"
-                      label="Le coût d'entretien"
-                      value={field.value?.toString()}
-                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="billboard.imageFiles"
+              name="billboard.photos"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
@@ -514,9 +519,9 @@ export default function BillboardInfoTab({
                       label="Importer photo(s)"
                       value={field.value}
                       multiple={true}
-                      required={false}
-                      inputRef={ref}
                       handleChange={field.onChange}
+                      showFileData={true}
+                      required={false}
                     />
                   </FormControl>
                   <FormMessage />
@@ -525,7 +530,29 @@ export default function BillboardInfoTab({
             />
             <FormField
               control={form.control}
-              name="billboard.imageFiles"
+              name="billboard.brochures"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      type="file"
+                      design="float"
+                      accept=".pdf,.doc,.docx, image/*"
+                      label="Importer brochure(s)"
+                      value={field.value}
+                      multiple={true}
+                      handleChange={field.onChange}
+                      showFileData={true}
+                      required={false}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="billboard.lastPhotos"
               render={() => (
                 <FormItem className="-space-y-0.5">
                   <FormLabel>Liste des photos enregistrées</FormLabel>
@@ -574,29 +601,7 @@ export default function BillboardInfoTab({
             />
             <FormField
               control={form.control}
-              name="billboard.brochureFiles"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      type="file"
-                      design="float"
-                      accept=".pdf,.doc,.docx, image/*"
-                      label="Importer brochure(s)"
-                      value={field.value}
-                      multiple={true}
-                      inputRef={ref}
-                      handleChange={field.onChange}
-                      required={false}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="billboard.brochureFiles"
+              name="billboard.lastBrochures"
               render={() => (
                 <FormItem className="-space-y-0.5">
                   <FormLabel>Liste des brochures enregistrées</FormLabel>
@@ -646,21 +651,184 @@ export default function BillboardInfoTab({
           </div>
         </div>
         <div className="space-y-2.5">
-          <h2 className="font-semibold text-sm">Informations techniques</h2>
+          <h2 className="font-semibold text-sm">Données financières</h2>
           <div className="space-y-4.5">
             <FormField
               control={form.control}
-              name="billboard.structure"
+              name="billboard.rentalPrice"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      type="number"
+                      design="float"
+                      label="Prix de location"
+                      value={field.value?.toString()}
+                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="billboard.installationCost"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      type="number"
+                      design="float"
+                      label="Le coût d'installation"
+                      value={field.value?.toString()}
+                      required={false}
+                      handleChange={(e) => field.onChange(new Decimal(e as string))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="billboard.maintenance"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      type="number"
+                      design="float"
+                      required={false}
+                      label="Le coût d'entretien"
+                      value={field.value?.toString()}
+                      handleChange={(e) => field.onChange(new Decimal(String(e)))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+        <div className="space-y-2.5">
+          <h2 className="font-semibold text-sm">Informations techniques</h2>
+          <div className="space-y-4.5">
+            <div className="grid grid-cols-3 gap-x-4">
+              <FormField
+                control={form.control}
+                name="billboard.width"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <TextInput
+                        type="number"
+                        design="float"
+                        label="Largeur"
+                        value={field.value}
+                        handleChange={(e) => {
+                          setWidth(Number(e))
+                          field.onChange(e)
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="billboard.height"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <TextInput
+                        type="number"
+                        design="float"
+                        label="Hauteur"
+                        value={field.value}
+                        handleChange={(e) => {
+                          setHeight(Number(e))
+                          field.onChange(e)
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <TextInput
+                type="number"
+                design="float"
+                label="Surface"
+                disabled={true}
+                required={false}
+                value={width * height}
+                handleChange={() => { }}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="billboard.lighting"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      datas={lights}
+                      value={field.value}
+                      setValue={field.onChange}
+                      placeholder="Éclairage"
+                      searchMessage="Rechercher un type d'éclairage"
+                      noResultsMessage="Aucun type d'éclairage trouvé."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="billboard.structureType"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      isLoading={isGettingStructureType}
+                      datas={structureTypes.map((structureType) => ({
+                        id: structureType.id,
+                        label: structureType.name,
+                        value: structureType.id,
+                      }))}
+                      value={field.value}
+                      setValue={(e) => {
+                        field.onChange(e);
+                      }}
+                      placeholder="Type de structure"
+                      searchMessage="Rechercher un type de structure"
+                      noResultsMessage="Aucun type de structure trouvé."
+                      addElement={<StructureTypeModal />}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="billboard.panelCondition"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
                       datas={billboardStrucutures}
                       value={field.value}
-                      setValue={field.onChange}
-                      placeholder="Structure du panneau publicitaire"
-                      searchMessage="Rechercher une structure"
-                      noResultsMessage="Aucune structure trouvée."
+                      setValue={(e) => {
+                        field.onChange(e);
+                      }}
+                      placeholder="État du panneau"
+                      searchMessage="Rechercher un état"
+                      noResultsMessage="Aucun état trouvé."
                     />
                   </FormControl>
                   <FormMessage />
@@ -692,7 +860,7 @@ export default function BillboardInfoTab({
                   <FormControl>
                     <TextInput
                       design="float"
-                      label="Fondations du panneau"
+                      label="Fondations et visserie"
                       value={field.value}
                       handleChange={field.onChange}
                     />
@@ -704,13 +872,30 @@ export default function BillboardInfoTab({
 
             <FormField
               control={form.control}
-              name="billboard.technicalVisibility"
+              name="billboard.electricity"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
                       design="float"
-                      label="Visibilité technique"
+                      label="Électricité et éclairage"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="billboard.framework"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Structure et châssis"
                       value={field.value}
                       handleChange={field.onChange}
                     />
@@ -729,7 +914,7 @@ export default function BillboardInfoTab({
                       datas={generalNotes}
                       value={field.value}
                       setValue={field.onChange}
-                      placeholder="Notes de l'apparence du panneau"
+                      placeholder="Aspect général"
                       searchMessage="Rechercher une note"
                       noResultsMessage="Aucune note trouvée."
                     />

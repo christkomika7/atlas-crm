@@ -1,6 +1,9 @@
 import { ClientSchemaType, EditClientSchemaType } from "@/lib/zod/client.schema";
 import { RequestResponse } from "@/types/api.types";
 import { ClientType } from "@/types/client.types";
+import { DeliveryNoteType } from "@/types/delivery-note.types";
+import { InvoiceType } from "@/types/invoice.types";
+import { QuoteType } from "@/types/quote.types";
 
 export async function all({ id }: { id: string }) {
     try {
@@ -151,6 +154,58 @@ export async function removeMany({ ids }: { ids: string[] }) {
         });
 
         const res: RequestResponse<ClientType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getInvoice({ id }: { id: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/client/${id}/invoice`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<InvoiceType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getQuote({ id }: { id: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/client/${id}/quote`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<QuoteType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+export async function getDeliveryNote({ id }: { id: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/client/${id}/delivery-note`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<DeliveryNoteType[]> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }

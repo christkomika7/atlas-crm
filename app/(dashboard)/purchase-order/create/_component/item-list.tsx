@@ -8,7 +8,6 @@ import usePurchaseItemStore, { PurchaseItemType } from "@/stores/purchase-item.s
 import { VatRateType } from "@/types/company.types";
 import { CalculateTaxesResult, TaxItem } from "@/types/tax.type";
 import Decimal from "decimal.js";
-import { toast } from "sonner";
 
 export type ItemListProps = {
     item: PurchaseItemType;
@@ -47,7 +46,7 @@ export default function ItemList({ item, taxes, calculate, amountPaid }: ItemLis
 
             <h2 className="font-semibold text-sm">{item.name}</h2>
             {item.description && (
-                <pre className={`${generalSans.className} mb-2 leading-tight text-sm`}>{item.description}</pre>
+                <pre className={`${generalSans.className} whitespace-pre-wrap mb-2 leading-tight text-sm`}>{item.description}</pre>
             )}
             <div className="flex justify-between items-center gap-x-2">
                 <div className="flex items-center gap-x-1 font-medium text-sm">

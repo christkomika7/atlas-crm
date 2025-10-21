@@ -85,9 +85,9 @@ export async function getTransactions(params: GetTransactionsParams) {
   }
 }
 
-export async function getCategories({ companyId, type }: { companyId: string, type: "receipt" | "dibursement" }) {
+export async function getCategories({ companyId, type }: { companyId: string, type?: "receipt" | "dibursement" }) {
   const params = new URLSearchParams();
-  params.append("type", type);
+  if (type) params.append("type", type);
 
   const queryString = params.toString();
   const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/category/${companyId}${queryString ? `?${queryString}` : ""
@@ -112,10 +112,17 @@ export async function getCategories({ companyId, type }: { companyId: string, ty
   }
 }
 
-export async function getSources({ companyId }: { companyId: string }) {
+export async function getSources({ companyId, type }: { companyId: string, type?: "cash" | "check" | "bank-transfer" }) {
+  const params = new URLSearchParams();
+  if (type) params.append("type", type);
+
+  const queryString = params.toString();
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/source/${companyId}${queryString ? `?${queryString}` : ""
+    }`;
+
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/source/${companyId}`,
+      url,
       {
         method: "GET",
       },

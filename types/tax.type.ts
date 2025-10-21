@@ -23,7 +23,7 @@ export type TaxItem = {
 
 export type TaxInput = {
     taxName: string;
-    taxValue: string[];
+    taxValue: string;
     cumul?: CumulType[];
 };
 
@@ -48,6 +48,8 @@ export type CalculateTaxesResult = {
     totalTax: Decimal;
     totalWithTaxes: Decimal;
     totalWithoutTaxes: Decimal;
+    currentPrice: Decimal;
+    subtotal: Decimal;
 };
 
 export type CalculateTaxesInput = {

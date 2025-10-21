@@ -24,7 +24,6 @@ export async function GET(req: NextRequest) {
         state: "success",
         data: {
             ...billboard,
-            contractDuration: [billboard?.contractStart, billboard?.contractEnd],
         },
     }, { status: 200 })
 }

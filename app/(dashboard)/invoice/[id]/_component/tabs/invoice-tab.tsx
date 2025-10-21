@@ -252,6 +252,7 @@ export default function InvoiceTab() {
             updatedPrice: calculate({
               items: [parseItem(item)],
               taxes: company?.vatRates ?? [],
+              amountType: amountType,
             }).totalWithoutTaxes
             ,
             locationStart: new Date(item.locationStart),
@@ -274,6 +275,7 @@ export default function InvoiceTab() {
               calculate({
                 items: [parseItem(item)],
                 taxes: company?.vatRates ?? [],
+                amountType: amountType,
               }).totalWithoutTaxes,
             locationStart: new Date(item.locationStart),
             locationEnd: new Date(item.locationEnd),
@@ -301,12 +303,14 @@ export default function InvoiceTab() {
     const HTPrice = calculate({
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
+      amountType: amountType,
       discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
+      amountType: amountType,
       discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
     }).totalWithTaxes
 

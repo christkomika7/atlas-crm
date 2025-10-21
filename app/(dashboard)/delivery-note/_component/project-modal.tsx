@@ -12,7 +12,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Spinner from "@/components/ui/spinner";
 import TextInput from "@/components/ui/text-input";
 import useQueryAction from "@/hook/useQueryAction";
-import { BillboardTypeSchemaType } from "@/lib/zod/billboard-type.schema";
 import useProjectStore from "@/stores/project.store";
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
@@ -65,19 +64,19 @@ export default function ProjectModal({ clientId }: ProjectModalProps) {
     data,
   } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
     getCollaborators,
-    () => {},
+    () => { },
     "collaborators"
   );
 
   const { mutate, isPending } = useQueryAction<
     ProjectSchemaType,
     RequestResponse<ProjectType>
-  >(create, () => {}, "projects");
+  >(create, () => { }, "projects");
 
   const { mutate: mutateRemove, isPending: isPendingRemove } = useQueryAction<
     { id: string },
     RequestResponse<ProjectType>
-  >(remove, () => {}, "projects");
+  >(remove, () => { }, "projects");
 
   useEffect(() => {
     if (companyId) {

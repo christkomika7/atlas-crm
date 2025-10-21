@@ -70,7 +70,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                 </span>
             }
 
-            <h2 className="font-semibold text-sm">{item.name}</h2>
+            <h2 className="font-semibold text-sm">{item.name} {item.hasTax && <span className="text-blue">*</span>}</h2>
             {item.description && (
                 <pre className={`${generalSans.className} whitespace-pre-wrap mb-2 leading-tight text-sm`}>{item.description}</pre>
             )}

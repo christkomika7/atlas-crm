@@ -66,7 +66,6 @@ export async function GET(req: NextRequest) {
                 state: "success",
                 data: billboards.map((billboard) => ({
                     ...billboard,
-                    contractDuration: [billboard?.contractStart, billboard?.contractEnd],
                 })),
             },
             { status: 200 }
@@ -105,13 +104,9 @@ export async function POST(req: NextRequest) {
 
     const folderPhoto = createFolder([billboard.company.companyName, "billboard", "photo", `${billboard.name}_----${key}`]);
     const folderBrochure = createFolder([billboard.company.companyName, "billboard", "brochure", `${billboard.name}_----${key}`]);
-    const folderContract = createFolder([billboard.company.companyName, "billboard", "contract", `${billboard.name}_----${key}`]);
-    const folderOther = createFolder([billboard.company.companyName, "billboard", "other", `${billboard.name}_----${key}`]);
 
-    let savedPathsPhoto: string[] = await copyTo(billboard.imageFiles, folderPhoto);
-    let savedPathsBrochure: string[] = await copyTo(billboard.brochureFiles, folderBrochure);
-    let savedPathsContract: string[] = await copyTo(billboard.signedLeaseContract, folderContract);
-    let savedPathsOther: string[] = await copyTo(billboard.files, folderOther);
+    let savedPathsPhoto: string[] = await copyTo(billboard.photos, folderPhoto);
+    let savedPathsBrochure: string[] = await copyTo(billboard.brochures, folderBrochure);
 
     try {
 
@@ -119,56 +114,73 @@ export async function POST(req: NextRequest) {
             await prisma.billboard.create({
                 data: {
                     reference: key,
-                    pathBrochure: folderBrochure,
-                    pathContract: folderContract,
-                    pathFile: folderOther,
-                    pathPhoto: folderPhoto,
+                    hasTax: billboard.hasTax,
                     type: {
                         connect: {
                             id: billboard.typeId
                         }
                     },
                     name: billboard.name,
-                    dimension: billboard.dimension,
-                    city: { connect: { id: billboard.cityId } },
-                    area: { connect: { id: billboard.areaId } },
-                    placement: billboard.placement,
-                    orientation: billboard.orientation,
-                    information: billboard.information,
-                    address: billboard.address,
-                    gmaps: billboard.gmaps,
+                    locality: billboard.locality,
                     zone: billboard.zone,
+                    area: { connect: { id: billboard.areaId } },
+                    visualMarker: billboard.visualMarker,
+                    displayBoard: { connect: { id: billboard.displayBoardId } },
+
+                    address: billboard.address,
+                    city: { connect: { id: billboard.cityId } },
+                    orientation: billboard.orientation,
+                    gmaps: billboard.gmaps,
+
+                    pathPhoto: folderPhoto,
+                    pathBrochure: folderBrochure,
+                    photos: savedPathsPhoto,
+                    brochures: savedPathsBrochure,
+
                     rentalPrice: billboard.rentalPrice,
                     installationCost: billboard.installationCost,
                     maintenance: billboard.maintenance,
-                    imageFiles: savedPathsPhoto,
-                    brochureFiles: savedPathsBrochure,
-                    structure: billboard.structure,
+
+                    width: billboard.width,
+                    height: billboard.height,
+                    lighting: billboard.lighting,
+                    structureType: { connect: { id: billboard.structureTypeId } },
+                    panelCondition: billboard.panelCondition,
                     decorativeElement: billboard.decorativeElement,
                     foundations: billboard.foundations,
-                    technicalVisibility: billboard.technicalVisibility,
+                    electricity: billboard.electricity,
+                    framework: billboard.framework,
                     note: billboard.note,
 
                     lessorSpaceType: billboard.lessorSpaceType,
-                    lessorType: billboard.lessorType,
+                    lessorType: { connect: { id: billboard.lessorTypeId } },
+
                     lessorName: billboard.lessorName,
-                    lessorEmail: billboard.lessorEmail,
-                    lessorJob: billboard.lessorJob,
+                    lessorAddress: billboard.lessorAddress,
+                    lessorCity: billboard.lessorCity,
                     lessorPhone: billboard.lessorPhone,
+                    lessorEmail: billboard.lessorEmail,
+
                     capital: billboard.capital,
                     rccm: billboard.rccm,
-
                     taxIdentificationNumber: billboard.taxIdentificationNumber,
-                    lessorAddress: billboard.lessorAddress,
-                    representativeName: billboard.representativeName,
-                    representativeContract: billboard.representativeContract,
-                    leasedSpace: billboard.leasedSpace,
-                    contractStart: billboard.contractStart,
-                    contractEnd: billboard.contractEnd,
-                    paymentMethod: billboard.paymentMethod,
+                    bankName: billboard.bankName,
+                    rib: billboard.rib,
+                    iban: billboard.iban,
+                    bicSwift: billboard.bicSwift,
+
+                    representativeFirstName: billboard.representativeFirstName,
+                    representativeLastName: billboard.representativeLastName,
+                    representativeJob: billboard.representativeJob,
+                    representativePhone: billboard.representativePhone,
+                    representativeEmail: billboard.representativeEmail,
+
+                    rentalStartDate: billboard.rentalStartDate,
+                    rentalPeriod: billboard.rentalPeriod,
+                    paymentMode: billboard.paymentMode,
+                    paymentFrequency: billboard.paymentFrequency,
+                    electricitySupply: billboard.electricitySupply,
                     specificCondition: billboard.specificCondition,
-                    signedLeaseContract: savedPathsContract,
-                    files: savedPathsOther,
                     company: { connect: { id: billboard.companyId } },
                 },
             });
@@ -177,45 +189,52 @@ export async function POST(req: NextRequest) {
             await prisma.billboard.create({
                 data: {
                     reference: key,
-                    pathBrochure: folderBrochure,
-                    pathContract: folderContract,
-                    pathFile: folderOther,
-                    pathPhoto: folderPhoto,
+                    hasTax: billboard.hasTax,
                     type: {
                         connect: {
                             id: billboard.typeId
                         }
                     },
                     name: billboard.name,
-                    dimension: billboard.dimension,
-                    city: { connect: { id: billboard.cityId } },
-                    area: { connect: { id: billboard.areaId } },
-                    placement: billboard.placement,
-                    orientation: billboard.orientation,
-                    information: billboard.information,
-                    address: billboard.address,
-                    gmaps: billboard.gmaps,
+                    locality: billboard.locality,
                     zone: billboard.zone,
+                    area: { connect: { id: billboard.areaId } },
+                    visualMarker: billboard.visualMarker,
+                    displayBoard: { connect: { id: billboard.displayBoardId } },
+
+                    address: billboard.address,
+                    city: { connect: { id: billboard.cityId } },
+                    orientation: billboard.orientation,
+                    gmaps: billboard.gmaps,
+
+                    pathPhoto: folderPhoto,
+                    pathBrochure: folderBrochure,
+                    photos: savedPathsPhoto,
+                    brochures: savedPathsBrochure,
+
                     rentalPrice: billboard.rentalPrice,
                     installationCost: billboard.installationCost,
                     maintenance: billboard.maintenance,
-                    imageFiles: savedPathsPhoto,
-                    brochureFiles: savedPathsBrochure,
-                    structure: billboard.structure,
+
+                    width: billboard.width,
+                    height: billboard.height,
+                    lighting: billboard.lighting,
+                    structureType: { connect: { id: billboard.structureTypeId } },
+                    panelCondition: billboard.panelCondition,
                     decorativeElement: billboard.decorativeElement,
                     foundations: billboard.foundations,
-                    technicalVisibility: billboard.technicalVisibility,
+                    electricity: billboard.electricity,
+                    framework: billboard.framework,
                     note: billboard.note,
 
-                    lessorType: billboard.lessorType,
                     lessorSpaceType: billboard.lessorSpaceType,
+                    lessorType: { connect: { id: billboard.lessorTypeId } },
+
                     lessorSupplier: {
                         connect: {
                             id: billboard.lessorSupplierId as string
                         }
                     },
-                    signedLeaseContract: savedPathsContract,
-                    files: savedPathsOther,
                     company: { connect: { id: billboard.companyId } },
                 },
             });
@@ -232,8 +251,6 @@ export async function POST(req: NextRequest) {
         await removePath([
             ...savedPathsPhoto,
             ...savedPathsBrochure,
-            ...savedPathsContract,
-            ...savedPathsOther
         ]);
 
         return NextResponse.json({
@@ -242,13 +259,6 @@ export async function POST(req: NextRequest) {
         }, { status: 500 });
 
     }
-
-
-
-
-
-
-
 
 }
 
@@ -274,16 +284,15 @@ export async function PUT(req: NextRequest) {
     });
 
     const billboardFields = [
-        "id", "companyId", "reference", "type", "name", "dimension", "placement", "city", "area",
-        "orientation", "information", "address", "gmaps", "zone",
-        "rentalPrice", "installationCost", "maintenance", "structure", "decorativeElement",
-        "foundations", "technicalVisibility", "note", "lastImageFiles", "lastBrochureFiles", "hasTax"
+        "id", "companyId", "reference", "hasTax", "type", "name", "locality", "zone", "area", "visualMarker",
+        "displayBoard", "address", "city", "gmaps", "orientation",
+        "rentalPrice", "installationCost", "maintenance", "width", "height", "lighting",
+        "structureType", "panelCondition", "decorativeElement", "foundations", "electricity", "framework", "note", "lastPhotos", "lastPhotos", "lastBrochures"
     ];
 
     const lessorFields = [
-        "lessorType", "lessorName", "lessorJob", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "lessorAddress",
-        "representativeName", "representativeContract", "leasedSpace", "paymentMethod",
-        "specificCondition", "lastSignedLeaseContract", "lastFiles", "lessorCustomer", "lessorSpaceType"
+        "lessorSpaceType", "lessorType", "lessorCustomer", "lessorName", "lessorAddress", "lessorCity", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "rib", "iban", "bicSwift", "bankName",
+        "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition"
     ];
 
     const billboardData: Record<string, any> = {};
@@ -298,33 +307,29 @@ export async function PUT(req: NextRequest) {
     }
 
     // Conversion des dates
-    lessorData.contractDuration = rawData["contractFrom"] && rawData["contractTo"] ? {
-        from: new Date(rawData["contractFrom"]),
-        to: new Date(rawData["contractTo"]),
-    } : undefined;
+    lessorData.rentalStartDate = rawData["rentalStartDate"] ? new Date(rawData["rentalStartDate"]) : undefined;
 
     // Fichiers uploadés
-    billboardData.imageFiles = filesMap["imageFiles"] ?? [];
-    billboardData.brochureFiles = filesMap["brochureFiles"] ?? [];
-    lessorData.signedLeaseContract = filesMap["signedLeaseContract"] ?? [];
-    lessorData.files = filesMap["files"] ?? [];
+    billboardData.photos = filesMap["photos"] ?? [];
+    billboardData.brochures = filesMap["brochures"] ?? [];
 
     // Conversion des anciens fichiers en tableau
     const dataToValidate = {
         billboard: {
             ...(billboardData as EditBillboardSchemaType),
             hasTax: JSON.parse(billboardData.hasTax),
-            lastImageFiles: billboardData.lastImageFiles ? billboardData.lastImageFiles.split(";") : [],
-            lastBrochureFiles: billboardData.lastBrochureFiles ? billboardData.lastBrochureFiles.split(";") : [],
+            width: Number(billboardData.width),
+            height: Number(billboardData.height),
+            lastPhotos: billboardData.lastPhotos ? billboardData.lastPhotos.split(";") : [],
+            lastBrochures: billboardData.lastBrochures ? billboardData.lastBrochures.split(";") : [],
             rentalPrice: new Decimal(billboardData.rentalPrice),
             installationCost: new Decimal(billboardData.installationCost),
             maintenance: new Decimal(billboardData.maintenance),
         },
         lessor: {
             ...(lessorData as EditLessorSchemaType),
-            lastSignedLeaseContract: lessorData.lastSignedLeaseContract ? lessorData.lastSignedLeaseContract.split(";") : [],
-            lastFiles: lessorData.lastFiles ? lessorData.lastFiles.split(";") : [],
-            capital: new Decimal(lessorData.capital || 0)
+            capital: new Decimal(lessorData.capital || 0),
+            paymentMode: lessorData.paymentMode ? JSON.parse(lessorData.paymentMode) : []
         }
     };
 
@@ -351,14 +356,10 @@ export async function PUT(req: NextRequest) {
     // Création dossiers
     const folderPhoto = createFolder([companyExist.companyName, "billboard", "photo", `${data.billboard.name}_----${billboard.pathPhoto.split("_----")[1]}`]);
     const folderBrochure = createFolder([companyExist.companyName, "billboard", "brochure", `${data.billboard.name}_----${billboard.pathBrochure.split("_----")[1]}`]);
-    const folderContract = createFolder([companyExist.companyName, "billboard", "contract", `${data.billboard.name}_----${billboard.pathContract.split("_----")[1]}`]);
-    const folderOther = createFolder([companyExist.companyName, "billboard", "other", `${data.billboard.name}_----${billboard.pathFile.split("_----")[1]}`]);
 
     // Sauvegarde fichiers
-    let savedPathsContract: string[] = await updateFiles({ folder: folderContract, outdatedData: { id: billboard.id, path: billboard.pathContract, files: billboard.signedLeaseContract }, updatedData: { id: data.billboard.id, lastUploadDocuments: data.lessor.lastSignedLeaseContract }, files: data.lessor.signedLeaseContract ?? [] });
-    let savedPathsOther: string[] = await updateFiles({ folder: folderOther, outdatedData: { id: billboard.id, path: billboard.pathFile, files: billboard.files }, updatedData: { id: data.billboard.id, lastUploadDocuments: data.lessor.lastFiles }, files: data.lessor.files ?? [] });
-    let savedPathsPhoto: string[] = await updateFiles({ folder: folderPhoto, outdatedData: { id: billboard.id, path: billboard.pathPhoto, files: billboard.imageFiles }, updatedData: { id: data.billboard.id, lastUploadDocuments: data.billboard.lastImageFiles }, files: data.billboard.imageFiles ?? [] });
-    let savedPathsBrochure: string[] = await updateFiles({ folder: folderBrochure, outdatedData: { id: billboard.id, path: billboard.pathBrochure, files: billboard.brochureFiles }, updatedData: { id: data.billboard.id, lastUploadDocuments: data.billboard.lastBrochureFiles }, files: data.billboard.brochureFiles ?? [] });
+    let savedPathsPhoto: string[] = await updateFiles({ folder: folderPhoto, outdatedData: { id: billboard.id, path: billboard.pathPhoto, files: billboard.photos }, updatedData: { id: data.billboard.id, lastUploadDocuments: data.billboard.lastPhotos }, files: data.billboard.photos ?? [] });
+    let savedPathsBrochure: string[] = await updateFiles({ folder: folderBrochure, outdatedData: { id: billboard.id, path: billboard.pathBrochure, files: billboard.brochures }, updatedData: { id: data.billboard.id, lastUploadDocuments: data.billboard.lastBrochures }, files: data.billboard.brochures ?? [] });
 
     try {
         const updatedBillboard = await prisma.billboard.update({
@@ -366,10 +367,6 @@ export async function PUT(req: NextRequest) {
                 id: data.billboard.id
             },
             data: {
-                pathBrochure: folderBrochure,
-                pathContract: folderContract,
-                pathFile: folderOther,
-                pathPhoto: folderPhoto,
                 reference: data.billboard.reference,
                 hasTax: data.billboard.hasTax,
                 type: {
@@ -378,27 +375,39 @@ export async function PUT(req: NextRequest) {
                     }
                 },
                 name: data.billboard.name,
-                dimension: data.billboard.dimension,
-                city: { connect: { id: data.billboard.city } },
-                area: { connect: { id: data.billboard.area } },
-                placement: data.billboard.placement,
-                orientation: data.billboard.orientation,
-                information: data.billboard.information,
-                address: data.billboard.address,
-                gmaps: data.billboard.gmaps,
+                locality: data.billboard.locality,
                 zone: data.billboard.zone,
+                area: { connect: { id: data.billboard.area } },
+                visualMarker: data.billboard.visualMarker,
+                displayBoard: { connect: { id: data.billboard.displayBoard } },
+
+                address: data.billboard.address,
+                city: { connect: { id: data.billboard.city } },
+                orientation: data.billboard.orientation,
+                gmaps: data.billboard.gmaps,
+
+                pathPhoto: folderPhoto,
+                pathBrochure: folderBrochure,
+                photos: savedPathsPhoto,
+                brochures: savedPathsBrochure,
+
                 rentalPrice: data.billboard.rentalPrice,
                 installationCost: data.billboard.installationCost,
                 maintenance: data.billboard.maintenance,
-                imageFiles: savedPathsPhoto,
-                brochureFiles: savedPathsBrochure,
-                structure: data.billboard.structure,
+
+                width: data.billboard.width,
+                height: data.billboard.height,
+                lighting: data.billboard.lighting,
+                structureType: { connect: { id: data.billboard.structureType } },
+                panelCondition: data.billboard.panelCondition,
                 decorativeElement: data.billboard.decorativeElement,
                 foundations: data.billboard.foundations,
-                technicalVisibility: data.billboard.technicalVisibility,
+                electricity: data.billboard.electricity,
+                framework: data.billboard.framework,
                 note: data.billboard.note,
-                lessorType: data.lessor.lessorType,
+
                 lessorSpaceType: data.lessor.lessorSpaceType,
+                lessorType: { connect: { id: data.lessor.lessorType } },
                 ...(data.lessor.lessorSpaceType === "public" ? {
                     lessorSupplier: {
                         connect: {
@@ -407,23 +416,31 @@ export async function PUT(req: NextRequest) {
                     },
                 } : {
                     lessorName: data.lessor.lessorName,
-                    lessorEmail: data.lessor.lessorEmail,
-                    lessorJob: data.lessor.lessorJob,
+                    lessorAddress: data.lessor.lessorAddress,
+                    lessorCity: data.lessor.lessorCity,
                     lessorPhone: data.lessor.lessorPhone,
+                    lessorEmail: data.lessor.lessorEmail,
+
                     capital: data.lessor.capital,
                     rccm: data.lessor.rccm,
-
                     taxIdentificationNumber: data.lessor.taxIdentificationNumber,
-                    lessorAddress: data.lessor.lessorAddress,
-                    representativeName: data.lessor.representativeName,
-                    representativeContract: data.lessor.representativeContract,
-                    leasedSpace: data.lessor.leasedSpace,
-                    contractStart: data.lessor.contractDuration?.from ?? null,
-                    contractEnd: data.lessor.contractDuration?.to ?? null,
-                    paymentMethod: data.lessor.paymentMethod,
+                    bankName: data.lessor.bankName,
+                    rib: data.lessor.rib,
+                    iban: data.lessor.iban,
+                    bicSwift: data.lessor.bicSwift,
+
+                    representativeFirstName: data.lessor.representativeFirstName,
+                    representativeLastName: data.lessor.representativeLastName,
+                    representativeJob: data.lessor.representativeJob,
+                    representativePhone: data.lessor.representativePhone,
+                    representativeEmail: data.lessor.representativeEmail,
+
+                    rentalStartDate: data.lessor.rentalStartDate ?? null,
+                    rentalPeriod: data.lessor.rentalPeriod,
+                    paymentMode: JSON.stringify(data.lessor.paymentMode),
+                    paymentFrequency: data.lessor.paymentFrequency,
+                    electricitySupply: data.lessor.electricitySupply,
                     specificCondition: data.lessor.specificCondition,
-                    signedLeaseContract: savedPathsContract,
-                    files: savedPathsOther,
                 }),
                 company: { connect: { id: data.billboard.companyId } },
             },
@@ -434,12 +451,11 @@ export async function PUT(req: NextRequest) {
             message: "Panneau modifié avec succès.",
             data: {
                 ...updatedBillboard,
-                contractDuration: [updatedBillboard?.contractStart, updatedBillboard?.contractEnd],
             },
         });
 
     } catch (error) {
-        await removePath([...savedPathsPhoto, ...savedPathsBrochure, ...savedPathsContract, ...savedPathsOther]);
+        await removePath([...savedPathsPhoto, ...savedPathsBrochure,]);
         return NextResponse.json({ status: "error", message: "Erreur lors de la modification." }, { status: 500 });
     }
 }
@@ -460,10 +476,8 @@ export async function DELETE(req: NextRequest) {
     }
 
     await prisma.billboard.delete({ where: { id } });
-    await removePath(billboard.imageFiles)
-    await removePath(billboard.brochureFiles)
-    await removePath(billboard.signedLeaseContract)
-    await removePath(billboard.files)
+    await removePath(billboard.photos)
+    await removePath(billboard.brochures)
     return NextResponse.json({
         state: "success",
         message: "Panneau publicitaire supprimé avec succès.",

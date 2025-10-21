@@ -130,7 +130,7 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
                     </div>
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    <BillboardPhoto path={billboard.imageFiles.length > 0 ? billboard.imageFiles[0] : undefined} name={billboard.name.toUpperCase()} />
+                    <BillboardPhoto path={billboard.photos.length > 0 ? billboard.photos[0] : undefined} name={billboard.name.toUpperCase()} />
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {billboard.reference.toUpperCase()}

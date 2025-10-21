@@ -712,11 +712,11 @@ export function getPrefix(
 export function getDocumentRef(transaction: TransactionType) {
   if (transaction.type === "RECEIPT") {
     if (transaction.referenceInvoiceId) {
-      return `${transaction.company.documentModel.invoicesPrefix || INVOICE_PREFIX}-${transaction.referenceInvoice.invoiceNumber}`;
+      return `${transaction.company.documentModel.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(transaction.referenceInvoice.invoiceNumber, false)}`;
     }
   } else {
     if (transaction.referencePurchaseOrderId) {
-      return `${transaction.company.documentModel.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${transaction.referencePurchaseOrder.purchaseOrderNumber}`;
+      return `${transaction.company.documentModel.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(transaction.referencePurchaseOrder.purchaseOrderNumber, false)}`;
     }
   }
 

@@ -46,7 +46,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
 
   const [categoryId, setCategoryId] = useState("");
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
-
+  const [paymentMode, setPaymentMode] = useState<"cash" | "check" | "bank-transfer">();
 
   const form = useForm<ReceiptSchemaType>({
     resolver: zodResolver(receiptSchema),
@@ -77,7 +77,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
   const {
     mutate: mutateGetSources,
     isPending: isGettingSources,
-  } = useQueryAction<{ companyId: string }, RequestResponse<SourceType[]>>(
+  } = useQueryAction<{ companyId: string, type?: "cash" | "check" | "bank-transfer" }, RequestResponse<SourceType[]>>(
     getSources,
     () => { },
     "sources"
@@ -110,15 +110,6 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
         },
       })
 
-      mutateGetSources({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setSources(data.data)
-          }
-        },
-      })
-
-
       mutateGetDocuments({ companyId, type: "receipt" }, {
         onSuccess(data) {
           if (data.data) {
@@ -134,6 +125,19 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
       });
     }
   }, [companyId]);
+
+
+  useEffect(() => {
+    if (paymentMode) {
+      mutateGetSources({ companyId, type: paymentMode }, {
+        onSuccess(data) {
+          if (data.data) {
+            setSources(data.data)
+          }
+        },
+      })
+    }
+  }, [paymentMode])
 
   useEffect(() => {
     if (categoryId) {
@@ -321,7 +325,10 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                     <Combobox
                       datas={acceptPayment}
                       value={field.value}
-                      setValue={field.onChange}
+                      setValue={e => {
+                        setPaymentMode(e as "cash" | "check" | "bank-transfer")
+                        field.onChange(e)
+                      }}
                       placeholder="Mode de paiement"
                       searchMessage="Rechercher un mode de paiement"
                       noResultsMessage="Aucun mode de paiement trouvé."
@@ -370,7 +377,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                       placeholder="Source"
                       searchMessage="Rechercher une source"
                       noResultsMessage="Aucune source trouvée."
-                      addElement={<SourceModal />}
+                      addElement={<SourceModal sourceType={paymentMode} />}
                     />
                   </FormControl>
                   <FormMessage />
