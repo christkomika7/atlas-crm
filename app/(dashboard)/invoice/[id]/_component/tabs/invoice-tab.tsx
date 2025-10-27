@@ -361,6 +361,7 @@ export default function InvoiceTab() {
           setInvoiceNumber(invoice.invoiceNumber);
           setPaymentLimit(invoice.paymentLimit);
           setLastUploadFiles(invoice.files.filter((file) => Boolean(file)) ?? []);
+          setAmountType(invoice.amountType);
           setClientDiscount({
             discount: Number(invoice.discount),
             discountType: invoice.discountType as "purcent" | "money"

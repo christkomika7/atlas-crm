@@ -5,6 +5,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { checkAccess } from "@/lib/access";
 import { parseData } from "@/lib/parse";
+import { $Enums } from "@/lib/generated/prisma";
+import { checkAccessDeletion } from "@/lib/server";
 
 export async function GET(req: NextRequest) {
   await checkAccess(["SUPPLIERS"], "READ");
@@ -120,6 +122,7 @@ export async function DELETE(req: NextRequest) {
 
   const supplier = await prisma.supplier.findUnique({
     where: { id },
+    include: { company: true }
   });
 
   if (!supplier) {
@@ -128,6 +131,9 @@ export async function DELETE(req: NextRequest) {
       state: "error",
     }, { status: 400 })
   }
+
+
+  await checkAccessDeletion($Enums.DeletionType.SUPPLIERS, [id], supplier.company.id)
 
   await prisma.supplier.delete({ where: { id } });
   await removePath(supplier.uploadDocuments);

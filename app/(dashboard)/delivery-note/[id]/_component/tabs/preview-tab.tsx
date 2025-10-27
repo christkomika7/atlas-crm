@@ -149,24 +149,6 @@ export default function PreviewTab() {
                   N° {document?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-{(generateAmaId(deliveryNote?.deliveryNoteNumber ?? 1, false))}
                 </p>
               </div>
-              <div className="space-y-2 py-4">
-                <p className="flex justify-between items-center gap-x-2 text-sm">
-                  <span className="font-semibold">Total TTC</span>
-                  <span>
-                    {deliveryNote?.totalTTC ? formatNumber(deliveryNote.totalTTC) : 0}{" "}
-                    {deliveryNote?.company.currency}
-                  </span>
-                </p>
-                <p className="flex justify-between items-center gap-x-2 text-sm">
-                  <span>Arriéré</span>
-                  <span>
-                    {formatNumber(
-                      deliveryNote ? new Decimal(deliveryNote.totalTTC) : 0
-                    )}{" "}
-                    {deliveryNote?.company.currency}
-                  </span>
-                </p>
-              </div>
               {deliveryNote?.fromRecordId && deliveryNote.fromRecordName && deliveryNote.fromRecordReference &&
                 <p className="flex justify-between items-center gap-x-2 pb-4 text-sm">
                   <span className="font-semibold">Convertir depuis le {deliveryNote.fromRecordName.toLocaleLowerCase()}</span>

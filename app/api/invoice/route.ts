@@ -2,8 +2,8 @@ import { checkAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { checkBillboardConflicts, rollbackInvoice } from "@/lib/server";
-import { generateId } from "@/lib/utils";
+import { checkAccessDeletion, checkBillboardConflicts, rollbackInvoice } from "@/lib/server";
+import { generateId, getFirstValidCompanyId } from "@/lib/utils";
 import { invoiceSchema, InvoiceSchemaType } from "@/lib/zod/invoice.schema";
 import { NextResponse, type NextRequest } from "next/server";
 import { InvoiceType } from "@/types/invoice.types";
@@ -302,9 +302,20 @@ export async function DELETE(req: NextRequest) {
                 }
             },
             receipts: true,
-            dibursements: true
+            dibursements: true,
+            company: true
         }
-    })
+    });
+
+    const companyId = getFirstValidCompanyId(invoices);
+
+    if (!companyId) return NextResponse.json({
+        message: "Identifiant invalide.",
+        state: "error",
+    }, { status: 400 });
+
+
+    await checkAccessDeletion($Enums.DeletionType.INVOICES, ids, companyId);
 
     for (const invoice of invoices) {
         if (invoice.receipts.length > 0 || invoice.dibursements.length > 0) {

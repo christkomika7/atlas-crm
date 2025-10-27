@@ -181,6 +181,7 @@ export async function getInvoice({ id }: { id: string }) {
     }
 }
 
+
 export async function getQuote({ id }: { id: string }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/client/${id}/quote`, {

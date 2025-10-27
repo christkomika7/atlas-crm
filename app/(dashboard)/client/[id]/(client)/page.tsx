@@ -18,7 +18,7 @@ export default function ClientDetails() {
   const { mutate, isPending, data } = useQueryAction<
     { id: string },
     RequestResponse<ClientType>
-  >(unique, () => {}, "client");
+  >(unique, () => { }, "client");
 
   useEffect(() => {
     if (param.id) {

@@ -4,7 +4,7 @@ import { createFolder, removePath, updateFiles } from "@/lib/file";
 import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { rollbackPurchaseOrder } from "@/lib/server";
+import { checkAccessDeletion, rollbackPurchaseOrder } from "@/lib/server";
 import { generateId, getIdFromUrl } from "@/lib/utils";
 import { ItemPurchaseOrderSchemaType } from "@/lib/zod/item.schema";
 import { purchaseOrderUpdateSchema, PurchaseOrderUpdateSchemaType } from "@/lib/zod/purchase-order.schema";
@@ -370,7 +370,8 @@ export async function DELETE(req: NextRequest) {
     include: {
       items: true,
       productsServices: true,
-      dibursements: true
+      dibursements: true,
+      company: true
     }
   });
 
@@ -387,6 +388,8 @@ export async function DELETE(req: NextRequest) {
       message: "Supprimez d'abord les transactions associées à ce bon de commande.",
     }, { status: 409 });
   }
+
+  await checkAccessDeletion($Enums.DeletionType.PURCHASE_ORDERS, [id], purchaseOrder.company.id)
 
 
   if (purchaseOrder?.items && purchaseOrder?.items.length > 0) {

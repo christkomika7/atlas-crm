@@ -44,6 +44,23 @@ export async function all({ companyId, filter }: { companyId: string, filter: "u
     }
 }
 
+export async function getLatestPurchaseOrder({ companyId }: { companyId: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/purchase-order/${companyId}/last`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<PurchaseOrderType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
 export async function unique({ id }: { id: string }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/purchase-order/${id}/unique`, {

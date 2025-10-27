@@ -1,7 +1,8 @@
-import { z } from "zod";
+import { string, z } from "zod";
 import { userEditSchema, userSchema } from "./user.schema";
 
 export const taxSchema = z.object({
+    id: string(),
     taxName: z.string({
         error: "Le nom de la taxe est obligatoire."
     }),

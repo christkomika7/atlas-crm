@@ -6,15 +6,14 @@ import mime from "mime-types";
 import prisma from "./prisma";
 import { removePath, saveFile } from "./file";
 import { BillboardItem, ConflictResult, ExistingBillboardItem, InvoiceType } from "@/types/invoice.types";
-import { format, isAfter, isBefore, isEqual, isValid, setDate } from "date-fns";
-import { updatedItem } from "@/types/item.type";
-import { Item } from "./generated/prisma";
+import { format, isAfter, isBefore, isEqual, isValid } from "date-fns";
 import { QuoteType } from "@/types/quote.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
+import { getSession } from "./auth";
+import { $Enums, Deletion } from "./generated/prisma";
+import { NextResponse } from "next/server";
 
-// @ts-ignore - on utilise la classe globale File de Node 18+
-const NodeFile = globalThis.File;
 
 export async function getFileFromPath(filePath: string): Promise<File | null> {
     try {
@@ -500,4 +499,129 @@ export async function checkBillboardConflicts(
         hasConflict: conflicts.length > 0,
         conflicts
     };
+}
+
+
+export async function checkAccessDeletion(type: $Enums.DeletionType, ids: string[], companyId: string) {
+    const session = await getSession();
+
+    if (session?.user.role !== "ADMIN") {
+
+        for (const id of ids) {
+            const exist = await prisma.deletion.findFirst({
+                where: { recordId: id }
+            })
+
+            if (exist) continue
+            await prisma.deletion.create({
+                data: {
+                    type,
+                    recordId: id,
+                    company: {
+                        connect: { id: companyId }
+                    }
+                }
+            });
+            switch (type) {
+                case "QUOTES":
+                    await prisma.quote.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+                case "INVOICES":
+                    await prisma.invoice.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+                case "DELIVERY_NOTES":
+                    await prisma.deliveryNote.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+                case "PURCHASE_ORDERS":
+                    await prisma.purchaseOrder.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+                case "RECEIPTS":
+                    await prisma.receipt.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+                case "DISBURSEMENTS":
+                    await prisma.dibursement.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+                case "PRODUCT_SERVICES":
+                    await prisma.productService.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+                case "BILLBOARDS":
+                    await prisma.billboard.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+                case "CLIENTS":
+                    await prisma.client.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+                case "SUPPLIERS":
+                    await prisma.supplier.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+                case "PROJECTS":
+                    await prisma.project.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+                case "APPOINTMENTS":
+                    await prisma.appointment.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
+            }
+        }
+    }
+
+    return true
 }

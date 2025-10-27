@@ -156,7 +156,7 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
                     })}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(invoice.totalTTC)} {currency}
+                    {formatNumber(invoice.amountType === "TTC" ? invoice.totalTTC : invoice.totalHT)} {currency}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     <span

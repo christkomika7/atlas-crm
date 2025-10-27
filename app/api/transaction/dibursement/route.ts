@@ -25,6 +25,15 @@ export async function POST(req: NextRequest) {
 
         const referenceDocument = {};
 
+        if (data.documentRef) {
+            Object.assign(referenceDocument, {
+                referencePurchaseOrder: {
+                    connect: {
+                        id: data.documentRef
+                    }
+                },
+            })
+        }
 
         if (data.project) {
             Object.assign(referenceDocument, {
@@ -80,11 +89,6 @@ export async function POST(req: NextRequest) {
                 company: {
                     connect: {
                         id: data.companyId
-                    }
-                },
-                referencePurchaseOrder: {
-                    connect: {
-                        id: data.documentRef
                     }
                 },
                 ...referenceDocument,

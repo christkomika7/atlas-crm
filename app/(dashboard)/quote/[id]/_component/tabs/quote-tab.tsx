@@ -199,6 +199,7 @@ export default function QuoteTab() {
             setQuoteNumber(quote.quoteNumber);
             setPaymentLimit(quote.paymentLimit);
             setLastUploadFiles(quote.files.filter((file) => Boolean(file)) ?? []);
+            setAmountType(quote.amountType);
             setClientDiscount({
               discount: Number(quote.discount),
               discountType: quote.discountType as "purcent" | "money"
@@ -229,6 +230,7 @@ export default function QuoteTab() {
               id: quote.id,
               companyId: quote.companyId,
               quoteNumber: quote.quoteNumber,
+              amountType: quote.amountType,
               note: quote.note,
               paymentLimit: quote.paymentLimit,
               totalHT: quote.totalHT,

@@ -11,10 +11,16 @@ import { RequestResponse } from "@/types/api.types";
 import { SourceType, TransactionCategoryType } from "@/types/transaction.type";
 import { UserType } from "@/types/user.types";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 
-export default function TransactionFilters() {
+type TransactionFilters = {
+  filters: "empty" | "filter" | "reset";
+  setFilters: Dispatch<SetStateAction<"empty" | "filter" | "reset">>;
+}
+
+export default function TransactionFilters({ filters, setFilters }: TransactionFilters) {
   const router = useRouter();
+  const isResetting = useRef(false);
 
   const companyId = useDataStore.use.currentCompany();
 
@@ -89,7 +95,34 @@ export default function TransactionFilters() {
     }
   }, [companyId]);
 
+  // Gérer le reset en premier
   useEffect(() => {
+    if (filters === "reset") {
+      isResetting.current = true;
+
+      setMovementValue("");
+      setCategoryValue("");
+      setPaymentModeValue('');
+      setSourceValue("");
+      setPaidForValue("");
+      setStartDate(undefined);
+      setEndDate(undefined);
+
+      router.replace("/transaction");
+
+      // Attendre que tous les states soient mis à jour
+      setTimeout(() => {
+        setFilters("empty");
+        isResetting.current = false;
+      }, 100);
+    }
+  }, [filters]);
+
+  // Gérer la mise à jour des filtres
+  useEffect(() => {
+    // Ne pas exécuter pendant le reset
+    if (isResetting.current) return;
+
     const params = new URLSearchParams();
 
     if (movementValue) params.set("movement", movementValue);
@@ -103,6 +136,11 @@ export default function TransactionFilters() {
     const queryString = params.toString();
     const url = queryString ? `/transaction?${queryString}` : "/transaction";
 
+    // Vérifier si au moins un filtre est actif
+    const hasActiveFilters = movementValue || categoryValue || paymentModeValue ||
+      sourceValue || paidForValue || startDate || endDate;
+
+    setFilters(hasActiveFilters ? "filter" : "empty");
     router.replace(url);
   }, [
     movementValue,
@@ -112,7 +150,6 @@ export default function TransactionFilters() {
     paidForValue,
     startDate,
     endDate,
-    router,
   ]);
 
   return (
@@ -121,14 +158,14 @@ export default function TransactionFilters() {
         <DatePicker
           label="Date de début"
           mode="single"
-          value={startDate}
+          value={startDate || undefined}
           disabled={false}
           onChange={(date) => setStartDate(date as Date)}
         />
         <DatePicker
           label="Date de fin"
           mode="single"
-          value={endDate}
+          value={endDate || undefined}
           disabled={false}
           onChange={(date) => setEndDate(date as Date)}
         />

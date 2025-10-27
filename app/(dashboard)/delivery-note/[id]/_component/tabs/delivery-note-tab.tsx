@@ -202,6 +202,7 @@ export default function DeliveryNoteTab() {
             setDeliverNoteNumber(deliveryNote.deliveryNoteNumber);
             setPaymentLimit(deliveryNote.paymentLimit);
             setLastUploadFiles(deliveryNote.files.filter((file) => Boolean(file)) ?? []);
+            setAmountType(deliveryNote.amountType);
             setClientDiscount({
               discount: Number(deliveryNote.discount),
               discountType: deliveryNote.discountType as "purcent" | "money"
@@ -234,6 +235,7 @@ export default function DeliveryNoteTab() {
               deliveryNoteNumber: deliveryNote.deliveryNoteNumber,
               note: deliveryNote.note,
               paymentLimit: deliveryNote.paymentLimit,
+              amountType: deliveryNote.amountType,
               totalHT: deliveryNote.totalHT,
               totalTTC: deliveryNote.totalTTC,
               discount: deliveryNote.discount,

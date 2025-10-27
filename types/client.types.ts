@@ -4,6 +4,7 @@ export type ClientType = {
     id: string;
     companyName: string;
     lastname: string;
+    hasDelete: boolean;
     firstname: string;
     email: string;
     phone: string;

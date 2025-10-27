@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "deletion" ALTER COLUMN "ids" SET NOT NULL,
+ALTER COLUMN "ids" SET DATA TYPE TEXT;

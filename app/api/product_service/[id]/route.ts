@@ -7,6 +7,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { editProductServiceSchema, EditProductServiceSchemaType } from "@/lib/zod/product-service.schema";
 
 import prisma from "@/lib/prisma";
+import { checkAccessDeletion } from "@/lib/server";
 
 export async function GET(req: NextRequest) {
     await checkAccess(["INVOICES"], "MODIFY");
@@ -172,6 +173,7 @@ export async function DELETE(req: NextRequest) {
 
     const productService = await prisma.productService.findUnique({
         where: { id },
+        include: { company: true }
     });
 
     if (!productService) {
@@ -180,6 +182,8 @@ export async function DELETE(req: NextRequest) {
             state: "error",
         }, { status: 400 })
     }
+
+    await checkAccessDeletion($Enums.DeletionType.PRODUCT_SERVICES, [id], productService.company.id)
 
     const deletedProductService = await prisma.productService.delete({ where: { id } });
     return NextResponse.json({

@@ -222,6 +222,7 @@ export default function PreviewTab() {
                 onClose={() => setOpen({ ...open, paymentHistory: false })}
               >
                 <PaymentHistoryModal
+                  refresh={refresh}
                   title={` Facture N° ${document?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice?.invoiceNumber ?? 1, false)} - ${invoice.client.companyName}`}
                   amount={`${formatNumber(
                     invoice ? new Decimal(getAmountPrice(invoice.amountType, invoice?.totalTTC, invoice?.totalHT)).minus(invoice.payee) : 0

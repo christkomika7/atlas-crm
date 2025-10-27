@@ -54,7 +54,7 @@ export default function ClientPage() {
               ) : (
                 <>
                   {selectedClientIds.length > 0 &&
-                    `(${selectedClientIds.length})`}{" "}
+                    `(${selectedClientIds.length})`}
                   Suppression
                 </>
               )}

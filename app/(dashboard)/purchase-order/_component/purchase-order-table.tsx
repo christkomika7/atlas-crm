@@ -147,7 +147,7 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
                     })}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(purchaseOrder.totalTTC)} {currency}
+                    {formatNumber(purchaseOrder.amountType === "TTC" ? purchaseOrder.totalTTC : purchaseOrder.totalHT)} {currency}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     <span

@@ -37,38 +37,23 @@ export default function CreateCompanyForm() {
   const resetEmployees = useEmployeeStore.use.resetEmployees();
   const clearTaxs = useTaxStore.use.clearTaxs();
 
+  const taxs = useTaxStore.use.taxs();
+
+  const employees = useEmployeeStore.use.employees()
+
   const getCompany = useCompanyStore.use.getCompany();
   const updateCompany = useCompanyStore.use.updateCompany();
   const clearCompany = useCompanyStore.use.clearCompany();
-  const updateEmployee = useEmployeeStore.use.updateEmployee();
+
   const getEmployees = useEmployeeStore.use.getEmployees();
-  const setTaxs = useTaxStore.use.setTaxs();
-  const getTaxs = useTaxStore.use.getTaxs();
+  const updateEmployee = useEmployeeStore.use.updateEmployee();
   const setCurrentCompany = useDataStore.use.setCurrentCompany();
+
   const setCurrency = useDataStore.use.setCurrency();
   const currentCompany = useDataStore.use.currentCompany();
 
   const form = useForm<CompanySchemaType>({
-    resolver: zodResolver(companySchema),
-    defaultValues: {
-      companyName: "",
-      registeredAddress: "",
-      phoneNumber: "",
-      email: "",
-      city: "",
-      codePostal: "",
-      website: "",
-      businessRegistrationNumber: "",
-      taxIdentificationNumber: "",
-      capitalAmount: "",
-      vatRate: [],
-      currency: "",
-      employees: [],
-      fiscal: { from: undefined, to: undefined },
-      bankAccountDetails: "",
-      businessActivityType: "",
-      country: "",
-    },
+    resolver: zodResolver(companySchema)
   });
 
   const { mutate, isPending } = useQueryAction<
@@ -77,10 +62,8 @@ export default function CreateCompanyForm() {
   >(create, () => { }, ["companies", "countries"]);
 
   useEffect(() => {
-    router.refresh();
     const company = getCompany();
     const employees = getEmployees();
-    const taxs = getTaxs();
 
     if (employees?.length > 0) {
       employees.map(async (employee, index) => {
@@ -95,7 +78,7 @@ export default function CreateCompanyForm() {
       });
     }
 
-    const defaultValues: Partial<CompanySchemaType> = {
+    form.reset({
       companyName: company?.companyName ?? "",
       registeredAddress: company?.registeredAddress ?? "",
       phoneNumber: company?.phoneNumber ?? "",
@@ -106,7 +89,7 @@ export default function CreateCompanyForm() {
       businessRegistrationNumber: company?.businessRegistrationNumber ?? "",
       taxIdentificationNumber: company?.taxIdentificationNumber ?? "",
       capitalAmount: company ? company.capitalAmount : "",
-      vatRate: taxs.length > 0 ? taxs : [],
+      vatRate: taxs,
       currency: company?.currency ?? "",
       fiscal:
         company?.fiscal && company.fiscal.from && company.fiscal.to
@@ -118,63 +101,21 @@ export default function CreateCompanyForm() {
       bankAccountDetails: company?.bankAccountDetails ?? "",
       businessActivityType: company?.businessActivityType ?? "",
       country: company?.country ?? "",
-    };
-
-    form.reset(defaultValues);
+    })
   }, []);
 
   useEffect(() => {
-    const subscription = form.watch((formData) => {
-      if (Array.isArray(formData.vatRate) && formData.vatRate.length > 0) {
-        const validTaxs = formData.vatRate
-          .filter(
-            (item): item is NonNullable<typeof item> =>
-              !!item && !!item.taxName && Array.isArray(item.taxValue)
-          )
-          .map((item) => ({
-            taxName: item.taxName!,
-            taxValue: item.taxValue!,
-            cumul: Array.isArray(item.cumul)
-              ? item.cumul.filter(
-                (c): c is { id: number; name: string; check: boolean } =>
-                  !!c &&
-                  typeof c.id === "number" &&
-                  !!c.name &&
-                  typeof c.check === "boolean"
-              )
-              : undefined,
-          }));
+    form.setValue('employees', employees);
+  }, [employees])
 
-        setTaxs(validTaxs);
-      }
+  useEffect(() => {
+    form.setValue("vatRate", taxs);
+  }, [taxs])
 
-      updateCompany({
-        companyName: formData.companyName ?? "",
-        registeredAddress: formData.registeredAddress ?? "",
-        phoneNumber: formData.phoneNumber ?? "",
-        email: formData.email ?? "",
-        website: formData.website ?? "",
-        city: formData.city,
-        codePostal: formData.codePostal,
-        businessRegistrationNumber: formData.businessRegistrationNumber ?? "",
-        taxIdentificationNumber: formData.taxIdentificationNumber ?? "",
-        capitalAmount: formData.capitalAmount ? formData.capitalAmount : "",
-        currency: formData.currency ?? "",
-        fiscal:
-          formData.fiscal?.from && formData.fiscal?.to
-            ? {
-              from: new Date(formData.fiscal.from),
-              to: new Date(formData.fiscal.to),
-            }
-            : undefined,
-        bankAccountDetails: formData.bankAccountDetails ?? "",
-        businessActivityType: formData.businessActivityType ?? "",
-        country: formData.country ?? "",
-      });
-    });
 
-    return () => subscription.unsubscribe();
-  }, [form.watch]);
+  function handleData(field: Partial<keyof CompanySchemaType>, value: any) {
+    updateCompany({ [field]: value });
+  }
 
   async function submit(formData: CompanySchemaType) {
     const { success, data } = companySchema.safeParse(formData);
@@ -219,7 +160,10 @@ export default function CreateCompanyForm() {
                   design="float"
                   label="Nom de l'entreprise"
                   value={field.value}
-                  handleChange={field.onChange}
+                  handleChange={(value) => {
+                    handleData("companyName", value)
+                    field.onChange(value)
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -235,7 +179,10 @@ export default function CreateCompanyForm() {
                 <Combobox
                   datas={formatedCountries}
                   value={field.value}
-                  setValue={field.onChange}
+                  setValue={(value) => {
+                    handleData("country", value)
+                    field.onChange(value)
+                  }}
                   placeholder="Pays de résidence"
                   searchMessage="Rechercher un pays"
                   noResultsMessage="Aucun pays trouvé."
@@ -255,7 +202,10 @@ export default function CreateCompanyForm() {
                   design="float"
                   label="Ville"
                   value={field.value}
-                  handleChange={field.onChange}
+                  handleChange={(value) => {
+                    handleData("city", value)
+                    field.onChange(value)
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -272,7 +222,10 @@ export default function CreateCompanyForm() {
                   design="float"
                   label="Boite postale"
                   value={field.value}
-                  handleChange={field.onChange}
+                  handleChange={(value) => {
+                    handleData("codePostal", value)
+                    field.onChange(value)
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -289,7 +242,10 @@ export default function CreateCompanyForm() {
                   design="float"
                   label="Adresse enregistrée"
                   value={field.value}
-                  handleChange={field.onChange}
+                  handleChange={(value) => {
+                    handleData("registeredAddress", value)
+                    field.onChange(value)
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -306,7 +262,10 @@ export default function CreateCompanyForm() {
                   design="float"
                   label="Numéro de téléphone"
                   value={field.value}
-                  handleChange={field.onChange}
+                  handleChange={(value) => {
+                    handleData("phoneNumber", value)
+                    field.onChange(value)
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -323,7 +282,10 @@ export default function CreateCompanyForm() {
                   design="float"
                   label="Adresse mail"
                   value={field.value}
-                  handleChange={field.onChange}
+                  handleChange={(value) => {
+                    handleData("email", value)
+                    field.onChange(value)
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -341,7 +303,10 @@ export default function CreateCompanyForm() {
                   design="float"
                   label="Site internet"
                   value={field.value ?? ""}
-                  handleChange={field.onChange}
+                  handleChange={(value) => {
+                    handleData("website", value)
+                    field.onChange(value)
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -363,7 +328,10 @@ export default function CreateCompanyForm() {
                       design="float"
                       label="Numéro d’immatriculation (RCCM)"
                       value={field.value}
-                      handleChange={field.onChange}
+                      handleChange={(value) => {
+                        handleData("businessRegistrationNumber", value)
+                        field.onChange(value)
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -380,7 +348,10 @@ export default function CreateCompanyForm() {
                       design="float"
                       label="Numéro d'identification fiscale (NIF)"
                       value={field.value}
-                      handleChange={field.onChange}
+                      handleChange={(value) => {
+                        handleData("taxIdentificationNumber", value)
+                        field.onChange(value)
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -398,7 +369,10 @@ export default function CreateCompanyForm() {
                       design="float"
                       label="Montant du capital"
                       value={field.value}
-                      handleChange={(e) => field.onChange(String(e))}
+                      handleChange={(value) => {
+                        handleData("capitalAmount", String(value))
+                        field.onChange(String(value))
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -415,7 +389,10 @@ export default function CreateCompanyForm() {
                     <Combobox
                       datas={currencies}
                       value={field.value}
-                      setValue={field.onChange}
+                      setValue={(value) => {
+                        handleData("currency", value)
+                        field.onChange(value)
+                      }}
                       placeholder="Devise"
                       searchMessage="Rechercher une devise"
                       noResultsMessage="Aucune devise trouvée."
@@ -432,10 +409,10 @@ export default function CreateCompanyForm() {
           <FormField
             control={form.control}
             name="vatRate"
-            render={({ field }) => (
+            render={() => (
               <FormItem className="-space-y-2">
                 <FormControl>
-                  <TaxPanel taxs={field.value} setTaxs={field.onChange} />
+                  <TaxPanel />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -447,10 +424,10 @@ export default function CreateCompanyForm() {
           <FormField
             control={form.control}
             name="employees"
-            render={({ field }) => (
+            render={() => (
               <FormItem className="-space-y-2">
                 <FormControl>
-                  <EmployeePanel handleChange={field.onChange} />
+                  <EmployeePanel />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -480,9 +457,9 @@ export default function CreateCompanyForm() {
                           }
                           : undefined
                       }
-                      onChange={(e) => {
-                        const range = e as { from: Date; to: Date };
-                        field.onChange({ from: range.from, to: range.to });
+                      onChange={(value) => {
+                        handleData("fiscal", value)
+                        field.onChange(value)
                       }}
                     />
                   </FormControl>
@@ -500,7 +477,10 @@ export default function CreateCompanyForm() {
                       design="float"
                       label="Détails du compte bancaire"
                       value={field.value}
-                      handleChange={field.onChange}
+                      handleChange={(value) => {
+                        handleData("bankAccountDetails", value)
+                        field.onChange(value)
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -517,7 +497,10 @@ export default function CreateCompanyForm() {
                       design="float"
                       label="Secteur d'activité"
                       value={field.value}
-                      handleChange={field.onChange}
+                      handleChange={(value) => {
+                        handleData("businessActivityType", value)
+                        field.onChange(value)
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

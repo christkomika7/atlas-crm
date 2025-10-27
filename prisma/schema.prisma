@@ -13,6 +13,26 @@ enum Role {
   USER
 }
 
+enum ContractType {
+  CLIENT
+  LESSOR
+}
+
+enum DeletionType {
+  QUOTES
+  INVOICES
+  DELIVERY_NOTES
+  PURCHASE_ORDERS
+  RECEIPTS
+  DISBURSEMENTS
+  PRODUCT_SERVICES
+  BILLBOARDS
+  CLIENTS
+  SUPPLIERS
+  PROJECTS
+  APPOINTMENTS
+}
+
 enum SourceType {
   CHECK
   CASH
@@ -34,6 +54,7 @@ enum Resource {
   APPOINTMENT
   TRANSACTION
   SETTING
+  CONTRACT
 }
 
 enum ItemState {
@@ -133,9 +154,11 @@ model Company {
   purchaseOrders             PurchaseOrder[]
   deliveryNotes              DeliveryNote[]
   items                      Item[]
-  DisplayBoard               DisplayBoard[]
-  StructureType              StructureType[]
-  LessorType                 LessorType[]
+  displayBoards              DisplayBoard[]
+  structureTypes             StructureType[]
+  lessorTypes                LessorType[]
+  deletions                  Deletion[]
+  contracts                  Contract[]
 
   @@unique([email])
   @@map("company")
@@ -145,6 +168,7 @@ model Supplier {
   id                         String   @id @default(uuid())
   companyName                String   @unique
   firstname                  String
+  hasDelete                  Boolean  @default(false)
   lastname                   String
   phone                      String
   email                      String
@@ -234,6 +258,7 @@ model Client {
   id                         String   @id @default(uuid())
   companyName                String
   lastname                   String
+  hasDelete                  Boolean  @default(false)
   firstname                  String
   email                      String
   phone                      String
@@ -253,9 +278,6 @@ model Client {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
   appointments Appointment[]
 
   projects      Project[]
@@ -265,6 +287,10 @@ model Client {
   deliveryNotes DeliveryNote[]
   receipts      Receipt[]
   dibursements  Dibursement[]
+  contracts     Contract[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("client")
 }
@@ -273,6 +299,7 @@ model Appointment {
   id             String   @id @default(uuid())
   subject        String
   address        String
+  hasDelete      Boolean  @default(false)
   date           DateTime
   time           String
   notify         Boolean  @default(false)
@@ -296,12 +323,34 @@ model Appointment {
   @@map("appointment")
 }
 
+model Contract {
+  id   String       @id @default(uuid())
+  type ContractType
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  invoices Invoice[]
+
+  billboardId String?
+  billboard   Billboard? @relation(fields: [billboardId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contract")
+}
+
 model Billboard {
   id String @id @default(uuid())
 
   reference      String        @unique
   hasTax         Boolean       @default(false)
   typeId         String
+  hasDelete      Boolean       @default(false)
   type           BillboardType @relation(fields: [typeId], references: [id], onDelete: Cascade)
   name           String
   locality       String
@@ -392,6 +441,7 @@ model Billboard {
   items         Item[]
   quotes        Quote[]
   deliveryNotes DeliveryNote[]
+  contracts     Contract[]
 
   @@map("billboard")
 }
@@ -399,6 +449,7 @@ model Billboard {
 model Invoice {
   id            String     @id @default(uuid())
   invoiceNumber Int        @default(autoincrement())
+  hasDelete     Boolean    @default(false)
   note          String
   files         String[]
   pathFiles     String
@@ -426,6 +477,9 @@ model Invoice {
   payments         Payment[]
   recurrences      Recurrence[]
 
+  Contract   Contract? @relation(fields: [contractId], references: [id])
+  contractId String?
+
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -442,6 +496,7 @@ model PurchaseOrder {
   id                  String     @id @default(uuid())
   purchaseOrderNumber Int        @default(autoincrement())
   note                String
+  hasDelete           Boolean    @default(false)
   files               String[]
   pathFiles           String
   totalHT             Decimal    @default(0) @db.Decimal(15, 2)
@@ -477,6 +532,7 @@ model PurchaseOrder {
 model Quote {
   id           String     @id @default(uuid())
   quoteNumber  Int        @default(autoincrement())
+  hasDelete    Boolean    @default(false)
   note         String
   files        String[]
   pathFiles    String
@@ -514,6 +570,7 @@ model Quote {
 model DeliveryNote {
   id                 String     @id @default(uuid())
   deliveryNoteNumber Int        @default(autoincrement())
+  hasDelete          Boolean    @default(false)
   note               String
   files              String[]
   pathFiles          String
@@ -635,6 +692,7 @@ model Project {
   id                 String          @id @default(uuid())
   name               String          @unique
   deadline           DateTime
+  hasDelete          Boolean         @default(false)
   projectInformation String?
   amount             Decimal         @default(0) @db.Decimal(15, 2)
   balance            Decimal         @default(0) @db.Decimal(15, 2)
@@ -788,6 +846,7 @@ model DocumentModel {
 model Receipt {
   id        String          @id @default(uuid())
   type      TransactionType @default(RECEIPT)
+  hasDelete Boolean         @default(false)
   reference Int             @default(autoincrement())
   date      DateTime
   movement  BankTransaction @default(INFLOWS)
@@ -834,6 +893,7 @@ model Receipt {
 model Dibursement {
   id        String          @id @default(uuid())
   type      TransactionType @default(DISBURSEMENT)
+  hasDelete Boolean         @default(false)
   reference Int             @default(autoincrement())
   date      DateTime
   movement  BankTransaction @default(OUTFLOWS)
@@ -949,6 +1009,21 @@ model Allocation {
   @@map("allocation")
 }
 
+model Deletion {
+  id         String       @id @default(uuid())
+  type       DeletionType
+  recordId   String       @unique
+  isValidate Boolean      @default(false)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("deletion")
+}
+
 model Permission {
   id        String   @id @default(uuid())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1021,6 +1096,7 @@ model ProductService {
   id          String             @id @default(uuid())
   type        ProductServiceType @default(PRODUCT)
   hasTax      Boolean            @default(false)
+  hasDelete   Boolean            @default(false)
   reference   String
   category    String
   designation String

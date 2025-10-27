@@ -22,6 +22,7 @@ export type TaxItem = {
 }
 
 export type TaxInput = {
+    id: string;
     taxName: string;
     taxValue: string;
     cumul?: CumulType[];

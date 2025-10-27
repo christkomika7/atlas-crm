@@ -150,47 +150,59 @@ export async function POST(req: NextRequest) {
         }
         natureId = nature.id;
 
-
-        await prisma.receipt.create({
-            data: {
-                date: toUtcDateOnly(data.date),
-                amount: new Decimal(data.amount),
-                amountType: invoice.amountType,
-                description: data.information || "",
-                checkNumber: data.checkNumber || "",
-                paymentType: data.mode,
-                client: {
-                    connect: {
-                        id: invoice.clientId as string
-                    }
-                },
-                referenceInvoice: {
-                    connect: {
-                        id: invoice.id
-                    }
-                },
-                category: {
-                    connect: {
-                        id: categoryId
-                    }
-                },
-                nature: {
-                    connect: {
-                        id: natureId
-                    }
-                },
-                source: {
-                    connect: {
-                        id: data.source
-                    }
-                },
-                company: {
-                    connect: {
-                        id: invoice.companyId
+        await prisma.$transaction([
+            prisma.receipt.create({
+                data: {
+                    date: toUtcDateOnly(data.date),
+                    amount: new Decimal(data.amount),
+                    amountType: invoice.amountType,
+                    description: data.information || "",
+                    checkNumber: data.checkNumber || "",
+                    paymentType: data.mode,
+                    client: {
+                        connect: {
+                            id: invoice.clientId as string
+                        },
+                    },
+                    referenceInvoice: {
+                        connect: {
+                            id: invoice.id
+                        }
+                    },
+                    category: {
+                        connect: {
+                            id: categoryId
+                        }
+                    },
+                    nature: {
+                        connect: {
+                            id: natureId
+                        }
+                    },
+                    source: {
+                        connect: {
+                            id: data.source
+                        }
+                    },
+                    company: {
+                        connect: {
+                            id: invoice.companyId
+                        }
                     }
                 }
-            }
-        });
+            }),
+            prisma.client.update({
+                where: { id: invoice.clientId as string },
+                data: {
+                    due: {
+                        decrement: data.amount
+                    },
+                    paidAmount: {
+                        increment: data.amount
+                    }
+                }
+            })
+        ]);
 
         return NextResponse.json(
             { state: "success", message: "Le paiement a été effectué avec succès." },

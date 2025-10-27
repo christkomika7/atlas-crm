@@ -13,6 +13,7 @@ export type CumulType = {
 }
 
 export type VatRateType = {
+    id: string;
     taxName: string;
     taxValue: string;
     cumul?: CumulType[] | undefined;

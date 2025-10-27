@@ -146,7 +146,7 @@ export default function RecordDocument({
                 }}
             ></div>
             <div
-                className="relative flex justify-between gap-x-2 mb-9 py-6 px-3"
+                className="relative grid grid-cols-2 gap-x-2 mb-9 py-6 px-3"
                 style={{
                     backgroundColor: secondColor,
                 }}
@@ -186,34 +186,34 @@ export default function RecordDocument({
                     <h2 className="font-semibold text-black text-xl text-right">
                         {title}
                     </h2>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", }}>
-                        <p style={{ color: "#000", fontSize: "0.875rem", marginBottom: "-1px", textAlign: "right" }}>
+                    <div className="">
+                        <p className="text-black text-sm text-right mb-[-1px]">
                             {record?.company.registeredAddress}
                         </p>
-                        <p style={{ color: "#000", fontSize: "0.875rem", marginBottom: "-1px", textAlign: "right" }}>
+                        <p className="text-black text-sm mb-[-1px] text-right">
                             BP: {record?.company.codePostal}
                         </p>
-                        <p style={{ color: "#000", fontSize: "0.875rem", marginBottom: "-1px", textAlign: "right" }}>
+                        <p className="text-black text-sm mb-[-1px] text-right">
                             {record?.company.city},{" "}
                             {getCountryFrenchName(record?.company.country as string)}
                         </p>
-                        <p style={{ color: "#000", fontSize: "0.875rem", marginBottom: "-1px", textAlign: "right" }}>
+                        <p className="text-black text-sm mb-[-1px] text-right">
                             {record?.company.email}
                         </p>
                         {record?.company.website && (
-                            <p style={{ color: "#000", fontSize: "0.875rem", marginBottom: "-1px", textAlign: "right" }}>
+                            <p className="text-black text-sm mb-[-1px] text-right">
                                 <Link href={record?.company.website}>
                                     {record?.company.website}
                                 </Link>
                             </p>
                         )}
-                        <p style={{ color: "#000", fontSize: "0.875rem", marginBottom: "-1px", textAlign: "right" }}>
+                        <p className="text-black text-sm mb-[-1px] text-right">
                             {record?.company.phoneNumber}
                         </p>
-                        <p style={{ color: "#000", fontSize: "0.875rem", marginBottom: "-1px", textAlign: "right" }}>
+                        <p className="text-black text-sm mb-[-1px] text-right">
                             RCCM: {record?.company.businessRegistrationNumber}
                         </p>
-                        <p style={{ color: "#000", fontSize: "0.875rem", textAlign: "right" }}>
+                        <p className="text-black text-sm text-right">
                             NIF: {record?.company.taxIdentificationNumber}
                         </p>
                     </div>
@@ -370,14 +370,16 @@ export default function RecordDocument({
                     Campagne : {record?.company.companyName}
                 </p>
 
-                {orderNote && (
+                <h3 style={{ marginBottom: "1px", fontWeight: 500, fontSize: "0.875rem" }}>Note :</h3>
+
+                {record?.note && (
                     <pre
                         style={{
                             fontFamily: generalSans.style?.fontFamily || "sans-serif",
                             fontSize: "0.875rem", lineHeight: 1.3
                         }}
                     >
-                        {orderNote}
+                        {record?.note}
                     </pre>
                 )}
             </div>

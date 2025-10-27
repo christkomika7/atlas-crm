@@ -217,6 +217,7 @@ export default function PreviewTab() {
                 onClose={() => setOpen({ ...open, payment: false })}
               >
                 <PaymentHistoryModal
+                  refresh={refresh}
                   title={` Bon de commande N° ${document?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrder?.purchaseOrderNumber ?? 1, false)} - ${purchaseOrder.supplier.companyName}`}
                   amount={`${formatNumber(
                     purchaseOrder ? new Decimal(getAmountPrice(purchaseOrder.amountType, purchaseOrder?.totalTTC, purchaseOrder?.totalHT)).minus(purchaseOrder.payee) : 0

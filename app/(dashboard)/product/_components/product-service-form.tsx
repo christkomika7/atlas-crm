@@ -50,6 +50,7 @@ export default function ProductServiceForm({
     if (id) {
       const initForm = {
         companyId: id,
+        hasTax: false
       };
 
       form.reset(initForm);

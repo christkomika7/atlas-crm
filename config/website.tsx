@@ -15,6 +15,7 @@ import {
   TransactionIcon,
 } from "@/components/icons";
 import { WebsiteType } from "@/types/website.types";
+import { ReceiptTextIcon } from "lucide-react";
 
 export const website: WebsiteType = {
   sidebarMenu: [
@@ -104,13 +105,20 @@ export const website: WebsiteType = {
     },
     {
       id: 13,
+      icon: <ReceiptTextIcon />,
+      title: "Contrat",
+      path: "/contract",
+      resource: "CONTRACT",
+    },
+    {
+      id: 14,
       icon: <TransactionIcon />,
       title: "Transaction",
       path: "/transaction",
       resource: "TRANSACTION",
     },
     {
-      id: 14,
+      id: 15,
       icon: <SettingIcon />,
       title: "Paramètres",
       path: "/settings",

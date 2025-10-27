@@ -2,14 +2,14 @@ import { checkAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { generateId } from "@/lib/utils";
+import { generateId, getFirstValidCompanyId } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 import { quoteSchema, QuoteSchemaType } from "@/lib/zod/quote.schema";
 import { QUOTE_PREFIX } from "@/config/constant";
 import Decimal from "decimal.js";
 import { $Enums } from "@/lib/generated/prisma";
 import { QuoteType } from "@/types/quote.types";
-import { rollbackQuote } from "@/lib/server";
+import { checkAccessDeletion, rollbackQuote } from "@/lib/server";
 import { toUtcDateOnly } from "@/lib/date";
 import { ItemType } from "@/types/item.type";
 
@@ -119,6 +119,7 @@ export async function POST(req: NextRequest) {
             const upload = await createFile(file, folderFile);
             savedFilePaths = [...savedFilePaths, upload];
         }
+
 
         const itemForCreate = [
             ...data.item.billboards?.map(billboard => ({
@@ -237,6 +238,8 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
     await checkAccess(["QUOTES"], "MODIFY");
+
+
     const data = await req.json();
 
     if (data.ids.length === 0) {
@@ -252,9 +255,19 @@ export async function DELETE(req: NextRequest) {
                 where: {
                     state: "IGNORE"
                 }
-            }
+            },
+            company: true
         }
-    })
+    });
+
+    const companyId = getFirstValidCompanyId(quotes);
+
+    if (!companyId) return NextResponse.json({
+        message: "Identifiant invalide.",
+        state: "error",
+    }, { status: 400 });
+
+    await checkAccessDeletion($Enums.DeletionType.QUOTES, ids, companyId)
 
     for (const quote of quotes) {
         if (quote.items && quote.items.length > 0) {

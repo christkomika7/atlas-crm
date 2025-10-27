@@ -7,6 +7,8 @@ import { editCompanySchema, EditCompanySchemaType } from "@/lib/zod/company.sche
 import { NextResponse, type NextRequest } from "next/server";
 
 import prisma from "@/lib/prisma";
+import { checkAccessDeletion } from "@/lib/server";
+import { getSession } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
     const id = getIdFromUrl(req.url, "last") as string;
@@ -185,6 +187,7 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
     await checkAccess(["DASHBOARD"], "MODIFY");
+    const session = await getSession();
 
     const id = getIdFromUrl(req.url, "last") as string;
 
@@ -192,12 +195,17 @@ export async function DELETE(req: NextRequest) {
         where: { id },
     });
 
-    console.log({ company })
-
     if (!company) {
         return NextResponse.json({
             message: "Entreprise introuvable.",
             state: "error",
+        }, { status: 400 })
+    }
+
+    if (session?.user.role !== "ADMIN") {
+        return NextResponse.json({
+            state: "error",
+            message: "Vous n'avez pas les accès nécéssaire pour pouvoir executer cette requête."
         }, { status: 400 })
     }
 

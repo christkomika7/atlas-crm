@@ -11,27 +11,27 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import TextInput from "@/components/ui/text-input";
-import { cn } from "@/lib/utils";
+import { cn, normalizeName } from "@/lib/utils";
 import { taxSchema, TaxSchemaType } from "@/lib/zod/company.schema";
+import useTaxStore from "@/stores/tax.store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 type EditTaxFormProps = {
-  setOpen: (open: boolean) => void;
-  setTaxs: (taxs: TaxSchemaType[]) => void;
-  taxs: TaxSchemaType[];
+  close: () => void;
   tax: TaxSchemaType;
-  index: number;
 };
 
 export default function EditTaxForm({
-  setOpen,
-  setTaxs,
-  taxs,
+  close,
   tax,
-  index,
 }: EditTaxFormProps) {
+
+  const taxs = useTaxStore.use.taxs();
+  const updateTax = useTaxStore.use.updateTax();
+  const currentId = useTaxStore.use.id();
 
   const form = useForm<TaxSchemaType>({
     resolver: zodResolver(taxSchema),
@@ -42,18 +42,25 @@ export default function EditTaxForm({
     form.reset(tax);
   }, [tax]);
 
+
   function handleClose() {
     form.reset();
-    setOpen(false);
+    close();
   }
 
   function submit(formData: TaxSchemaType) {
     const { success, data } = taxSchema.safeParse(formData);
     if (success) {
-      const updated = [...taxs];
-      updated[index] = data;
-      setTaxs(updated);
-      setOpen(false);
+      const idx = taxs.findIndex((t) => t.id === currentId);
+      if (idx === -1) return;
+
+      const nameKey = normalizeName(data.taxName);
+      const conflict = taxs.some((t, i) => i !== idx && normalizeName(t.taxName) === nameKey);
+      if (conflict) return toast.error("Le nom de cette taxe est déjà utilisé.");
+      updateTax(currentId, data);
+
+      form.reset()
+      close();
     }
   }
 
@@ -66,7 +73,6 @@ export default function EditTaxForm({
         }}
         className="space-y-4.5 m-2 max-w-xl"
       >
-        {/* Nom */}
         <FormField
           control={form.control}
           name="taxName"
@@ -85,7 +91,6 @@ export default function EditTaxForm({
           )}
         />
 
-        {/* Valeurs */}
         <FormField
           control={form.control}
           name="taxValue"
@@ -104,7 +109,6 @@ export default function EditTaxForm({
           )}
         />
 
-        {/* Cumul */}
         <FormField
           control={form.control}
           name="cumul"
@@ -176,7 +180,6 @@ export default function EditTaxForm({
           }}
         />
 
-        {/* Boutons */}
         <div className="flex justify-end gap-x-2 pt-2">
           <Button type="submit" variant="primary" className="w-fit">
             Mettre à jour la taxe

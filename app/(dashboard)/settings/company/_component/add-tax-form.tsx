@@ -15,24 +15,25 @@ import { cn } from "@/lib/utils";
 import { taxSchema, TaxSchemaType } from "@/lib/zod/company.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import useTaxStore from "@/stores/tax.store";
+import { toast } from "sonner";
 
 type AddTaxFormProps = {
-  setOpen: (open: boolean) => void;
-  taxs: TaxSchemaType[];
-  setTaxs: (taxs: TaxSchemaType[]) => void;
+  close: () => void;
+
 };
 
 export default function AddTaxForm({
-  setOpen,
-  taxs,
-  setTaxs,
+  close,
 }: AddTaxFormProps) {
+
+  const taxs = useTaxStore.use.taxs();
+  const addTax = useTaxStore.use.addTax();
 
   const form = useForm<TaxSchemaType>({
     resolver: zodResolver(taxSchema),
     defaultValues: {
-      taxName: "",
-      cumul: [],
+      id: Date.now().toString()
     },
   });
 
@@ -42,7 +43,7 @@ export default function AddTaxForm({
 
   function handleClose() {
     resetForm();
-    setOpen(false);
+    close();
   }
 
   function onSubmit(formData: TaxSchemaType) {
@@ -51,11 +52,11 @@ export default function AddTaxForm({
       const alreadyExists = taxs.some(
         (t) => t.taxName.toLowerCase() === data.taxName.toLowerCase()
       );
-      if (!alreadyExists) {
-        setTaxs([...taxs, data]);
-      }
+      if (alreadyExists) return toast.error("Un taxe porte déjà ce nom");
+
+      addTax(data);
       resetForm();
-      setOpen(false);
+      close();
     }
   }
 

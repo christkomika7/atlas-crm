@@ -4,28 +4,16 @@ import { EditIcon, XIcon } from "lucide-react";
 import React, { useState } from "react";
 import AddTaxForm from "./add-tax-form";
 import EditTaxForm from "./edit-tax-form";
-import { TaxSchemaType } from "@/lib/zod/company.schema";
+import useTaxStore from "@/stores/tax.store";
 
-type TaxPanelProps = {
-  taxs: TaxSchemaType[];
-  setTaxs: (taxs: TaxSchemaType[]) => void;
-};
 
-export default function TaxPanel({ taxs, setTaxs }: TaxPanelProps) {
-  const [selectedTaxIndex, setSelectedTaxIndex] = useState<number | null>(null);
-  const [openEdit, setOpenEdit] = useState<boolean>(false);
-  const [openAdd, setOpenAdd] = useState<boolean>(false);
-
-  const handleEdit = (index: number) => {
-    setSelectedTaxIndex(index);
-    setOpenEdit(true);
-  };
-
-  const handleDelete = (index: number) => {
-    setTaxs(taxs.filter((_, i) => i !== index));
-  };
-
-  const selectedTax = selectedTaxIndex !== null ? taxs[selectedTaxIndex] : null;
+export default function TaxPanel() {
+  const taxs = useTaxStore.use.taxs();
+  const currentTax = useTaxStore.use.currentTax();
+  const deleteTax = useTaxStore.use.deleteTax()
+  const setCurrentId = useTaxStore.use.setCurrentId();
+  const currentId = useTaxStore.use.id();
+  const [open, setOpen] = useState<{ add: boolean, edit: boolean }>({ add: false, edit: false });
 
   return (
     <div className="space-y-1">
@@ -48,7 +36,8 @@ export default function TaxPanel({ taxs, setTaxs }: TaxPanelProps) {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  handleEdit(index);
+                  setCurrentId(tax.id);
+                  setOpen({ ...open, edit: true });
                 }}
               >
                 <EditIcon className="size-3.5" />
@@ -58,7 +47,7 @@ export default function TaxPanel({ taxs, setTaxs }: TaxPanelProps) {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  handleDelete(index);
+                  deleteTax(tax.id);
                 }}
               >
                 <XIcon className="size-3.5 text-red" />
@@ -69,24 +58,21 @@ export default function TaxPanel({ taxs, setTaxs }: TaxPanelProps) {
       </div>
 
       <ModalContainer
-        open={openEdit}
-        setOpen={setOpenEdit}
+        open={open.edit}
+        setOpen={(e) => setOpen({ ...open, edit: Boolean(e) })}
         title="Modifier la taxe"
       >
-        {selectedTax !== null && selectedTaxIndex !== null && (
+        {currentTax && (
           <EditTaxForm
-            setOpen={setOpenEdit}
-            tax={selectedTax}
-            taxs={taxs}
-            setTaxs={setTaxs}
-            index={selectedTaxIndex}
+            close={() => setOpen({ ...open, edit: false })}
+            tax={currentTax}
           />
         )}
       </ModalContainer>
 
       <ModalContainer
-        open={openAdd}
-        setOpen={setOpenAdd}
+        open={open.add}
+        setOpen={(e) => setOpen({ ...open, add: Boolean(e) })}
         title="Ajouter une nouvelle taxe"
         action={
           <button
@@ -97,7 +83,8 @@ export default function TaxPanel({ taxs, setTaxs }: TaxPanelProps) {
           </button>
         }
       >
-        <AddTaxForm setOpen={setOpenAdd} taxs={taxs} setTaxs={setTaxs} />
+        <AddTaxForm
+          close={() => setOpen({ ...open, add: false })} />
       </ModalContainer>
     </div>
   );

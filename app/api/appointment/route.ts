@@ -2,9 +2,11 @@ import { checkAccess } from "@/lib/access";
 import { formatDateToDashModel, parseDateTime } from "@/lib/date";
 import { base64ToBuffer, sendMail } from "@/lib/email";
 import { createFile, createFolder, removePath } from "@/lib/file";
+import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { generateId } from "@/lib/utils";
+import { checkAccessDeletion } from "@/lib/server";
+import { generateId, getFirstValidCompanyId } from "@/lib/utils";
 import { appointmentSchema, AppointmentSchemaType } from "@/lib/zod/appointment.schema";
 import { User } from "better-auth";
 import { NextResponse, type NextRequest } from "next/server";
@@ -143,8 +145,21 @@ export async function DELETE(req: NextRequest) {
     const ids = data.ids as string[];
 
     const appointments = await prisma.appointment.findMany({
-        where: { id: { in: ids } }
-    })
+        where: { id: { in: ids } },
+        include: {
+            company: true
+        }
+    });
+
+    const companyId = getFirstValidCompanyId(appointments);
+
+    if (!companyId) return NextResponse.json({
+        message: "Identifiant invalide.",
+        state: "error",
+    }, { status: 400 });
+
+    await checkAccessDeletion($Enums.DeletionType.APPOINTMENTS, ids, companyId)
+
 
     await prisma.appointment.deleteMany({
         where: {

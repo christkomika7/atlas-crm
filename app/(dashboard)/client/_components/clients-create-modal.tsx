@@ -16,7 +16,7 @@ type ClientsCreateModalProps = {
 };
 
 export default function ClientsCreateModal({
-  onClientAdded,
+  onClientAdded
 }: ClientsCreateModalProps) {
   const [open, setOpen] = useState(false);
   return (

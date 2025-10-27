@@ -2,9 +2,10 @@ import { checkAccess } from "@/lib/access";
 import { checkData } from "@/lib/database";
 import { parseDateTime } from "@/lib/date";
 import { createFolder, removePath, updateFiles } from "@/lib/file";
-import { Prisma } from "@/lib/generated/prisma";
+import { $Enums, Prisma } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
+import { checkAccessDeletion } from "@/lib/server";
 import { getIdFromUrl } from "@/lib/utils";
 import { editProjectSchema, EditProjectSchemaType } from "@/lib/zod/project.schema";
 import { ProjectType } from "@/types/project.types";
@@ -140,7 +141,8 @@ export async function DELETE(req: NextRequest) {
     const project = await prisma.project.findUnique({
         where: { id },
         include: {
-            tasks: true
+            tasks: true,
+            company: true
         }
     });
 
@@ -151,7 +153,10 @@ export async function DELETE(req: NextRequest) {
         }, { status: 400 })
     }
 
+    await checkAccessDeletion($Enums.DeletionType.PROJECTS, [id], project.company.id)
+
     const deletedProject = await prisma.project.delete({ where: { id } });
+
     const paths = project.tasks
         .map(p => p.path)
         .filter(Boolean);

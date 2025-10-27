@@ -1,8 +1,10 @@
 import { checkAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
+import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { generateId } from "@/lib/utils";
+import { checkAccessDeletion } from "@/lib/server";
+import { generateId, getFirstValidCompanyId } from "@/lib/utils";
 import { billboardFormSchema, BillboardSchemaFormType } from "@/lib/zod/billboard.schema";
 import { Decimal } from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
@@ -302,8 +304,18 @@ export async function DELETE(req: NextRequest) {
     const ids = data.ids as string[];
 
     const billboards = await prisma.billboard.findMany({
-        where: { id: { in: ids } }
+        where: { id: { in: ids } },
+        include: { company: true }
     })
+
+    const companyId = getFirstValidCompanyId(billboards);
+
+    if (!companyId) return NextResponse.json({
+        message: "Identifiant invalide.",
+        state: "error",
+    }, { status: 400 });
+
+    await checkAccessDeletion($Enums.DeletionType.BILLBOARDS, ids, companyId)
 
     await prisma.billboard.deleteMany({
         where: {

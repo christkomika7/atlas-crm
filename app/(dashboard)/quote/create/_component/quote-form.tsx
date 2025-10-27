@@ -80,10 +80,7 @@ export default function QuoteForm() {
 
 
   const form = useForm<QuoteSchemaType>({
-    resolver: zodResolver(quoteSchema),
-    defaultValues: {
-      amountType: "TTC"
-    },
+    resolver: zodResolver(quoteSchema)
   });
 
   const {
@@ -161,6 +158,7 @@ export default function QuoteForm() {
       form.reset({
         companyId,
         discount: "0",
+        amountType: "TTC",
       });
 
       mutateGetProductService({ companyId }, {

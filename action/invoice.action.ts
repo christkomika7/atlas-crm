@@ -44,6 +44,24 @@ export async function all({ companyId, filter }: { companyId: string, filter: "u
     }
 }
 
+export async function getLatestInvoice({ companyId }: { companyId: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${companyId}/last`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<InvoiceType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+
 export async function getBillboardItemLocations({ companyId }: { companyId: string }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${companyId}/location`, {
@@ -293,6 +311,25 @@ export async function share(data: RecordEmailSchemaType) {
         return res;
     } catch (error) {
         console.error("Erreur dans la fonction create:", error);
+        throw error;
+    }
+}
+
+export async function duplicateInvoice({ invoiceId }: { invoiceId: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${invoiceId}/duplicate`, {
+            method: "POST",
+        });
+
+        const res: RequestResponse<null> = await response.json();
+
+        if (!response.ok) {
+            throw new Error(res.message || "Erreur lors de la duplication de la facture");
+        }
+
+        return res;
+    } catch (error) {
+        console.error("Erreur dans la fonction duplicate:", error);
         throw error;
     }
 }

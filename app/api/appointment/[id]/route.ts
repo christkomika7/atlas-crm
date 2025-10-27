@@ -2,7 +2,7 @@ import { checkAccess } from "@/lib/access";
 import { checkData } from "@/lib/database";
 import { getCurrentDateTime, parseDateTime } from "@/lib/date";
 import { createFolder, moveTo, removePath, saveFile } from "@/lib/file";
-import { Prisma, User } from "@/lib/generated/prisma";
+import { $Enums, Prisma, User } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import { getIdFromUrl } from "@/lib/utils";
 import { editAppointmentSchema, EditAppointmentSchemaType } from "@/lib/zod/appointment.schema";
@@ -10,6 +10,7 @@ import { AppointmentType } from "@/types/appointment.type";
 import { type NextRequest, NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
+import { checkAccessDeletion } from "@/lib/server";
 
 export async function POST(req: NextRequest) {
     await checkAccess(["APPOINTMENT"], "READ");
@@ -182,6 +183,7 @@ export async function DELETE(req: NextRequest) {
 
     const appointment = await prisma.appointment.findUnique({
         where: { id },
+        include: { company: true }
     });
 
     if (!appointment) {
@@ -190,6 +192,8 @@ export async function DELETE(req: NextRequest) {
             state: "error",
         }, { status: 400 })
     }
+
+    await checkAccessDeletion($Enums.DeletionType.PRODUCT_SERVICES, [id], appointment.company.id);
 
     await prisma.appointment.delete({ where: { id } });
     await removePath(appointment.documents);

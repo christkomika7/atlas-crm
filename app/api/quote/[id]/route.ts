@@ -2,10 +2,10 @@ import { QUOTE_PREFIX } from "@/config/constant";
 import { checkAccess } from "@/lib/access";
 import { toUtcDateOnly } from "@/lib/date";
 import { createFolder, removePath, updateFiles } from "@/lib/file";
-import { $Enums } from "@/lib/generated/prisma";
+import { $Enums, AmountType } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { rollbackQuote } from "@/lib/server";
+import { checkAccessDeletion, rollbackQuote } from "@/lib/server";
 import { generateId, getIdFromUrl } from "@/lib/utils";
 import { quoteUpdateSchema, QuoteUpdateSchemaType } from "@/lib/zod/quote.schema";
 import { ItemType } from "@/types/item.type";
@@ -406,7 +406,8 @@ export async function DELETE(req: NextRequest) {
         }
       },
       billboards: true,
-      productsServices: true
+      productsServices: true,
+      company: true
     }
   });
 
@@ -416,6 +417,9 @@ export async function DELETE(req: NextRequest) {
       state: "error",
     }, { status: 400 })
   }
+
+
+  await checkAccessDeletion($Enums.DeletionType.QUOTES, [id], quote.company.id)
 
 
   if (quote?.items && quote?.items.length > 0) {

@@ -24,12 +24,11 @@ import { RequestResponse } from "@/types/api.types";
 import { hasEmail } from "@/action/user.action";
 import Spinner from "@/components/ui/spinner";
 import { setFile } from "@/lib/file-storage";
-import { Decimal } from "decimal.js";
 
 export default function CreateEmployeeForm() {
   const [resetKey, setResetKey] = useState(0);
-  const addEmployee = useEmployeeStore((state) => state.addEmployee);
-  const emailExist = useEmployeeStore((state) => state.emailExists);
+  const addEmployee = useEmployeeStore.use.addEmployee();
+  const emailExist = useEmployeeStore.use.emailExists();
 
   const form = useForm<UserSchemaType>({
     resolver: zodResolver(userSchema),
@@ -90,7 +89,7 @@ export default function CreateEmployeeForm() {
           }
           addEmployee({ ...newUser });
           toast.success("Employé ajouté avec succès.");
-          form.reset();
+          form.reset({});
           setResetKey((prev) => prev + 1);
         },
       }
@@ -226,7 +225,7 @@ export default function CreateEmployeeForm() {
                       design="float"
                       label="Salaire"
                       value={field.value}
-                      handleChange={(e) => field.onChange(String(e))}
+                      handleChange={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />

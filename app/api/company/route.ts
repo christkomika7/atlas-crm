@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
         );
 
         let company: Company | null = null
+
+        console.log({ data })
         try {
             company = await prisma.company.create({
                 data: {

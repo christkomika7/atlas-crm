@@ -2,8 +2,8 @@ import { checkAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { rollbackPurchaseOrder } from "@/lib/server";
-import { generateId } from "@/lib/utils";
+import { checkAccessDeletion, rollbackPurchaseOrder } from "@/lib/server";
+import { generateId, getFirstValidCompanyId } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 import Decimal from "decimal.js";
 import { purchaseOrderSchema, PurchaseOrderSchemaType } from "@/lib/zod/purchase-order.schema";
@@ -227,8 +227,20 @@ export async function DELETE(req: NextRequest) {
         include: {
             items: true,
             dibursements: true,
+            company: true
         }
     })
+
+
+
+    const companyId = getFirstValidCompanyId(purchaseOrders);
+
+    if (!companyId) return NextResponse.json({
+        message: "Identifiant invalide.",
+        state: "error",
+    }, { status: 400 });
+
+    await checkAccessDeletion($Enums.DeletionType.PURCHASE_ORDERS, ids, companyId)
 
     for (const purchaseOrder of purchaseOrders) {
 

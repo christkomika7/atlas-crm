@@ -16,12 +16,17 @@ import { UserType } from "@/types/user.types";
 import { useEmployeeStore } from "@/stores/employee.store";
 import { setFile } from "@/lib/file-storage";
 import { formatPermissions } from "@/lib/permission";
+import useTaxStore from "@/stores/tax.store";
 
 export default function UpdateCompany() {
   const param = useParams();
+
+  const setTaxs = useTaxStore.use.setTaxs();
+
   const setCompany = useCompanyStore.use.setCompany();
-  const addEmployees = useEmployeeStore.use.addEmployees();
   const getCompany = useCompanyStore.use.getCompany();
+
+  const addEmployees = useEmployeeStore.use.addEmployees();
 
   const { mutate, isPending, data } = useQueryAction<
     { id: string },
@@ -37,8 +42,8 @@ export default function UpdateCompany() {
             const company = data.data;
             if (!company) return;
 
-            const companyStore = getCompany();
-            if (companyStore && companyStore.key) return;
+            const store = getCompany();
+            if (store && store.key) return;
 
             setCompany({
               key: crypto.randomUUID(),
@@ -63,6 +68,8 @@ export default function UpdateCompany() {
               businessActivityType: company.businessActivityType ?? "",
               country: company.country ?? "",
             });
+
+            setTaxs(company.vatRates);
 
             const employees = await Promise.all(
               company.employees.map(async (employee) => {

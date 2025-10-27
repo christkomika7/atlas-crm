@@ -128,7 +128,7 @@ const DeliveryNoteTable = forwardRef<DeliveryNoteTableRef, DeliveryNoteTableProp
                     })}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(deliveryNote.totalTTC)} {currency}
+                    {formatNumber(deliveryNote.amountType === "TTC" ? deliveryNote.totalTTC : deliveryNote.totalHT)} {currency}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     <span>-</span>

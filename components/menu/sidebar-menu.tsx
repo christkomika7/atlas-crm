@@ -15,15 +15,15 @@ type SidebarMenuProps = {
   currentCompany: string;
   currency: string;
   permissions:
-    | {
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        userId: string;
-        resource: $Enums.Resource;
-        actions: $Enums.Action[];
-      }[]
-    | undefined;
+  | {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    userId: string;
+    resource: $Enums.Resource;
+    actions: $Enums.Action[];
+  }[]
+  | undefined;
 };
 
 export default function SidebarMenu({

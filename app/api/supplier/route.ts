@@ -2,6 +2,9 @@ import prisma from "@/lib/prisma";
 import { removePath } from "@/lib/file";
 import { NextResponse, type NextRequest } from "next/server";
 import { checkAccess } from "@/lib/access";
+import { checkAccessDeletion } from "@/lib/server";
+import { $Enums } from "@/lib/generated/prisma";
+import { getFirstValidCompanyId } from "@/lib/utils";
 
 export async function DELETE(req: NextRequest) {
     await checkAccess(["SUPPLIERS"], "MODIFY");
@@ -14,8 +17,19 @@ export async function DELETE(req: NextRequest) {
     const ids = data.ids as string[];
 
     const suppliers = await prisma.supplier.findMany({
-        where: { id: { in: ids } }
+        where: { id: { in: ids } },
+        include: { company: true }
     })
+
+    const companyId = getFirstValidCompanyId(suppliers);
+
+    if (!companyId) return NextResponse.json({
+        message: "Identifiant invalide.",
+        state: "error",
+    }, { status: 400 });
+
+
+    await checkAccessDeletion($Enums.DeletionType.SUPPLIERS, ids, companyId)
 
     await prisma.supplier.deleteMany({
         where: {

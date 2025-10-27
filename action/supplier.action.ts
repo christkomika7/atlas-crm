@@ -1,5 +1,6 @@
 import { SupplierSchemaType, EditSupplierSchemaType } from "@/lib/zod/supplier.schema";
 import { RequestResponse } from "@/types/api.types";
+import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { SupplierType } from "@/types/supplier.types";
 
 export async function all({ id }: { id: string }) {
@@ -160,3 +161,22 @@ export async function removeMany({ ids }: { ids: string[] }) {
         throw error;
     }
 }
+
+export async function getPurchaseOrder({ id }: { id: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/supplier/${id}/purchase-order`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<PurchaseOrderType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+

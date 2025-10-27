@@ -15,9 +15,10 @@ type PaymentHistoryModalProps = {
     closeModal: () => void;
     title: string;
     amount: string;
+    refresh: () => void
 }
 
-export default function PaymentHistoryModal({ recordId, recordType, closeModal, title, amount }: PaymentHistoryModalProps) {
+export default function PaymentHistoryModal({ recordId, recordType, closeModal, title, amount, refresh }: PaymentHistoryModalProps) {
     const [currentId, setCurrentId] = useState<string>("");
     const [payments, setPayments] = useState<PaymentType[]>([]);
     const { mutate: mutateGetPayments, isPending: isGettingPayments } =
@@ -63,6 +64,7 @@ export default function PaymentHistoryModal({ recordId, recordType, closeModal, 
                 onSuccess() {
                     setCurrentId("");
                     initPayment()
+                    refresh()
                 },
             })
         }

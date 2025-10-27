@@ -82,7 +82,8 @@ export const priority = [
         label: "Relax",
         value: "RELAX"
     },
-]
+];
+
 
 export const status = [
     {
@@ -359,9 +360,8 @@ export const lights = [
 ]
 
 export const reportTypes = [
-    { id: 1, value: "salesByDate", label: "Ventes par date" },
-    { id: 2, value: "salesByClient", label: "Ventes par client" },
-    { id: 3, value: "salesByItem", label: "Ventes par article" },
+    { id: 2, value: "salesByClient", label: "Ventes par client " },
+    { id: 3, value: "salesByItem", label: "Ventes par produit|service" },
     { id: 4, value: "salesByBillboards", label: "Ventes par panneaux publicitaires" },
     { id: 5, value: "paymentsByDate", label: "Paiements par date" },
     { id: 6, value: "paymentsByClients", label: "Paiements par clients" },

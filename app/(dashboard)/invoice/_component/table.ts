@@ -23,9 +23,9 @@ export const dropdownMenu: TableActionButtonType[] = [
         title: "Aperçu",
     },
     {
-        id: "convert",
+        id: "duplicate",
         icon: FilesIcon,
-        title: "Convertir",
+        title: "Dupliquer",
     },
     {
         id: "delete",

@@ -456,6 +456,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      required={false}
                       isLoading={isGettingDocuments}
                       datas={documents.map(document => ({
                         id: document.id,
@@ -466,7 +467,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                         },
                         value: document.id
                       }))}
-                      value={field.value}
+                      value={field.value as string}
                       setValue={e => {
                         field.onChange(e)
                       }}

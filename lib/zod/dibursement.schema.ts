@@ -11,7 +11,7 @@ export const dibursementSchema = z.object({
     amountType: z.enum(["HT", "TTC"], { message: "Le type de montant est requis." }),
     paymentMode: z.string({ error: "Le mode de paiement est requis." }),
     checkNumber: z.string().optional(),
-    documentRef: z.string({ error: "La référence du document est requise." }),
+    documentRef: z.string({ error: "La référence du document est requise." }).optional(),
     allocation: z.string({ error: "L'allocation est requise." }),
     source: z.string({ error: "La source est requise." }),
     payOnBehalfOf: z.string().optional(),

@@ -17,6 +17,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function normalizeName(name?: string) {
+  return (name ?? "").trim().toLowerCase();
+}
+
 export function generateId() {
   const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
   return customAlphabet(alphabet, 7)();
@@ -115,6 +119,17 @@ export function initialName(name: string): string {
     splitName[0][0].toUpperCase() +
     splitName[splitName.length - 1][0].toUpperCase()
   );
+}
+
+export function getFirstValidCompanyId(items: any): string | null {
+  console.log({ items })
+  for (const item of items) {
+    console.log({ item })
+    if (item.company?.id) {
+      return item.company.id;
+    }
+  }
+  return null;
 }
 
 

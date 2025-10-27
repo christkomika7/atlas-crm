@@ -14,13 +14,13 @@ export async function GET(req: NextRequest) {
         where.purchaseOrderId = recordId;
     }
 
-    console.log({ where })
-
     try {
         const payments = await prisma.payment.findMany({
             where,
             orderBy: { createdAt: "asc" },
         });
+
+        console.log({ payments })
 
         return NextResponse.json(
             {

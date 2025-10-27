@@ -23,80 +23,19 @@ import { useUploadProfile } from "@/hook/useUploadProfile";
 import TextInput from "@/components/ui/text-input";
 import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
-import { Decimal } from "decimal.js";
 
 export default function EditEmployeeForm() {
   const param = useParams();
+  const [employee, setEmployee] = useState<UserType>();
   const { handleUpload, loading } = useUploadProfile();
 
   const form = useForm<UserEditSchemaType>({
-    resolver: zodResolver(userEditSchema),
-    defaultValues: {
-      image: undefined,
-      lastname: "",
-      firstname: "",
-      email: "",
-      phone: "",
-      job: "",
-      salary: "",
-      password: "",
-      dashboard: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      clients: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      suppliers: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      invoices: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      quotes: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      deliveryNotes: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      projects: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      appointment: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      transaction: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      setting: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-    },
+    resolver: zodResolver(userEditSchema)
   });
 
   const {
-    mutate: mutateEmployee,
-    isPending: isPendingEmployee,
-    data: employeeData,
+    mutate: mutateGetEmployees,
+    isPending: isGettingEmployees,
   } = useQueryAction<{ id: string }, RequestResponse<UserType>>(
     unique,
     () => { },
@@ -111,12 +50,19 @@ export default function EditEmployeeForm() {
     );
 
   useEffect(() => {
-    if (param.id) mutateEmployee({ id: param.id as string });
+    if (param.id) {
+      mutateGetEmployees({ id: param.id as string }, {
+        onSuccess(data) {
+          if (data.data) {
+            setEmployee(data.data);
+          }
+        },
+      })
+    };
   }, [param.id]);
 
   useEffect(() => {
-    if (employeeData?.data) {
-      const employee = employeeData.data;
+    if (employee) {
       const defaultValues: UserEditSchemaType = {
         id: employee.id,
         image: undefined,
@@ -154,17 +100,17 @@ export default function EditEmployeeForm() {
 
       form.reset(defaultValues);
     }
-  }, [employeeData, form]);
+  }, [employee, form]);
 
   async function submit(formData: UserEditSchemaType) {
     const { success, data } = userEditSchema.safeParse(formData);
-    if (success && employeeData?.data?.path) {
+    if (success && employee?.path) {
       if (loading) {
         toast.loading("Téléversement de la photo de profil en cours...");
       }
 
       const result = await handleUpload({
-        folder: employeeData?.data?.path!,
+        folder: employee.path!,
         image: data.image,
       });
 
@@ -179,42 +125,13 @@ export default function EditEmployeeForm() {
     }
   }
 
-  if (isPendingEmployee && !employeeData) return <Spinner />;
+  if (isGettingEmployees && !employee) return <Spinner />;
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)} className="space-y-4.5 m-2">
         <div className="p-3.5 border border-neutral-100 rounded-xl">
           <div className="space-y-4.5 max-w-xl">
-            {/* <FormField
-              control={form.control}
-              name="image"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <div className="w-28 h-28">
-                      <ProfileInput
-                        initialImage={`/api/upload?path=${profil}`}
-                        onChange={(file) => {
-                          field.onChange(file);
-                        }}
-                        label={
-                          <Label
-                            htmlFor="profile"
-                            className="right-2 bottom-2 z-20 absolute flex justify-center items-center"
-                          >
-                            <span className="flex justify-center items-center bg-blue border-2 border-white rounded-full size-5 text-white">
-                              <PlusIcon className="size-4" />
-                            </span>
-                          </Label>
-                        }
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
             <FormField
               control={form.control}
               name="lastname"

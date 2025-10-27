@@ -4,6 +4,7 @@ import { ClientType } from "./client.types";
 import { CompanyType } from "./company.types";
 import { SupplierType } from "./supplier.types";
 import { PurchaseOrderType } from "./purchase-order.types";
+import Decimal from "decimal.js";
 
 export type TransactionType = {
   id: string;
@@ -115,3 +116,14 @@ export type DeletedTransactions = {
   id: string;
   transactionType: $Enums.TransactionType;
 };
+
+
+export type SourceTransaction = {
+  sourceName: string,
+  sourceId: string,
+  sourceType: string,
+  totalReceipts: Decimal,
+  totalDisbursements: Decimal,
+  difference: Decimal,
+  percentageDifference: number
+}

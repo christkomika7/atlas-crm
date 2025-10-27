@@ -309,6 +309,7 @@ export default function PurchaseOrderTab() {
           setPurchaseOrderNumber(purchaseOrder.purchaseOrderNumber);
           setPaymentLimit(purchaseOrder.paymentLimit);
           setLastUploadFiles(purchaseOrder.files.filter((file) => Boolean(file)) ?? []);
+          setAmountType(purchaseOrder.amountType);
           setSupplierDiscount({
             discount: Number(purchaseOrder.discount),
             discountType: purchaseOrder.discountType as "purcent" | "money"

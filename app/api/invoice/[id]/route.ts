@@ -5,7 +5,7 @@ import { createFolder, removePath, updateFiles } from "@/lib/file";
 import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { checkBillboardConflicts, rollbackInvoice } from "@/lib/server";
+import { checkAccessDeletion, checkBillboardConflicts, rollbackInvoice } from "@/lib/server";
 import { generateId, getIdFromUrl } from "@/lib/utils";
 import { invoiceUpdateSchema, InvoiceUpdateSchemaType } from "@/lib/zod/invoice.schema";
 import { InvoiceType } from "@/types/invoice.types";
@@ -229,6 +229,8 @@ export async function PUT(req: NextRequest) {
     await rollbackInvoice(invoiceExist as unknown as InvoiceType);
   }
 
+  const amount = invoiceExist.amountType === "TTC" ? invoiceExist.totalTTC : invoiceExist.totalHT;
+
   if (payee.gt(0) && !invoiceExist.isPaid) {
     if (invoiceExist.clientId !== data.clientId) {
       await prisma.$transaction([
@@ -246,7 +248,7 @@ export async function PUT(req: NextRequest) {
           where: { id: invoiceExist.clientId as string },
           data: {
             due: {
-              decrement: invoiceExist.amountType === "TTC" ? invoiceExist.totalTTC : invoiceExist.totalHT
+              decrement: amount
             },
             paidAmount: {
               decrement: invoiceExist.payee
@@ -474,6 +476,7 @@ export async function DELETE(req: NextRequest) {
       productsServices: true,
       receipts: true,
       dibursements: true,
+      company: true
     }
   });
 
@@ -483,6 +486,8 @@ export async function DELETE(req: NextRequest) {
       state: "error",
     }, { status: 400 })
   }
+
+  await checkAccessDeletion($Enums.DeletionType.INVOICES, [id], invoice.company.id)
 
   if (invoice.receipts.length > 0 || invoice.dibursements.length > 0) {
     return NextResponse.json({

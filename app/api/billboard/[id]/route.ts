@@ -1,8 +1,10 @@
 import { checkAccess } from "@/lib/access";
 import { checkData } from "@/lib/database";
 import { copyTo, createFolder, removePath, updateFiles } from "@/lib/file";
+import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
+import { checkAccessDeletion } from "@/lib/server";
 import { generateId, getIdFromUrl } from "@/lib/utils";
 import { editBillboardFormSchema, EditBillboardSchemaFormType, EditBillboardSchemaType, EditLessorSchemaType } from "@/lib/zod/billboard.schema";
 import { BillboardType } from "@/types/billboard.types";
@@ -466,6 +468,7 @@ export async function DELETE(req: NextRequest) {
 
     const billboard = await prisma.billboard.findUnique({
         where: { id },
+        include: { company: true }
     });
 
     if (!billboard) {
@@ -474,6 +477,8 @@ export async function DELETE(req: NextRequest) {
             state: "error",
         }, { status: 400 })
     }
+
+    await checkAccessDeletion($Enums.DeletionType.BILLBOARDS, [id], billboard.company.id);
 
     await prisma.billboard.delete({ where: { id } });
     await removePath(billboard.photos)

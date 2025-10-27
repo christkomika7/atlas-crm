@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import React from "react";
-import SaleBarChart from "./sale-bar-chart";
+import { SaleBarChart } from "./sale-bar-chart";
 
 export default function SalesChart() {
   return (

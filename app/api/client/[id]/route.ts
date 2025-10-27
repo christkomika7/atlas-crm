@@ -5,6 +5,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { checkAccess } from "@/lib/access";
 import { parseData } from "@/lib/parse";
+import { checkAccessDeletion } from "@/lib/server";
+import { $Enums } from "@/lib/generated/prisma";
 
 export async function GET(req: NextRequest) {
   await checkAccess(["CLIENTS"], "READ");
@@ -121,6 +123,7 @@ export async function DELETE(req: NextRequest) {
 
   const client = await prisma.client.findUnique({
     where: { id },
+    include: { company: true }
   });
 
   if (!client) {
@@ -128,6 +131,15 @@ export async function DELETE(req: NextRequest) {
       message: "Client introuvable.",
       state: "error",
     }, { status: 400 })
+  }
+
+  const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.CLIENTS, [id], client.company.id);
+
+  if (hasAccessDeletion) {
+    return NextResponse.json({
+      state: "success",
+      message: "Suppression en attente de validation.",
+    }, { status: 200 })
   }
 
   await prisma.client.delete({ where: { id } });

@@ -80,10 +80,7 @@ export default function DeliveryNoteForm() {
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
 
   const form = useForm<DeliveryNoteSchemaType>({
-    resolver: zodResolver(deliveryNoteSchema),
-    defaultValues: {
-      amountType: "TTC"
-    },
+    resolver: zodResolver(deliveryNoteSchema)
   });
 
   const {
@@ -160,6 +157,7 @@ export default function DeliveryNoteForm() {
       form.reset({
         companyId,
         discount: "0",
+        amountType: "TTC"
       });
       mutateGetProductService({ companyId }, {
         onSuccess(data) {

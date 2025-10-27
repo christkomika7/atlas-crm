@@ -44,6 +44,13 @@ export function DatePicker({
   >(undefined);
 
   useEffect(() => {
+    if (value === undefined || value === null) {
+      setSingleDate(undefined);
+      setMultipleDates([]);
+      setRangeDates(undefined);
+      return;
+    }
+
     if (isSingle && value instanceof Date) {
       setSingleDate(value);
     } else if (mode === "multiple" && Array.isArray(value)) {
@@ -59,8 +66,11 @@ export function DatePicker({
     }
   }, [value, mode, isSingle]);
 
-  let displayValue = "";
-  if (isSingle) {
+  let displayValue: string | undefined = undefined;
+
+  if (!value) {
+    displayValue = "";
+  } else if (isSingle) {
     displayValue = singleDate ? format(singleDate, "PPP", { locale: fr }) : "";
   } else if (mode === "range") {
     displayValue =
@@ -113,13 +123,13 @@ export function DatePicker({
         <FloatingInput
           type="text"
           disabled={true}
-          id={label.toLowerCase().replaceAll("-", "-")}
-          value={displayValue}
+          id={label.toLowerCase().replaceAll(" ", "-")}
+          value={displayValue || ""}
           required={required}
           className={className}
         />
         <FloatingLabel
-          htmlFor={label.toLowerCase().replaceAll("-", "-")}
+          htmlFor={label.toLowerCase().replaceAll(" ", "-")}
           className="!gap-x-0 text-sm !cursor-default"
         >
           {label && <CalendarIcon className="mr-2 w-4 h-4" />}
@@ -134,7 +144,7 @@ export function DatePicker({
             locale={fr}
             selected={singleDate}
             onSelect={(date) => {
-              setSingleDate(date as Date);
+              setSingleDate(date);
               onChange?.(date as Date);
             }}
             disabled={isDateDisabled}

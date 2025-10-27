@@ -5,7 +5,10 @@ import { checkAccess } from "@/lib/access";
 
 export async function GET(req: NextRequest) {
     await checkAccess(["INVOICES"], "READ");
-    const id = getIdFromUrl(req.url, "last") as string;
+    const id = getIdFromUrl(req.url, 2) as string;
+
+
+    console.log({ id })
 
     const client = await prisma.client.findUnique({ where: { id } });
     if (!client) {
@@ -19,6 +22,13 @@ export async function GET(req: NextRequest) {
         where: {
             clientId: id
         },
+        include: {
+            company: {
+                include: {
+                    documentModel: true
+                }
+            }
+        }
     })
 
     return NextResponse.json({

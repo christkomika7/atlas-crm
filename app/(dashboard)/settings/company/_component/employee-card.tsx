@@ -18,7 +18,7 @@ export default function EmployeeCard({
   imageKey,
 }: EmployeeCardProps) {
   const [image, setImage] = useState<string | undefined>("");
-  const { removeEmployee } = useEmployeeStore();
+  const removeEmployee = useEmployeeStore.use.removeEmployee()
 
   async function getFile(name: string) {
     const file = await getFileByType(name, "profile");

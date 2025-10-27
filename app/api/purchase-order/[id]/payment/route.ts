@@ -90,111 +90,66 @@ export async function POST(req: NextRequest) {
             return { purchaseOrder };
         });
 
-        // Vérifier et récupérer ou créer la catégorie, nature et source
-        const natureName = purchaseOrder.supplier!.companyName;
-        let categoryId: string = '';
-        let natureId: string = '';
-
-        // Vérifier si la catégorie existe
-        let category = await prisma.transactionCategory.findFirst({
-            where: {
-                name: "Règlement fournisseur",
-                companyId: purchaseOrder.companyId
-            }
-        });
-
-        // Si la catégorie n'existe pas, la créer
-        if (!category) {
-            category = await prisma.transactionCategory.create({
-                data: {
-                    company: {
-                        connect: {
-                            id: purchaseOrder.companyId
-                        }
-                    },
-                    type: $Enums.TransactionType.DISBURSEMENT,
-                    name: "Règlement fournisseur",
-                },
-            });
-        }
-        categoryId = category.id;
-
-        // Vérifier si la nature existe
-        let nature = await prisma.transactionNature.findFirst({
-            where: {
-                name: natureName,
-                companyId: purchaseOrder.companyId,
-                categoryId: category.id
-            }
-        });
-
-        // Si la nature n'existe pas, la créer
-        if (!nature) {
-            nature = await prisma.transactionNature.create({
-                data: {
-                    category: {
-                        connect: {
-                            id: category.id
-                        }
-                    },
-                    company: {
-                        connect: {
-                            id: purchaseOrder.companyId
-                        }
-                    },
-                    name: natureName,
-                },
-            });
-        }
-        natureId = nature.id;
-
 
         // Créer le disbursement avec les IDs récupérés ou créés
-        await prisma.dibursement.create({
-            data: {
-                date: toUtcDateOnly(data.date),
-                amount: new Decimal(data.amount),
-                amountType: purchaseOrder.amountType,
-                checkNumber: data.checkNumber || "",
-                paymentType: data.mode,
-                description: data.information || "",
-                supplier: {
-                    connect: {
-                        id: purchaseOrder.supplierId as string
-                    }
-                },
-                referencePurchaseOrder: {
-                    connect: {
-                        id: purchaseOrder.id
-                    }
-                },
-                category: {
-                    connect: {
-                        id: categoryId
-                    }
-                },
-                nature: {
-                    connect: {
-                        id: natureId
-                    }
-                },
-                allocation: {
-                    connect: {
-                        id: data.allocation
-                    }
-                },
-                source: {
-                    connect: {
-                        id: data.source
-                    }
-                },
-                company: {
-                    connect: {
-                        id: purchaseOrder.companyId
+        await prisma.$transaction([
+            prisma.dibursement.create({
+                data: {
+                    date: toUtcDateOnly(data.date),
+                    amount: new Decimal(data.amount),
+                    amountType: purchaseOrder.amountType,
+                    checkNumber: data.checkNumber || "",
+                    paymentType: data.mode,
+                    description: data.information || "",
+                    supplier: {
+                        connect: {
+                            id: purchaseOrder.supplierId as string
+                        }
+                    },
+                    referencePurchaseOrder: {
+                        connect: {
+                            id: purchaseOrder.id
+                        }
+                    },
+                    category: {
+                        connect: {
+                            id: data.category
+                        }
+                    },
+                    nature: {
+                        connect: {
+                            id: data.nature
+                        }
+                    },
+                    allocation: {
+                        connect: {
+                            id: data.allocation
+                        }
+                    },
+                    source: {
+                        connect: {
+                            id: data.source
+                        }
+                    },
+                    company: {
+                        connect: {
+                            id: purchaseOrder.companyId
+                        }
                     }
                 }
-            }
-        });
+            }),
+            prisma.supplier.update({
+                where: { id: purchaseOrder.supplierId as string },
+                data: {
+                    due: {
+                        decrement: data.amount
+                    },
+                    paidAmount: {
+                        increment: data.amount
+                    }
+                }
+            })
+        ]);
 
         return NextResponse.json(
             { state: "success", message: "Le paiement a été effectué avec succès." },

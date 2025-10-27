@@ -2,13 +2,13 @@ import { checkAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { generateId } from "@/lib/utils";
+import { generateId, getFirstValidCompanyId } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 import { DELIVERY_NOTE_PREFIX } from "@/config/constant";
 import Decimal from "decimal.js";
 import { $Enums } from "@/lib/generated/prisma";
 import { deliveryNoteSchema, DeliveryNoteSchemaType } from "@/lib/zod/delivery-note.schema";
-import { rollbackDeliveryNote } from "@/lib/server";
+import { checkAccessDeletion, rollbackDeliveryNote } from "@/lib/server";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 import { ItemType } from "@/types/item.type";
 
@@ -252,9 +252,19 @@ export async function DELETE(req: NextRequest) {
                 where: {
                     state: "IGNORE"
                 }
-            }
+            },
+            company: true
         }
-    })
+    });
+
+    const companyId = getFirstValidCompanyId(deliveryNotes);
+
+    if (!companyId) return NextResponse.json({
+        message: "Identifiant invalide.",
+        state: "error",
+    }, { status: 400 });
+
+    await checkAccessDeletion($Enums.DeletionType.DELIVERY_NOTES, ids, companyId)
 
     for (const deliveryNote of deliveryNotes) {
         if (deliveryNote.items && deliveryNote.items.length > 0) {

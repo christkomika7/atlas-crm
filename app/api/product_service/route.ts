@@ -1,6 +1,9 @@
 import { checkAccess } from "@/lib/access";
+import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
+import { checkAccessDeletion } from "@/lib/server";
+import { getFirstValidCompanyId } from "@/lib/utils";
 import { productServiceSchema, ProductServiceSchemaType } from "@/lib/zod/product-service.schema";
 import { User } from "better-auth";
 import { NextResponse, type NextRequest } from "next/server";
@@ -72,6 +75,24 @@ export async function DELETE(req: NextRequest) {
 
     }
     const ids = data.ids as string[];
+
+    const productServices = await prisma.productService.findMany({
+        where: {
+            id: { in: ids }
+        },
+        include: {
+            company: true
+        }
+    })
+
+    const companyId = getFirstValidCompanyId(productServices);
+
+    if (!companyId) return NextResponse.json({
+        message: "Identifiant invalide.",
+        state: "error",
+    }, { status: 400 });
+
+    await checkAccessDeletion($Enums.DeletionType.PRODUCT_SERVICES, ids, companyId);
 
     await prisma.productService.deleteMany({
         where: {

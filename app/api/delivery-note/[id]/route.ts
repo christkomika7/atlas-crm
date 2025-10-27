@@ -5,7 +5,7 @@ import { createFolder, removePath, updateFiles } from "@/lib/file";
 import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { rollbackDeliveryNote } from "@/lib/server";
+import { checkAccessDeletion, rollbackDeliveryNote } from "@/lib/server";
 import { generateId, getIdFromUrl } from "@/lib/utils";
 import { deliveryNoteUpdateSchema, DeliveryNoteUpdateSchemaType } from "@/lib/zod/delivery-note.schema";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
@@ -407,7 +407,8 @@ export async function DELETE(req: NextRequest) {
         }
       },
       billboards: true,
-      productsServices: true
+      productsServices: true,
+      company: true
     }
   });
 
@@ -418,6 +419,8 @@ export async function DELETE(req: NextRequest) {
     }, { status: 400 })
   }
 
+
+  await checkAccessDeletion($Enums.DeletionType.DELIVERY_NOTES, [id], deliveryNote.company.id);
 
   if (deliveryNote?.items && deliveryNote?.items.length > 0) {
     await rollbackDeliveryNote(deliveryNote as unknown as DeliveryNoteType)

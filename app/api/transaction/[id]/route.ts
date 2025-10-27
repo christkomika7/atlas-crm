@@ -25,9 +25,10 @@ export async function GET(req: NextRequest) {
     const endDate = searchParams.get("endDate");
     const movementValue = searchParams.get("movementValue");
     const categoryValue = searchParams.get("categoryValue");
-    const paymentModeValue = searchParams.get("paymentModeValue");
     const sourceValue = searchParams.get("sourceValue");
     const paidForValue = searchParams.get("paidForValue");
+
+    console.log({ startDate, endDate })
 
     // Tri
     const sortKeys = [
@@ -51,10 +52,18 @@ export async function GET(req: NextRequest) {
     // Construction des conditions WHERE communes
     const baseWhere: any = { companyId };
 
-    if (startDate || endDate) {
+    const parseIso = (s?: string | null) => {
+      if (!s) return null;
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : d;
+    };
+    const parsedStart = parseIso(startDate);
+    const parsedEnd = parseIso(endDate);
+
+    if (parsedStart || parsedEnd) {
       baseWhere.date = {};
-      if (startDate) baseWhere.createdAt.gte = new Date(startDate);
-      if (endDate) baseWhere.createdAt.lte = new Date(endDate);
+      if (parsedStart) baseWhere.date.gte = parsedStart;
+      if (parsedEnd) baseWhere.date.lte = parsedEnd;
     }
     if (movementValue) baseWhere.movement = movementValue;
     if (categoryValue) baseWhere.categoryId = categoryValue;

@@ -127,7 +127,7 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
                     })}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(quote.totalTTC)} {currency}
+                    {formatNumber(quote.amountType === "TTC" ? quote.totalTTC : quote.totalHT)} {currency}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     <span>-</span>

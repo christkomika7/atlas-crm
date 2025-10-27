@@ -11,6 +11,7 @@ import {
   AllocationType,
   DeletedTransactions,
   GetTransactionsParams,
+  SourceTransaction,
   SourceType,
   TransactionCategoryType,
   TransactionDocument,
@@ -129,6 +130,29 @@ export async function getSources({ companyId, type }: { companyId: string, type?
     );
 
     const res: RequestResponse<SourceType[]> = await response.json();
+    if (!response.ok) {
+      throw new Error(res.message);
+    }
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getBySource({ companyId }: { companyId: string }) {
+  const params = new URLSearchParams();
+
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/source/${companyId}/by`;
+
+  try {
+    const response = await fetch(
+      url,
+      {
+        method: "GET",
+      },
+    );
+
+    const res: RequestResponse<SourceTransaction[]> = await response.json();
     if (!response.ok) {
       throw new Error(res.message);
     }

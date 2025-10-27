@@ -11,12 +11,24 @@ import {
 import { periods, reportTypes } from "@/lib/data";
 import { useState } from "react";
 import ExportDataChart from "../export-data-chart";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Button } from "@/components/ui/button";
 
 export default function ExportTab() {
-  const [filters, setFilters] = useState({
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [filters, setFilters] = useState<{
+    reportType: string,
+    period: string,
+    start?: Date,
+    end?: Date
+  }>({
     reportType: "",
     period: "",
+    start: undefined,
+    end: undefined
   });
+
 
   // Données fictives pour remplir le tableau
   const rows = [
@@ -48,23 +60,40 @@ export default function ExportTab() {
 
   return (
     <div className="space-y-4 pt-4">
-      <div className="grid grid-cols-2 gap-x-2 max-w-2xl w-full">
-        <Combobox
-          datas={reportTypes}
-          value={filters.reportType}
-          setValue={(e) => setFilters({ ...filters, reportType: String(e) })}
-          placeholder="Sélectionner un type de rapport"
-          searchMessage="Rechercher un type de rapport"
-          noResultsMessage="Aucun type de rapport trouvé."
-        />
-        <Combobox
-          datas={periods}
-          value={filters.period}
-          setValue={(e) => setFilters({ ...filters, period: String(e) })}
-          placeholder="Sélectionner une période"
-          searchMessage="Rechercher une période"
-          noResultsMessage="Aucune période trouvée."
-        />
+      <div className="flex gap-x-2 justify-between items-center">
+        <div className="grid grid-cols-4 gap-x-2 max-w-2xl w-full">
+          <Combobox
+            datas={reportTypes}
+            value={filters.reportType}
+            setValue={(e) => setFilters({ ...filters, reportType: String(e) })}
+            placeholder="Type de rapport"
+            searchMessage="Rechercher un type de rapport"
+            noResultsMessage="Aucun type de rapport trouvé."
+          />
+          <Combobox
+            datas={periods}
+            value={filters.period}
+            setValue={(e) => setFilters({ ...filters, period: String(e) })}
+            placeholder="Période"
+            searchMessage="Rechercher une période"
+            noResultsMessage="Aucune période trouvée."
+          />
+          <DatePicker
+            label="Date de début"
+            mode="single"
+            value={filters.start || undefined}
+            disabled={false}
+            onChange={(date) => setFilters({ ...filters, start: date as Date })}
+          />
+          <DatePicker
+            label="Date de fin"
+            mode="single"
+            value={filters.end || undefined}
+            disabled={false}
+            onChange={(date) => setFilters({ ...filters, end: date as Date })}
+          />
+        </div>
+        <Button variant="inset-primary" className="max-w-[120px] !h-11" >Exporter</Button>
       </div>
       <div className="space-y-2">
         <h2 className="font-semibold">Sales by Clients</h2>
