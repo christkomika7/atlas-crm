@@ -4,7 +4,7 @@ import { InvoicePaymentSchemaType } from "@/lib/zod/payment.schema";
 import { RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
 import { LocationBillboardDateType } from "@/stores/item.store";
 import { RequestResponse } from "@/types/api.types";
-import { InvoiceType, RecurrenceType } from "@/types/invoice.types";
+import { InvoiceType, PaidInfosInvoiceType, RecurrenceType } from "@/types/invoice.types";
 
 export async function invoiceNumber({ companyId }: { companyId: string }) {
     try {
@@ -23,7 +23,7 @@ export async function invoiceNumber({ companyId }: { companyId: string }) {
     }
 }
 
-export async function all({ companyId, filter }: { companyId: string, filter: "unpaid" | "paid" }) {
+export async function all({ companyId, filter }: { companyId: string, filter?: "unpaid" | "paid" }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${companyId}`, {
             method: 'POST',
@@ -34,6 +34,43 @@ export async function all({ companyId, filter }: { companyId: string, filter: "u
         });
 
         const res: RequestResponse<InvoiceType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+export async function expireInvoices({ companyId }: { companyId: string }) {
+
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${companyId}/expire`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<PaidInfosInvoiceType> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function noExpireInvoices({ companyId }: { companyId: string }) {
+
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${companyId}/no-expire`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<PaidInfosInvoiceType> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }
@@ -96,6 +133,7 @@ export async function unique({ id }: { id: string }) {
     }
 }
 
+
 export async function create(data: InvoiceSchemaType) {
     try {
         const formData = new FormData();
@@ -145,6 +183,7 @@ export async function create(data: InvoiceSchemaType) {
 }
 
 export async function createdPayment(data: InvoicePaymentSchemaType) {
+
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${data.recordId}/payment`, {
             method: "POST",

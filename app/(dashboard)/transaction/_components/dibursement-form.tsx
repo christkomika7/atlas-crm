@@ -36,6 +36,9 @@ import { getCollaborators } from "@/action/user.action";
 import { UserType } from "@/types/user.types";
 import { ProjectType } from "@/types/project.types";
 import { getallByCompany } from "@/action/project.action";
+import { SupplierType } from "@/types/supplier.types";
+import { all as getallClients } from "@/action/supplier.action";
+import { TRANSACTION_CATEGORIES } from "@/config/constant";
 
 type DibursementFormProps = {
   refreshTransaction: () => void
@@ -57,7 +60,9 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const [categoryId, setCategoryId] = useState("");
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
   const [collaborators, setCollaborators] = useState<UserType[]>([]);
+  const [partners, setPartners] = useState<SupplierType[]>([]);
   const [projects, setProjects] = useState<ProjectType[]>([]);
+  const [category, setCategory] = useState("");
   const [paymentMode, setPaymentMode] = useState<"cash" | "check" | "bank-transfer">();
   const [natureId, setNatureId] = useState("");
 
@@ -88,7 +93,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const {
     mutate: mutateGetSources,
     isPending: isGettingSources,
-  } = useQueryAction<{ companyId: string }, RequestResponse<SourceType[]>>(
+  } = useQueryAction<{ companyId: string, type?: "cash" | "check" | "bank-transfer" }, RequestResponse<SourceType[]>>(
     getSources,
     () => { },
     "sources"
@@ -133,6 +138,16 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   );
 
 
+  const {
+    mutate: mutateGetPartners,
+    isPending: isGettingPartners,
+  } = useQueryAction<{ id: string }, RequestResponse<SupplierType[]>>(
+    getallClients,
+    () => { },
+    "suppliers"
+  );
+
+
   const { mutate: mutateCreateDibursement, isPending: isCreatingDibursement } = useQueryAction<
     DibursementSchemaType,
     RequestResponse<TransactionType>
@@ -153,6 +168,15 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
         onSuccess(data) {
           if (data.data) {
             setProjects(data.data);
+          }
+        },
+      });
+
+
+      mutateGetPartners({ id: companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setPartners(data.data);
           }
         },
       });
@@ -210,6 +234,22 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
     }
   }, [categoryId])
 
+  useEffect(() => {
+    mutateGetSources({ companyId, type: paymentMode }, {
+      onSuccess(data) {
+        if (data.data) {
+          setSources(data.data)
+        }
+      },
+    });
+  }, [paymentMode])
+
+  function getCategoryData(id: string) {
+    const current = categories.find(category => category.id === id);
+    setCategory(current?.name || "");
+    setCategoryId(id)
+  }
+
 
 
   async function submit(dibursementData: DibursementSchemaType) {
@@ -265,7 +305,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                       }))}
                       value={field.value}
                       setValue={(e) => {
-                        setCategoryId(e)
+                        getCategoryData(String(e))
                         field.onChange(e)
                       }}
                       placeholder="Catégorie"
@@ -315,13 +355,14 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      required={false}
                       isLoading={isGettingProjects}
                       datas={projects.map(project => ({
                         id: project.id,
                         label: `${cutText(project.client.firstname + " " + project.client.lastname)} - ${project.name}`,
                         value: project.id
                       }))}
-                      value={field.value}
+                      value={field.value || ""}
                       setValue={e => {
                         field.onChange(e)
                       }}
@@ -481,7 +522,34 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               )}
             />
           </div>
-          <div className="gap-4.5 grid grid-cols-3">
+          <div className={cn("gap-4.5 grid", TRANSACTION_CATEGORIES.includes(category) ? "grid-cols-3" : "grid-cols-2")}>
+            <FormField
+              control={form.control}
+              name="partner"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      required={false}
+                      isLoading={isGettingPartners}
+                      datas={partners.map(partners => ({
+                        id: partners.id,
+                        label: `${cutText(partners.firstname + " " + partners.lastname)} - ${partners.companyName}`,
+                        value: partners.id
+                      }))}
+                      value={field.value || ""}
+                      setValue={e => {
+                        field.onChange(e)
+                      }}
+                      placeholder="Partenaire"
+                      searchMessage="Rechercher un partenaire"
+                      noResultsMessage="Aucun partenaire trouvé."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="allocation"
@@ -507,6 +575,29 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                 </FormItem>
               )}
             />
+            {TRANSACTION_CATEGORIES.includes(category) &&
+              <FormField
+                control={form.control}
+                name="period"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <DatePicker
+                        value={field.value}
+                        label="Période"
+                        mode="single"
+                        onChange={(e) => field.onChange(e as Date)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            }
+
+          </div>
+          <div className="gap-4.5 grid grid-cols-2">
+
             <FormField
               control={form.control}
               name="source"

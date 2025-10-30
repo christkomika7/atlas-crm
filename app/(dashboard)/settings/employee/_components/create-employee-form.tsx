@@ -31,31 +31,7 @@ export default function CreateEmployeeForm() {
   const emailExist = useEmployeeStore.use.emailExists();
 
   const form = useForm<UserSchemaType>({
-    resolver: zodResolver(userSchema),
-    defaultValues: {
-      image: undefined,
-      lastname: "",
-      firstname: "",
-      email: "",
-      phone: "",
-      job: "",
-      salary: "",
-      password: "",
-      dashboard: { create: false, edit: false, read: false },
-      clients: { create: false, edit: false, read: false },
-      suppliers: { create: false, edit: false, read: false },
-      invoices: { create: false, edit: false, read: false },
-      quotes: { create: false, edit: false, read: false },
-      deliveryNotes: { create: false, edit: false, read: false },
-      purchaseOrder: { create: false, edit: false, read: false },
-      creditNotes: { create: false, edit: false, read: false },
-      productServices: { create: false, edit: false, read: false },
-      billboards: { create: false, edit: false, read: false },
-      projects: { create: false, edit: false, read: false },
-      appointment: { create: false, edit: false, read: false },
-      transaction: { create: false, edit: false, read: false },
-      setting: { create: false, edit: false, read: false },
-    },
+    resolver: zodResolver(userSchema)
   });
 
   const { mutate, isPending } = useQueryAction<
@@ -89,7 +65,7 @@ export default function CreateEmployeeForm() {
           }
           addEmployee({ ...newUser });
           toast.success("Employé ajouté avec succès.");
-          form.reset({});
+          form.reset();
           setResetKey((prev) => prev + 1);
         },
       }
@@ -225,7 +201,7 @@ export default function CreateEmployeeForm() {
                       design="float"
                       label="Salaire"
                       value={field.value}
-                      handleChange={field.onChange}
+                      handleChange={e => field.onChange(String(e))}
                     />
                   </FormControl>
                   <FormMessage />
@@ -892,6 +868,60 @@ export default function CreateEmployeeForm() {
                         />
                         <Controller
                           name="appointment.read"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                className="cursor-pointer"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Contract */}
+              <FormField
+                control={form.control}
+                name="contract"
+                render={() => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <div className="grid grid-cols-[200px_80px_80px_80px]">
+                        <p className="font-medium text-sm">Contrat</p>
+                        <Controller
+                          name="contract.create"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                className="cursor-pointer"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="contract.edit"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                className="cursor-pointer"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="contract.read"
                           control={form.control}
                           render={({ field }) => (
                             <div className="flex justify-center">

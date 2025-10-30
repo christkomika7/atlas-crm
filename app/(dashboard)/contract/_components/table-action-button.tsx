@@ -9,17 +9,21 @@ import { RequestResponse } from "@/types/api.types";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "lucide-react";
-import { remove } from "@/action/appointment.action";
 import { useRouter } from "next/navigation";
-import { AppointmentType } from "@/types/appointment.type";
-import AppointmentsEditModal from "./contract-edit-modal";
+import { removeContract } from "@/action/contract.action";
+import { $Enums } from "@/lib/generated/prisma";
+import ClientContractEdit from "./client-contract-edit";
+import LessorContractEdit from "./lessor-contract-edit";
+import ModalContainer from "@/components/modal/modal-container";
+import { SetStateAction, useState } from "react";
 
 type TableActionButtonProps = {
   id: string;
   menus: TableActionButtonType[];
   deleteTitle: string;
+  contract: $Enums.ContractType;
   deleteMessage: string | React.ReactNode;
-  refreshClients: () => void;
+  refreshContract: () => void;
 };
 
 export default function TableActionButton({
@@ -27,13 +31,17 @@ export default function TableActionButton({
   id,
   deleteTitle,
   deleteMessage,
-  refreshClients,
+  refreshContract,
+  contract
 }: TableActionButtonProps) {
+
   const router = useRouter();
+  const [open, setOpen] = useState(false);
+
   const { mutate, isPending } = useQueryAction<
     { id: string },
-    RequestResponse<AppointmentType[]>
-  >(remove, () => { }, "appointments");
+    RequestResponse<null>
+  >(removeContract, () => { }, "contracts");
 
   function handleDelete() {
     if (id) {
@@ -41,12 +49,17 @@ export default function TableActionButton({
         { id },
         {
           onSuccess() {
-            refreshClients();
+            refreshContract();
           },
         }
       );
     }
   }
+
+  function goto(id: string) {
+    return router.push(`/contract/${id}/${contract}`);
+  }
+
 
   return (
     <Popover>
@@ -58,7 +71,18 @@ export default function TableActionButton({
       <PopoverContent align="end" className="p-0 w-[180px]">
         <ul>
           {menus.map((menu) => {
-            if (menu.action === "delete")
+            if (menu.action === "infos") {
+              return <li key={menu.id}>
+                <button
+                  className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                  onClick={() => goto(id)}
+                >
+                  <menu.icon className="w-4 h-4" />
+                  {menu.title}
+                </button>
+              </li>
+            }
+            if (menu.action === "delete") {
               return (
                 <ConfirmDialog
                   key={menu.id}
@@ -69,11 +93,42 @@ export default function TableActionButton({
                   loading={isPending}
                 />
               );
-            return (
-              <li key={menu.id}>
-                <AppointmentsEditModal id={id} title={menu.title} />
-              </li>
-            );
+
+            }
+            if (menu.action === "update") {
+              return (
+                <li key={menu.id}>
+                  <ModalContainer
+                    size="sm"
+                    action={
+                      <button
+                        className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                      >
+                        <menu.icon className="w-4 h-4" />
+                        {menu.title}
+                      </button>
+                    }
+                    title={`Modifier le contrat du ${contract === "CLIENT" ? "client" : "bailleur"}`}
+                    open={open}
+                    setOpen={function (value: SetStateAction<boolean>): void {
+                      setOpen(value);
+                    }}
+                  >
+                    {
+                      contract === "CLIENT" ?
+                        <ClientContractEdit id={id}
+                          refreshContract={refreshContract}
+                          closeModal={() => setOpen(false)}
+                        /> :
+                        <LessorContractEdit id={id}
+                          refreshContract={refreshContract}
+                          closeModal={() => setOpen(false)}
+                        />
+                    }
+                  </ModalContainer>
+                </li>
+              );
+            }
           })}
         </ul>
       </PopoverContent>

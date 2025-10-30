@@ -332,6 +332,10 @@ export function downloadFile(url: string) {
   document.body.removeChild(link);
 }
 
+export function isNegative(value: string | number | Decimal) {
+  return new Decimal(value).isNeg()
+}
+
 export function hasPermission(
   role: Role,
   resources: $Enums.Resource[],
@@ -536,6 +540,14 @@ export function createPermissionsData(
       ].filter((a): a is Action => a !== null),
     },
     {
+      resource: Resource.CONTRACT,
+      actions: [
+        user.contract?.read ? Action.READ : null,
+        user.contract?.edit ? Action.MODIFY : null,
+        user.contract?.create ? Action.CREATE : null,
+      ].filter((a): a is Action => a !== null),
+    },
+    {
       resource: Resource.TRANSACTION,
       actions: [
         user.transaction?.read ? Action.READ : null,
@@ -736,8 +748,6 @@ export function getDocumentRef(transaction: TransactionType) {
   }
 
 }
-
-
 
 export function parsePurchaseItem(item: Omit<PurchaseItemType, OmitItemType>): TaxItem {
   return {

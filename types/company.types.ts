@@ -1,3 +1,4 @@
+import Decimal from "decimal.js";
 import { ModelDocumentType } from "./document.types";
 
 export type TaxType = {
@@ -51,3 +52,33 @@ export type CompanyCountriesType = {
     currency: string
 }
 
+
+export type FilterDataType = {
+    id: string;
+    date: Date;
+    reference: string;
+    name: string
+    count: number;
+    totalGenerated: Decimal;
+    totalPaid: Decimal;
+    totalRemaining: Decimal
+}
+
+
+export type ReportType =
+    | "salesByClient"
+    | "salesByItem"
+    | "salesByBillboards"
+    | "paymentsByDate"
+    | "paymentsByClients"
+    | "paymentsByType"
+    | "expensesByCategories"
+    | "expensesJournal"
+    | "debtorAccountAging";
+
+export type PeriodType =
+    | "currentFiscalYear"
+    | "currentQuarter"
+    | "currentMonth"
+    | "previousMonth"
+    | "previousYear";

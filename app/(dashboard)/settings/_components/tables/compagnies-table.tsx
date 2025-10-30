@@ -62,7 +62,7 @@ export default function CompagniesTable() {
               </div>
             </TableCell>
           </TableRow>
-        ) : query.data?.data?.length ? (
+        ) : query.data?.data && query.data.data.length > 0 ? (
           query.data.data.map((company) => (
             <TableRow key={company.id}>
               <TableCell className="text-neutral-600">

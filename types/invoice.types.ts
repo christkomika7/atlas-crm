@@ -78,3 +78,9 @@ export type RecurrenceType = {
     companyId: string;
     repeat: string;
 }
+
+
+export type PaidInfosInvoiceType = {
+    sumUnpaid: Decimal,
+    percentageUnpaid: Decimal,
+}

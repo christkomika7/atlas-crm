@@ -304,7 +304,6 @@ export default function InvoiceTab() {
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
-      discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
@@ -339,18 +338,13 @@ export default function InvoiceTab() {
     }
   }, [client]);
 
-  useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors })
-    })
-  }, [form.watch])
-
 
   function initInvoice() {
     mutateGetInvoice({ id: param.id as string }, {
       onSuccess(data) {
         if (data.data) {
           const invoice = data.data;
+          console.log({ invoice });
           setAmountDue(
             invoice.amountType === "TTC" ? new Decimal(invoice.totalTTC).minus(invoice.payee) : new Decimal(invoice.totalHT).minus(invoice.payee)
           )

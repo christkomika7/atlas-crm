@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   await checkAccess(["INVOICES"], "READ");
   const id = getIdFromUrl(req.url, "last") as string;
-  const { data }: { data: "unpaid" | "paid" } = await req.json();
+  const { data }: { data?: "unpaid" | "paid" } = await req.json();
 
   if (!id) {
     return NextResponse.json({
@@ -48,10 +48,43 @@ export async function POST(req: NextRequest) {
     }, { status: 404 });
   }
 
+  if (data) {
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        companyId: id,
+        isPaid: data === "paid" ? true : false,
+      },
+      include: {
+        client: true,
+        project: true,
+        items: {
+          where: {
+            state: "APPROVED"
+          }
+        },
+        company: {
+          include: {
+            documentModel: true
+          }
+        }
+      },
+      orderBy: {
+        invoiceNumber: "desc"
+      }
+    });
+
+    return NextResponse.json(
+      {
+        state: "success",
+        data: invoices,
+      },
+      { status: 200 }
+    );
+  }
+
   const invoices = await prisma.invoice.findMany({
     where: {
       companyId: id,
-      isPaid: data === "paid" ? true : false,
     },
     include: {
       client: true,

@@ -38,15 +38,16 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
       totalWithoutTaxes: new Decimal(0),
       currentPrice: new Decimal(0),
       subtotal: new Decimal(0),
+      discountAmount: new Decimal(0),
     };
   }
 
   const taxResults = new Map<string, TaxResult>();
   let totalHT = new Decimal(0);
   let totalHTWithTax = new Decimal(0);
-  let subtotalBeforeDiscount = new Decimal(0);
+  let globalDiscountAmount = new Decimal(0);
 
-  // Initialisation des taxes (totalTax = 0 pour commencer)
+  // Initialisation des taxes
   for (const tax of taxes) {
     taxResults.set(tax.taxName, {
       taxName: tax.taxName,
@@ -76,25 +77,23 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     }
   }
 
-  subtotalBeforeDiscount = totalHT;
-
   // Étape 2 : Application de la remise globale
   if (discount) {
     const [discountValue, discountType] = discount;
     const decDiscountValue = new Decimal(discountValue);
-    const totalHTBeforeDiscount = totalHT; // Sauvegarde pour le calcul de proportion
+    const totalHTBeforeDiscount = totalHT;
 
     if (discountType === "money") {
-      const discountAmount = decDiscountValue;
-      totalHT = totalHT.minus(discountAmount);
+      globalDiscountAmount = decDiscountValue;
+      totalHT = totalHT.minus(globalDiscountAmount);
 
       if (totalHTBeforeDiscount.greaterThan(0)) {
         const proportion = totalHTWithTax.div(totalHTBeforeDiscount);
-        totalHTWithTax = totalHTWithTax.minus(discountAmount.mul(proportion));
+        totalHTWithTax = totalHTWithTax.minus(globalDiscountAmount.mul(proportion));
       }
     } else {
-      const discountAmount = totalHT.mul(decDiscountValue).div(100);
-      totalHT = totalHT.minus(discountAmount);
+      globalDiscountAmount = totalHT.mul(decDiscountValue).div(100);
+      totalHT = totalHT.minus(globalDiscountAmount);
       totalHTWithTax = totalHTWithTax.minus(
         totalHTWithTax.mul(decDiscountValue).div(100)
       );
@@ -103,14 +102,12 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
 
   totalHT = roundToOneDecimal(totalHT);
   totalHTWithTax = roundToOneDecimal(totalHTWithTax);
+  globalDiscountAmount = roundToOneDecimal(globalDiscountAmount);
 
-  // Si aucun montant taxable spécifique, on considère le totalHT comme base taxable.
+  // Montant taxable : après remise
   const taxableAmount = totalHTWithTax.greaterThan(0) ? totalHTWithTax : totalHT;
 
-  // Étape 3 : Calcul des taxes appliquées SUR LA BASE
-  // Règle : si une taxe possède un champ `cumul` non vide (avec des checks),
-  // on considère ici que sa valeur principale SUR LA BASE = 0 (elle agit comme taxe "cumulée").
-  // Les taxes sans cumul sont calculées normalement sur la base.
+  // Étape 3 : Calcul des taxes sur la base après remise
   for (const tax of taxes) {
     const taxResult = taxResults.get(tax.taxName)!;
     const rate = parseTaxValue(tax.taxValue);
@@ -121,19 +118,16 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     taxResult.taxPrice = taxableAmount;
 
     if (!hasCumulChecked) {
-      // Taxe normale appliquée sur la base
       const taxAmount = taxableAmount.mul(rate).div(100);
       taxResult.totalTax = roundToOneDecimal(taxAmount);
       taxResult.appliedRates = [rate.toNumber()];
     } else {
-      // Taxe dont le montant principal sur la base est 0 (sera calculée via cumuls)
       taxResult.totalTax = new Decimal(0);
       taxResult.appliedRates = [rate.toNumber()];
     }
   }
 
-  // Étape 4 : Calcul des cumuls (chaque taxe qui cumule sur d'autres)
-  // On utilise les totalTax déjà calculés pour les taxes de base.
+  // Étape 4 : Calcul des taxes cumulées
   for (const tax of taxes) {
     if (!tax.cumul || tax.cumul.length === 0) continue;
 
@@ -141,32 +135,23 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     if (!currentTaxResult) continue;
 
     const rate = parseTaxValue(tax.taxValue);
-
     let cumulatedTaxAmount = new Decimal(0);
 
     for (const c of tax.cumul) {
       if (!c.check) continue;
-      const other = taxResults.get(c.name);
-      if (!other) continue;
+      const targetTax = taxResults.get(c.name);
+      if (!targetTax) continue;
 
-      // On applique le pourcentage (rate) SUR le montant de la taxe ciblée (other.totalTax)
-      // Exemple : CA 2% en cumul sur TVA -> cumulAmount = TVA_total * 2% = 200 * 2% = 4
-      const cumulAmount = new Decimal(other.totalTax).mul(rate).div(100);
+      const cumulAmount = new Decimal(targetTax.totalTax).mul(rate).div(100);
       cumulatedTaxAmount = cumulatedTaxAmount.plus(cumulAmount);
     }
 
-    if (cumulatedTaxAmount.greaterThan(0)) {
-      currentTaxResult.totalTax = roundToOneDecimal(
-        new Decimal(currentTaxResult.totalTax).plus(cumulatedTaxAmount)
-      );
-      // on écrit à nouveau la map
-      taxResults.set(tax.taxName, currentTaxResult);
-    }
+    currentTaxResult.totalTax = roundToOneDecimal(cumulatedTaxAmount);
+    taxResults.set(tax.taxName, currentTaxResult);
   }
 
   // Étape 5 : Totaux finaux
   let totalTaxAmount = new Decimal(0);
-
   for (const taxResult of taxResults.values()) {
     totalTaxAmount = totalTaxAmount.plus(new Decimal(taxResult.totalTax));
   }
@@ -175,14 +160,15 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
   const totalWithTaxes = roundToOneDecimal(totalHT.plus(totalTaxAmount));
 
   const currentPrice = amountType === "TTC" ? totalWithTaxes : totalHT;
-  const subtotal = roundToOneDecimal(subtotalBeforeDiscount);
+  const subtotal = totalHT; // Total HT après remise, avant taxes
 
   return {
     taxes: Array.from(taxResults.values()),
     totalTax: totalTaxAmount,
     totalWithTaxes,
-    totalWithoutTaxes: totalHT,
+    totalWithoutTaxes: totalHT, // HT après remise
     currentPrice,
     subtotal,
+    discountAmount: globalDiscountAmount,
   };
 }

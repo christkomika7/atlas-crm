@@ -1,7 +1,8 @@
+import { toDateOnlyString } from "@/lib/date";
 import { urlToFile } from "@/lib/utils";
 import { CompanySchemaType, EditCompanySchemaType } from "@/lib/zod/company.schema";
 import { RequestResponse } from "@/types/api.types";
-import { CompanyType } from "@/types/company.types";
+import { CompanyType, FilterDataType } from "@/types/company.types";
 import { UserType } from "@/types/user.types";
 
 export async function all() {
@@ -16,6 +17,29 @@ export async function all() {
         }
         return res;
 
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function filterDatas({ companyId, reportType, period, start, end }: { companyId: string, reportType?: string, period?: string, start?: Date, end?: Date }) {
+    const params = new URLSearchParams();
+    if (reportType) params.append("reportType", reportType || "salesByClient");
+    if (period) params.append("period", period);
+    if (start) params.append("start", toDateOnlyString(start));
+    if (end) params.append("end", toDateOnlyString(end));
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/${companyId}/filter${queryString ? `?${queryString}` : ""}`;
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+        });
+        const res: RequestResponse<FilterDataType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
     } catch (error) {
         throw error;
     }

@@ -410,7 +410,6 @@ export default function DeliveryNoteTab() {
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
-      discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({

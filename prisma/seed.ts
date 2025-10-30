@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { Action, Resource, Role } from "@/lib/generated/prisma";
 import crypto from 'crypto';
 import prisma from "@/lib/prisma";
-import Decimal from "decimal.js";
 
 export async function main() {
   const existingUser = await prisma.user.findUnique({
@@ -147,6 +146,14 @@ export async function main() {
                 },
                 {
                   resource: Resource.APPOINTMENT,
+                  actions: [
+                    Action.READ,
+                    Action.MODIFY,
+                    Action.CREATE
+                  ]
+                },
+                {
+                  resource: Resource.CONTRACT,
                   actions: [
                     Action.READ,
                     Action.MODIFY,

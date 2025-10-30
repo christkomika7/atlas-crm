@@ -1,4 +1,3 @@
-import { checkAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
 import { formatNumber, generateAmaId, getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
@@ -13,7 +12,6 @@ import { QuoteType } from "@/types/quote.types";
 import { InvoiceType } from "@/types/invoice.types";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
-
 
 export async function GET(req: NextRequest) {
     const session = await getSession();
@@ -496,6 +494,53 @@ export async function GET(req: NextRequest) {
                 data: transformProjects,
             }, { status: 200 });
 
+        case "CONTRACT":
+            const deletionContracts = await prisma.deletion.findMany({
+                where: {
+                    type: type as $Enums.DeletionType,
+                    companyId: id,
+                    isValidate: false
+                },
+            });
+
+            let transformContracts: DeletionType[] = [];
+            for (const deletion of deletionContracts) {
+                const contract = await prisma.contract.findUnique({
+                    where: { id: deletion.recordId },
+                    include: {
+                        client: true,
+                        lessor: true,
+                        billboard: true,
+                        company: {
+                            include: { documentModel: true }
+                        }
+                    }
+                });
+
+                if (!contract) {
+                    continue
+                }
+
+                const forUser = contract.type === "CLIENT" ? `${contract.client?.lastname} ${contract.client?.firstname}` :
+                    contract.type === "LESSOR" && contract.lessor ? `${contract.lessor?.lastname} ${contract.lessor?.firstname}` :
+                        `${contract.billboard?.lessorName}`
+
+                transformContracts = [...transformContracts, {
+                    id: deletion.id,
+                    recordId: deletion.recordId,
+                    reference: '',
+                    categorie: contract.type === "CLIENT" ? "Client" : "Bailleur",
+                    date: deletion.createdAt,
+                    forUser,
+                }];
+
+            }
+
+            return NextResponse.json({
+                state: "success",
+                data: transformContracts,
+            }, { status: 200 });
+
         case "APPOINTMENTS":
             const deletionAppointment = await prisma.deletion.findMany({
                 where: {
@@ -965,10 +1010,12 @@ export async function PUT(req: NextRequest) {
 
                     break
                 case "delete":
-                    await prisma.billboard.delete({
+                    const billboard = await prisma.billboard.delete({
                         where: { id: recordId },
                     });
                     await prisma.deletion.delete({ where: { id } });
+
+                    await removePath([billboard.pathBrochure, billboard.pathPhoto]);
 
                     break;
             }
@@ -989,7 +1036,31 @@ export async function PUT(req: NextRequest) {
 
                     break
                 case "delete":
-                    await prisma.client.delete({
+                    const client = await prisma.client.delete({
+                        where: { id: recordId },
+                    });
+                    await prisma.deletion.delete({ where: { id } });
+                    await removePath(client.uploadDocuments);
+                    break;
+            }
+            break;
+
+        case "CONTRACT":
+            switch (action) {
+                case "cancel":
+                    await prisma.$transaction([
+                        prisma.contract.update({
+                            where: { id: recordId },
+                            data: {
+                                hasDelete: false
+                            }
+                        }),
+                        prisma.deletion.delete({ where: { id } })
+                    ]);
+
+                    break
+                case "delete":
+                    await prisma.contract.delete({
                         where: { id: recordId },
                     });
                     await prisma.deletion.delete({ where: { id } });
@@ -997,7 +1068,6 @@ export async function PUT(req: NextRequest) {
                     break;
             }
             break;
-
 
         case "SUPPLIERS":
             switch (action) {
@@ -1014,14 +1084,15 @@ export async function PUT(req: NextRequest) {
 
                     break
                 case "delete":
-                    await prisma.supplier.delete({
+                    const supplier = await prisma.supplier.delete({
                         where: { id: recordId },
                     });
                     await prisma.deletion.delete({ where: { id } });
-
+                    await removePath(supplier.uploadDocuments);
                     break;
             }
             break;
+
         case "PROJECTS":
             switch (action) {
                 case "cancel":
@@ -1037,14 +1108,15 @@ export async function PUT(req: NextRequest) {
 
                     break
                 case "delete":
-                    await prisma.project.delete({
+                    const project = await prisma.project.delete({
                         where: { id: recordId },
                     });
                     await prisma.deletion.delete({ where: { id } });
-
+                    await removePath([project.path]);
                     break;
             }
             break;
+
         case "APPOINTMENTS":
             switch (action) {
                 case "cancel":
@@ -1060,11 +1132,11 @@ export async function PUT(req: NextRequest) {
 
                     break
                 case "delete":
-                    await prisma.appointment.delete({
+                    const appointment = await prisma.appointment.delete({
                         where: { id: recordId },
                     });
                     await prisma.deletion.delete({ where: { id } });
-
+                    await removePath([appointment.path]);
                     break;
             }
             break;

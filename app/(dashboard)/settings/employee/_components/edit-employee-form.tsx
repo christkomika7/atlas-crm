@@ -81,6 +81,7 @@ export default function EditEmployeeForm() {
         deliveryNotes: { create: false, edit: false, read: false },
         projects: { create: false, edit: false, read: false },
         appointment: { create: false, edit: false, read: false },
+        contract: { create: false, edit: false, read: false },
         transaction: { create: false, edit: false, read: false },
         setting: { create: false, edit: false, read: false },
       };
@@ -234,7 +235,7 @@ export default function EditEmployeeForm() {
                       design="float"
                       label="Salaire"
                       value={field.value}
-                      handleChange={(e) => field.onChange(String(e))}
+                      handleChange={e => field.onChange(String(e))}
                     />
                   </FormControl>
                   <FormMessage />
@@ -663,6 +664,60 @@ export default function EditEmployeeForm() {
                           render={({ field }) => (
                             <div className="flex justify-center">
                               <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Contract */}
+              <FormField
+                control={form.control}
+                name="contract"
+                render={() => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <div className="grid grid-cols-[200px_80px_80px_80px]">
+                        <p className="font-medium text-sm">Contrat</p>
+                        <Controller
+                          name="contract.create"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                className="cursor-pointer"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="contract.edit"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                className="cursor-pointer"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="contract.read"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                className="cursor-pointer"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
                               />

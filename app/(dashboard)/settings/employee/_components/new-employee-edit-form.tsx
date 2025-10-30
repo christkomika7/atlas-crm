@@ -95,6 +95,11 @@ export default function NewEmployeeEditForm() {
         edit: false,
         read: false,
       },
+      contract: {
+        create: false,
+        edit: false,
+        read: false
+      },
       transaction: {
         create: false,
         edit: false,
@@ -111,7 +116,7 @@ export default function NewEmployeeEditForm() {
   const { mutate, isPending } = useQueryAction<
     { id: string; email: string },
     RequestResponse<undefined>
-  >(hasEmail, () => {}, "employee");
+  >(hasEmail, () => { }, "employee");
 
   // Fonction utilitaire pour nettoyer les URLs
   const cleanupPreviewUrl = (urlRef: React.RefObject<string | undefined>) => {
@@ -246,9 +251,8 @@ export default function NewEmployeeEditForm() {
     const { success, data } = userEditSchema.safeParse(formData);
     if (!success) return;
 
-    const path = `${crypto.randomUUID()}_${data.firstname}_${
-      data.lastname
-    }`.toLowerCase();
+    const path = `${crypto.randomUUID()}_${data.firstname}_${data.lastname
+      }`.toLowerCase();
 
     const newUser = {
       ...data,
@@ -421,7 +425,7 @@ export default function NewEmployeeEditForm() {
                       design="float"
                       label="Salaire"
                       value={field.value}
-                      handleChange={field.onChange}
+                      handleChange={e => field.onChange(String(e))}
                       required={false}
                     />
                   </FormControl>

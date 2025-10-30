@@ -1,17 +1,16 @@
 "use client";
 import Header from "@/components/header/header";
 import { Button } from "@/components/ui/button";
-import AppointmentsCreateModal from "./_components/contract-create-modal";
 import { useRef, useState } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
-import { AppointmentType } from "@/types/appointment.type";
-import { removeMany } from "@/action/appointment.action";
 import Spinner from "@/components/ui/spinner";
 import { Tabs } from "@/components/ui/tabs";
 import { ContractTableRef } from "./_components/contract-table";
 import ClientTab from "./_components/tabs/client-tab";
 import LessorTab from "./_components/tabs/lessor-tab";
+import { removeManyContract } from "@/action/contract.action";
+import ContractMenu from "./_components/contract-menu";
 
 
 export default function ContractPage() {
@@ -21,8 +20,8 @@ export default function ContractPage() {
 
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },
-    RequestResponse<AppointmentType[]>
-  >(removeMany, () => { }, "contract");
+    RequestResponse<null>
+  >(removeManyContract, () => { }, "contracts");
 
   const handleContractAdded = () => {
     contractTableRef.current?.refreshContract();
@@ -45,10 +44,10 @@ export default function ContractPage() {
   return (
     <div className="space-y-9">
       <Header title="Contrat">
-        <div className="flex gap-x-2">
+        <div className="grid grid-cols-[120px_120px] gap-x-2">
           <Button
             variant="primary"
-            className="bg-red w-fit font-medium"
+            className="bg-red  font-medium"
             onClick={removeClients}
           >
             {isPending ? (
@@ -61,8 +60,8 @@ export default function ContractPage() {
               </>
             )}
           </Button>
-          <AppointmentsCreateModal
-            onAppointmentAdded={handleContractAdded}
+          <ContractMenu
+            refreshContract={handleContractAdded}
           />
         </div>
       </Header>

@@ -46,7 +46,7 @@ export default function PurchaseOrderInfo({ isGettingDocument, isGettingPurchase
         <>
             <div className="space-y-2">
                 <div className="flex justify-between gap-x-2">
-                    <h2 className="font-semibold">Facture</h2>
+                    <h2 className="font-semibold">Bon de commande</h2>
                     {isGettingPurchaseOrderNumber && isGettingDocument ? (
                         <Spinner size={10} />
                     ) : (
@@ -107,8 +107,18 @@ export default function PurchaseOrderInfo({ isGettingDocument, isGettingPurchase
                             items: parsePurchaseItems(items),
                             taxes,
                             discount: discount.discount && discount.discountType ? [0, discount.discountType] : undefined
-                            // discount: discount.discount && discount.discountType ? [discount.discount, discount.discountType] : undefined
                         }).totalWithoutTaxes)} {" "}
+                        {currency}
+                    </p>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <h2>Remise ( {discount.discountType === "purcent" ? `${discount.discount}%` : `${discount.discount} ${currency}`} )</h2>
+                    <p>
+                        {formatNumber(calculate({
+                            items: parsePurchaseItems(items),
+                            taxes,
+                            discount: discount.discount && discount.discountType ? [discount.discount, discount.discountType] : [0, discount.discountType],
+                        }).discountAmount)} {" "}
                         {currency}
                     </p>
                 </div>
@@ -117,6 +127,7 @@ export default function PurchaseOrderInfo({ isGettingDocument, isGettingPurchase
                         {calculate({
                             items: parsePurchaseItems(items),
                             taxes,
+                            discount: discount.discount && discount.discountType ? [0, discount.discountType] : undefined
                         }).taxes.map((tax) => (
                             <li key={tax.taxName} className="flex justify-between text-sm">
                                 <span>{tax.taxName} </span>

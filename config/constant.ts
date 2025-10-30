@@ -23,6 +23,8 @@ export const SEARCH_DEBOUND = 800 as const;
 
 export const IMAGE_TYPES = ["jpeg", "jpg", "png", "webp"];
 
+export const TRANSACTION_CATEGORIES = ["Règlement loyer", "Règlement salaire", "Règlement prestation de service"]
+
 // PREFIX
 export const INVOICE_PREFIX = "Facture";
 export const QUOTE_PREFIX = "Devis";

@@ -4,6 +4,7 @@ import { copyTo, createFolder, removePath } from "@/lib/file";
 import { $Enums } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
 import { generateId, getIdFromUrl } from "@/lib/utils";
+import Decimal from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     const itemForCreate = [
         ...invoice.items.filter(it => it.itemType === "billboard")?.map(billboard => ({
-            state: $Enums.ItemState.IGNORE,
+            state: $Enums.ItemState.APPROVED,
             name: billboard.name,
             hasTax: billboard.hasTax,
             description: billboard.description ?? "",
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
             itemType: billboard.itemType ?? "billboard"
         })) ?? [],
         ...invoice.items.filter(it => it.itemType !== "billboard")?.map(productService => ({
-            state: $Enums.ItemState.IGNORE,
+            state: $Enums.ItemState.APPROVED,
             name: productService.name,
             hasTax: productService.hasTax,
             description: productService.description ?? "",
@@ -85,7 +86,9 @@ export async function POST(req: NextRequest) {
             },
             itemType: productService.itemType ?? "product"
         })) ?? []
-    ]
+    ];
+
+    console.log({ itemForCreate });
 
     try {
         const [createdInvoice] = await prisma.$transaction([
@@ -99,6 +102,8 @@ export async function POST(req: NextRequest) {
                     totalTTC: invoice.totalTTC,
                     amountType: invoice.amountType,
                     note: invoice.note!,
+                    isPaid: false,
+                    payee: new Decimal(0),
                     files: savedPaths,
                     items: {
                         create: itemForCreate

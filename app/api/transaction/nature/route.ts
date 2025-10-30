@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
     }) as NatureSchemaType;
 
 
-    const natureExist = await prisma.transactionNature.findUnique({
-        where: { name: data.name }
+    const natureExist = await prisma.transactionNature.findFirst({
+        where: { name: data.name, categoryId: data.categoryId }
     });
 
     if (natureExist) {

@@ -1,7 +1,6 @@
 import { ACCEPTED_FILES_TYPES, ACCEPTED_IMAGE_TYPES, IMAGE_TYPES, MAX_FILE_SIZE } from "@/config/constant";
 import { z } from "zod";
 import { validateMimeType } from "../utils";
-import { Decimal } from "decimal.js";
 
 export const userSchema = z.object({
     id: z.string().optional(),
@@ -121,6 +120,11 @@ export const userSchema = z.object({
         read: z.boolean(),
     }).optional(),
     appointment: z.object({
+        create: z.boolean(),
+        edit: z.boolean(),
+        read: z.boolean(),
+    }).optional(),
+    contract: z.object({
         create: z.boolean(),
         edit: z.boolean(),
         read: z.boolean(),
@@ -252,6 +256,11 @@ export const userEditSchema = z.object({
         read: z.boolean(),
     }).optional(),
     appointment: z.object({
+        create: z.boolean(),
+        edit: z.boolean(),
+        read: z.boolean(),
+    }).optional(),
+    contract: z.object({
         create: z.boolean(),
         edit: z.boolean(),
         read: z.boolean(),

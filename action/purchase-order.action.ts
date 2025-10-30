@@ -2,7 +2,7 @@ import { RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
 import { PurchaseOrderPaymentSchemaType } from "@/lib/zod/payment.schema";
 import { PurchaseOrderSchemaType, PurchaseOrderUpdateSchemaType } from "@/lib/zod/purchase-order.schema";
 import { RequestResponse } from "@/types/api.types";
-import { RecurrenceType } from "@/types/invoice.types";
+import { PaidInfosInvoiceType, RecurrenceType } from "@/types/invoice.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { toDateOnlyString } from "@/lib/date";
 
@@ -13,6 +13,24 @@ export async function purchaseOrderNumber({ companyId }: { companyId: string }) 
         });
 
         const res: RequestResponse<number> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function noExpirePurchaseOrders({ companyId }: { companyId: string }) {
+
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/purchase-order/${companyId}/no-expire`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<PaidInfosInvoiceType> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }

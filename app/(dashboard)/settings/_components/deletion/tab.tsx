@@ -11,6 +11,7 @@ import ClientTab from "./client-tab";
 import SupplierTab from "./supplier-tab";
 import ProjectTab from "./project-tab";
 import AppointmentTab from "./appointment-tab";
+import ContractTab from "./contract-tab";
 
 
 export const tabs: TabType[] = [
@@ -73,5 +74,10 @@ export const tabs: TabType[] = [
     id: 12,
     title: "Rendez-vous",
     content: <AppointmentTab />,
+  },
+  {
+    id: 13,
+    title: "Contrat",
+    content: <ContractTab />,
   },
 ];

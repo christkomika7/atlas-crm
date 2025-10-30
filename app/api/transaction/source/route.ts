@@ -16,8 +16,10 @@ export async function POST(req: NextRequest) {
     }) as SourceSchemaType;
 
 
-    const sourceExist = await prisma.source.findUnique({
-        where: { name: data.name }
+    const sourceExist = await prisma.source.findFirst({
+        where: {
+            name: data.name, sourceType: data.sourceType === "check" ? $Enums.SourceType.CHECK : data.sourceType === "cash" ? $Enums.SourceType.CASH : $Enums.SourceType.BANK_TRANSFERT,
+        }
     });
 
     if (sourceExist) {

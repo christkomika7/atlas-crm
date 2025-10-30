@@ -120,7 +120,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export default function ExportDataChart() {
+export default function SalesByClientChart() {
   const [activeChart, setActiveChart] =
     React.useState<keyof typeof chartConfig>("desktop");
 

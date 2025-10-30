@@ -16,7 +16,7 @@ export default function ClientTab({
   return (
     <div className="pt-4">
       <ContractTable
-        filter="client"
+        filter="CLIENT"
         ref={contractTableRef}
         selectedContractIds={selectedContractIds}
         setSelectedContractIds={setSelectedContractIds}

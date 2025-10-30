@@ -97,6 +97,7 @@ export type GetTransactionsParams = {
   endDate?: string | null;
   movementValue?: string | null;
   categoryValue?: string | null;
+  natureValue?: string | null;
   paymentModeValue?: string | null;
   sourceValue?: string | null;
   paidForValue?: string | null;

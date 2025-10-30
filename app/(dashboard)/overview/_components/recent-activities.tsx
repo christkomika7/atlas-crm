@@ -35,7 +35,7 @@ export default function RecentActivities() {
     <div className="p-4 border border-neutral-200 rounded-lg space-y-4">
       <div className="flex justify-between">
         <h2 className="font-medium text-sm">Activitée récente</h2>
-        <Link href="/invoice" className="text-sm text-neutral-600">
+        <Link href="/invoice" className="text-sm text-blue-600 text-medium">
           Voir tout
         </Link>
       </div>

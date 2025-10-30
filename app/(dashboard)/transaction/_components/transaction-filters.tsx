@@ -1,4 +1,4 @@
-import { getCategories, getSources } from "@/action/transaction.action";
+import { getCategories, getNatures, getSources } from "@/action/transaction.action";
 import { getCollaborators } from "@/action/user.action";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -8,7 +8,7 @@ import { acceptPayment, movements } from "@/lib/data";
 import { useDataStore } from "@/stores/data.store";
 import useTransactionStore from "@/stores/transaction.store";
 import { RequestResponse } from "@/types/api.types";
-import { SourceType, TransactionCategoryType } from "@/types/transaction.type";
+import { SourceType, TransactionCategoryType, TransactionNatureType } from "@/types/transaction.type";
 import { UserType } from "@/types/user.types";
 import { useRouter } from "next/navigation";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
@@ -26,11 +26,16 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
 
   const categories = useTransactionStore.use.categories();
   const setCategories = useTransactionStore.use.setCategories();
+
+  const natures = useTransactionStore.use.natures();
+  const setNatures = useTransactionStore.use.setNatures();
+
   const sources = useTransactionStore.use.sources();
   const setSources = useTransactionStore.use.setSources();
 
   const [movementValue, setMovementValue] = useState<string>("");
   const [categoryValue, setCategoryValue] = useState<string>("");
+  const [natureValue, setNatureValue] = useState<string>("");
   const [paymentModeValue, setPaymentModeValue] = useState<string>("");
   const [sourceValue, setSourceValue] = useState<string>("");
   const [paidForValue, setPaidForValue] = useState<string>("");
@@ -43,6 +48,12 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
       { companyId: string, type?: "receipt" | "dibursement"; },
       RequestResponse<TransactionCategoryType[]>
     >(getCategories, () => { }, "categories");
+
+  const { mutate: mutateGetNatures, isPending: isGettingNatures } =
+    useQueryAction<
+      { categoryId: string },
+      RequestResponse<TransactionNatureType[]>
+    >(getNatures, () => { }, "natures");
 
   const { mutate: mutateGetSources, isPending: isGettingSources } =
     useQueryAction<{ companyId: string }, RequestResponse<SourceType[]>>(
@@ -95,6 +106,23 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
     }
   }, [companyId]);
 
+  useEffect(() => {
+    if (categoryValue) {
+      mutateGetNatures(
+        { categoryId: categoryValue },
+        {
+          onSuccess(data) {
+            if (data.data) {
+              setNatures(data.data);
+            }
+          },
+        },
+      );
+      return
+    }
+    setNatures([])
+  }, [categoryValue])
+
   // Gérer le reset en premier
   useEffect(() => {
     if (filters === "reset") {
@@ -102,6 +130,7 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
 
       setMovementValue("");
       setCategoryValue("");
+      setNatureValue("");
       setPaymentModeValue('');
       setSourceValue("");
       setPaidForValue("");
@@ -127,6 +156,8 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
 
     if (movementValue) params.set("movement", movementValue);
     if (categoryValue) params.set("category", categoryValue);
+    if (natureValue) params.set("nature", natureValue);
+
     if (paymentModeValue) params.set("paymentMode", paymentModeValue);
     if (sourceValue) params.set("source", sourceValue);
     if (paidForValue) params.set("paidFor", paidForValue);
@@ -145,6 +176,7 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
   }, [
     movementValue,
     categoryValue,
+    natureValue,
     paymentModeValue,
     sourceValue,
     paidForValue,
@@ -191,6 +223,20 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
           placeholder="Catégorie"
           searchMessage="Rechercher une catégorie"
           noResultsMessage="Aucune catégorie trouvée."
+        />
+        <Combobox
+          isLoading={isGettingNatures}
+          datas={natures.map((nature) => ({
+            id: nature.id,
+            label: nature.name,
+            value: nature.id,
+          }))}
+          required={false}
+          value={natureValue}
+          setValue={setNatureValue}
+          placeholder="Nature"
+          searchMessage="Rechercher une nature"
+          noResultsMessage="Aucune nature trouvée."
         />
         <Combobox
           datas={acceptPayment}

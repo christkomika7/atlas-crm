@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { checkBillboardConflicts } from "@/lib/server";
 import { generateAmaId, generateId, getIdFromUrl } from "@/lib/utils";
 import { BillboardItem } from "@/types/invoice.types";
+import Decimal from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -115,7 +116,8 @@ export async function POST(req: NextRequest) {
                     fromRecordName: "Devis",
                     fromRecordReference: `${quote.company.documentModel?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(quote.quoteNumber, false)}`,
                     totalTTC: quote.totalTTC,
-                    payee: 0,
+                    isPaid: false,
+                    payee: new Decimal(0),
                     note: quote.note!,
                     files: savedPaths,
                     items: {

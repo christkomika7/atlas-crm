@@ -42,7 +42,7 @@ export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, ref
         <>
             <div className="space-y-2">
                 <div className="flex justify-between gap-x-2">
-                    <h2 className="font-semibold">Bon de livraison</h2>
+                    <h2 className="font-semibold">Devis</h2>
                     {isGettingQuoteNumber && isGettingDocument ? (
                         <Spinner size={10} />
                     ) : (
@@ -93,9 +93,19 @@ export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, ref
                         {formatNumber(calculate({
                             items: parseItems(items),
                             taxes,
-                            discount: discount.discount && discount.discountType ? [0, discount.discountType] : undefined
-                            // discount: discount.discount && discount.discountType ? [discount.discount, discount.discountType] : undefined
+                            discount: discount.discount && discount.discountType ? [discount.discount, discount.discountType] : [0, discount.discountType],
                         }).totalWithoutTaxes)} {" "}
+                        {currency}
+                    </p>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <h2>Remise ( {discount.discountType === "purcent" ? `${discount.discount}%` : `${discount.discount} ${currency}`} )</h2>
+                    <p>
+                        {formatNumber(calculate({
+                            items: parseItems(items),
+                            taxes,
+                            discount: discount.discount && discount.discountType ? [discount.discount, discount.discountType] : [0, discount.discountType],
+                        }).discountAmount)} {" "}
                         {currency}
                     </p>
                 </div>
@@ -104,6 +114,7 @@ export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, ref
                         {calculate({
                             items: parseItems(items),
                             taxes,
+                            discount: discount.discount && discount.discountType ? [discount.discount, discount.discountType] : [0, discount.discountType],
                         }).taxes.map((tax) => (
                             <li key={tax.taxName} className="flex justify-between text-sm">
                                 <span>{tax.taxName} </span>

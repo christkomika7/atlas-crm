@@ -6,13 +6,15 @@ import mime from "mime-types";
 import prisma from "./prisma";
 import { removePath, saveFile } from "./file";
 import { BillboardItem, ConflictResult, ExistingBillboardItem, InvoiceType } from "@/types/invoice.types";
-import { format, isAfter, isBefore, isEqual, isValid } from "date-fns";
+import { endOfMonth, endOfQuarter, endOfYear, format, isAfter, isBefore, isEqual, isValid, startOfMonth, startOfQuarter, startOfYear, subMonths, subYears } from "date-fns";
 import { QuoteType } from "@/types/quote.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 import { getSession } from "./auth";
-import { $Enums, Deletion } from "./generated/prisma";
+import { $Enums } from "./generated/prisma";
 import { NextResponse } from "next/server";
+import { PeriodType, ReportType } from "@/types/company.types";
+import { Decimal } from "decimal.js";
 
 
 export async function getFileFromPath(filePath: string): Promise<File | null> {
@@ -310,7 +312,6 @@ export async function rollbackDeliveryNote(
     ]);
 }
 
-
 export async function rollbackQuote(
     quoteExist: QuoteType,
 ) {
@@ -501,12 +502,9 @@ export async function checkBillboardConflicts(
     };
 }
 
-
 export async function checkAccessDeletion(type: $Enums.DeletionType, ids: string[], companyId: string) {
     const session = await getSession();
-
     if (session?.user.role !== "ADMIN") {
-
         for (const id of ids) {
             const exist = await prisma.deletion.findFirst({
                 where: { recordId: id }
@@ -619,9 +617,328 @@ export async function checkAccessDeletion(type: $Enums.DeletionType, ids: string
                         }
                     })
                     break;
+
+                case "CONTRACT":
+                    await prisma.contract.update({
+                        where: { id },
+                        data: {
+                            hasDelete: true
+                        }
+                    })
+                    break;
             }
+        }
+        return true
+    }
+
+    return false
+}
+
+
+export async function filters({
+    companyId,
+    start,
+    end,
+    period,
+    reportType
+}: {
+    companyId: string;
+    start?: string;
+    end?: string;
+    period?: PeriodType;
+    reportType: ReportType
+}) {
+    const now = new Date();
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
+
+    if (start || end) {
+        if (start) {
+            const parsed = new Date(start);
+            if (isNaN(parsed.getTime())) {
+                return NextResponse.json(
+                    { state: "error", message: "start invalide. Utilisez un format de date ISO." },
+                    { status: 400 }
+                );
+            }
+            startDate = parsed;
+        }
+
+        if (end) {
+            const parsed = new Date(end);
+            if (isNaN(parsed.getTime())) {
+                return NextResponse.json(
+                    { state: "error", message: "end invalide. Utilisez un format de date ISO." },
+                    { status: 400 }
+                );
+            }
+            endDate = parsed;
+        }
+    } else if (period) {
+        switch (period) {
+            case "currentFiscalYear":
+                startDate = startOfYear(now);
+                endDate = endOfYear(now);
+                break;
+            case "currentQuarter":
+                startDate = startOfQuarter(now);
+                endDate = endOfQuarter(now);
+                break;
+            case "currentMonth":
+                startDate = startOfMonth(now);
+                endDate = endOfMonth(now);
+                break;
+            case "previousMonth":
+                startDate = startOfMonth(subMonths(now, 1));
+                endDate = endOfMonth(subMonths(now, 1));
+                break;
+            case "previousYear":
+                startDate = startOfYear(subYears(now, 1));
+                endDate = endOfYear(subYears(now, 1));
+                break;
         }
     }
 
-    return true
+    const whereClause: any = { companyId };
+
+    if (startDate || endDate) {
+        whereClause.createdAt = {};
+
+        if (startDate && !endDate) {
+            whereClause.createdAt.gte = startDate;
+        } else if (!startDate && endDate) {
+            whereClause.createdAt.lte = endDate;
+        } else if (startDate && endDate) {
+            if (startDate.getTime() > endDate.getTime()) {
+                return NextResponse.json(
+                    { state: "error", message: "start doit être antérieur ou égal à end." },
+                    { status: 400 }
+                );
+            }
+            whereClause.createdAt = { gte: startDate, lte: endDate };
+        }
+    }
+
+    switch (reportType) {
+        case "salesByClient": {
+            const invoiceWhere: any = { companyId };
+
+            if (startDate || endDate) {
+                invoiceWhere.createdAt = {};
+                if (startDate && !endDate) {
+                    invoiceWhere.createdAt.gte = startDate;
+                } else if (!startDate && endDate) {
+                    invoiceWhere.createdAt.lte = endDate;
+                } else if (startDate && endDate) {
+                    invoiceWhere.createdAt = { gte: startDate, lte: endDate };
+                }
+            }
+
+            const clients = await prisma.client.findMany({
+                where: { companyId },
+                include: {
+                    invoices: {
+                        where: invoiceWhere,
+                        select: {
+                            totalTTC: true,
+                            payee: true,
+                            isPaid: true,
+                            id: true,
+                        },
+                    },
+                },
+            });
+
+            const result = clients.map((c) => {
+                const totalGeneratedDecimal = c.invoices.reduce((acc: Decimal, inv: any) => {
+                    let valueDecimal = new Decimal(0);
+                    try {
+                        // Force une conversion en string pour éviter les erreurs de construction
+                        const raw = inv.totalTTC !== null && inv.totalTTC !== undefined ? inv.totalTTC.toString() : "0";
+                        valueDecimal = new Decimal(raw);
+                    } catch (err) {
+                        // En cas d'erreur, retomber sur 0 (et éventuellement logguer)
+                        // console.error("parse totalTTC failed for invoice", inv.id, err);
+                        valueDecimal = new Decimal(0);
+                    }
+                    return acc.plus(valueDecimal);
+                }, new Decimal(0));
+
+                const totalPaidDecimal = c.invoices.reduce((acc: Decimal, inv: any) => {
+                    let valueDecimal = new Decimal(0);
+                    try {
+                        const raw = inv.payee !== null && inv.payee !== undefined ? inv.payee.toString() : "0";
+                        valueDecimal = new Decimal(raw);
+                    } catch (err) {
+                        // console.error("parse payee failed for invoice", inv.id, err);
+                        valueDecimal = new Decimal(0);
+                    }
+                    return acc.plus(valueDecimal);
+                }, new Decimal(0));
+
+                const totalRemainingDecimal = totalGeneratedDecimal.minus(totalPaidDecimal);
+
+                return {
+                    id: c.id,
+                    date: c.createdAt,
+                    reference: "",
+                    name: c.companyName || `${c.firstname} ${c.lastname}`.trim(),
+                    count: c.invoices.length,
+                    totalGenerated: totalGeneratedDecimal.toFixed(2),
+                    totalPaid: totalPaidDecimal.toFixed(2),
+                    totalRemaining: totalRemainingDecimal.toFixed(2),
+                };
+            });
+
+            return result;
+        }
+
+
+        case "salesByItem": {
+            // Filtre des invoices (mêmes règles que précédemment)
+            const invoiceWhere: any = { companyId };
+
+            if (startDate || endDate) {
+                invoiceWhere.createdAt = {};
+                if (startDate && !endDate) {
+                    invoiceWhere.createdAt.gte = startDate;
+                } else if (!startDate && endDate) {
+                    invoiceWhere.createdAt.lte = endDate;
+                } else if (startDate && endDate) {
+                    invoiceWhere.createdAt = { gte: startDate, lte: endDate };
+                }
+            }
+
+            // Récupérer les produits/services et leurs factures correspondant aux filtres
+            const products = await prisma.productService.findMany({
+                where: { companyId },
+                include: {
+                    invoices: {
+                        where: invoiceWhere,
+                        select: {
+                            totalTTC: true,
+                            payee: true,
+                            id: true,
+                        },
+                    },
+                },
+            });
+
+            const result = products.map((p) => {
+                const totalGeneratedDecimal = p.invoices.reduce((acc: Decimal, inv: any) => {
+                    let valueDecimal = new Decimal(0);
+                    try {
+                        const raw = inv.totalTTC !== null && inv.totalTTC !== undefined ? inv.totalTTC.toString() : "0";
+                        valueDecimal = new Decimal(raw);
+                    } catch (err) {
+                        valueDecimal = new Decimal(0);
+                    }
+                    return acc.plus(valueDecimal);
+                }, new Decimal(0));
+
+                const totalPaidDecimal = p.invoices.reduce((acc: Decimal, inv: any) => {
+                    let valueDecimal = new Decimal(0);
+                    try {
+                        const raw = inv.payee !== null && inv.payee !== undefined ? inv.payee.toString() : "0";
+                        valueDecimal = new Decimal(raw);
+                    } catch (err) {
+                        valueDecimal = new Decimal(0);
+                    }
+                    return acc.plus(valueDecimal);
+                }, new Decimal(0));
+
+                const totalRemainingDecimal = totalGeneratedDecimal.minus(totalPaidDecimal);
+
+                return {
+                    id: p.id,
+                    date: p.createdAt,
+                    reference: p.reference,
+                    name: p.designation,
+                    count: p.invoices.length,
+                    totalGenerated: totalGeneratedDecimal.toFixed(2),
+                    totalPaid: totalPaidDecimal.toFixed(2),
+                    totalRemaining: totalRemainingDecimal.toFixed(2),
+                };
+            });
+
+            return result;
+        }
+
+        case "salesByBillboards": {
+            // Filtre des invoices (mêmes règles que précédemment)
+            const invoiceWhere: any = { companyId };
+
+            if (startDate || endDate) {
+                invoiceWhere.createdAt = {};
+                if (startDate && !endDate) {
+                    invoiceWhere.createdAt.gte = startDate;
+                } else if (!startDate && endDate) {
+                    invoiceWhere.createdAt.lte = endDate;
+                } else if (startDate && endDate) {
+                    invoiceWhere.createdAt = { gte: startDate, lte: endDate };
+                }
+            }
+
+            // Récupérer les panneaux (billboards) et leurs factures correspondant aux filtres
+            const billboards = await prisma.billboard.findMany({
+                where: { companyId },
+                include: {
+                    invoices: {
+                        where: invoiceWhere,
+                        select: {
+                            totalTTC: true,
+                            payee: true,
+                            id: true,
+                        },
+                    },
+                },
+            });
+
+            const result = billboards.map((b) => {
+                const totalGeneratedDecimal = b.invoices.reduce((acc: Decimal, inv: any) => {
+                    let valueDecimal = new Decimal(0);
+                    try {
+                        const raw = inv.totalTTC !== null && inv.totalTTC !== undefined ? inv.totalTTC.toString() : "0";
+                        valueDecimal = new Decimal(raw);
+                    } catch (err) {
+                        valueDecimal = new Decimal(0);
+                    }
+                    return acc.plus(valueDecimal);
+                }, new Decimal(0));
+
+                const totalPaidDecimal = b.invoices.reduce((acc: Decimal, inv: any) => {
+                    let valueDecimal = new Decimal(0);
+                    try {
+                        const raw = inv.payee !== null && inv.payee !== undefined ? inv.payee.toString() : "0";
+                        valueDecimal = new Decimal(raw);
+                    } catch (err) {
+                        valueDecimal = new Decimal(0);
+                    }
+                    return acc.plus(valueDecimal);
+                }, new Decimal(0));
+
+                const totalRemainingDecimal = totalGeneratedDecimal.minus(totalPaidDecimal);
+
+                return {
+                    id: b.id,
+                    date: b.createdAt,
+                    reference: b.reference,
+                    name: b.name,
+                    count: b.invoices.length,
+                    totalGenerated: totalGeneratedDecimal.toFixed(2),
+                    totalPaid: totalPaidDecimal.toFixed(2),
+                    totalRemaining: totalRemainingDecimal.toFixed(2),
+                };
+            });
+
+            return result;
+        }
+        case "paymentsByDate":
+        case "paymentsByClients":
+        case "paymentsByType":
+        case "expensesByCategories":
+        case "expensesJournal":
+        case "debtorAccountAging":
+    }
+
 }

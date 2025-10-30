@@ -94,8 +94,18 @@ export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryN
                             items: parseItems(items),
                             taxes,
                             discount: discount.discount && discount.discountType ? [0, discount.discountType] : undefined
-                            // discount: discount.discount && discount.discountType ? [discount.discount, discount.discountType] : undefined
                         }).totalWithoutTaxes)} {" "}
+                        {currency}
+                    </p>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <h2>Remise ( {discount.discountType === "purcent" ? `${discount.discount}%` : `${discount.discount} ${currency}`} )</h2>
+                    <p>
+                        {formatNumber(calculate({
+                            items: parseItems(items),
+                            taxes,
+                            discount: discount.discount && discount.discountType ? [discount.discount, discount.discountType] : [0, discount.discountType],
+                        }).discountAmount)} {" "}
                         {currency}
                     </p>
                 </div>
@@ -104,6 +114,7 @@ export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryN
                         {calculate({
                             items: parseItems(items),
                             taxes,
+                            discount: discount.discount && discount.discountType ? [0, discount.discountType] : undefined
                         }).taxes.map((tax) => (
                             <li key={tax.taxName} className="flex justify-between text-sm">
                                 <span>{tax.taxName} </span>

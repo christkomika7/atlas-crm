@@ -86,7 +86,7 @@ export default function SidebarMenu({
             <Link
               href={menu.path}
               className={clsx(
-                "flex items-center gap-x-2 hover:bg-white/10 px-5 py-2 rounded-lg font-medium text-white text-sm",
+                "flex items-center gap-x-2 hover:bg-white/10 px-4 py-2 rounded-lg font-medium text-white text-sm",
                 path.startsWith(menu.path) && "bg-blue hover:!bg-blue"
               )}
             >

@@ -1,5 +1,4 @@
 import { $Enums, Action, Resource } from "@/lib/generated/prisma";
-import { Decimal } from "decimal.js";
 
 export type ProfileType<F = string> = {
     id: string;
@@ -29,6 +28,7 @@ export type ResourceType =
     | "billboards"
     | "projects"
     | "appointment"
+    | "contract"
     | "transaction"
     | "setting";
 

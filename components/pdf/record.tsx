@@ -287,6 +287,7 @@ export default function RecordDocument({
                                     items: (record ? (parseItems(record.items)) : []),
                                     taxes: record?.company?.vatRates ?? [],
                                     amountType: record?.amountType || "TTC",
+                                    discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
                                 }).subtotal)}
                                 {record?.company.currency}
                             </td>
@@ -296,14 +297,19 @@ export default function RecordDocument({
                                 Remise ({record?.discountType === "money" ? `${formatNumber(record!.discount)} ${record?.company?.currency}` : `${record!.discount}%`})
                             </td>
                             <td className="pr-3 text-right">
-                                {record?.discountType === "money" ? `${formatNumber(record!.discount)} ${record?.company?.currency}` : `${formatNumber(new Decimal(getAmountPrice(record!.amountType, record?.totalTTC, record?.totalHT)).mul(record!.discount).div(100))}`}
-                                {" "}{record?.company.currency}
+                                {calculate({
+                                    items: (record ? (parseItems(record.items)) : []),
+                                    taxes: record?.company?.vatRates ?? [],
+                                    amountType: record?.amountType || "TTC",
+                                    discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
+                                }).discountAmount.toString()} {" "}{record?.company.currency}
                             </td>
                         </tr>
                         {calculate({
                             items: (record ? (parseItems(record.items)) : []),
                             taxes: record?.company?.vatRates ?? [],
                             amountType: record?.amountType || "TTC",
+                            discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
                         }).taxes.map((tax) => (
                             <tr key={tax.taxName} className="text-sm">
                                 <td colSpan={3} className="text-right">

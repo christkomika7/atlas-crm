@@ -24,11 +24,10 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const movementValue = searchParams.get("movementValue");
+    const natureValue = searchParams.get("natureValue");
     const categoryValue = searchParams.get("categoryValue");
     const sourceValue = searchParams.get("sourceValue");
     const paidForValue = searchParams.get("paidForValue");
-
-    console.log({ startDate, endDate })
 
     // Tri
     const sortKeys = [
@@ -67,6 +66,7 @@ export async function GET(req: NextRequest) {
     }
     if (movementValue) baseWhere.movement = movementValue;
     if (categoryValue) baseWhere.categoryId = categoryValue;
+    if (natureValue) baseWhere.natureId = natureValue;
     if (sourceValue) baseWhere.sourceId = sourceValue;
 
     // WHERE spécifique pour disbursements (seuls ils ont payOnBehalfOf)
@@ -217,7 +217,7 @@ export async function GET(req: NextRequest) {
       ...receipt,
       allocation: null,
       payOnBehalfOf: null,
-      documentReference: `${receipt.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(receipt.referenceInvoice?.invoiceNumber as number, false)}`,
+      documentReference: receipt.referenceInvoice?.invoiceNumber ? `${receipt.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(receipt.referenceInvoice?.invoiceNumber as number, false)}` : "-",
       type: receipt.type.toString(),
       movement: receipt.movement.toString(),
       amountType: receipt.amountType.toString(),
@@ -229,7 +229,7 @@ export async function GET(req: NextRequest) {
       type: disbursement.type.toString(),
       movement: disbursement.movement.toString(),
       amountType: disbursement.amountType.toString(),
-      documentReference: `${disbursement.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(disbursement.referencePurchaseOrder?.purchaseOrderNumber as number, false)}`,
+      documentReference: disbursement.referencePurchaseOrder?.purchaseOrderNumber ? `${disbursement.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(disbursement.referencePurchaseOrder?.purchaseOrderNumber as number, false)}` : "-",
       // Normalisation du payOnBehalfOf avec profile
       payOnBehalfOf: disbursement.payOnBehalfOf
         ? {

@@ -25,7 +25,7 @@ type SourceModalProps = {
     sourceType?: "check" | "cash" | "bank-transfer"
 }
 
-export default function SourceModal({ sourceType }: SourceModalProps) {
+export default function SourceModal({ sourceType: type }: SourceModalProps) {
     const companyId = useDataStore.use.currentCompany();
 
     const sources = useTransactionStore.use.sources();
@@ -78,9 +78,9 @@ export default function SourceModal({ sourceType }: SourceModalProps) {
 
         if (!companyId) return toast.error("Aucune entreprise trouvée.");
         if (!name) return toast.error("Aucune source insérée.");
-        if (!sourceType) return toast.error("Veuillez sélectionner le mode de paiement avant.");
+        if (!type) return toast.error("Veuillez sélectionner le mode de paiement avant.");
         mutateCreateSource(
-            { name, companyId, sourceType },
+            { name, companyId, sourceType: type },
             {
                 onSuccess(data) {
                     if (data.data) {

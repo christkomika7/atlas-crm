@@ -377,7 +377,6 @@ export const periods = [
     { id: 3, value: "currentMonth", label: "Mois en cours" },
     { id: 4, value: "previousMonth", label: "Mois précédent" },
     { id: 5, value: "previousYear", label: "Année précédente" },
-    { id: 6, value: "custom", label: "Personnalisé" },
 ];
 
 export const movements = [

@@ -16,7 +16,7 @@ export default function LessorTab({
   return (
     <div className="pt-4">
       <ContractTable
-        filter="lessor"
+        filter="LESSOR"
         ref={contractTableRef}
         selectedContractIds={selectedContractIds}
         setSelectedContractIds={setSelectedContractIds}

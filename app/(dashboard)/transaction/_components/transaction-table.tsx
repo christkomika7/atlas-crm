@@ -525,7 +525,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                       {getPaymentMode(transaction.paymentType)}
                     </TableCell>
                     <TableCell className="text-center">
-                      {transaction.checkNumber}
+                      {transaction.checkNumber || "-"}
                     </TableCell>
                     <TableCell className="text-center">
                       {transaction.documentReference}
@@ -545,8 +545,8 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                         : "-"}
                     </TableCell>
                     <TableCell className="text-center">
-                      {transaction.client && `${transaction.client.lastname} ${transaction.client.firstname}`}
-                      {transaction.supplier && `${transaction.supplier.lastname} ${transaction.supplier.firstname}`}
+                      {transaction.client ? `${transaction.client.lastname} ${transaction.client.firstname}` :
+                        transaction.supplier ? `${transaction.supplier.lastname} ${transaction.supplier.firstname}` : "-"}
                     </TableCell>
                     <TableCell className="text-center">
                       {transaction.comment || "-"}

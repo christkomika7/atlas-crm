@@ -32,6 +32,7 @@ export async function getTransactions(params: GetTransactionsParams) {
     if (params.endDate) query.set("endDate", params.endDate);
     if (params.movementValue) query.set("movementValue", params.movementValue);
     if (params.categoryValue) query.set("categoryValue", params.categoryValue);
+    if (params.natureValue) query.set("natureValue", params.natureValue);
     if (params.paymentModeValue)
       query.set("paymentModeValue", params.paymentModeValue);
     if (params.sourceValue) query.set("sourceValue", params.sourceValue);
@@ -66,7 +67,7 @@ export async function getTransactions(params: GetTransactionsParams) {
       headers: {
         "Content-Type": "application/json",
       },
-      cache: "no-store", // Éviter le cache pour les données dynamiques
+      cache: "no-store",
     });
 
     if (!response.ok) {

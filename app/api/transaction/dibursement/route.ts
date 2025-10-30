@@ -11,7 +11,8 @@ export async function POST(req: NextRequest) {
 
     const data = parseData<DibursementSchemaType>(dibursementSchema, {
         ...res,
-        date: new Date(res.date)
+        date: new Date(res.date),
+        period: res.period ? new Date(res.period) : undefined
     }) as DibursementSchemaType;
 
     const companyExist = await prisma.company.findUnique({ where: { id: data.companyId } });
@@ -24,6 +25,12 @@ export async function POST(req: NextRequest) {
     try {
 
         const referenceDocument = {};
+
+        if (data.period) {
+            Object.assign(referenceDocument, {
+                period: data.period
+            })
+        }
 
         if (data.documentRef) {
             Object.assign(referenceDocument, {

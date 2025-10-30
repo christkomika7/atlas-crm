@@ -4,7 +4,7 @@ import { getBySource } from "@/action/transaction.action";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import Spinner from "@/components/ui/spinner";
 import useQueryAction from "@/hook/useQueryAction";
-import { cn, formatNumber } from "@/lib/utils";
+import { cn, formatNumber, isNegative } from "@/lib/utils";
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { SourceTransaction } from "@/types/transaction.type";
@@ -12,6 +12,7 @@ import { Minus, MoveUpRightIcon, TrendingDownIcon, TrendingUpIcon } from "lucide
 import { useEffect, useState } from "react";
 import { BanknoteArrowUp } from 'lucide-react';
 import { HandCoins } from 'lucide-react';
+import { Decimal } from "@prisma/client/runtime/library";
 
 
 
@@ -44,12 +45,7 @@ export default function SourceInfos() {
                 <div className="p-4 border border-neutral-200 rounded-lg flex gap-x-2">
                     {transactions.map((transaction, index) => (
                         <div key={transaction.sourceId} className={cn("py-2 px-3 w-[200px] -space-y-0.5", index > 0 && "border-l border-neutral-200 ")}>
-                            <h2 className="font-bold">{formatNumber(transaction.difference)} {currency}</h2>
-                            <div>
-
-                                <p className="text-xs text-neutral-600 flex gap-x-1.5 items-center "><span className="font-medium">Entrée : </span> {formatNumber(transaction.totalReceipts)} {currency}</p>
-                                <p className="text-xs text-neutral-600 flex gap-x-1.5 items-center "><span className="font-medium">Sortie : </span> {formatNumber(transaction.totalDisbursements)} {currency}</p>
-                            </div>
+                            <h2 className={cn("font-bold", isNegative(transaction.difference) ? "text-red" : "text-emerald-500")}>{formatNumber(transaction.difference)} {currency}</h2>
                             <p className="text-sm text-neutral-600 flex gap-x-2 items-center">
                                 {transaction.sourceName} {transaction.percentageDifference > 0 ?
                                     <span className="text-emerald-500 flex gap-x-1.5 items-center"> <TrendingUpIcon size={14} /> {transaction.percentageDifference}% </span> :

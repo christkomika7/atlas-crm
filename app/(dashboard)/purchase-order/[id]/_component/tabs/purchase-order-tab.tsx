@@ -253,7 +253,6 @@ export default function PurchaseOrderTab() {
       items: parsePurchaseItems(items),
       amountType: amountType,
       taxes: company?.vatRates ?? [],
-      discount: supplierDiscount.discount && supplierDiscount.discountType ? [supplierDiscount.discount, supplierDiscount.discountType] : undefined
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({

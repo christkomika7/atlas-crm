@@ -30,6 +30,7 @@ enum DeletionType {
   CLIENTS
   SUPPLIERS
   PROJECTS
+  CONTRACT
   APPOINTMENTS
 }
 
@@ -194,6 +195,7 @@ model Supplier {
   purchaseOrders PurchaseOrder[]
   receipts       Receipt[]
   ribursements   Dibursement[]
+  Contract       Contract[]
 
   @@map("supplier")
 }
@@ -327,8 +329,13 @@ model Contract {
   id   String       @id @default(uuid())
   type ContractType
 
+  hasDelete Boolean @default(false)
+
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  lessorId String?
+  lessor   Supplier? @relation(fields: [lessorId], references: [id], onDelete: SetNull)
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -706,12 +713,13 @@ model Project {
   collaborators      User[]          @relation("project_collaborators")
   tasks              Task[]
   invoices           Invoice[]
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
   quotes             Quote[]
   purchaseOrders     PurchaseOrder[]
   deliveryNotes      DeliveryNote[]
-  Dibursement        Dibursement[]
+  dibursements       Dibursement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("project")
 }
@@ -907,6 +915,8 @@ model Dibursement {
   amount     Decimal    @default(0) @db.Decimal(15, 2)
   amountType AmountType @default(HT)
 
+  period DateTime?
+
   paymentType String
   checkNumber String?
 
@@ -951,7 +961,7 @@ model Dibursement {
 
 model Source {
   id   String @id @default(ulid())
-  name String @unique
+  name String
 
   sourceType SourceType @default(CHECK)
 
@@ -979,7 +989,7 @@ model TransactionCategory {
 
 model TransactionNature {
   id   String @id @default(uuid())
-  name String @unique
+  name String
 
   categoryId String
   category   TransactionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)

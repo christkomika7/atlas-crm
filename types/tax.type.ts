@@ -51,6 +51,7 @@ export type CalculateTaxesResult = {
     totalWithoutTaxes: Decimal;
     currentPrice: Decimal;
     subtotal: Decimal;
+    discountAmount: Decimal;
 };
 
 export type CalculateTaxesInput = {

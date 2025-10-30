@@ -1,4 +1,4 @@
-import { auth, getSession } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { Action, Prisma, Resource } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
 import { removePath } from "@/lib/file";
@@ -7,7 +7,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getIdFromUrl } from "@/lib/utils";
 import { checkAccess } from "@/lib/access";
 import { parseData } from "@/lib/parse";
-import { Decimal } from "decimal.js";
 
 export async function GET(req: NextRequest) {
     await checkAccess(["DASHBOARD"], "READ");
@@ -110,6 +109,7 @@ export async function PUT(req: NextRequest) {
                 toPermissions(Resource.BILLBOARDS, data.billboards),
                 toPermissions(Resource.PROJECTS, data.projects),
                 toPermissions(Resource.APPOINTMENT, data.appointment),
+                toPermissions(Resource.CONTRACT, data.contract),
                 toPermissions(Resource.TRANSACTION, data.transaction),
                 toPermissions(Resource.SETTING, data.setting),
             ].filter(Boolean) as Prisma.PermissionCreateManyInput[];
