@@ -1,6 +1,6 @@
 "use client";
 import { CheckIcon, ChevronsUpDownIcon, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, cutText } from "@/lib/utils";
 import {
   Command,
   CommandEmpty,
@@ -30,6 +30,7 @@ type ComboboxProps = {
   }[];
   setValue: Dispatch<SetStateAction<string>>;
   value: string;
+  cut?: number;
   placeholder?: string;
   searchMessage?: string;
   noResultsMessage?: string;
@@ -46,6 +47,7 @@ export function Combobox({
   searchMessage,
   noResultsMessage,
   value,
+  cut,
   setValue,
   datas,
   required = true,
@@ -62,7 +64,7 @@ export function Combobox({
   const getDisplayValue = () => {
     if (!value) return "";
     const selectedData = datas.find((data) => data.value === value);
-    return selectedData?.label || "";
+    return cut ? cutText(selectedData?.label || "", cut) : selectedData?.label || "";
   };
 
   return (
@@ -110,7 +112,7 @@ export function Combobox({
                         value={data.label}
                         disabled={isDisabled}
                         className={cn(
-                          "flex items-center gap-2",
+                          "flex items-center text-sm gap-2",
                           isDisabled
                             ? "text-gray-400 cursor-not-allowed opacity-60"
                             : "cursor-pointer"

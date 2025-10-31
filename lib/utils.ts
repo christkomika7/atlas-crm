@@ -800,3 +800,24 @@ export function getAmountPrice(amountType: 'HT' | "TTC", TTCPrice?: Decimal, HTP
   const ht = HTPrice || new Decimal(0);
   return amountType === "HT" ? ht : ttc;
 }
+
+export function toShortNum(value: number | string): string {
+  const num = typeof value === "string"
+    ? Number(value.replace(/\s+/g, "").replace(/,/g, "."))
+    : Number(value);
+
+  if (Number.isNaN(num)) return String(value);
+
+  const abs = Math.abs(num);
+  const sign = num < 0 ? "-" : "";
+
+  const format = (n: number, suffix: string) =>
+    `${sign}${parseFloat(n.toFixed(1)).toString().replace(/\.0$/, "")}${suffix}`;
+
+  if (abs >= 1_000_000_000_000) return format(abs / 1_000_000_000_000, "T");
+  if (abs >= 1_000_000_000) return format(abs / 1_000_000_000, "B");
+  if (abs >= 1_000_000) return format(abs / 1_000_000, "M");
+  if (abs >= 1_000) return format(abs / 1_000, "K");
+  return `${sign}${abs.toString()}`;
+}
+

@@ -65,6 +65,7 @@ export function checkDeadline(range: [Date, Date]) {
 
     return { daysLeft, isOutside };
 }
+
 export function getDateStatus(range: DateRange): "green" | "yellow" | "red" {
     let { startDate, endDate } = range;
 

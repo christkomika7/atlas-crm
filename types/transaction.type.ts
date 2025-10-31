@@ -128,3 +128,21 @@ export type SourceTransaction = {
   difference: Decimal,
   percentageDifference: number
 }
+
+export type CategoryDetailType = {
+  categoryId: string,
+  categoryName: string,
+  total: Decimal,
+  percentage: number,
+}
+
+export type CategoryItemType = {
+  categoryId: string;
+  categoryName: string;
+  total: string;
+}
+
+export type CategoryFilterType = {
+  total: Decimal;
+  items: CategoryItemType[]
+}

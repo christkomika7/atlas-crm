@@ -11,10 +11,12 @@ import {
 } from "@/components/ui/popover";
 import { useState, useEffect } from "react";
 import { FloatingInput, FloatingLabel } from "./floating-input";
+import { cutText } from "@/lib/utils";
 
 type DateRange = [Date, Date];
 
 type DatePickerProps = {
+  cut?: number;
   mode?: "single" | "multiple" | "range";
   required?: boolean;
   label: string;
@@ -34,6 +36,7 @@ export function DatePicker({
   disabled,
   disabledRanges = [],
   className,
+  cut,
 }: DatePickerProps) {
   const isSingle = mode === "single";
 
@@ -124,7 +127,7 @@ export function DatePicker({
           type="text"
           disabled={true}
           id={label.toLowerCase().replaceAll(" ", "-")}
-          value={displayValue || ""}
+          value={mode === "range" && cut ? cutText(displayValue || "", cut) : displayValue || ""}
           required={required}
           className={className}
         />

@@ -984,6 +984,9 @@ model TransactionCategory {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
   @@map("transaction_category")
 }
 

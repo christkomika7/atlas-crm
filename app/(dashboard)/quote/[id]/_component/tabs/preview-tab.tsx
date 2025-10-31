@@ -17,6 +17,7 @@ import { QuoteType } from "@/types/quote.types";
 import { getUniqueQuote } from "@/action/quote.action";
 import RecordDocument from "@/components/pdf/record";
 import { record } from "zod";
+import Decimal from "decimal.js";
 
 export default function PreviewTab() {
   const param = useParams();
@@ -132,7 +133,7 @@ export default function PreviewTab() {
                   record={quote}
                   recordNumber={`${generateAmaId(quote?.quoteNumber ?? 1, false)}`}
                   isLoading={isGettingQuote}
-                  moreInfos={false}
+                  payee={new Decimal(0)}
                 />
               </div>
             </>

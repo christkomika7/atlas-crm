@@ -63,6 +63,24 @@ export const paymentTerms = [
     { id: 7, value: "paiement_120_jours", label: "Paiement sous 120 jours", data: 120 },
 ];
 
+
+export const colors = [
+    { id: 1, color: "#3366FF" }, { id: 2, color: "#33CC66" }, { id: 3, color: "#FF9933" }, { id: 4, color: "#FF4C4C" },
+    { id: 5, color: "#6680FF" }, { id: 6, color: "#66CC99" }, { id: 7, color: "#FFB266" }, { id: 8, color: "#FF6666" },
+    { id: 9, color: "#99AFFF" }, { id: 10, color: "#99D6B2" }, { id: 11, color: "#FFC299" }, { id: 12, color: "#FF8080" },
+    { id: 13, color: "#B2CFFF" }, { id: 14, color: "#B2E0CC" }, { id: 15, color: "#FFD1B2" }, { id: 16, color: "#FF9999" },
+    { id: 17, color: "#4D80FF" }, { id: 18, color: "#4DD08C" }, { id: 19, color: "#FFB380" }, { id: 20, color: "#FF6666" },
+    { id: 21, color: "#6699FF" }, { id: 22, color: "#66E0AA" }, { id: 23, color: "#FFC9A3" }, { id: 24, color: "#FF8080" },
+    { id: 25, color: "#80B3FF" }, { id: 26, color: "#80E0B3" }, { id: 27, color: "#FFD1B2" }, { id: 28, color: "#FF9999" },
+    { id: 29, color: "#99CCFF" }, { id: 30, color: "#99E6CC" }, { id: 31, color: "#FFE0B3" }, { id: 32, color: "#FF4C4C" },
+    { id: 33, color: "#B3D1FF" }, { id: 34, color: "#B3F0D6" }, { id: 35, color: "#FFE6CC" }, { id: 36, color: "#FF6666" },
+    { id: 37, color: "#CCE0FF" }, { id: 38, color: "#CCFFE6" }, { id: 39, color: "#FFF0CC" }, { id: 40, color: "#FF8080" },
+    { id: 41, color: "#E6F0FF" }, { id: 42, color: "#E6FFF5" }, { id: 43, color: "#FFF5E6" }, { id: 44, color: "#FF9999" },
+    { id: 45, color: "#99B3FF" }, { id: 46, color: "#99FFCC" }, { id: 47, color: "#FFE6B3" }, { id: 48, color: "#FF4C4C" },
+    { id: 49, color: "#6699FF" }, { id: 50, color: "#66CC99" },
+];
+
+
 export const priority = [
     {
         id: 1,

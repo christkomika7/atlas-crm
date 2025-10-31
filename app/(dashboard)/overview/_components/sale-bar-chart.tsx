@@ -1,85 +1,127 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { TrendingUp } from "lucide-react"
-import { Label, Pie, PieChart } from "recharts"
+import * as React from "react";
+import Decimal from "decimal.js";
+import { Pie, PieChart, Cell, Label, Tooltip } from "recharts";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import {
   ChartConfig,
   ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
+import { CategoryItemType } from "@/types/transaction.type";
+import { colors } from "@/lib/data";
+import { formatNumber, toShortNum } from "@/lib/utils";
+import Spinner from "@/components/ui/spinner";
 
-export const description = "A donut chart with text"
-
-const chartData = [
-  { browser: "chrome", visitors: 275, fill: "var(--color-chrome)" },
-  { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
-  { browser: "firefox", visitors: 287, fill: "var(--color-firefox)" },
-  { browser: "edge", visitors: 173, fill: "var(--color-edge)" },
-  { browser: "other", visitors: 190, fill: "var(--color-other)" },
-]
+export const description = "A donut chart with text (dépenses)";
 
 const chartConfig = {
-  visitors: {
-    label: "Visitors",
+  depenses: {
+    label: "Dépenses",
   },
-  chrome: {
-    label: "Chrome",
-    color: "var(--chart-1)",
-  },
-  safari: {
-    label: "Safari",
-    color: "var(--chart-2)",
-  },
-  firefox: {
-    label: "Firefox",
-    color: "var(--chart-3)",
-  },
-  edge: {
-    label: "Edge",
-    color: "var(--chart-4)",
-  },
-  other: {
-    label: "Other",
-    color: "var(--chart-5)",
-  },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
-export function SaleBarChart() {
-  const totalVisitors = React.useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.visitors, 0)
-  }, [])
+type SaleBarChartProps = {
+  currency: string;
+  items: CategoryItemType[];
+  isLoading: boolean;
+};
+
+function CustomTooltip({ active, payload, label, currency }: any) {
+  if (!active || !payload || !payload.length) return null;
+
+  const p = payload[0];
+  const isPlaceholder = p?.payload?.isPlaceholder;
+  const name = isPlaceholder ? "Aucune dépense" : p?.payload?.name ?? label ?? "Inconnue";
+  const value = isPlaceholder ? 0 : (typeof p?.value === "number" ? p.value : Number(p?.value ?? 0));
+  const index = p?.payload?.index ?? 0;
+  const color = colors[index % colors.length]?.color ?? "#cccccc";
 
   return (
-    <ChartContainer
-      config={chartConfig}
-      className="mx-auto aspect-square max-h-[250px]"
-    >
-      <PieChart>
-        <ChartTooltip
-          cursor={false}
-          content={<ChartTooltipContent hideLabel />}
+    <div className="min-w-[160px] max-w-xs p-2 rounded-md shadow-lg bg-white border border-neutral-200">
+      <div className="grid grid-cols-[6px_1fr] gap-x-2 items-center">
+        <div
+          className="w-2 h-full rounded-full"
+          style={{ backgroundColor: color }}
         />
-        <Pie
-          data={chartData}
-          dataKey="visitors"
-          nameKey="browser"
-          innerRadius={60}
-          strokeWidth={5}
-        >
-          <Label
-            content={({ viewBox }) => {
-              if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+        <div>
+          <div className="text-sm font-semibold truncate">{name}</div>
+          <div className="text-xs text-neutral-600">
+            {`${toShortNum(value)} ${currency}`}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function SaleBarChart({ items, currency, isLoading }: SaleBarChartProps) {
+  // chartData: si items vide => placeholder pour que le donut reste visible
+  const chartData = React.useMemo(() => {
+    if (!items || items.length === 0) {
+      return [
+        {
+          name: "Aucune dépense",
+          value: 1, // valeur artificielle pour afficher un donut plein
+          id: "placeholder",
+          index: 0,
+          isPlaceholder: true,
+        },
+      ];
+    }
+
+    return items.map((it, index) => {
+      const raw = (it.total ?? "0").toString().replace(",", ".");
+      const value = new Decimal(raw || "0").toNumber();
+      return {
+        name: it.categoryName || it.categoryId,
+        value,
+        id: it.categoryId,
+        index,
+        isPlaceholder: false,
+      };
+    });
+  }, [items]);
+
+  // totalDepenses : si items vide -> 0
+  const totalDepenses = React.useMemo(() => {
+    if (!items || items.length === 0) return 0;
+    return chartData.reduce((acc, cur) => acc + (cur.value ?? 0), 0);
+  }, [chartData, items]);
+
+  return (
+    <div className="relative">
+      <ChartContainer
+        config={chartConfig}
+        className="mx-auto aspect-square max-h-[250px] relative"
+      >
+        <PieChart>
+          {/* Tooltip personnalisé avec couleur */}
+          <Tooltip content={<CustomTooltip currency={currency} />} />
+
+          <Pie
+            data={chartData}
+            dataKey="value"
+            nameKey="name"
+            innerRadius={60}
+            outerRadius={90}
+            strokeWidth={5}
+            paddingAngle={2}
+            isAnimationActive={false}
+          >
+            {chartData.map((entry, index) => {
+              // si placeholder -> gris neutre, sinon couleur du tableau
+              const col = entry.isPlaceholder
+                ? "#e5e7eb" // neutral-200 gris clair
+                : colors[index % colors.length]?.color ?? "#cccccc";
+              return <Cell key={`cell-${entry.id}-${index}`} fill={col} />;
+            })}
+
+            <Label
+              content={(props: any) => {
+                const viewBox = props?.viewBox as any;
+                if (!viewBox || typeof viewBox.cx !== "number" || typeof viewBox.cy !== "number") return null;
+
                 return (
                   <text
                     x={viewBox.cx}
@@ -90,25 +132,32 @@ export function SaleBarChart() {
                     <tspan
                       x={viewBox.cx}
                       y={viewBox.cy}
-                      className="fill-foreground text-3xl font-bold"
+                      className="fill-foreground text-lg font-bold"
                     >
-                      {totalVisitors.toLocaleString()}
+                      {toShortNum(totalDepenses)} {currency}
                     </tspan>
                     <tspan
                       x={viewBox.cx}
-                      y={(viewBox.cy || 0) + 24}
-                      className="fill-muted-foreground"
+                      y={viewBox.cy + 24}
+                      className="fill-muted-foreground text-xs"
                     >
-                      Visitors
+                      Dépenses
                     </tspan>
                   </text>
-                )
-              }
-            }}
-          />
-        </Pie>
-      </PieChart>
-    </ChartContainer>
+                );
+              }}
+            />
+          </Pie>
+        </PieChart>
+      </ChartContainer>
 
-  )
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="rounded-full bg-white/25 backdrop-blur-lg p-3">
+            <Spinner />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

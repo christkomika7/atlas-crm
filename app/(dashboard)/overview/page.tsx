@@ -28,7 +28,7 @@ export default function OverviewPage() {
             </Button>
           </div>
         </div>
-        <div className="grid grid-cols-[1.5fr_1fr_1fr] gap-4">
+        <div className="grid grid-cols-[1.8fr_1fr_1fr] gap-4">
           <SalesChart />
           <RecentActivitiesBc />
           <RecentActivities />

@@ -305,18 +305,22 @@ export default function RecordDocument({
                                 }).discountAmount.toString()} {" "}{record?.company.currency}
                             </td>
                         </tr>
-                        {calculate({
-                            items: (record ? (parseItems(record.items)) : []),
-                            taxes: record?.company?.vatRates ?? [],
-                            amountType: record?.amountType || "TTC",
-                            discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
-                        }).taxes.map((tax) => (
-                            <tr key={tax.taxName} className="text-sm">
-                                <td colSpan={3} className="text-right">
-                                    {tax.taxName} </td>
-                                <td className="pr-3 text-right">  {formatNumber(tax.totalTax)} {record?.company?.currency}</td>
-                            </tr>
-                        ))}
+                        {record?.amountType === "TTC" &&
+                            <>
+                                {calculate({
+                                    items: (record ? (parseItems(record.items)) : []),
+                                    taxes: record?.company?.vatRates ?? [],
+                                    amountType: record?.amountType || "TTC",
+                                    discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
+                                }).taxes.map((tax) => (
+                                    <tr key={tax.taxName} className="text-sm">
+                                        <td colSpan={3} className="text-right">
+                                            {tax.taxName} </td>
+                                        <td className="pr-3 text-right">  {formatNumber(tax.totalTax)} {record?.company?.currency}</td>
+                                    </tr>
+                                ))}
+                            </>
+                        }
                         {record?.amountType === "TTC" &&
                             <tr className="text-sm">
                                 <td colSpan={3} className="text-right">
