@@ -3,8 +3,14 @@ import { RequestResponse } from "@/types/api.types";
 import { ProjectType } from "@/types/project.types";
 
 export async function getallByCompany({ companyId, projectStatus }: { companyId: string, projectStatus?: "loading" | "stop" }) {
+    const params = new URLSearchParams();
+    if (projectStatus) params.append("filter", projectStatus);
+
+    const queryString = params.toString();
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/project/${companyId}/company${queryString ? `?${queryString}` : ""
+        }`;
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/project/${companyId}/company`, {
+        const response = await fetch(url, {
             method: 'GET',
         });
 
@@ -162,3 +168,25 @@ export async function remove({ id }: { id: string }) {
         throw error;
     }
 }
+
+export async function removeMany({ ids }: { ids: string[] }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/project`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ids }),
+        });
+
+        const res: RequestResponse<null> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+

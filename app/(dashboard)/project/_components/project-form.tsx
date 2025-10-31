@@ -1,4 +1,3 @@
-"use client";
 import { useForm } from "react-hook-form";
 import {
   Form,
@@ -14,21 +13,32 @@ import { Button } from "@/components/ui/button";
 import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
 import TextInput from "@/components/ui/text-input";
+import { Combobox } from "@/components/ui/combobox";
 import { useDataStore } from "@/stores/data.store";
+import { create as CreateProject } from "@/action/project.action";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useEffect } from "react";
+import { all } from "@/action/client.action";
+import { ClientType } from "@/types/client.types";
+import { useEffect, useState } from "react";
 import { projectSchema, ProjectSchemaType } from "@/lib/zod/project.schema";
-import { ProjectType } from "@/types/project.types";
-import { create } from "@/action/project.action";
-import { useParams, useRouter } from "next/navigation";
-import { UserType } from "@/types/user.types";
 import { getCollaborators } from "@/action/user.action";
+import { UserType } from "@/types/user.types";
+import { ProjectType } from "@/types/project.types";
 import { MultipleSelect } from "@/components/ui/multi-select";
 
-export default function ProjectForm() {
-  const id = useDataStore.use.currentCompany();
-  const router = useRouter();
-  const param = useParams();
+type ProjectFormProps = {
+  closeModal: () => void;
+  refreshData: () => void;
+};
+
+export default function ProjectForm({
+  closeModal,
+  refreshData,
+}: ProjectFormProps) {
+  const companyId = useDataStore.use.currentCompany();
+
+  const [collaborators, setCollaborators] = useState<UserType[]>([]);
+  const [clients, setClients] = useState<ClientType[]>([]);
 
   const form = useForm<ProjectSchemaType>({
     resolver: zodResolver(projectSchema),
@@ -42,75 +52,131 @@ export default function ProjectForm() {
   });
 
   const {
+    mutate: mutateClient,
+    isPending: isLoadingClient,
+  } = useQueryAction<{ id: string }, RequestResponse<ClientType[]>>(
+    all,
+    () => { },
+    "clients"
+  );
+
+  const {
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
-    data,
   } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
     getCollaborators,
     () => { },
     "collaborators"
   );
 
-  const { mutate, isPending } = useQueryAction<
+  const { mutate: mutateCreateProject, isPending: isCreatingProject } = useQueryAction<
     ProjectSchemaType,
     RequestResponse<ProjectType>
-  >(create, () => { }, "projects");
+  >(CreateProject, () => { }, "projects");
+
 
   useEffect(() => {
-    if (id) {
-      mutateCollaborators({ id });
+    if (companyId) {
+      mutateClient({ id: companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setClients(data.data)
+          }
+        },
+      });
+
+      mutateCollaborators({ id: companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setCollaborators(data.data)
+          }
+        },
+      });
     }
-  }, [id]);
+
+  }, [companyId]);
+
+
 
   useEffect(() => {
-    if (id && param.id) {
-      const initForm = {
-        company: id,
-        client: param.id as string,
-      };
-
-      form.reset(initForm);
+    if (companyId) {
+      form.reset({
+        company: companyId
+      });
     }
-  }, [form, id]);
+  }, [companyId]);
 
   async function submit(projectData: ProjectSchemaType) {
     const { success, data } = projectSchema.safeParse(projectData);
     if (!success) return;
-    if (id) {
-      mutate(
+    if (companyId) {
+      mutateCreateProject(
         { ...data },
         {
           onSuccess() {
             form.reset();
-            router.push(`/client/${param.id}`);
+            refreshData();
+            closeModal()
+
           },
         }
       );
     }
   }
 
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)} className="space-y-4.5 m-2">
         <div className="space-y-4.5 max-w-full">
-          <FormField
-            control={form.control}
-            name="projectName"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <TextInput
-                    type="text"
-                    design="float"
-                    label="Nom du projet"
-                    value={field.value}
-                    handleChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-2 gap-x-4.5">
+            <FormField
+              control={form.control}
+              name="client"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      isLoading={isLoadingClient}
+                      datas={
+                        clients.map((client) => ({
+                          id: client.id,
+                          label: `${client.firstname} ${client.lastname}`,
+                          value: client.id,
+                        })) ?? []
+                      }
+                      value={field.value}
+                      setValue={e => {
+                        field.onChange(e)
+                      }}
+                      placeholder="Sélectionner un client"
+                      searchMessage="Rechercher un client"
+                      noResultsMessage="Aucun client trouvé."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="projectName"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      type="text"
+                      design="float"
+                      label="Nom du projet"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <FormField
             control={form.control}
@@ -181,7 +247,7 @@ export default function ProjectForm() {
                     }
                     isLoading={isLoadingCollaborators}
                     options={
-                      data?.data?.map((user) => ({
+                      collaborators.map((user) => ({
                         label: user.name,
                         value: user.id,
                       })) ?? []
@@ -205,9 +271,9 @@ export default function ProjectForm() {
             type="submit"
             variant="primary"
             className="justify-center max-w-xs"
-            disabled={isPending}
+            disabled={isCreatingProject}
           >
-            {isPending ? <Spinner /> : "Enregistrer"}
+            {isCreatingProject ? <Spinner /> : "Enregistrer"}
           </Button>
         </div>
       </form>

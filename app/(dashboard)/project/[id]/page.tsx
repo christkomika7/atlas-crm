@@ -1,7 +1,7 @@
 "use client";
 import Header from "@/components/header/header";
 import { useEffect } from "react";
-import TaskContainer from "../_components/task-container";
+import TaskContainer from "./_components/task-container";
 import { useParams } from "next/navigation";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
@@ -18,10 +18,10 @@ export default function ClientProjectPage() {
   >(uniqueByClient, () => { }, "project");
 
   useEffect(() => {
-    if (param.projectId) {
-      mutate({ id: param.projectId as string });
+    if (param.id) {
+      mutate({ id: param.id as string });
     }
-  }, [param.projectId]);
+  }, [param.id]);
 
   return (
     <div className="flex flex-col h-full">

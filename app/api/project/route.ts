@@ -1,8 +1,11 @@
 import { checkAccess } from "@/lib/access";
 import { parseDateTime } from "@/lib/date";
 import { createFile, createFolder, removePath } from "@/lib/file";
+import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
+import { checkAccessDeletion } from "@/lib/server";
+import { getFirstValidCompanyId } from "@/lib/utils";
 import { projectSchema, ProjectSchemaType } from "@/lib/zod/project.schema";
 import { generateId } from "better-auth";
 import { NextResponse, type NextRequest } from "next/server";
@@ -100,3 +103,68 @@ export async function POST(req: NextRequest) {
     }
 }
 
+
+export async function DELETE(req: NextRequest) {
+    await checkAccess(["PROJECTS"], "MODIFY");
+    const data = await req.json();
+
+    if (data.ids.length === 0) {
+        return NextResponse.json({ state: "error", message: "Aucun identifiant trouvé" }, { status: 404 });
+
+    }
+    const ids = data.ids as string[];
+
+    const projects = await prisma.project.findMany({
+        where: { id: { in: ids } },
+        include: {
+            company: true,
+            quotes: true,
+            invoices: true,
+            deliveryNotes: true,
+            purchaseOrders: true,
+            dibursements: true,
+        }
+    });
+
+    const companyId = getFirstValidCompanyId(projects);
+
+    if (!companyId) return NextResponse.json({
+        message: "Identifiant invalide.",
+        state: "error",
+    }, { status: 400 });
+
+    const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.PROJECTS, ids, companyId);
+
+    if (hasAccessDeletion) {
+        return NextResponse.json({
+            state: "success",
+            message: "Suppression en attente de validation.",
+        }, { status: 200 })
+    }
+
+    for (const project of projects) {
+        if (project.quotes || project.invoices || project.deliveryNotes || project.dibursements ||
+            project.purchaseOrders) {
+            return NextResponse.json({
+                message: "Veuillez supprimer toutes les données reliées au projet (devis, facture, bon de livraison etc.).",
+                state: "error",
+            }, { status: 400 });
+        }
+    }
+
+    await prisma.project.deleteMany({
+        where: {
+            id: { in: ids }
+        },
+    })
+
+
+    projects.map(async project => {
+        await removePath(project.files)
+    })
+    return NextResponse.json({
+        state: "success",
+        message: "Tous les projets sélectionnés ont été supprimés avec succès.",
+    }, { status: 200 })
+
+}

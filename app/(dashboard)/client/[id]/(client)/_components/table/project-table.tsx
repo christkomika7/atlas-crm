@@ -18,7 +18,7 @@ import { useEffect } from "react";
 import TableActionButton from "../table-action-button";
 import { dropdownMenu } from "../table";
 import { Badge } from "@/components/ui/badge";
-import { getStatusName } from "@/lib/utils";
+import { formatNumber, getStatusName } from "@/lib/utils";
 
 export default function ProjectTable() {
   const params = useParams();
@@ -26,7 +26,7 @@ export default function ProjectTable() {
   const { mutate, isPending, data } = useQueryAction<
     { clientId: string },
     RequestResponse<ProjectType[]>
-  >(allByClient, () => {}, "projects");
+  >(allByClient, () => { }, "projects");
 
   useEffect(() => {
     if (params.id) {
@@ -80,10 +80,10 @@ export default function ProjectTable() {
                   })}
                 </TableCell>
                 <TableCell className="text-neutral-600 text-center">
-                  {project.amount} {project.company?.currency}
+                  {formatNumber(project.amount)} {project.company?.currency}
                 </TableCell>
                 <TableCell className="text-neutral-600 text-center">
-                  {project.balance} {project.company?.currency}
+                  {formatNumber(project.balance)} {project.company?.currency}
                 </TableCell>
                 <TableCell className="text-neutral-600 text-center">
                   <Badge variant={project.status}>
