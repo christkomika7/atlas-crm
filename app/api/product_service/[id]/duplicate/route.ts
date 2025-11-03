@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { generateId, getIdFromUrl } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
     await checkAccess(["PRODUCT_SERVICES"], "CREATE");
     const id = getIdFromUrl(req.url, 2) as string;
 
@@ -60,23 +60,6 @@ export async function POST(req: NextRequest) {
             message: `Erreur lors de la duplication du ${productService?.type === "PRODUCT" ? "produit" : "service"}.`,
         }, { status: 500 });
     }
-
-    return NextResponse.json({
-        state: "success",
-        data: productService,
-    }, { status: 200 })
-}
-
-
-export async function GET(req: NextRequest) {
-    await checkAccess(["PRODUCT_SERVICES"], "READ");
-    const id = getIdFromUrl(req.url, 2) as string;
-
-    const productService = await prisma.productService.findUnique({
-        where: {
-            id
-        },
-    })
 
     return NextResponse.json({
         state: "success",

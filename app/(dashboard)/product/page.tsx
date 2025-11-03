@@ -1,7 +1,6 @@
 "use client";
 import Header from "@/components/header/header";
 import { Button } from "@/components/ui/button";
-import AppointmentsCreateModal from "./_components/product-service-create-modal";
 import { useRef, useState } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
@@ -24,7 +23,7 @@ export default function ProductServicePage() {
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },
     RequestResponse<ProductServiceType[]>
-  >(removeMany, () => {}, "product-services");
+  >(removeMany, () => { }, "product-services");
 
   const handleProductSelectAdded = () => {
     productServiceTableRef.current?.refreshProductService();

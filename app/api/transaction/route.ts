@@ -15,6 +15,15 @@ export async function DELETE(req: NextRequest) {
     (item) => item.transactionType === "DISBURSEMENT",
   );
 
+  const companyId = req.nextUrl.searchParams.get("companyId")?.trim() ?? "";
+
+  if (!companyId) {
+    return NextResponse.json({
+      status: "error",
+      message: "Aucun entreprise trouvée.",
+    }, { status: 404 });
+  }
+
   const session = await getSession();
 
   const user = await prisma.user.findUnique({
@@ -26,7 +35,7 @@ export async function DELETE(req: NextRequest) {
     }
   });
 
-  if (!user?.company?.id) {
+  if (!user) {
     return NextResponse.json({
       message: "L'identifiant est invalide.",
       state: "error",
@@ -47,7 +56,7 @@ export async function DELETE(req: NextRequest) {
             recordId: receipt.id,
             company: {
               connect: {
-                id: user.company.id
+                id: companyId
               }
             }
           }
@@ -68,7 +77,7 @@ export async function DELETE(req: NextRequest) {
             recordId: disbursement.id,
             company: {
               connect: {
-                id: user.company.id
+                id: companyId
               }
             }
           }

@@ -53,7 +53,7 @@ export default function ClientForm({
   const { mutate, isPending } = useQueryAction<
     ClientSchemaType & { id: string },
     RequestResponse<ClientType[]>
-  >(create, () => {}, "clients");
+  >(create, () => { }, "clients");
 
   async function submit(userData: ClientSchemaType) {
     const { success, data } = clientSchema.safeParse(userData);
@@ -99,13 +99,13 @@ export default function ClientForm({
           <div className="gap-x-2 grid grid-cols-2 w-full">
             <FormField
               control={form.control}
-              name="lastname"
+              name="firstname"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
                       design="float"
-                      label="Nom"
+                      label="Prénom"
                       value={field.value}
                       handleChange={field.onChange}
                     />
@@ -116,13 +116,13 @@ export default function ClientForm({
             />
             <FormField
               control={form.control}
-              name="firstname"
+              name="lastname"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
                       design="float"
-                      label="Prénom"
+                      label="Nom"
                       value={field.value}
                       handleChange={field.onChange}
                     />

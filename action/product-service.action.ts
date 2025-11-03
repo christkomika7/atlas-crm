@@ -62,6 +62,25 @@ export async function unique({ id }: { id: string }) {
     }
 }
 
+
+export async function duplicationProductService({ id }: { id: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/product_service/${id}/duplicate`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<ProductServiceType> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+
 export async function create(data: ProductServiceSchemaType) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/product_service`, {

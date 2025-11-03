@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Popover,
   PopoverContent,
@@ -9,10 +11,12 @@ import { RequestResponse } from "@/types/api.types";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "lucide-react";
-import { remove } from "@/action/product-service.action";
+import { duplicationProductService, remove } from "@/action/product-service.action";
 import { ProductServiceType } from "@/types/product-service.types";
 import { $Enums } from "@/lib/generated/prisma";
 import ProductServiceEditModal from "./product-service-edit-modal";
+import Spinner from "@/components/ui/spinner";
+import { useState } from "react";
 
 type TableActionButtonProps = {
   id: string;
@@ -31,10 +35,18 @@ export default function TableActionButton({
   refreshProductServices,
   filter,
 }: TableActionButtonProps) {
+
+  const [currentId, setCurrentId] = useState("");
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<ProductServiceType[]>
-  >(remove, () => {}, "product-services");
+  >(remove, () => { }, "product-services");
+
+
+  const { mutate: mutateDuplicate, isPending: isDuplicating } = useQueryAction<
+    { id: string },
+    RequestResponse<ProductServiceType>
+  >(duplicationProductService, () => { }, "product-services");
 
   function handleDelete() {
     if (id) {
@@ -42,6 +54,23 @@ export default function TableActionButton({
         { id },
         {
           onSuccess() {
+            refreshProductServices();
+          },
+        }
+      );
+    }
+  }
+
+
+  function duplicate(menuId: string) {
+    setCurrentId(menuId)
+
+    if (id) {
+      mutateDuplicate(
+        { id },
+        {
+          onSuccess() {
+            setCurrentId("")
             refreshProductServices();
           },
         }
@@ -69,6 +98,16 @@ export default function TableActionButton({
                   action={handleDelete}
                   loading={isPending}
                 />
+              );
+            if (menu.action === "duplicate")
+              return (
+                <li key={menu.id}>
+                  <button onClick={() => duplicate(String(menu.id))} className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer">
+                    {<menu.icon className="w-4 h-4" />}
+                    {menu.title}
+                    {currentId === menu.id && isDuplicating && <Spinner />}
+                  </button>
+                </li>
               );
             return (
               <li key={menu.id}>

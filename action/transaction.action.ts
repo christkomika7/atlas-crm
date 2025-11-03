@@ -534,12 +534,21 @@ export async function deleteAllocation({
 
 export async function deleteTransactions({
   data,
+  companyId
 }: {
   data: DeletedTransactions[];
+  companyId: string
 }) {
+  const params = new URLSearchParams();
+  if (companyId) params.append("companyId", companyId);
+
+  const queryString = params.toString();
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction${queryString ? `?${queryString}` : ""
+    }`;
+
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction`,
+      url,
       {
         method: "DELETE",
         headers: {

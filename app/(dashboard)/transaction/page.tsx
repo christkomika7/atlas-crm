@@ -12,9 +12,11 @@ import TransactionTable, {
 } from "./_components/transaction-table";
 import TransactionFilters from "./_components/transaction-filters";
 import { deleteTransactions } from "@/action/transaction.action";
-import { FilterIcon, FilterXIcon } from "lucide-react";
+import { FilterXIcon } from "lucide-react";
+import { useDataStore } from "@/stores/data.store";
 
 export default function TransactionPage() {
+  const companyId = useDataStore.use.currentCompany();
   const [filters, setFilters] = useState<"empty" | "filter" | "reset">("empty");
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<
     DeletedTransactions[]
@@ -22,7 +24,7 @@ export default function TransactionPage() {
   const transactionTableRef = useRef<TransactionTableRef>(null);
 
   const { mutate: mutateDeleteTransactions, isPending } = useQueryAction<
-    { data: DeletedTransactions[] },
+    { data: DeletedTransactions[], companyId: string },
     RequestResponse<TransactionType[]>
   >(deleteTransactions, () => { }, "transactions");
 
@@ -33,7 +35,7 @@ export default function TransactionPage() {
   function removeTransactions() {
     if (selectedTransactionIds.length > 0) {
       mutateDeleteTransactions(
-        { data: selectedTransactionIds },
+        { data: selectedTransactionIds, companyId },
         {
           onSuccess() {
             setSelectedTransactionIds([]);

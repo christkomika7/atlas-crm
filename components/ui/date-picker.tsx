@@ -21,7 +21,7 @@ type DatePickerProps = {
   required?: boolean;
   label: string;
   value?: Date | Date[] | { from: Date; to: Date };
-  onChange?: (value: Date | Date[] | { from: Date; to: Date }) => void;
+  onChange?: (value: Date | Date[] | { from: Date; to: Date } | undefined) => void;
   disabled?: boolean;
   disabledRanges?: DateRange[];
   className?: string;
@@ -46,6 +46,7 @@ export function DatePicker({
     { from: Date; to: Date } | undefined
   >(undefined);
 
+  // Sync internal state with incoming prop (controlled usage)
   useEffect(() => {
     if (value === undefined || value === null) {
       setSingleDate(undefined);
@@ -69,11 +70,10 @@ export function DatePicker({
     }
   }, [value, mode, isSingle]);
 
-  let displayValue: string | undefined = undefined;
+  // --- IMPORTANT FIX: base displayValue on internal state (not only on prop) ---
+  let displayValue: string = "";
 
-  if (!value) {
-    displayValue = "";
-  } else if (isSingle) {
+  if (isSingle) {
     displayValue = singleDate ? format(singleDate, "PPP", { locale: fr }) : "";
   } else if (mode === "range") {
     displayValue =
@@ -116,9 +116,12 @@ export function DatePicker({
       onChange?.({ from: range.from, to: range.to });
     } else {
       setRangeDates(undefined);
-      onChange?.(undefined as unknown as Date | Date[] | { from: Date; to: Date });
+      onChange?.(undefined);
     }
   };
+
+  // debug helper — supprime quand tout marche
+  // console.debug("DatePicker internal:", { singleDate, multipleDates, rangeDates, displayValue });
 
   return (
     <Popover>
