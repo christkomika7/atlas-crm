@@ -218,6 +218,7 @@ export default function PurchaseOrderTab() {
         productServices: items
           .map((item) => ({
             id: item.id,
+            reference: item.reference,
             name: item.name,
             hasTax: item.hasTax,
             selectedQuantity: item.selectedQuantity,
