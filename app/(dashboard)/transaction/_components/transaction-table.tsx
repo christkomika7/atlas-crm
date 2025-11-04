@@ -176,7 +176,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
       selectedTransactionIds.some((transac) => transac.id === id);
 
     return (
-      <div className="border border-neutral-200 rounded-xl flex flex-col justify-between h-full bg-amber-300">
+      <div className="border border-neutral-200 rounded-xl flex flex-col justify-between h-full">
         <Table>
           <TableHeader>
             <TableRow className="h-14">
