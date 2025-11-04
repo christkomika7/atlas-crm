@@ -44,6 +44,7 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
     if (check) {
       addItem({
         id: randomUUID,
+        reference: productService.reference,
         name: productService.designation,
         hasTax: productService.hasTax,
         description: productService.description,

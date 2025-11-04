@@ -1,3 +1,4 @@
+import { RECEIPT_CATEGORY } from "@/config/constant";
 import { checkAccess } from "@/lib/access"
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
@@ -19,11 +20,37 @@ export async function POST(req: NextRequest) {
     if (!companyExist) return NextResponse.json({
         status: "error",
         message: "Identifiant invalide",
-    }, { status: 404 })
+    }, { status: 404 });
 
     try {
 
+        const category = await prisma.transactionCategory.findUnique({ where: { id: data.category } });
+
+        if (!category) {
+            return NextResponse.json({
+                status: "error",
+                message: "Catégorie invalide.",
+            }, { status: 404 });
+        }
+
+        if (category.name === RECEIPT_CATEGORY && !data.documentRef) {
+            return NextResponse.json({
+                status: "error",
+                message: "Aucune référence de document trouvée.",
+            }, { status: 404 });
+        }
+
         const referenceDocument = {};
+
+        if (data.documentRef) {
+            Object.assign(referenceDocument, {
+                referenceInvoice: {
+                    connect: {
+                        id: data.documentRef
+                    }
+                },
+            })
+        }
 
         const createdReceipt = await prisma.receipt.create({
             data: {
@@ -54,11 +81,6 @@ export async function POST(req: NextRequest) {
                 company: {
                     connect: {
                         id: data.companyId
-                    }
-                },
-                referenceInvoice: {
-                    connect: {
-                        id: data.documentRef
                     }
                 },
                 ...referenceDocument,

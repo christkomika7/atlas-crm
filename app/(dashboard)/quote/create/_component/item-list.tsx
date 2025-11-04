@@ -63,6 +63,7 @@ export default function ItemList({ item, taxes, calculate, isCompleted, location
                 ×
             </span>
 
+            <small className="font-semibold">• {item.reference}</small>
             <h2 className="font-semibold text-sm">{item.name}</h2>
             {item.description && (
                 <pre className={`${generalSans.className} whitespace-pre-wrap mb-2 leading-tight text-sm`}>{item.description}</pre>

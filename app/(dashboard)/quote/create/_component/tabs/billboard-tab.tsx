@@ -48,6 +48,7 @@ export default function BillboardTab({ isGettingBillboards, billboards }: Billbo
     if (check) {
       addItem({
         id: randomUUID,
+        reference: billboard.reference,
         name: billboard.name,
         hasTax: billboard.hasTax,
         description: "",

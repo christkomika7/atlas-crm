@@ -229,6 +229,7 @@ export default function PurchaseOrderForm() {
       form.setValue("item", {
         productServices: items
           .map((item) => ({
+            reference: item.reference,
             name: item.name,
             hasTax: item.hasTax,
             quantity: item.quantity,

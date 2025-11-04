@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
             productServices: productServicesParse?.map((b: ItemType) => ({
                 id: "",
                 name: b.name,
+                reference: b.reference,
                 hasTax: b.hasTax,
                 quantity: b.quantity,
                 description: b.description,
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
             billboards: billboardsParse?.map((b: ItemType) => ({
                 id: "",
                 name: b.name,
+                reference: b.reference,
                 hasTax: b.hasTax,
                 description: b.description,
                 quantity: b.quantity,
@@ -139,6 +141,7 @@ export async function POST(req: NextRequest) {
                         id: data.companyId
                     }
                 },
+                reference: billboard.reference,
                 state: $Enums.ItemState.APPROVED,
                 name: billboard.name,
                 hasTax: billboard.hasTax,
@@ -165,6 +168,7 @@ export async function POST(req: NextRequest) {
                         id: data.companyId
                     }
                 },
+                reference: productService.reference,
                 state: $Enums.ItemState.APPROVED,
                 name: productService.name,
                 hasTax: productService.hasTax,

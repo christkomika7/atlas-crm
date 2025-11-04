@@ -152,6 +152,7 @@ export async function PUT(req: NextRequest) {
     item: {
       productServices: productServicesParse?.map((b: ItemType) => ({
         id: b.id,
+        reference: b.reference,
         name: b.name,
         hasTax: b.hasTax,
         quantity: b.quantity,
@@ -168,6 +169,7 @@ export async function PUT(req: NextRequest) {
       })) ?? [],
       billboards: billboardsParse?.map((b: ItemType) => ({
         id: b.id,
+        reference: b.reference,
         name: b.name,
         hasTax: b.hasTax,
         quantity: b.quantity,
@@ -369,6 +371,7 @@ export async function PUT(req: NextRequest) {
       ...data.item.billboards?.map(billboard => ({
         state: $Enums.ItemState.APPROVED,
         name: billboard.name,
+        reference: billboard.reference,
         hasTax: billboard.hasTax,
         description: billboard.description,
         quantity: billboard.quantity,
@@ -392,6 +395,7 @@ export async function PUT(req: NextRequest) {
       ...data.item.productServices?.map(productService => ({
         state: $Enums.ItemState.APPROVED,
         name: productService.name,
+        reference: productService.reference,
         hasTax: productService.hasTax,
         description: productService.description,
         quantity: productService.quantity,

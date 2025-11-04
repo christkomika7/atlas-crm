@@ -61,6 +61,7 @@ export default function BillboardTab({ isGettingBillboards, billboards }: Billbo
       addItem({
         id: randomUUID,
         name: billboard.name,
+        reference: billboard.reference,
         hasTax: billboard.hasTax,
         description: "",
         price: new Decimal(billboard.rentalPrice),

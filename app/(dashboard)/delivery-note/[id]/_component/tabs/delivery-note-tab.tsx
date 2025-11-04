@@ -211,6 +211,7 @@ export default function DeliveryNoteTab() {
 
             const mappedItems = [...deliveryNote.items.map(item => ({
               id: item.id,
+              reference: item.reference,
               name: item.name,
               hasTax: item.hasTax,
               quantity: item.quantity,
@@ -349,6 +350,7 @@ export default function DeliveryNoteTab() {
           .filter((item) => item.itemType === "billboard")
           .map((item) => ({
             id: item.id,
+            reference: item.reference,
             name: item.name,
             hasTax: item.hasTax,
             quantity: item.quantity,
@@ -372,6 +374,7 @@ export default function DeliveryNoteTab() {
           .filter((item) => item.itemType !== "billboard")
           .map((item) => ({
             id: item.id,
+            reference: item.reference,
             name: item.name,
             hasTax: item.hasTax,
             quantity: item.quantity,

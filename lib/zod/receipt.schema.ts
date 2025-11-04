@@ -10,7 +10,7 @@ export const receiptSchema = z.object({
     amountType: z.enum(["HT", "TTC"], { message: "Le type de montant est requis." }),
     paymentMode: z.string({ error: "Le mode de paiement est requis." }),
     checkNumber: z.string().optional(),
-    documentRef: z.string({ error: "La référence du document est requise." }),
+    documentRef: z.string().optional(),
     source: z.string({ error: "La source est requise." }),
     comment: z.string().optional()
 });

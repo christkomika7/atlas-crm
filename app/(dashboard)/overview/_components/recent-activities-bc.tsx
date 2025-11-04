@@ -44,7 +44,7 @@ export default function RecentActivitiesBc() {
           {purchaseOrders.map(purchaseOrder => (
             <li>
               <p className="text-sm flex gap-x-2 justify-between items-center text-neutral-700">
-                <span>Facture n° {generateAmaId(purchaseOrder.purchaseOrderNumber, false)}</span>
+                <span>BC n° {generateAmaId(purchaseOrder.purchaseOrderNumber, false)}</span>
                 <span>{formatNumber(purchaseOrder.amountType === "TTC" ? purchaseOrder.totalTTC : purchaseOrder.totalHT)} {purchaseOrder.company.currency}</span>
               </p>
               <p className="text-xs text-neutral-600">{new Date(purchaseOrder.updatedAt).toLocaleDateString("fr-fr", {

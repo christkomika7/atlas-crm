@@ -653,6 +653,7 @@ model Payment {
 
 model Item {
   id              String          @id @default(uuid())
+  reference       String          @default("")
   state           ItemState       @default(APPROVED)
   hasTax          Boolean         @default(false)
   name            String

@@ -243,6 +243,7 @@ export default function InvoiceTab() {
           .filter((item) => item.itemType === "billboard")
           .map((item) => ({
             id: item.id,
+            reference: item.reference,
             name: item.name,
             quantity: item.quantity,
             hasTax: item.hasTax,
@@ -266,6 +267,7 @@ export default function InvoiceTab() {
         productServices: items
           .filter((item) => item.itemType !== "billboard")
           .map((item) => ({
+            reference: item.reference,
             id: item.id,
             name: item.name,
             hasTax: item.hasTax,
@@ -366,6 +368,7 @@ export default function InvoiceTab() {
 
           const mappedItems = [...invoice.items.map(item => ({
             id: item.id,
+            reference: item.reference,
             name: item.name,
             hasTax: item.hasTax,
             quantity: item.quantity,
@@ -401,6 +404,7 @@ export default function InvoiceTab() {
             item: {
               billboards: invoice.items.filter(item => item.itemType === "billboard").map(billboard => ({
                 id: billboard.id,
+                reference: billboard.reference,
                 name: billboard.name,
                 hasTax: billboard.hasTax,
                 quantity: billboard.quantity,
@@ -417,6 +421,7 @@ export default function InvoiceTab() {
               })),
               productServices: invoice.items.filter(item => item.itemType !== "billboard").map(productService => ({
                 id: productService.id,
+                reference: productService.reference,
                 name: productService.name,
                 hasTax: productService.hasTax,
                 quantity: productService.quantity,

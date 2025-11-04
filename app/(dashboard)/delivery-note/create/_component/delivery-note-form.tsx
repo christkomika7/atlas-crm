@@ -248,6 +248,7 @@ export default function DeliveryNoteForm() {
           .filter((item) => item.itemType === "billboard")
           .map((item) => ({
             id: item.id,
+            reference: item.reference,
             name: item.name,
             hasTax: item.hasTax,
             quantity: item.quantity,
@@ -270,6 +271,7 @@ export default function DeliveryNoteForm() {
         productServices: items
           .filter((item) => item.itemType !== "billboard")
           .map((item) => ({
+            reference: item.reference,
             name: item.name,
             hasTax: item.hasTax,
             quantity: item.quantity,

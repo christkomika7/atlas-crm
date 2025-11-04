@@ -119,6 +119,7 @@ export async function PUT(req: NextRequest) {
     item: {
       productServices: productServicesParse?.map((b: ItemType) => ({
         id: b.id,
+        reference: b.reference,
         name: b.name,
         quantity: b.quantity,
         hasTax: b.hasTax,
@@ -135,6 +136,7 @@ export async function PUT(req: NextRequest) {
       })) ?? [],
       billboards: billboardsParse?.map((b: ItemType) => ({
         id: b.id,
+        reference: b.reference,
         name: b.name,
         hasTax: b.hasTax,
         description: b.description,
@@ -277,6 +279,7 @@ export async function PUT(req: NextRequest) {
         }
       },
       state: $Enums.ItemState.IGNORE,
+      reference: billboard.reference,
       name: billboard.name,
       hasTax: billboard.hasTax,
       description: billboard.description ?? "",
@@ -302,6 +305,7 @@ export async function PUT(req: NextRequest) {
         }
       },
       state: $Enums.ItemState.IGNORE,
+      reference: productService.reference,
       name: productService.name,
       hasTax: productService.hasTax,
       description: productService.description ?? "",
@@ -338,11 +342,7 @@ export async function PUT(req: NextRequest) {
           note: data.note!,
           files: savedFilePaths,
           items: {
-            createMany: {
-              data: [
-
-              ]
-            },
+            create: itemForCreate
           },
           project: {
             connect: {

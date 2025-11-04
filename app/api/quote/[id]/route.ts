@@ -2,7 +2,7 @@ import { QUOTE_PREFIX } from "@/config/constant";
 import { checkAccess } from "@/lib/access";
 import { toUtcDateOnly } from "@/lib/date";
 import { createFolder, removePath, updateFiles } from "@/lib/file";
-import { $Enums, AmountType } from "@/lib/generated/prisma";
+import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { checkAccessDeletion, rollbackQuote } from "@/lib/server";
@@ -121,6 +121,7 @@ export async function PUT(req: NextRequest) {
         id: b.id,
         hasTax: b.hasTax,
         name: b.name,
+        reference: b.reference,
         description: b.description,
         quantity: b.quantity,
         locationStart: toUtcDateOnly(b.locationStart),
@@ -136,6 +137,7 @@ export async function PUT(req: NextRequest) {
       billboards: billboardsParse?.map((b: ItemType) => ({
         id: b.id,
         name: b.name,
+        reference: b.reference,
         hasTax: b.hasTax,
         description: b.description,
         quantity: b.quantity,
@@ -280,6 +282,7 @@ export async function PUT(req: NextRequest) {
         }
       },
       state: $Enums.ItemState.IGNORE,
+      reference: billboard.reference,
       name: billboard.name,
       hasTax: billboard.hasTax,
       description: billboard.description,
@@ -306,6 +309,7 @@ export async function PUT(req: NextRequest) {
       },
       state: $Enums.ItemState.IGNORE,
       name: productService.name,
+      reference: productService.reference,
       hasTax: productService.hasTax,
       description: productService.description,
       quantity: productService.quantity,

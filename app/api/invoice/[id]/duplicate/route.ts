@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
     const itemForCreate = [
         ...invoice.items.filter(it => it.itemType === "billboard")?.map(billboard => ({
             state: $Enums.ItemState.APPROVED,
+            reference: billboard.reference,
             name: billboard.name,
             hasTax: billboard.hasTax,
             description: billboard.description ?? "",
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest) {
         ...invoice.items.filter(it => it.itemType !== "billboard")?.map(productService => ({
             state: $Enums.ItemState.APPROVED,
             name: productService.name,
+            reference: productService.reference,
             hasTax: productService.hasTax,
             description: productService.description ?? "",
             quantity: productService.quantity,

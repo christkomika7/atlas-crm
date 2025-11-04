@@ -108,7 +108,7 @@ export default function SalesChart() {
                       className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: color }}
                     />
-                    {category.categoryName} ( {category.percentage}% )
+                    {category.categoryName} ( {Math.round(Number(category.percentage))}% )
                   </span>
                 </li>
               );

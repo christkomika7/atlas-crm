@@ -208,6 +208,7 @@ export default function QuoteTab() {
 
             const mappedItems = [...quote.items.map(item => ({
               id: item.id,
+              reference: item.reference,
               name: item.name,
               hasTax: item.hasTax,
               quantity: item.quantity,
@@ -242,6 +243,7 @@ export default function QuoteTab() {
               item: {
                 billboards: quote.items.filter(item => item.itemType === "billboard").map(billboard => ({
                   id: billboard.id,
+                  reference: billboard.reference,
                   name: billboard.name,
                   hasTax: billboard.hasTax,
                   quantity: billboard.quantity,
@@ -258,6 +260,7 @@ export default function QuoteTab() {
                 })),
                 productServices: quote.items.filter(item => item.itemType !== "billboard").map(productService => ({
                   id: productService.id,
+                  reference: productService.reference,
                   name: productService.name,
                   hasTax: productService.hasTax,
                   quantity: productService.quantity,
@@ -346,6 +349,7 @@ export default function QuoteTab() {
           .filter((item) => item.itemType === "billboard")
           .map((item) => ({
             id: item.id,
+            reference: item.reference,
             name: item.name,
             hasTax: item.hasTax,
             quantity: item.quantity,
@@ -368,6 +372,7 @@ export default function QuoteTab() {
           .filter((item) => item.itemType !== "billboard")
           .map((item) => ({
             id: item.id,
+            reference: item.reference,
             name: item.name,
             hasTax: item.hasTax,
             quantity: item.quantity,

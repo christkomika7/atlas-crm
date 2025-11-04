@@ -319,6 +319,7 @@ export default function PurchaseOrderTab() {
 
           const mappedItems: PurchaseItemType[] = [...purchaseOrder.items.map(item => ({
             id: item.id,
+            reference: item.reference,
             name: item.name,
             hasTax: item.hasTax,
             quantity: Number(item.quantity),
@@ -352,6 +353,7 @@ export default function PurchaseOrderTab() {
             item: {
               productServices: purchaseOrder.items.filter(item => item.itemType !== "billboard").map(productService => ({
                 id: productService.id,
+                reference: productService.reference,
                 hasTax: productService.hasTax,
                 name: productService.name,
                 selectedQuantity: productService.quantity,

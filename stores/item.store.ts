@@ -10,6 +10,7 @@ export type ItemQuantity = {
 
 export type ItemType = {
     id: string;
+    reference: string;
     name: string;
     description?: string;
     hasTax: boolean;

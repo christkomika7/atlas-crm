@@ -28,6 +28,7 @@ import NatureModal from "../../../../components/modal/nature-modal";
 import { acceptPayment } from "@/lib/data";
 import SourceModal from "../../../../components/modal/source-modal";
 import Spinner from "@/components/ui/spinner";
+import { RECEIPT_CATEGORY } from "@/config/constant";
 
 type ReceiptFormProps = {
   closeModal: () => void;
@@ -44,6 +45,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
   const sources = useTransactionStore.use.sources();
   const setSources = useTransactionStore.use.setSources();
 
+  const [category, setCategory] = useState("")
   const [categoryId, setCategoryId] = useState("");
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
   const [paymentMode, setPaymentMode] = useState<"cash" | "check" | "bank-transfer">();
@@ -203,6 +205,8 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                       }))}
                       value={field.value}
                       setValue={(e) => {
+                        const current = categories.find(c => c.id === e)?.name;
+                        setCategory(current || "");
                         setCategoryId(e)
                         field.onChange(e)
                       }}
@@ -391,6 +395,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      required={category === RECEIPT_CATEGORY}
                       isLoading={isGettingDocuments}
                       datas={documents.map(category => ({
                         id: category.id,
@@ -401,7 +406,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                         },
                         value: category.id
                       }))}
-                      value={field.value}
+                      value={field.value || ""}
                       setValue={e => {
                         field.onChange(e)
                       }}

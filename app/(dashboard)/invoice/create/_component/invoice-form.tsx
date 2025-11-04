@@ -255,6 +255,7 @@ export default function InvoiceForm() {
           .filter((item) => item.itemType === "billboard")
           .map((item) => ({
             id: item.id,
+            reference: item.reference,
             name: item.name,
             hasTax: item.hasTax,
             quantity: item.quantity,
@@ -278,6 +279,7 @@ export default function InvoiceForm() {
         productServices: items
           .filter((item) => item.itemType !== "billboard")
           .map((item) => ({
+            reference: item.reference,
             name: item.name,
             quantity: item.quantity,
             hasTax: item.hasTax,

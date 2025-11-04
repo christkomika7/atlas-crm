@@ -42,6 +42,7 @@ export async function notifyRecurrence(data: NotifyRecurrenceProps) {
             const itemForCreate = [
                 ...invoice.items.filter(i => i.itemType === "billboard").map(billboard => ({
                     name: billboard.name,
+                    reference: billboard.reference,
                     hasTax: billboard.hasTax,
                     description: billboard.description ?? "",
                     quantity: billboard.quantity,
@@ -63,6 +64,7 @@ export async function notifyRecurrence(data: NotifyRecurrenceProps) {
                 ...invoice.items.filter(i => i.itemType !== "billboard")?.map(productService => ({
                     name: productService.name,
                     description: productService.description ?? "",
+                    reference: productService.reference,
                     hasTax: productService.hasTax,
                     quantity: productService.quantity,
                     price: productService.price,

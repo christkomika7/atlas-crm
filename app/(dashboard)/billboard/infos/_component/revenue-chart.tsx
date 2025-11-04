@@ -19,6 +19,7 @@ import { Sale } from "@/types/item.type";
 import { getTotalDuration } from "@/lib/date";
 import { useDataStore } from "@/stores/data.store";
 import { Decimal } from "decimal.js";
+import { formatNumber } from "@/lib/utils";
 
 type RevenueChartProps = {
   sales: Sale[];
@@ -52,7 +53,6 @@ function formatMonth(monthKey: string) {
 export function RevenueChart({ sales }: RevenueChartProps) {
   const currency = useDataStore.use.currency();
 
-  // Transformer les données pour le chart par mois
   const monthMap: Record<string, Decimal> = {};
 
   for (const sale of sales) {
@@ -67,7 +67,6 @@ export function RevenueChart({ sales }: RevenueChartProps) {
     }
   }
 
-  // Convertir map en tableau pour recharts
   const chartData = Object.entries(monthMap)
     .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(([month, amount]) => ({
@@ -126,8 +125,8 @@ export function RevenueChart({ sales }: RevenueChartProps) {
                     className="w-[200px]"
                     nameKey="amount"
                     labelKey="name"
-                    formatter={(value, name) => [
-                      `${Number(value).toLocaleString()} ${currency}`,
+                    formatter={(value) => [
+                      `${formatNumber(Number(value).toFixed(1))} ${currency}`,
                     ]}
                   />
                 }
@@ -142,7 +141,7 @@ export function RevenueChart({ sales }: RevenueChartProps) {
                   dataKey="amount"
                   position="top"
                   formatter={(value: number) =>
-                    `${value.toLocaleString()} ${currency}`
+                    `${formatNumber(Number(value).toFixed(1))} ${currency}`
                   }
                 />
               </Bar>
