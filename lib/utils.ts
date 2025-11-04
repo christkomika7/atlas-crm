@@ -739,11 +739,11 @@ export function getPrefix(
 export function getDocumentRef(transaction: TransactionType) {
   if (transaction.type === "RECEIPT") {
     if (transaction.referenceInvoiceId) {
-      return `${transaction.company.documentModel.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(transaction.referenceInvoice.invoiceNumber, false)}`;
+      return `${transaction.company.documentModel.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(transaction?.referenceInvoice?.invoiceNumber || 0, false)}`;
     }
   } else {
     if (transaction.referencePurchaseOrderId) {
-      return `${transaction.company.documentModel.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(transaction.referencePurchaseOrder.purchaseOrderNumber, false)}`;
+      return `${transaction.company.documentModel.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(transaction?.referencePurchaseOrder?.purchaseOrderNumber || 0, false)}`;
     }
   }
 
