@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
             }, { status: 404 });
         }
 
-        if (category.name === RECEIPT_CATEGORY && !data.documentRef) {
+        if (RECEIPT_CATEGORY.includes(category.name) && !data.documentRef) {
             return NextResponse.json({
                 status: "error",
                 message: "Aucune référence de document trouvée.",
