@@ -38,7 +38,7 @@ import { ProjectType } from "@/types/project.types";
 import { getallByCompany } from "@/action/project.action";
 import { SupplierType } from "@/types/supplier.types";
 import { all as getallClients } from "@/action/supplier.action";
-import { TRANSACTION_CATEGORIES } from "@/config/constant";
+import { DIBURSMENT_CATEGORY, TRANSACTION_CATEGORIES } from "@/config/constant";
 
 type DibursementFormProps = {
   refreshTransaction: () => void
@@ -67,9 +67,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const [natureId, setNatureId] = useState("");
 
   const form = useForm<DibursementSchemaType>({
-    resolver: zodResolver(dibursementSchema),
-    defaultValues: {
-    },
+    resolver: zodResolver(dibursementSchema)
   });
 
   const {
@@ -550,6 +548,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="allocation"
@@ -557,13 +556,14 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      required={DIBURSMENT_CATEGORY.includes(category)}
                       isLoading={isGettingAllocations}
                       datas={allocations.map(allocation => ({
                         id: allocation.id,
                         label: allocation.name,
                         value: allocation.id
                       }))}
-                      value={field.value}
+                      value={field.value || ""}
                       setValue={field.onChange}
                       placeholder="Allocation"
                       searchMessage="Rechercher une allocation"
@@ -583,10 +583,19 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <DatePicker
-                        value={field.value}
                         label="Période"
-                        mode="single"
-                        onChange={(e) => field.onChange(e as Date)}
+                        mode="range"
+                        value={
+                          field.value?.from && field.value.to
+                            ? {
+                              from: new Date(field.value.from),
+                              to: new Date(field.value.to),
+                            }
+                            : undefined
+                        }
+                        onChange={(value) => {
+                          field.onChange(value)
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

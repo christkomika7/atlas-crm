@@ -12,15 +12,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dispatch,
   SetStateAction,
+  useCallback,
   useEffect,
-  forwardRef,
   useImperativeHandle,
   useState,
-  useCallback,
-  useRef,
+  forwardRef,
 } from "react";
 import useQueryAction from "@/hook/useQueryAction";
-import { RequestResponse } from "@/types/api.types";
 import { useDataStore } from "@/stores/data.store";
 import { useSearchParams } from "next/navigation";
 import { getTransactions } from "@/action/transaction.action";
@@ -35,10 +33,12 @@ import {
   ChevronDownIcon,
 } from "lucide-react";
 import { formatDateToDashModel } from "@/lib/date";
-import { cutText, formatNumber, getDocumentRef } from "@/lib/utils";
+import { cutText, formatNumber } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
 import { $Enums } from "@/lib/generated/prisma";
 import { acceptPayment } from "@/lib/data";
+import Paginations from "@/components/paginations";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 
 type TransactionTableProps = {
   selectedTransactionIds: DeletedTransactions[];
@@ -64,8 +64,6 @@ type SortField =
 const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
   ({ selectedTransactionIds, setSelectedTransactionIds }, ref) => {
     const searchParams = useSearchParams();
-    const tableContainerRef = useRef<HTMLDivElement>(null);
-
     const currency = useDataStore.use.currency();
     const companyId = useDataStore.use.currentCompany();
 
@@ -77,45 +75,35 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const source = searchParams.get("source");
     const paidFor = searchParams.get("paidFor");
 
-    const [cursor, setCursor] = useState<string | null>(null);
     const [transactions, setTransactions] = useState<TransactionType[]>([]);
-    const [hasMore, setHasMore] = useState(true);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [sortField, setSortField] = useState<SortField | null>(null);
+    const [totalItems, setTotalItems] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize] = useState(DEFAULT_PAGE_SIZE);
+    const [sortField, setSortField] = useState<SortField>("byDate");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+    const [isLoading, setIsLoading] = useState(false);
 
-    const { mutate: mutateGetTransactions, isPending: isGettingTransactions } =
-      useQueryAction<GetTransactionsParams, RequestResponse<TransactionType[]>>(
-        getTransactions,
-        () => { },
-        "transactions",
-      );
+    const { mutate: mutateGetTransactions } = useQueryAction<
+      GetTransactionsParams,
+      { data: TransactionType[]; total: number }
+    >(getTransactions, () => { }, "transactions");
 
     const toggleSelection = (transactionId: string, checked: boolean, transactionType: $Enums.TransactionType) => {
       setSelectedTransactionIds((prev) =>
         checked
           ? [...prev, { id: transactionId, transactionType }]
-          : prev.filter((transac) => transac.id !== transactionId),
+          : prev.filter((transac) => transac.id !== transactionId)
       );
     };
 
-    // Fonction pour construire les paramètres de tri
-    const buildSortParams = (field: SortField, order: "asc" | "desc") => {
-      const params: Partial<GetTransactionsParams> = {};
-      params[field] = order;
-      return params;
-    };
+    const buildSortParams = (field: SortField, order: "asc" | "desc") => ({
+      [field]: order,
+    });
 
-    // Fonction pour charger les transactions
     const loadTransactions = useCallback(
-      (
-        isRefresh: boolean = false,
-        currentCursor: string | null = null,
-        currentSort?: { field: SortField | null; order: "asc" | "desc" },
-      ) => {
+      (page: number) => {
         if (!companyId) return;
-
-        const sort = currentSort || { field: sortField, order: sortOrder };
+        setIsLoading(true);
 
         const params: GetTransactionsParams = {
           companyId,
@@ -126,25 +114,18 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
           paidForValue: paidFor || undefined,
           paymentModeValue: paymentMode || undefined,
           sourceValue: source || undefined,
-          cursor: isRefresh ? undefined : currentCursor,
-          take: 5, // Nombre d'éléments par page
-          ...buildSortParams(sort.field || "byDate", sort.order),
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          ...buildSortParams(sortField, sortOrder),
         };
 
         mutateGetTransactions(params, {
           onSuccess(data) {
-            if (data.data) {
-              if (isRefresh) {
-                setTransactions(data.data);
-              } else {
-                setTransactions((prev) => [...prev, ...(data?.data ?? [])]);
-              }
-              setCursor(data.nextCursor);
-              setHasMore(!!data.nextCursor);
-            }
+            setTransactions(data.data);
+            setTotalItems(data.total);
           },
           onSettled() {
-            setIsLoadingMore(false);
+            setIsLoading(false);
           },
         });
       },
@@ -157,320 +138,84 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
         paidFor,
         paymentMode,
         source,
+        pageSize,
         sortField,
         sortOrder,
         mutateGetTransactions,
-      ],
+      ]
     );
 
-    // Fonction de rafraîchissement
-    const refreshTransaction = useCallback(() => {
-      setCursor(null);
-      setHasMore(true);
-      loadTransactions(true);
-    }, [loadTransactions]);
-
-    // Fonction pour charger plus de données (scroll infini)
-    const loadMore = useCallback(() => {
-      if (hasMore && !isGettingTransactions && !isLoadingMore && cursor) {
-        setIsLoadingMore(true);
-        loadTransactions(false, cursor);
-      }
-    }, [
-      hasMore,
-      isGettingTransactions,
-      isLoadingMore,
-      cursor,
-      loadTransactions,
-    ]);
-
-    // Fonction de tri
     const handleSort = useCallback(
       (field: SortField) => {
         let newOrder: "asc" | "desc" = "asc";
-
-        if (sortField === field) {
-          newOrder = sortOrder === "asc" ? "desc" : "asc";
-        }
-
+        if (sortField === field) newOrder = sortOrder === "asc" ? "desc" : "asc";
         setSortField(field);
         setSortOrder(newOrder);
-        setCursor(null);
-        setHasMore(true);
-
-        // Charger immédiatement avec le nouveau tri
-        loadTransactions(true, null, { field, order: newOrder });
+        setCurrentPage(1);
       },
-      [sortField, sortOrder, loadTransactions],
+      [sortField, sortOrder]
     );
 
-    // Fonction pour rendre les icônes de tri
     const renderSortIcon = (field: SortField) => {
-      if (sortField !== field) {
-        return <ChevronsUpDownIcon className="size-3.5" />;
-      }
-      return sortOrder === "asc" ? (
-        <ChevronUpIcon className="size-3.5" />
-      ) : (
-        <ChevronDownIcon className="size-3.5" />
-      );
+      if (sortField !== field) return <ChevronsUpDownIcon className="size-3.5" />;
+      return sortOrder === "asc" ? <ChevronUpIcon className="size-3.5" /> : <ChevronDownIcon className="size-3.5" />;
     };
 
-    // Fonction de gestion du scroll
-    const handleScroll = useCallback(() => {
-      if (!tableContainerRef.current) return;
-
-      // Chercher le conteneur ScrollArea
-      const scrollArea = tableContainerRef.current.closest(
-        "[data-radix-scroll-area-viewport]",
-      ) as HTMLElement;
-
-      if (scrollArea) {
-        const { scrollTop, scrollHeight, clientHeight } = scrollArea;
-
-        // Déclencher le chargement quand on est proche du bas (100px avant)
-        if (scrollTop + clientHeight >= scrollHeight - 100) {
-          loadMore();
-        }
-      } else {
-        // Fallback: utiliser le scroll de window si ScrollArea non trouvé
-        if (
-          window.innerHeight + document.documentElement.scrollTop + 100 >=
-          document.documentElement.offsetHeight
-        ) {
-          loadMore();
-        }
-      }
-    }, [loadMore]);
-
-    // Effect pour le scroll infini
-    useEffect(() => {
-      if (!tableContainerRef.current) return;
-
-      // Chercher le conteneur ScrollArea
-      const scrollArea = tableContainerRef.current.closest(
-        "[data-radix-scroll-area-viewport]",
-      ) as HTMLElement;
-
-      if (scrollArea) {
-        scrollArea.addEventListener("scroll", handleScroll);
-        return () => scrollArea.removeEventListener("scroll", handleScroll);
-      } else {
-        // Fallback: écouter le scroll de window
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-      }
-    }, [handleScroll]);
-
-    // Effect pour les changements de filtres
-    useEffect(() => {
-      refreshTransaction();
-    }, [startDate, endDate, category, movement, paymentMode, source, paidFor]);
-
-    // Fonction pour vérifier si on peut scroller
-    const checkIfScrollable = useCallback(() => {
-      if (!tableContainerRef.current) return false;
-
-      const scrollArea = tableContainerRef.current.closest(
-        "[data-radix-scroll-area-viewport]",
-      ) as HTMLElement;
-
-      if (scrollArea) {
-        return scrollArea.scrollHeight > scrollArea.clientHeight;
-      }
-      return document.documentElement.scrollHeight > window.innerHeight;
-    }, []);
-
-    // Fonction pour charger jusqu'à ce que le conteneur soit scrollable
-    const ensureScrollable = useCallback(() => {
-      if (!hasMore || isGettingTransactions || isLoadingMore || !cursor) return;
-
-      // Attendre un court délai pour que le DOM soit mis à jour
-      setTimeout(() => {
-        if (!checkIfScrollable()) {
-          setIsLoadingMore(true);
-          loadTransactions(false, cursor);
-        }
-      }, 100);
-    }, [
-      hasMore,
-      isGettingTransactions,
-      isLoadingMore,
-      cursor,
-      checkIfScrollable,
-      loadTransactions,
-    ]);
-
-    // Effect pour vérifier si on peut scroller après chaque chargement
-    useEffect(() => {
-      if (transactions.length > 0 && !isGettingTransactions && !isLoadingMore) {
-        ensureScrollable();
-      }
-    }, [transactions, isGettingTransactions, isLoadingMore, ensureScrollable]);
-
-    // Effect initial
-    useEffect(() => {
-      if (companyId && transactions.length === 0) {
-        loadTransactions(true);
-      }
-    }, [companyId]);
-
     useImperativeHandle(ref, () => ({
-      refreshTransaction,
+      refreshTransaction: () => loadTransactions(currentPage),
     }));
 
-    function getPaymentMode(value: string) {
-      return acceptPayment.find(accept => accept.value === value)?.label;
-    }
+    useEffect(() => {
+      loadTransactions(currentPage);
+    }, [companyId, currentPage, sortField, sortOrder, startDate, endDate, category, movement, paymentMode, source, paidFor, loadTransactions]);
 
-    const isSelected = (id: string) => selectedTransactionIds.some(transac => transac.id === id);
+    const getPaymentModeLabel = (value: string) =>
+      acceptPayment.find((accept) => accept.value === value)?.label || "-";
+
+    const isSelected = (id: string) =>
+      selectedTransactionIds.some((transac) => transac.id === id);
 
     return (
-      <div
-        ref={tableContainerRef}
-        className="border border-neutral-200 rounded-xl"
-      >
+      <div className="border border-neutral-200 rounded-xl flex flex-col justify-between h-full bg-amber-300">
         <Table>
           <TableHeader>
             <TableRow className="h-14">
               <TableHead className="min-w-[50px] font-medium" />
-              <TableHead className="font-medium text-center">
-                <span
-                  className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                  onClick={() => handleSort("byDate")}
-                >
-                  Date
-                  <span className="text-neutral-400">
-                    {renderSortIcon("byDate")}
-                  </span>
-                </span>
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                <span
-                  className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                  onClick={() => handleSort("byMovement")}
-                >
-                  Mouvement
-                  <span className="text-neutral-400">
-                    {renderSortIcon("byMovement")}
-                  </span>
-                </span>
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                <span
-                  className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                  onClick={() => handleSort("byCategory")}
-                >
-                  Catégorie
-                  <span className="text-neutral-400">
-                    {renderSortIcon("byCategory")}
-                  </span>
-                </span>
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                <span
-                  className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                  onClick={() => handleSort("byNature")}
-                >
-                  Nature
-                  <span className="text-neutral-400">
-                    {renderSortIcon("byNature")}
-                  </span>
-                </span>
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                <span
-                  className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                  onClick={() => handleSort("byDescription")}
-                >
-                  Description
-                  <span className="text-neutral-400">
-                    {renderSortIcon("byDescription")}
-                  </span>
-                </span>
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                <span
-                  className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                  onClick={() => handleSort("byAmount")}
-                >
-                  HT Montant
-                  <span className="text-neutral-400">
-                    {renderSortIcon("byAmount")}
-                  </span>
-                </span>
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                <span
-                  className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                  onClick={() => handleSort("byAmount")}
-                >
-                  TTC Montant
-                  <span className="text-neutral-400">
-                    {renderSortIcon("byAmount")}
-                  </span>
-                </span>
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                <span
-                  className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                  onClick={() => handleSort("byPaymentMode")}
-                >
-                  Mode de paiement
-                  <span className="text-neutral-400">
-                    {renderSortIcon("byPaymentMode")}
-                  </span>
-                </span>
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                Numéro de chèque
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                Référence du document
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                <span
-                  className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                  onClick={() => handleSort("byAllocation")}
-                >
-                  Allocation
-                  <span className="text-neutral-400">
-                    {renderSortIcon("byAllocation")}
-                  </span>
-                </span>
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                <span
-                  className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                  onClick={() => handleSort("bySource")}
-                >
-                  Source
-                  <span className="text-neutral-400">
-                    {renderSortIcon("bySource")}
-                  </span>
-                </span>
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                <span
-                  className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                  onClick={() => handleSort("byPaidOnBehalfOf")}
-                >
-                  Payé pour le compte de
-                  <span className="text-neutral-400">
-                    {renderSortIcon("byPaidOnBehalfOf")}
-                  </span>
-                </span>
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                Payeur
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                Commentaire
-              </TableHead>
+              {[
+                { label: "Date", field: "byDate" },
+                { label: "Mouvement", field: "byMovement" },
+                { label: "Catégorie", field: "byCategory" },
+                { label: "Nature", field: "byNature" },
+                { label: "Description", field: null },
+                { label: "HT Montant", field: null },
+                { label: "TTC Montant", field: null },
+                { label: "Mode de paiement", field: null },
+                { label: "Numéro de chèque", field: null },
+                { label: "Référence du document", field: null },
+                { label: "Allocation", field: null },
+                { label: "Source", field: null },
+                { label: "Payé pour le compte de", field: null },
+                { label: "Payeur", field: null },
+                { label: "Commentaire", field: null },
+              ].map((col, idx) => (
+                <TableHead key={idx} className="font-medium text-center">
+                  {col.field ? (
+                    <span
+                      className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
+                      onClick={() => handleSort(col.field as SortField)}
+                    >
+                      {col.label}
+                      <span className="text-neutral-400">{renderSortIcon(col.field as SortField)}</span>
+                    </span>
+                  ) : (
+                    col.label
+                  )}
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isGettingTransactions && transactions.length === 0 ? (
+            {isLoading ? (
               <TableRow>
                 <TableCell colSpan={15}>
                   <div className="flex justify-center items-center py-6 w-full">
@@ -479,104 +224,75 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                 </TableCell>
               </TableRow>
             ) : transactions.length > 0 ? (
-              <>
-                {transactions.map((transaction) => (
-                  <TableRow
-                    key={transaction.id}
-                    className={`h-16 transition-colors ${isSelected(transaction.id) ? "bg-neutral-100" : ""
-                      }`}
-                  >
-                    <TableCell className="text-neutral-600">
-                      <div className="flex justify-center items-center">
-                        <Checkbox
-                          checked={isSelected(transaction.id)}
-                          onCheckedChange={(checked) =>
-                            toggleSelection(transaction.id, !!checked, transaction.type)
-                          }
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {formatDateToDashModel(new Date(transaction.date))}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.movement === "INFLOWS" ? "Entrée" : "Sortie"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.category.name}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.nature.name}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.description || "-"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.amountType === "HT"
-                        ? `${formatNumber(transaction.amount)} ${currency}`
+              transactions.map((transaction) => (
+                <TableRow
+                  key={transaction.id}
+                  className={`h-16 transition-colors ${isSelected(transaction.id) ? "bg-neutral-100" : ""
+                    }`}
+                >
+                  <TableCell className="text-center">
+                    <Checkbox
+                      checked={isSelected(transaction.id)}
+                      onCheckedChange={(checked) =>
+                        toggleSelection(transaction.id, !!checked, transaction.type)
+                      }
+                    />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {formatDateToDashModel(new Date(transaction.date))}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {transaction.movement === "INFLOWS" ? "Entrée" : "Sortie"}
+                  </TableCell>
+                  <TableCell className="text-center">{transaction.category.name}</TableCell>
+                  <TableCell className="text-center">{transaction.nature.name}</TableCell>
+                  <TableCell className="text-center">{transaction.description || "-"}</TableCell>
+                  <TableCell className="text-center">
+                    {transaction.amountType === "HT" ? `${formatNumber(transaction.amount)} ${currency}` : "-"}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {transaction.amountType === "TTC" ? `${formatNumber(transaction.amount)} ${currency}` : "-"}
+                  </TableCell>
+                  <TableCell className="text-center">{getPaymentModeLabel(transaction.paymentType)}</TableCell>
+                  <TableCell className="text-center">{transaction.checkNumber || "-"}</TableCell>
+                  <TableCell className="text-center">{transaction.documentReference}</TableCell>
+                  <TableCell className="text-center">{transaction.allocation?.name || "-"}</TableCell>
+                  <TableCell className="text-center">{transaction.source?.name || "-"}</TableCell>
+                  <TableCell className="text-center">
+                    {transaction.payOnBehalfOf
+                      ? cutText(`${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`)
+                      : "-"}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {transaction.client
+                      ? `${transaction.client.lastname} ${transaction.client.firstname}`
+                      : transaction.supplier
+                        ? `${transaction.supplier.lastname} ${transaction.supplier.firstname}`
                         : "-"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.amountType === "TTC"
-                        ? `${formatNumber(transaction.amount)} ${currency}`
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {getPaymentMode(transaction.paymentType)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.checkNumber || "-"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.documentReference}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.allocation?.name || "-"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.source?.name || "-"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.payOnBehalfOf
-                        ? cutText(
-                          `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`,
-                        )
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.client ? `${transaction.client.lastname} ${transaction.client.firstname}` :
-                        transaction.supplier ? `${transaction.supplier.lastname} ${transaction.supplier.firstname}` : "-"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.comment || "-"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {isLoadingMore && (
-                  <TableRow>
-                    <TableCell colSpan={15}>
-                      <div className="flex justify-center items-center py-4 w-full">
-                        <Spinner />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </>
+                  </TableCell>
+                  <TableCell className="text-center">{transaction.comment || "-"}</TableCell>
+                </TableRow>
+              ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={15}
-                  className="py-6 text-gray-500 text-sm text-center"
-                >
+                <TableCell colSpan={15} className="py-6 text-gray-500 text-sm text-center">
                   Aucune transaction trouvée.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+
+        <Paginations
+          totalItems={totalItems}
+          pageSize={pageSize}
+          controlledPage={currentPage}
+          onPageChange={(page) => setCurrentPage(page)}
+          maxVisiblePages={DEFAULT_PAGE_SIZE}
+        />
       </div>
     );
-  },
+  }
 );
 
 TransactionTable.displayName = "TransactionTable";

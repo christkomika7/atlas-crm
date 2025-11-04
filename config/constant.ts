@@ -20,11 +20,13 @@ export const ACCEPTED_FILES_TYPES = [
 export type IMAGE_TYPES = "image/jpeg" | "image/jpg" | "image/png" | "image/webp" | "application/octet-stream";
 
 export const SEARCH_DEBOUND = 800 as const;
+export const DEFAULT_PAGE_SIZE = 5 as const;
 
 export const IMAGE_TYPES = ["jpeg", "jpg", "png", "webp"];
 
-export const TRANSACTION_CATEGORIES = ["Règlement loyer", "Règlement salaire", "Règlement prestation de service"]
-export const RECEIPT_CATEGORY = "Règlement client"
+export const TRANSACTION_CATEGORIES = ["Règlement loyer", "Règlement salaire", "Règlement prestation de service", "Reglement loyer", "Reglement salaire", "Reglement prestation de service"]
+export const RECEIPT_CATEGORY = ["Règlement client", "Reglement client"]
+export const DIBURSMENT_CATEGORY = ["Règlement fournisseur", "Reglement fournisseur"]
 // PREFIX
 export const INVOICE_PREFIX = "Facture";
 export const QUOTE_PREFIX = "Devis";

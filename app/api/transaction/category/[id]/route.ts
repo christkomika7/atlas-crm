@@ -5,7 +5,7 @@ import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["TRANSACTION"], "CREATE");
+    await checkAccess(["TRANSACTION"], "READ");
     const id = getIdFromUrl(req.url, "last") as string;
 
     const type = req.nextUrl.searchParams.get("type")?.trim() ?? "";

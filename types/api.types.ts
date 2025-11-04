@@ -5,6 +5,7 @@ export type QueryResponse = {
 
 export type RequestResponse<T> = {
     message: string;
+    total: number;
     state: "error" | "success";
     data?: T;
     nextCursor: string;

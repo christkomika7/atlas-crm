@@ -47,7 +47,7 @@ export default function TransactionPage() {
   }
 
   return (
-    <div className="space-y-9">
+    <div className="space-y-9 h-full">
       <Header title="Transactions">
         <div className="gap-x-2 flex items-center">
           {filters === "filter" && (

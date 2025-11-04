@@ -1,3 +1,4 @@
+import { DIBURSMENT_CATEGORY } from "@/config/constant";
 import { checkAccess } from "@/lib/access"
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
@@ -12,7 +13,10 @@ export async function POST(req: NextRequest) {
     const data = parseData<DibursementSchemaType>(dibursementSchema, {
         ...res,
         date: new Date(res.date),
-        period: res.period ? new Date(res.period) : undefined
+        period: res.period ? {
+            from: new Date(res.period.from),
+            to: new Date(res.period.to),
+        } : undefined
     }) as DibursementSchemaType;
 
     const companyExist = await prisma.company.findUnique({ where: { id: data.companyId } });
@@ -22,13 +26,40 @@ export async function POST(req: NextRequest) {
         message: "Identifiant invalide",
     }, { status: 404 })
 
+    const category = await prisma.transactionCategory.findUnique({ where: { id: data.category } });
+
+    if (!category) {
+        return NextResponse.json({
+            status: "error",
+            message: "Catégorie invalide",
+        }, { status: 404 })
+    }
+
+    if (DIBURSMENT_CATEGORY.includes(category.name) && !data.allocation) {
+        return NextResponse.json({
+            status: "error",
+            message: "L'allocation est obligatoire pour le règlement fournisseur",
+        }, { status: 404 })
+    }
+
     try {
 
         const referenceDocument = {};
 
+        if (data.allocation) {
+            Object.assign(referenceDocument, {
+                allocation: {
+                    connect: {
+                        id: data.allocation
+                    }
+                },
+            })
+        }
+
         if (data.period) {
             Object.assign(referenceDocument, {
-                period: data.period
+                periodStart: data.period.from,
+                periodEnd: data.period.to
             })
         }
 
@@ -86,11 +117,6 @@ export async function POST(req: NextRequest) {
                 nature: {
                     connect: {
                         id: data.nature
-                    }
-                },
-                allocation: {
-                    connect: {
-                        id: data.allocation
                     }
                 },
                 company: {

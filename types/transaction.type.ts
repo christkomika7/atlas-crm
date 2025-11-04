@@ -27,29 +27,29 @@ export type TransactionType = {
   paymentType: string;
   checkNumber: string;
 
-  referenceInvoiceId: string;
-  referenceInvoice: InvoiceType;
+  referenceInvoiceId?: string;
+  referenceInvoice?: InvoiceType;
 
-  referencePurchaseOrderId: string;
-  referencePurchaseOrder: PurchaseOrderType;
+  referencePurchaseOrderId?: string;
+  referencePurchaseOrder?: PurchaseOrderType;
 
-  allocationId: string;
-  allocation: AllocationType;
+  allocationId?: string;
+  allocation?: AllocationType;
 
-  clientId: string;
-  client: ClientType;
+  clientId?: string;
+  client?: ClientType;
 
-  supplierId: string;
-  supplier: SupplierType
+  supplierId?: string;
+  supplier?: SupplierType;
 
-  sourceId: string;
-  source: SourceType;
+  sourceId?: string;
+  source?: SourceType;
 
-  payOnBehalfOfId: string;
-  payOnBehalfOf: ClientType;
+  payOnBehalfOfId?: string;
+  payOnBehalfOf?: ClientType;
 
-  description: string;
-  comment: string;
+  description?: string;
+  comment?: string;
 
   companyId: string;
   company: CompanyType<string>;
@@ -91,8 +91,12 @@ export type TransactionDocument = {
 
 export type GetTransactionsParams = {
   companyId: string;
-  cursor?: string | null;
-  take?: number;
+
+  // Pagination
+  skip?: number;       // nombre d'éléments à ignorer
+  take?: number;       // nombre d'éléments à récupérer
+
+  // Filtres
   startDate?: string | null;
   endDate?: string | null;
   movementValue?: string | null;
@@ -101,6 +105,8 @@ export type GetTransactionsParams = {
   paymentModeValue?: string | null;
   sourceValue?: string | null;
   paidForValue?: string | null;
+
+  // Tri (un seul actif à la fois)
   byDate?: "asc" | "desc";
   byAmount?: "asc" | "desc";
   byMovement?: "asc" | "desc";
@@ -145,4 +151,15 @@ export type CategoryItemType = {
 export type CategoryFilterType = {
   total: Decimal;
   items: CategoryItemType[]
+}
+
+export type DividendType = {
+  natureId: string;
+  name: string;
+  total: string;
+}
+
+export type TransactionTotal = {
+  totalReceipt: string;
+  totalDibursement: string;
 }

@@ -916,7 +916,8 @@ model Dibursement {
   amount     Decimal    @default(0) @db.Decimal(15, 2)
   amountType AmountType @default(HT)
 
-  period DateTime?
+  periodStart DateTime?
+  periodEnd   DateTime?
 
   paymentType String
   checkNumber String?

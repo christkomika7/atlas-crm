@@ -1,5 +1,6 @@
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
+import { useDataStore } from "@/stores/data.store";
 import React from "react";
 
 type ProgressIndicatorProps = {
@@ -12,9 +13,11 @@ type ProgressIndicatorProps = {
 export default function ProgressIndicator({
   title,
   value,
-  max = 15000,
+  max = 100_000_000,
   status = "positive",
 }: ProgressIndicatorProps) {
+  const currency = useDataStore.use.currency();
+
   const percentage = (value / max) * 100;
 
   return (
@@ -27,7 +30,7 @@ export default function ProgressIndicator({
           status={status}
         />
         <span className="absolute top-1/2 left-2 -translate-y-1/2 font-semibold text-white">
-          $ {value}
+          {formatNumber(value)} {currency}
         </span>
       </div>
     </div>

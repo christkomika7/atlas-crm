@@ -36,7 +36,6 @@ type DocumentPreviewProps = {
     moreInfos?: boolean
 };
 
-// Type guard pour vérifier si c'est un PurchaseOrder
 function isPurchaseOrder(record: any): record is PurchaseOrderType {
     return record && 'supplier' in record && !('client' in record);
 }
@@ -50,7 +49,6 @@ export default function RecordDocument({
     logoSize,
     logoPosition,
     orderValue,
-    orderNote,
     isLoading,
     record,
     id,

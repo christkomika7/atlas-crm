@@ -51,7 +51,7 @@ export default function BillboardTab({ isGettingBillboards, billboards }: Billbo
         reference: billboard.reference,
         name: billboard.name,
         hasTax: billboard.hasTax,
-        description: "",
+        description: `Le panneau ${billboard.name} (référence ${billboard.reference}) est un panneau de type ${billboard.type.name} mesurant ${billboard.width} m de largeur sur ${billboard.height} m de hauteur, avec une orientation ${billboard.orientation}.`,
         price: new Decimal(billboard.rentalPrice),
         billboardReference: billboard.id,
         updatedPrice: new Decimal(0),

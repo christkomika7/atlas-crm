@@ -13,12 +13,14 @@ import {
   CategoryDetailType,
   CategoryFilterType,
   DeletedTransactions,
+  DividendType,
   GetTransactionsParams,
   SourceTransaction,
   SourceType,
   TransactionCategoryType,
   TransactionDocument,
   TransactionNatureType,
+  TransactionTotal,
   TransactionType,
 } from "@/types/transaction.type";
 
@@ -27,8 +29,8 @@ export async function getTransactions(params: GetTransactionsParams) {
     const query = new URLSearchParams();
 
     // Pagination
-    if (params.cursor) query.set("cursor", params.cursor);
-    if (params.take) query.set("take", String(params.take));
+    if (params.skip !== undefined) query.set("skip", String(params.skip));
+    if (params.take !== undefined) query.set("take", String(params.take));
 
     // Filtres directs
     if (params.startDate) query.set("startDate", params.startDate);
@@ -36,13 +38,12 @@ export async function getTransactions(params: GetTransactionsParams) {
     if (params.movementValue) query.set("movementValue", params.movementValue);
     if (params.categoryValue) query.set("categoryValue", params.categoryValue);
     if (params.natureValue) query.set("natureValue", params.natureValue);
-    if (params.paymentModeValue)
-      query.set("paymentModeValue", params.paymentModeValue);
+    if (params.paymentModeValue) query.set("paymentModeValue", params.paymentModeValue);
     if (params.sourceValue) query.set("sourceValue", params.sourceValue);
     if (params.paidForValue) query.set("paidForValue", params.paidForValue);
 
-    // Filtres de tri (un seul à la fois)
-    const sortKeys = [
+    // Tri (un seul tri actif)
+    const sortKeys: (keyof GetTransactionsParams)[] = [
       "byDate",
       "byAmount",
       "byMovement",
@@ -53,37 +54,24 @@ export async function getTransactions(params: GetTransactionsParams) {
       "byAllocation",
       "bySource",
       "byPaidOnBehalfOf",
-    ] as const;
+    ];
 
-    // Ajouter le paramètre de tri actif
     for (const key of sortKeys) {
       if (params[key]) {
-        query.set(key, params[key]!);
-        break; // Un seul tri à la fois
+        query.set(key, String(params[key]!));
+        break;
       }
     }
 
     const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${params.companyId}?${query.toString()}`;
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const response = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" }, cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     const res: RequestResponse<TransactionType[]> = await response.json();
+    if (res.state === "error") throw new Error(res.message);
 
-    if (res.state === "error") {
-      throw new Error(res.message);
-    }
-
-    return res;
+    return { data: res.data || [], total: res.total || (res.data ? res.data.length : 0) };
   } catch (error) {
     console.error("Error in getTransactions:", error);
     throw error;
@@ -107,6 +95,53 @@ export async function getCategories({ companyId, type }: { companyId: string, ty
     );
 
     const res: RequestResponse<TransactionCategoryType[]> =
+      await response.json();
+    if (!response.ok) {
+      throw new Error(res.message);
+    }
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
+
+
+export async function getDividends({ companyId }: { companyId: string }) {
+
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${companyId}/dividend`;
+
+  try {
+    const response = await fetch(
+      url,
+      {
+        method: "GET",
+      },
+    );
+
+    const res: RequestResponse<DividendType[]> =
+      await response.json();
+    if (!response.ok) {
+      throw new Error(res.message);
+    }
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getTransactionTotals({ companyId }: { companyId: string }) {
+
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${companyId}/total`;
+
+  try {
+    const response = await fetch(
+      url,
+      {
+        method: "GET",
+      },
+    );
+
+    const res: RequestResponse<TransactionTotal> =
       await response.json();
     if (!response.ok) {
       throw new Error(res.message);

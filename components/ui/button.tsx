@@ -22,7 +22,8 @@ const buttonVariants = cva(
           "text-accent-foreground hover:bg-accent hover:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
         dim: "text-muted-foreground hover:text-foreground data-[state=open]:text-foreground",
         foreground: "",
-        inverse: "",
+        inverse:
+          "bg-blue/10 text-blue border-blue focus-visible:ring-blue/20 !h-12 w-full cursor-pointer rounded-lg",
         primary:
           "bg-blue text-white focus-visible:ring-blue/20 !h-12 w-full cursor-pointer rounded-lg",
         delete:

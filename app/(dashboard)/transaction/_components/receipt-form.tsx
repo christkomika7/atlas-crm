@@ -395,7 +395,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      required={category === RECEIPT_CATEGORY}
+                      required={RECEIPT_CATEGORY.includes(category)}
                       isLoading={isGettingDocuments}
                       datas={documents.map(category => ({
                         id: category.id,
