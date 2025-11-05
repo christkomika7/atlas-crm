@@ -2,6 +2,24 @@ import { AreaSchemaType } from "@/lib/zod/area.schema";
 import { RequestResponse } from "@/types/api.types";
 import { AreaType } from "@/types/area.types";
 
+
+export async function getAreasByCompany({ companyId }: { companyId: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/area/${companyId}/company`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<AreaType[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
 export async function all({ cityId }: { cityId: string }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/area/${cityId}`, {

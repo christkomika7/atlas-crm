@@ -4,6 +4,11 @@ import prisma from "@/lib/prisma";
 import { contractSchema, ContractSchemaType } from "@/lib/zod/contract.schema";
 import { NextResponse, type NextRequest } from "next/server";
 
+function ensureArray<T = string>(v?: T | T[] | null): T[] | undefined {
+    if (v === undefined || v === null) return undefined;
+    return Array.isArray(v) ? v : [v];
+}
+
 export async function POST(req: NextRequest) {
     await checkAccess(["BILLBOARDS"], "CREATE");
 
@@ -17,26 +22,38 @@ export async function POST(req: NextRequest) {
         },
     }) as ContractSchemaType;
 
-    const billboards = await prisma.billboard.findMany({
-        where: {
-            cityId: data.city,
-            typeId: data.billboardType,
-            areaId: {
-                in: data.area,
-            },
-        },
-    });
+    // Normaliser les valeurs : accepter string ou string[]
+    const billboardTypes = ensureArray<string>(data.billboardType as any);
+    const cities = ensureArray<string>(data.city as any);
+    const areas = ensureArray<string>(data.area as any);
 
-    console.log({
-        data: billboards.map(billboard => ({
-            ...billboard,
-        }))
-    })
+    // Construire le where dynamiquement (les clés undefined sont ignorées par Prisma)
+    const where: any = {
+        hasDelete: false, // par exemple
+    };
+
+    if (billboardTypes && billboardTypes.length > 0) {
+        where.typeId = { in: billboardTypes };
+    }
+
+    if (cities && cities.length > 0) {
+        where.cityId = { in: cities };
+    }
+
+    if (areas && areas.length > 0) {
+        where.areaId = { in: areas };
+    }
+
+
+    const billboards = await prisma.billboard.findMany({
+        where,
+    });
 
     return NextResponse.json(
         {
             state: "success",
-            data: billboards.map(billboard => ({
+            count: billboards.length,
+            data: billboards.map((billboard) => ({
                 ...billboard,
             })),
         },

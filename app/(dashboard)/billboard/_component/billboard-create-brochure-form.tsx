@@ -1,11 +1,10 @@
 'use client';
 
-import { all as allAreas } from "@/action/area.action";
+import { all as allAreas, getAreasByCompany } from "@/action/area.action";
 import { all as allBillboardType } from "@/action/billboard-type.action";
 import { filter } from "@/action/billboard.action";
 import { all as allCities } from "@/action/city.action";
 import { Button } from "@/components/ui/button";
-import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
   Form,
@@ -25,8 +24,6 @@ import { CityType } from "@/types/city.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { pdf } from "@react-pdf/renderer";
-import ContractPDF from "./brochure-pdf";
 import usePdfStore from "@/stores/pdf.store";
 import { MultipleSelect, Option } from "@/components/ui/multi-select";
 import { BaseType } from "@/types/base.types";
@@ -44,8 +41,6 @@ export default function BillboardCreateBrochureForm({
   const [action, setAction] = useState<"download" | "send">();
   const setPdf = usePdfStore.use.setPdf();
 
-  const [cityId, setCityId] = useState("");
-
   const form = useForm<ContractSchemaType>({
     resolver: zodResolver(contractSchema),
     defaultValues: {},
@@ -55,8 +50,8 @@ export default function BillboardCreateBrochureForm({
     mutate: mutateArea,
     isPending: isPendingArea,
     data: areas,
-  } = useQueryAction<{ cityId: string }, RequestResponse<AreaType[]>>(
-    allAreas,
+  } = useQueryAction<{ companyId: string }, RequestResponse<AreaType[]>>(
+    getAreasByCompany,
     () => { },
     "areas"
   );
@@ -91,14 +86,10 @@ export default function BillboardCreateBrochureForm({
     if (companyId) {
       mutateCity({ companyId });
       mutateBillboardType({ companyId });
+      mutateArea({ companyId });
     }
   }, [companyId]);
 
-  useEffect(() => {
-    if (cityId) {
-      mutateArea({ cityId });
-    }
-  }, [cityId]);
 
   // <BrochurePDF
   //   data={{
@@ -176,58 +167,79 @@ export default function BillboardCreateBrochureForm({
             <FormField
               control={form.control}
               name="billboardType"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isPendingBillboardType}
-                      datas={
-                        billboardsType?.data?.map((billboardType) => ({
-                          id: billboardType.id,
-                          label: billboardType.name,
-                          value: billboardType.id,
-                        })) ?? []
-                      }
-                      value={field.value}
-                      setValue={field.onChange}
-                      placeholder="Sélectionner un type de panneau"
-                      searchMessage="Rechercher un type de panneau"
-                      noResultsMessage="Aucun type de panneau trouvé."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const allOptions: Option[] =
+                  billboardsType?.data?.map((billboardType) => ({
+                    id: billboardType.id,
+                    label: billboardType.name,
+                    value: billboardType.id,
+                  })) ?? [];
+
+                const selectedOptions = allOptions.filter((opt) =>
+                  field.value?.includes(opt.value)
+                );
+                return (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <MultipleSelect
+                        label={
+                          <span>
+                            Type de panneau <span className="text-red-500">*</span>
+                          </span>
+                        }
+                        isLoading={isPendingArea}
+                        options={allOptions}
+                        value={selectedOptions}
+                        onChange={(options) =>
+                          field.onChange(options.map((opt) => opt.value))
+                        }
+                        placeholder="Sélèctionner des types de panneau"
+                        disabled={isPendingBillboardType}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
             />
 
             <FormField
               control={form.control}
               name="city"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isPendingCity}
-                      datas={
-                        cities?.data?.map((city) => ({
-                          id: city.id,
-                          label: city.name,
-                          value: city.id,
-                        })) ?? []
-                      }
-                      value={field.value}
-                      setValue={(e) => {
-                        setCityId(e);
-                        field.onChange(e);
-                      }}
-                      placeholder="Sélectionner une ville"
-                      searchMessage="Rechercher une ville"
-                      noResultsMessage="Aucune ville trouvée."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const allOptions: Option[] =
+                  cities?.data?.map((city) => ({
+                    id: city.id,
+                    label: city.name,
+                    value: city.id,
+                  })) ?? [];
+
+                const selectedOptions = allOptions.filter((opt) =>
+                  field.value?.includes(opt.value)
+                );
+                return (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <MultipleSelect
+                        label={
+                          <span>
+                            Ville <span className="text-red-500">*</span>
+                          </span>
+                        }
+                        isLoading={isPendingArea}
+                        options={allOptions}
+                        value={selectedOptions}
+                        onChange={(options) =>
+                          field.onChange(options.map((opt) => opt.value))
+                        }
+                        placeholder="Sélèctionner des villes"
+                        disabled={isPendingCity}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
             />
             <FormField
               control={form.control}
@@ -260,7 +272,7 @@ export default function BillboardCreateBrochureForm({
                           field.onChange(options.map((opt) => opt.value))
                         }
                         placeholder="Sélèctionner des quartiers"
-                        disabled={isPendingBillboardFilter}
+                        disabled={isPendingArea}
                       />
                     </FormControl>
                     <FormMessage />

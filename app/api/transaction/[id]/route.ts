@@ -5,14 +5,15 @@ import { generateAmaId, getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  checkAccess(["TRANSACTION"], "READ");
+  // s'assurer d'attendre la vérification d'accès
+  await checkAccess(["TRANSACTION"], "READ");
 
   try {
     const companyId = getIdFromUrl(req.url, 2);
     if (!companyId) {
       return NextResponse.json(
         { state: "error", message: "Identifiant invalide." },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -46,9 +47,7 @@ export async function GET(req: NextRequest) {
     ] as const;
 
     const activeSort = sortKeys.find((key) => searchParams.has(key));
-    const sortOrder = activeSort
-      ? (searchParams.get(activeSort) as "asc" | "desc")
-      : "desc";
+    const sortOrder = activeSort ? (searchParams.get(activeSort) as "asc" | "desc") : "desc";
 
     // Construction WHERE
     const baseWhere: any = { companyId };
@@ -92,18 +91,28 @@ export async function GET(req: NextRequest) {
       company: { select: { documentModel: true } },
     };
 
+    // Récupère receipts et disbursements depuis la DB.
+    // On ordonne déjà par createdAt desc par défaut pour avoir les plus récents en haut.
+    // (L'ordre final peut ensuite être modifié par le tri côté application si demandé).
     const allReceipts = await prisma.receipt.findMany({
       where: baseWhere,
+      orderBy: { createdAt: "desc" },
       select: {
-        ...commonSelect, supplier: true, client: true, referenceInvoiceId: true,
+        ...commonSelect,
+        supplier: true,
+        client: true,
+        referenceInvoiceId: true,
         referenceInvoice: { select: { id: true, invoiceNumber: true } },
       },
     });
 
     const allDisbursements = await prisma.dibursement.findMany({
       where: disbursementWhere,
+      orderBy: { createdAt: "desc" },
       select: {
-        ...commonSelect, supplier: true, client: true,
+        ...commonSelect,
+        supplier: true,
+        client: true,
         allocation: { select: { id: true, name: true } },
         payOnBehalfOf: { select: { id: true, profile: { select: { firstname: true, lastname: true } } } },
         referencePurchaseOrderId: true,
@@ -116,7 +125,10 @@ export async function GET(req: NextRequest) {
       allocation: null,
       payOnBehalfOf: null,
       documentReference: receipt.referenceInvoice?.invoiceNumber
-        ? `${receipt.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(receipt.referenceInvoice?.invoiceNumber as number, false)}`
+        ? `${receipt.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(
+          receipt.referenceInvoice?.invoiceNumber as number,
+          false
+        )}`
         : "-",
       type: receipt.type.toString(),
       movement: receipt.movement.toString(),
@@ -129,7 +141,10 @@ export async function GET(req: NextRequest) {
       movement: disbursement.movement.toString(),
       amountType: disbursement.amountType.toString(),
       documentReference: disbursement.referencePurchaseOrder?.purchaseOrderNumber
-        ? `${disbursement.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(disbursement.referencePurchaseOrder?.purchaseOrderNumber as number, false)}`
+        ? `${disbursement.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(
+          disbursement.referencePurchaseOrder?.purchaseOrderNumber as number,
+          false
+        )}`
         : "-",
       payOnBehalfOf: disbursement.payOnBehalfOf
         ? {
@@ -142,7 +157,8 @@ export async function GET(req: NextRequest) {
 
     let allTransactions = [...normalizedReceipts, ...normalizedDisbursements];
 
-    // Tri côté application
+    // Tri côté application — si un tri est demandé, on l'applique,
+    // sinon on garde le tri par défaut (createdAt desc) qui est déjà celui de la DB.
     allTransactions.sort((a, b) => {
       if (activeSort === "byAmount") {
         const aAmount = parseFloat(a.amount?.toString() || "0");
@@ -151,6 +167,7 @@ export async function GET(req: NextRequest) {
       }
 
       if (activeSort === "byDate") {
+        // on trie par createdAt si on veut trier par date
         const aDate = new Date(a.createdAt).getTime();
         const bDate = new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
@@ -196,6 +213,7 @@ export async function GET(req: NextRequest) {
         return sortOrder === "asc" ? aPaid.localeCompare(bPaid) : bPaid.localeCompare(aPaid);
       }
 
+      // Pas de tri demandé explicitement: garder l'ordre par défaut (createdAt desc)
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
@@ -215,10 +233,7 @@ export async function GET(req: NextRequest) {
         : null,
     }));
 
-    return NextResponse.json(
-      { state: "success", data: formattedTransactions, total },
-      { status: 200 },
-    );
+    return NextResponse.json({ state: "success", data: formattedTransactions, total }, { status: 200 });
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return NextResponse.json(
@@ -226,7 +241,7 @@ export async function GET(req: NextRequest) {
         state: "error",
         message: error instanceof Error ? error.message : "Erreur lors de la récupération des transactions.",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
