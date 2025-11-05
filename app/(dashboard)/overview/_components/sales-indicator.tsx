@@ -75,7 +75,6 @@ export default function SalesIndicator() {
           <ProgressIndicator
             title="VAT"
             value={Number(vat || "0")}
-            max={20000}
           />
         }
       </div>
