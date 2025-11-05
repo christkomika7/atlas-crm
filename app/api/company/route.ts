@@ -8,16 +8,45 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { parseData } from "@/lib/parse";
 import { Company } from "@/lib/generated/prisma";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 
-
-export async function GET() {
+export async function GET(req: NextRequest) {
     await checkAccess(["DASHBOARD"], "READ");
 
-    const companies = await prisma.company.findMany();
-    return NextResponse.json({
-        state: "success",
-        data: companies,
-    }, { status: 200 })
+    try {
+        const { searchParams } = new URL(req.url);
+
+        const skip = parseInt(searchParams.get("skip") || "0", 10);
+        const take = parseInt(searchParams.get("take") || DEFAULT_PAGE_SIZE.toString(), 10);
+
+        // Total companies count
+        const total = await prisma.company.count();
+
+        // Companies with pagination
+        const companies = await prisma.company.findMany({
+            skip,
+            take,
+            orderBy: { createdAt: "desc" }, // Pour que les plus récents soient en premier
+        });
+
+        return NextResponse.json(
+            {
+                state: "success",
+                data: companies,
+                total,
+            },
+            { status: 200 }
+        );
+    } catch (error) {
+        console.error("Error fetching companies:", error);
+        return NextResponse.json(
+            {
+                state: "error",
+                message: error instanceof Error ? error.message : "Erreur lors de la récupération des entreprises.",
+            },
+            { status: 500 }
+        );
+    }
 }
 
 export async function POST(req: NextRequest) {

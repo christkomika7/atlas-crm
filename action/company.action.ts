@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { toDateOnlyString } from "@/lib/date";
 import { urlToFile } from "@/lib/utils";
 import { CompanySchemaType, EditCompanySchemaType } from "@/lib/zod/company.schema";
@@ -5,22 +6,25 @@ import { RequestResponse } from "@/types/api.types";
 import { CompanyType, FilterDataType } from "@/types/company.types";
 import { UserType } from "@/types/user.types";
 
-export async function all() {
+export async function all(skip = 0, take = DEFAULT_PAGE_SIZE) {
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company`, {
-            method: 'GET',
-        });
+        const response = await fetch(
+            `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company?skip=${skip}&take=${take}`,
+            {
+                method: "GET",
+            }
+        );
 
-        const res: RequestResponse<CompanyType<UserType>[]> = await response.json()
+        const res: RequestResponse<CompanyType<UserType>[]> = await response.json();
         if (!response.ok) {
             throw new Error(res.message);
         }
         return res;
-
     } catch (error) {
         throw error;
     }
 }
+
 
 export async function filterDatas({ companyId, reportType, period, start, end }: { companyId: string, reportType?: string, period?: string, start?: Date, end?: Date }) {
     const params = new URLSearchParams();

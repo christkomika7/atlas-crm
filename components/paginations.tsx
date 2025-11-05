@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "./ui/button";
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 
 type Props = {
     totalItems: number;
@@ -42,9 +43,9 @@ function buildPageList(totalPages: number, currentPage: number, maxVisible = 7) 
 
 export default function PaginationComponent({
     totalItems,
-    pageSize = 10,
+    pageSize = DEFAULT_PAGE_SIZE,
     initialPage = 1,
-    maxVisiblePages = 7,
+    maxVisiblePages = DEFAULT_PAGE_SIZE,
     onPageChange,
     controlledPage = null,
 }: Props) {

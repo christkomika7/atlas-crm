@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import ProfileInput from "@/components/ui/profile-input";
 import { PlusIcon } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useEmployeeStore } from "@/stores/employee.store";
 import useQueryAction from "@/hook/useQueryAction";
@@ -31,7 +31,24 @@ export default function CreateEmployeeForm() {
   const emailExist = useEmployeeStore.use.emailExists();
 
   const form = useForm<UserSchemaType>({
-    resolver: zodResolver(userSchema)
+    resolver: zodResolver(userSchema),
+    defaultValues: {
+      dashboard: { create: false, edit: false, read: false },
+      clients: { create: false, edit: false, read: false },
+      suppliers: { create: false, edit: false, read: false },
+      invoices: { create: false, edit: false, read: false },
+      quotes: { create: false, edit: false, read: false },
+      deliveryNotes: { create: false, edit: false, read: false },
+      purchaseOrder: { create: false, edit: false, read: false },
+      creditNotes: { create: false, edit: false, read: false },
+      productServices: { create: false, edit: false, read: false },
+      billboards: { create: false, edit: false, read: false },
+      projects: { create: false, edit: false, read: false },
+      appointment: { create: false, edit: false, read: false },
+      contract: { create: false, edit: false, read: false },
+      transaction: { create: false, edit: false, read: false },
+      setting: { create: false, edit: false, read: false },
+    }
   });
 
   const { mutate, isPending } = useQueryAction<

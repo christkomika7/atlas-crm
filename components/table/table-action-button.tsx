@@ -16,7 +16,9 @@ import useCompanyStore from "@/stores/company.store";
 import { useEmployeeStore } from "@/stores/employee.store";
 import { useRouter } from "next/navigation";
 import AlertDialogMessage from "../alert-dialog/alert-dialog-message";
-import { Trash2Icon, XIcon } from "lucide-react";
+import { Trash2Icon } from "lucide-react";
+import { useState } from "react";
+import Spinner from "../ui/spinner";
 
 type TableActionButtonProps = {
   id: string;
@@ -28,22 +30,28 @@ type TableActionButtonProps = {
 export default function TableActionButton({
   menus,
   id,
-  deleteTitle,
   deleteMessage,
 }: TableActionButtonProps) {
   const clearCompany = useCompanyStore.use.clearCompany();
   const resetEmployees = useEmployeeStore.use.resetEmployees();
+  const [currentId, setCurrentId] = useState("");
 
   const router = useRouter();
 
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<CompanyType<UserType>[]>
-  >(remove, () => {}, "companies");
+  >(remove, () => { }, "companies");
 
   function handleDelete() {
+
     if (id) {
-      mutate({ id });
+      setCurrentId(id)
+      mutate({ id }, {
+        onSuccess() {
+          setCurrentId("");
+        }
+      });
     }
   }
 
@@ -88,6 +96,7 @@ export default function TableActionButton({
                 >
                   <menu.icon className="w-4 h-4" />
                   {menu.title}
+                  {currentId === id && isPending && <Spinner size={14} />}
                 </button>
               </li>
             );
