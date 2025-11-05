@@ -7,7 +7,6 @@ import { type NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
     await checkAccess(["DASHBOARD"], "READ");
     const companyId = getIdFromUrl(req.url, 3) as string;
-    console.log({ companyId });
 
     const [receipts, dibursements] = await prisma.$transaction([
         prisma.receipt.findMany({

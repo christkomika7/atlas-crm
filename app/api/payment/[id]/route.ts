@@ -87,7 +87,6 @@ export async function DELETE(req: NextRequest) {
                 );
             }
 
-            // 3) Supprimer les dibursements liés (safe)
             ops.push(
                 prisma.dibursement.deleteMany({
                     where: { paymentId: payment.id }

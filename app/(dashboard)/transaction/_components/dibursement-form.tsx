@@ -38,7 +38,7 @@ import { ProjectType } from "@/types/project.types";
 import { getallByCompany } from "@/action/project.action";
 import { SupplierType } from "@/types/supplier.types";
 import { all as getallClients } from "@/action/supplier.action";
-import { DIBURSMENT_CATEGORY, TRANSACTION_CATEGORIES } from "@/config/constant";
+import { DIBURSMENT_CATEGORY, FISCAL_TYPE, TRANSACTION_CATEGORIES } from "@/config/constant";
 
 type DibursementFormProps = {
   refreshTransaction: () => void
@@ -65,6 +65,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const [category, setCategory] = useState("");
   const [paymentMode, setPaymentMode] = useState<"cash" | "check" | "bank-transfer">();
   const [natureId, setNatureId] = useState("");
+  const [nature, setNature] = useState("");
 
   const form = useForm<DibursementSchemaType>({
     resolver: zodResolver(dibursementSchema)
@@ -157,6 +158,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
       mutateGetCategories({ companyId, type: "dibursement" }, {
         onSuccess(data) {
           if (data.data) {
+            console.log({ cate: data.data })
             setCategories(data.data)
           }
         },
@@ -248,6 +250,12 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
     setCategoryId(id)
   }
 
+  function getNatureData(id: string) {
+    const current = natures.find(nature => nature.id === id);
+    setNature(current?.name || "");
+    setNatureId(id)
+  }
+
 
 
   async function submit(dibursementData: DibursementSchemaType) {
@@ -332,8 +340,8 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                         value: nature.id
                       }))}
                       value={field.value}
-                      setValue={e => {
-                        setNatureId(e)
+                      setValue={(e) => {
+                        getNatureData(String(e))
                         field.onChange(e)
                       }}
                       placeholder="Nature"
@@ -421,22 +429,24 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                             HT
                           </Label>
                         </div>
-                        <div className="flex max-h-11 items-center space-x-2">
-                          <RadioGroupItem
-                            value="TTC"
-                            id="TTC"
-                            className="hidden"
-                          />
-                          <Label
-                            htmlFor="TTC"
-                            className={cn(
-                              "flex bg-gray px-3 py-1 rounded-md h-full",
-                              field.value === "TTC" && "bg-blue text-white"
-                            )}
-                          >
-                            TTC
-                          </Label>
-                        </div>
+                        {!(FISCAL_TYPE.includes(category) && FISCAL_TYPE.includes(nature)) &&
+                          <div className="flex max-h-11 items-center space-x-2">
+                            <RadioGroupItem
+                              value="TTC"
+                              id="TTC"
+                              className="hidden"
+                            />
+                            <Label
+                              htmlFor="TTC"
+                              className={cn(
+                                "flex bg-gray px-3 py-1 rounded-md h-full",
+                                field.value === "TTC" && "bg-blue text-white"
+                              )}
+                            >
+                              TTC
+                            </Label>
+                          </div>
+                        }
                       </RadioGroup>
                     </FormControl>
                     <FormMessage />

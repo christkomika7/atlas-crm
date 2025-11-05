@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
     const sources = await prisma.source.findMany({
         where: {
-            sourceType: type === "check" ? $Enums.SourceType.CHECK : type === "cash" ? $Enums.SourceType.CASH : $Enums.SourceType.BANK_TRANSFERT,
+            sourceType: type === "check" || type === "bank-transfer" ? $Enums.SourceType.BANK : $Enums.SourceType.CASH,
             companyId: id
         },
     });

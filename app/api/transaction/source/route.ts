@@ -18,7 +18,10 @@ export async function POST(req: NextRequest) {
 
     const sourceExist = await prisma.source.findFirst({
         where: {
-            name: data.name, sourceType: data.sourceType === "check" ? $Enums.SourceType.CHECK : data.sourceType === "cash" ? $Enums.SourceType.CASH : $Enums.SourceType.BANK_TRANSFERT,
+            name: data.name,
+            sourceType: data.sourceType === "check" || data.sourceType === "bank-transfer" ?
+                $Enums.SourceType.BANK :
+                $Enums.SourceType.CASH,
         }
     });
 
@@ -33,7 +36,9 @@ export async function POST(req: NextRequest) {
         const createdSource = await prisma.source.create({
             data: {
                 name: data.name,
-                sourceType: data.sourceType === "check" ? $Enums.SourceType.CHECK : data.sourceType === "cash" ? $Enums.SourceType.CASH : $Enums.SourceType.BANK_TRANSFERT,
+                sourceType: data.sourceType === "check" || data.sourceType === "bank-transfer" ?
+                    $Enums.SourceType.BANK :
+                    $Enums.SourceType.CASH,
                 company: {
                     connect: {
                         id: data.companyId

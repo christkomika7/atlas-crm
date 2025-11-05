@@ -41,8 +41,13 @@ export async function GET(req: NextRequest) {
         },
         include: {
             natures: true
+        },
+        orderBy: {
+            createdAt: "desc"
         }
     });
+
+    console.log({ categories })
 
 
     return NextResponse.json({

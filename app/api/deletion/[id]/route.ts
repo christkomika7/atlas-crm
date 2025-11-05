@@ -939,10 +939,49 @@ export async function PUT(req: NextRequest) {
 
                     break
                 case "delete":
-                    await prisma.receipt.delete({
-                        where: { id: recordId },
-                    });
-                    await prisma.deletion.delete({ where: { id } });
+                    await prisma.$transaction(async (tx) => {
+                        const receiptExist = await tx.receipt.findUnique({
+                            where: { id: recordId }, include: {
+                                referenceInvoice: true,
+                                payment: true,
+                                client: true
+                            }
+                        });
+
+                        if (!receiptExist) {
+                            throw new Error("Identifiant de l'encaissement invalide.");
+                        }
+
+                        const amount = receiptExist.payment?.amount || new Decimal(0);
+
+                        if (receiptExist.referenceInvoice && receiptExist.payment) {
+                            await tx.invoice.update({
+                                where: { id: receiptExist.referenceInvoice.id },
+                                data: {
+                                    isPaid: false,
+                                    payee: {
+                                        decrement: amount
+                                    }
+                                }
+                            });
+                            await tx.payment.delete({ where: { id: receiptExist.payment.id } });
+
+                            if (receiptExist.client) {
+                                await prisma.client.update({
+                                    where: { id: receiptExist.client.id },
+                                    data: {
+                                        due: { increment: amount },
+                                        paidAmount: { decrement: amount }
+                                    }
+                                })
+                            }
+                        }
+
+                        await tx.receipt.delete({
+                            where: { id: recordId },
+                        });
+                        await tx.deletion.delete({ where: { id } });
+                    })
                     break;
             }
             break;
@@ -962,10 +1001,48 @@ export async function PUT(req: NextRequest) {
 
                     break
                 case "delete":
-                    await prisma.dibursement.delete({
-                        where: { id: recordId },
-                    });
-                    await prisma.deletion.delete({ where: { id } });
+                    await prisma.$transaction(async (tx) => {
+
+                        const disbursementExist = await tx.dibursement.findUnique({
+                            where: { id: recordId }, include: {
+                                referencePurchaseOrder: true,
+                                payment: true,
+                                supplier: true
+                            }
+                        });
+
+                        if (!disbursementExist) {
+                            throw new Error("Identifiant du décaissement invalide.");
+                        }
+
+                        const amount = disbursementExist.payment?.amount || new Decimal(0);
+
+                        if (disbursementExist.referencePurchaseOrder && disbursementExist.payment) {
+                            await tx.purchaseOrder.update({
+                                where: { id: disbursementExist.referencePurchaseOrder.id },
+                                data: {
+                                    isPaid: false,
+                                    payee: {
+                                        decrement: amount
+                                    }
+                                }
+                            });
+                            await tx.payment.delete({ where: { id: disbursementExist.payment.id } });
+
+                            if (disbursementExist.supplier) {
+                                await prisma.supplier.update({
+                                    where: { id: disbursementExist.supplier.id },
+                                    data: {
+                                        due: { increment: amount },
+                                        paidAmount: { decrement: amount }
+                                    }
+                                })
+                            }
+                        }
+                        await tx.dibursement.delete({ where: { id: recordId } })
+
+                        await tx.deletion.delete({ where: { id } });
+                    })
 
                     break;
             }

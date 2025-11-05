@@ -15,10 +15,11 @@ export async function GET(req: NextRequest) {
         );
     }
 
-    // bornes pour l'année en cours
     const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1); // 1er janvier 00:00
-    const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1); // 1er janv de l'année suivante
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
+
+    console.log({ startOfYear, startOfNextYear })
 
     // On fait les deux agrégations en parallèle (seulement pour l'année en cours)
     const [receiptsAgg, dibursementsAgg] = await Promise.all([

@@ -2,13 +2,14 @@
 import { useEffect, useState } from "react";
 import { RequestResponse } from "@/types/api.types";
 import { DividendType, TransactionTotal } from "@/types/transaction.type";
-import { getDividends, getTransactionTotals } from "@/action/transaction.action";
+import { getDividends, getTransactionTotals, getVAT } from "@/action/transaction.action";
 import { useDataStore } from "@/stores/data.store";
 import ProgressIndicator from "./progress-indicator";
 import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
 import { Progress } from "@/components/ui/progress";
 import { formatNumber } from "@/lib/utils";
+import Decimal from "decimal.js";
 
 export default function SalesIndicator() {
   const companyId = useDataStore.use.currentCompany();
@@ -17,11 +18,17 @@ export default function SalesIndicator() {
   const [dividends, setDividends] = useState<DividendType[]>([]);
   const [receipt, setReceipt] = useState("0");
   const [dibursement, setDibursement] = useState("0");
+  const [vat, setVat] = useState(new Decimal(0));
 
   const { mutate: mutateGetDividens, isPending: isGettingDividends } = useQueryAction<
     { companyId: string },
     RequestResponse<DividendType[]>
   >(getDividends, () => { }, "dividend");
+
+  const { mutate: mutateGetVat, isPending: isGettingVat } = useQueryAction<
+    { companyId: string },
+    RequestResponse<Decimal>
+  >(getVAT, () => { }, "vat");
 
 
   const { mutate: mutateGetTotals, isPending: isGettingTotals } = useQueryAction<
@@ -48,15 +55,29 @@ export default function SalesIndicator() {
         },
       });
 
+      mutateGetVat({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setVat(data.data);
+          }
+        },
+      });
+
     }
   }, [companyId])
 
-  console.log({ dividends });
+
 
   return (
     <div className="p-4 border border-neutral-200  items-center gap-x-8 rounded-lg grid grid-cols-4">
       <div className="h-full">
-        <ProgressIndicator title="VAT" value={4000} status="positive" />
+        {isGettingTotals ? <Spinner /> :
+          <ProgressIndicator
+            title="VAT"
+            value={Number(vat || "0")}
+            max={20000}
+          />
+        }
       </div>
       <div className="h-full">
         {isGettingDividends ? <Spinner /> :
@@ -90,7 +111,6 @@ export default function SalesIndicator() {
           <ProgressIndicator
             title="Décaissements"
             value={Number(dibursement || "0")}
-            status="positive"
           />
         }
       </div>
@@ -99,7 +119,6 @@ export default function SalesIndicator() {
           <ProgressIndicator
             title="Encaissements"
             value={Number(receipt || "0")}
-            status="positive"
           />
         }
       </div>

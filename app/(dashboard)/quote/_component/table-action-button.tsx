@@ -124,7 +124,7 @@ export default function TableActionButton({
                         </button>
                       </li>
                     }
-                    title="Convertir le devis"
+                    title="Dupliquer le devis"
                     open={open}
                     setOpen={(value) =>
                       setOpen(true)

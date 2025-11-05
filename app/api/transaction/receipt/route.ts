@@ -2,7 +2,9 @@ import { RECEIPT_CATEGORY } from "@/config/constant";
 import { checkAccess } from "@/lib/access"
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
+import { formatNumber } from "@/lib/utils";
 import { receiptSchema, ReceiptSchemaType } from "@/lib/zod/receipt.schema";
+import Decimal from "decimal.js";
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {
@@ -86,6 +88,71 @@ export async function POST(req: NextRequest) {
                 ...referenceDocument,
             }
         });
+
+        if (data.documentRef) {
+            const invoiceExist = await prisma.invoice.findUnique({
+                where: { id: data.documentRef }, include: {
+                    company: true
+                }
+            });
+
+            if (!invoiceExist) {
+                throw new Error("Identifiant de facture invalide.");
+            }
+
+            if (invoiceExist.isPaid) {
+                throw new Error("Cette facture est déjà réglée et ne peut pas recevoir de nouveau paiement.");
+            }
+
+            const total =
+                invoiceExist.amountType === "HT"
+                    ? invoiceExist.totalHT
+                    : invoiceExist.totalTTC;
+
+            const payee = invoiceExist.payee;
+            const remaining = total.minus(payee);
+            const newAmount = new Decimal(data.amount);
+
+            if (newAmount.gt(remaining.valueOf())) {
+                throw new Error(
+                    `Le montant saisi dépasse le solde restant à payer (${formatNumber(
+                        remaining.toString()
+                    )} ${invoiceExist.company.currency}).`
+                );
+            }
+
+            const hasCompletedPayment =
+                payee.add(newAmount.valueOf()).gte(total.minus(0.01));
+
+
+            await prisma.payment.create({
+                data: {
+                    createdAt: data.date,
+                    amount: String(data.amount),
+                    paymentMode: data.paymentMode,
+                    infos: data.description,
+                    invoice: { connect: { id: data.documentRef } },
+                },
+            });
+
+            await prisma.invoice.update({
+                where: { id: data.documentRef },
+                data: {
+                    isPaid: hasCompletedPayment,
+                    payee: payee.add(newAmount.valueOf()),
+                },
+                include: {
+                    company: {
+                        include: {
+                            documentModel: true
+                        }
+                    },
+                    client: true,
+
+                },
+            });
+
+        }
 
 
         return NextResponse.json({

@@ -23,6 +23,7 @@ import {
   TransactionTotal,
   TransactionType,
 } from "@/types/transaction.type";
+import Decimal from "decimal.js";
 
 export async function getTransactions(params: GetTransactionsParams) {
   try {
@@ -105,6 +106,28 @@ export async function getCategories({ companyId, type }: { companyId: string, ty
   }
 }
 
+export async function getVAT({ companyId }: { companyId: string }) {
+
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${companyId}/vat`;
+
+  try {
+    const response = await fetch(
+      url,
+      {
+        method: "GET",
+      },
+    );
+
+    const res: RequestResponse<Decimal> =
+      await response.json();
+    if (!response.ok) {
+      throw new Error(res.message);
+    }
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
 
 export async function getDividends({ companyId }: { companyId: string }) {
 

@@ -325,6 +325,25 @@ export const convert = [
     },
 ];
 
+
+export const invoiceDuplicates = [
+    {
+        id: 1,
+        label: "Devis",
+        value: "quote"
+    },
+    {
+        id: 2,
+        label: "Bon de livraison",
+        value: "delivery-note"
+    }, {
+        id: 3,
+        label: "Facture",
+        value: "invoice"
+    },
+];
+
+
 export const paymentFrequency = [
     { id: 0, value: "monthly", label: "Mensuel" },
     { id: 1, value: "quarterly", label: "Trimestriel" },

@@ -35,9 +35,8 @@ enum DeletionType {
 }
 
 enum SourceType {
-  CHECK
   CASH
-  BANK_TRANSFERT
+  BANK
 }
 
 enum Resource {
@@ -965,7 +964,7 @@ model Source {
   id   String @id @default(ulid())
   name String
 
-  sourceType SourceType @default(CHECK)
+  sourceType SourceType @default(CASH)
 
   companyId    String
   company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)

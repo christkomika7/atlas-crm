@@ -354,9 +354,16 @@ export async function share(data: RecordEmailSchemaType) {
     }
 }
 
-export async function duplicateInvoice({ invoiceId }: { invoiceId: string }) {
+export async function duplicateInvoice({ invoiceId, duplicateTo }: { invoiceId: string, duplicateTo?: "invoice" | "quote" | "delivery-note" }) {
+    const params = new URLSearchParams();
+    if (duplicateTo) params.append("type", duplicateTo);
+
+    const queryString = params.toString();
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${invoiceId}/duplicate${queryString ? `?${queryString}` : ""
+        }`;
+
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${invoiceId}/duplicate`, {
+        const response = await fetch(url, {
             method: "POST",
         });
 

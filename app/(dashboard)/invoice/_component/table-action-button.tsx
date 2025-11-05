@@ -9,14 +9,14 @@ import { RequestResponse } from "@/types/api.types";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "lucide-react";
-import { duplicateInvoice, remove } from "@/action/invoice.action";
+import { remove } from "@/action/invoice.action";
 import { InvoiceType } from "@/types/invoice.types";
 import { useRouter } from "next/navigation";
 import useTabStore from "@/stores/tab.store";
 import ModalContainer from "@/components/modal/modal-container";
 import { useState } from "react";
 import PaymentForm from "./payment-form";
-import Spinner from "@/components/ui/spinner";
+import DuplicateForm from "./duplicate-form";
 
 type TableActionButtonProps = {
   id: string;
@@ -35,6 +35,7 @@ export default function TableActionButton({
 }: TableActionButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [openDuplicate, setOpenDuplicate] = useState(false)
   const setTab = useTabStore.use.setTab();
 
   const { mutate, isPending } = useQueryAction<
@@ -42,13 +43,7 @@ export default function TableActionButton({
     RequestResponse<InvoiceType[]>
   >(remove, () => { }, "invoices");
 
-
-  const { mutate: mutateDuplicateInvoice, isPending: isDuplicatingInvoice } = useQueryAction<
-    { invoiceId: string },
-    RequestResponse<null>
-  >(duplicateInvoice, () => { }, "invoices");
-
-  function goTo(invoiceId: string, action: "update" | "preview" | "send" | "duplicate") {
+  function goTo(invoiceId: string, action: "update" | "preview" | "send") {
     switch (action) {
       case "update":
         setTab("action-invoice-tab", 0);
@@ -61,16 +56,6 @@ export default function TableActionButton({
       case "send":
         setTab("action-invoice-tab", 2);
         router.push(`/invoice/${invoiceId}`);
-        break;
-      case "duplicate":
-
-        mutateDuplicateInvoice({ invoiceId: invoiceId }, {
-          onSuccess(data) {
-            if (data.data) {
-              refreshInvoices()
-            }
-          },
-        })
         break;
     }
   }
@@ -129,24 +114,45 @@ export default function TableActionButton({
                     loading={isPending}
                   />
                 );
+              case "duplicate":
+                return (
+                  <ModalContainer
+                    size="sm"
+                    action={
+                      <li key={menu.id}>
+                        <button
+                          className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+
+                        >
+                          <menu.icon className="w-4 h-4" />
+                          {menu.title}
+                        </button>
+                      </li>
+                    }
+                    title="Dupliquer la facture"
+                    open={openDuplicate}
+                    setOpen={(value) =>
+                      setOpenDuplicate(true)
+                    }
+                    onClose={() => setOpenDuplicate(false)}
+                  >
+                    <DuplicateForm closeModal={() => setOpenDuplicate(false)} id={id} refreshInvoices={refreshInvoices} />
+                  </ModalContainer>
+                );
               default:
                 return (
                   <li key={menu.id}>
                     <button
                       className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
                       onClick={() =>
-                        goTo(id, menu.id as "update" | "preview" | "send" | "duplicate")
+                        goTo(id, menu.id as "update" | "preview" | "send")
                       }
                     >
                       <menu.icon className="w-4 h-4" />
                       {menu.title}
-
-                      {menu.id === "duplicate" && isDuplicatingInvoice &&
-                        <Spinner size={15} />
-                      }
-
                     </button>
                   </li>
+
                 );
             }
           })}
