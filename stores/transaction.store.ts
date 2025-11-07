@@ -1,12 +1,13 @@
 import { create } from "zustand";
 import { createSelectors } from "@/lib/store";
-import { AllocationType, SourceType, TransactionCategoryType, TransactionNatureType } from "@/types/transaction.type";
+import { AllocationType, FiscalObjectType, SourceType, TransactionCategoryType, TransactionNatureType } from "@/types/transaction.type";
 
 type TransactionStore = {
     categories: TransactionCategoryType[];
     natures: TransactionNatureType[];
     sources: SourceType[];
     allocations: AllocationType[];
+    fiscalObjects: FiscalObjectType[]
 
     setCategories: (categories: TransactionCategoryType[]) => void;
     addCategory: (category: TransactionCategoryType) => void;
@@ -23,6 +24,10 @@ type TransactionStore = {
     setAllocations: (allocations: AllocationType[]) => void;
     addAllocation: (allocation: AllocationType) => void;
     removeAllocation: (id: string) => void;
+
+    setFiscalObjects: (data: FiscalObjectType[]) => void;
+    addFiscalObjectType: (data: FiscalObjectType) => void;
+    removeFiscalObjectType: (id: string) => void;
 };
 
 const useTransactionStore = createSelectors(
@@ -31,6 +36,7 @@ const useTransactionStore = createSelectors(
         natures: [],
         sources: [],
         allocations: [],
+        fiscalObjects: [],
 
         setCategories(categories) {
             set({ categories });
@@ -82,6 +88,19 @@ const useTransactionStore = createSelectors(
         },
         removeAllocation(id) {
             set({ allocations: get().allocations.filter((a) => a.id !== id) });
+        },
+
+        setFiscalObjects(data) {
+            set({ fiscalObjects: data });
+        },
+        addFiscalObjectType(data) {
+            const exists = get().fiscalObjects.some((p) => p.id === data.id);
+            if (!exists) {
+                set({ fiscalObjects: [...get().fiscalObjects, data] });
+            }
+        },
+        removeFiscalObjectType(id) {
+            set({ fiscalObjects: get().fiscalObjects.filter((a) => a.id !== id) });
         },
     }))
 );

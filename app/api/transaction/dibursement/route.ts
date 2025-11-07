@@ -1,4 +1,4 @@
-import { DIBURSMENT_CATEGORY } from "@/config/constant";
+import { DIBURSMENT_CATEGORY, FISCAL_NATURE, FISCAL_OBJECT } from "@/config/constant";
 import { checkAccess } from "@/lib/access"
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
@@ -28,7 +28,10 @@ export async function POST(req: NextRequest) {
         message: "Identifiant invalide",
     }, { status: 404 })
 
-    const category = await prisma.transactionCategory.findUnique({ where: { id: data.category } });
+    const [category, nature] = await prisma.$transaction([
+        prisma.transactionCategory.findUnique({ where: { id: data.category } }),
+        prisma.transactionNature.findUnique({ where: { id: data.nature } }),
+    ]);
 
     if (!category) {
         return NextResponse.json({
@@ -44,9 +47,28 @@ export async function POST(req: NextRequest) {
         }, { status: 404 })
     }
 
+    if (nature?.name === FISCAL_NATURE && !data.fiscalObject) {
+        return NextResponse.json({
+            status: "error",
+            message: "L'objet de paiement est obligatoire",
+        }, { status: 404 })
+    }
+
     try {
 
         const referenceDocument = {};
+
+
+
+        if (data.fiscalObject) {
+            Object.assign(referenceDocument, {
+                fiscalObject: {
+                    connect: {
+                        id: data.fiscalObject
+                    }
+                },
+            })
+        }
 
         if (data.allocation) {
             Object.assign(referenceDocument, {

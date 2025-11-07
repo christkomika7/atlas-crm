@@ -73,6 +73,7 @@ const ClientsTable = forwardRef<ClientsTableRef, ClientsTableProps>(
             <TableRow className="h-14">
               <TableHead className="min-w-[50px] font-medium" />
               <TableHead className="font-medium text-center">Date</TableHead>
+              <TableHead className="font-medium text-center">Entreprise</TableHead>
               <TableHead className="font-medium text-center">Client</TableHead>
               <TableHead className="font-medium text-center">
                 Montant payé
@@ -115,6 +116,9 @@ const ClientsTable = forwardRef<ClientsTableRef, ClientsTableProps>(
                       month: "2-digit",
                       year: "numeric",
                     })}
+                  </TableCell>
+                  <TableCell className="text-neutral-600 text-center">
+                    {`${client.companyName}`}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {`${client.firstname} ${client.lastname}`}

@@ -6,51 +6,87 @@ import { parseData } from "@/lib/parse";
 import { checkAccessDeletion } from "@/lib/server";
 import { $Enums } from "@/lib/generated/prisma";
 import { clientContractSchema, ClientContractSchemaType, lessorContractSchema, LessorContractSchemaType } from "@/lib/zod/contract.schema";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 
 export async function GET(req: NextRequest) {
-  await checkAccess(["CONTRACT"], "READ");
-  const companyId = getIdFromUrl(req.url, "last") as string;
+  try {
+    await checkAccess(["CONTRACT"], "READ");
 
-  const exist = await prisma.company.findUnique({
-    where: { id: companyId }
-  })
-
-  if (!exist) {
-    return NextResponse.json({
-      status: "error",
-      message: "Aucun élément trouvé pour cet identifiant.",
-    }, { status: 404 });
-  }
-
-  const type = req.nextUrl.searchParams.get("type")?.trim() as $Enums.ContractType;
-
-  if (!type) {
-    return NextResponse.json({
-      status: "error",
-      message: "Aucun filtre trouvé.",
-    }, { status: 404 });
-  }
-
-  const contracts = await prisma.contract.findMany({
-    where: {
-      companyId,
-      type
-    },
-    include: {
-      client: true,
-      lessor: true,
-      billboard: {
-        include: {
-          lessorSupplier: true
-        }
-      }
+    const companyId = getIdFromUrl(req.url, "last") as string;
+    if (!companyId) {
+      return NextResponse.json(
+        { status: "error", message: "Identifiant de company invalide." },
+        { status: 400 }
+      );
     }
-  });
 
-  return NextResponse.json({
-    status: "success",
-    data: contracts,
-  });
+    const exist = await prisma.company.findUnique({ where: { id: companyId } });
+    if (!exist) {
+      return NextResponse.json(
+        { status: "error", message: "Aucun élément trouvé pour cet identifiant." },
+        { status: 404 }
+      );
+    }
+
+    const typeParam = req.nextUrl.searchParams.get("type")?.trim();
+    const type = typeParam as unknown as $Enums.ContractType;
+    if (!typeParam) {
+      return NextResponse.json(
+        { status: "error", message: "Aucun filtre trouvé." },
+        { status: 400 }
+      );
+    }
+
+    const rawSkip = req.nextUrl.searchParams.get("skip");
+    const rawTake = req.nextUrl.searchParams.get("take");
+
+    const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
+    const take = rawTake ? Math.max(1, parseInt(rawTake, 10) || DEFAULT_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
+
+    const total = await prisma.contract.count({
+      where: {
+        companyId,
+        type,
+      },
+    });
+
+    const contracts = await prisma.contract.findMany({
+      where: {
+        companyId,
+        type,
+      },
+      include: {
+        client: true,
+        lessor: true,
+        billboard: {
+          include: {
+            lessorSupplier: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take,
+    });
+
+    return NextResponse.json(
+      {
+        status: "success",
+        data: contracts,
+        total,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error in GET /api/contract/:companyId :", error);
+    return NextResponse.json(
+      {
+        status: "error",
+        message: error instanceof Error ? error.message : "Erreur lors de la récupération des contrats.",
+      },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {

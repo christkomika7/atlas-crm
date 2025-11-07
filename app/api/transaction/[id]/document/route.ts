@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
         const invoices = await prisma.invoice.findMany({
             where: {
                 companyId,
+                isPaid: false,
             },
             select: {
                 id: true,
@@ -44,6 +45,7 @@ export async function GET(req: NextRequest) {
         const parsedInvoices = invoices.map(invoice => ({
             id: invoice.id,
             type: 'Facture',
+            amountType: invoice.amountType,
             reference: `${invoice.company.documentModel?.invoicesPrefix ?? INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}`,
             price: invoice.amountType === "TTC" ? invoice.totalTTC : invoice.totalHT,
             currency: invoice.company.currency,
@@ -84,6 +86,7 @@ export async function GET(req: NextRequest) {
 
         const parsedPurchaseOrder = purchaseOrders.map(purchaseOrder => ({
             id: purchaseOrder.id,
+            amountType: purchaseOrder.amountType,
             type: cutText(`${purchaseOrder.supplier?.firstname} ${purchaseOrder.supplier?.lastname}`),
             reference: `${purchaseOrder.company.documentModel?.purchaseOrderPrefix ?? PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrder.purchaseOrderNumber, false)}`,
             price: purchaseOrder.amountType === "TTC" ? purchaseOrder.totalTTC : purchaseOrder.totalHT,

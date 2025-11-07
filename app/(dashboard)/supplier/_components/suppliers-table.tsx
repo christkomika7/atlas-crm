@@ -43,7 +43,7 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(
     const { mutate, isPending, data } = useQueryAction<
       { id: string },
       RequestResponse<SupplierType[]>
-    >(all, () => {}, "suppliers");
+    >(all, () => { }, "suppliers");
 
     const toggleSelection = (supplierId: string, checked: boolean) => {
       setSelectedSupplierIds((prev) =>
@@ -73,7 +73,7 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(
           <TableHeader>
             <TableRow className="h-14">
               <TableHead className="min-w-[50px] font-medium" />
-              <TableHead className="font-medium text-center">Société</TableHead>
+              <TableHead className="font-medium text-center">Entreprise</TableHead>
               <TableHead className="font-medium text-center">Nom</TableHead>
               <TableHead className="font-medium text-center">
                 Montant payé
@@ -100,9 +100,8 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(
               data.data.map((supplier) => (
                 <TableRow
                   key={supplier.id}
-                  className={`h-16 transition-colors ${
-                    isSelected(supplier.id) ? "bg-neutral-100" : ""
-                  }`}
+                  className={`h-16 transition-colors ${isSelected(supplier.id) ? "bg-neutral-100" : ""
+                    }`}
                 >
                   <TableCell className="text-neutral-600">
                     <div className="flex justify-center items-center">

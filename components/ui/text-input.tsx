@@ -89,7 +89,7 @@ export default function TextInput({
           {type === "number" ? (
             <InputNumber
               value={
-                typeof value === "number" && value ? Number(value) : undefined
+                typeof value === "number" ? value : Number(value || 0)
               }
               min={min}
               max={max}
@@ -160,7 +160,7 @@ export default function TextInput({
           {type === "number" ? (
             <InputNumber
               value={
-                typeof value === "number" && value ? Number(value) : undefined
+                typeof value === "number" ? value : Number(value || 0)
               }
               onValueChange={(val) => handleChange(val ?? 0)}
               placeholder=" "

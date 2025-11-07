@@ -45,6 +45,20 @@ export async function GET(req: NextRequest) {
 
     ]);
 
+    console.log({
+        invoices, data: invoices.map(record => ({
+            id: record.id,
+            type: "invoice",
+            reference: `${record.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(record.invoiceNumber, false)}`,
+            forUser: `${record.client?.lastname} ${record.client?.firstname}`,
+            amountPaid: new Decimal(record.payee.toString()),
+            amountUnpaid: record.amountType === "TTC" ?
+                new Decimal(record.totalTTC.toString()).minus(record.payee.toString()) :
+                new Decimal(record.totalHT.toString()).minus(record.payee.toString()),
+            status: record.isPaid ? "PAID" : !record.isPaid && new Decimal(record.payee.toString()).gt(0) ? "PENDING" : "WAIT"
+        })),
+    });
+
     const datas: RecordType[] = [
         ...invoices.map(record => ({
             id: record.id,
@@ -55,13 +69,7 @@ export async function GET(req: NextRequest) {
             amountUnpaid: record.amountType === "TTC" ?
                 new Decimal(record.totalTTC.toString()).minus(record.payee.toString()) :
                 new Decimal(record.totalHT.toString()).minus(record.payee.toString()),
-            status: new Decimal(record.payee.toString()).eq(0) ?
-                "WAIT" :
-                new Decimal(record.payee.toString()).gt(0)
-                    && new Decimal(record.payee.toString()).lte(record.amountType === "TTC" ? record.totalTTC.toString() : record.totalHT.toString()) ?
-                    "PENDING" :
-                    "PAID"
-
+            status: record.isPaid ? "PAID" : !record.isPaid && new Decimal(record.payee.toString()).gt(0) ? "PENDING" : "WAIT"
         })),
         ...purchaseOrders.map(record => ({
             id: record.id,
@@ -72,12 +80,8 @@ export async function GET(req: NextRequest) {
             amountUnpaid: record.amountType === "TTC" ?
                 new Decimal(record.totalTTC.toString()).minus(record.payee.toString()) :
                 new Decimal(record.totalHT.toString()).minus(record.payee.toString()),
-            status: new Decimal(record.payee.toString()).eq(0) ?
-                "WAIT" :
-                new Decimal(record.payee.toString()).gt(0)
-                    && new Decimal(record.payee.toString()).lte(record.amountType === "TTC" ? record.totalTTC.toString() : record.totalHT.toString()) ?
-                    "PENDING" :
-                    "PAID"
+            status: record.isPaid ? "PAID" : !record.isPaid && new Decimal(record.payee.toString()).gt(0) ? "PENDING" : "WAIT"
+
 
         })),
         ...quotes.map(record => ({
@@ -87,7 +91,7 @@ export async function GET(req: NextRequest) {
             forUser: `${record.client?.lastname} ${record.client?.firstname}`,
             amountPaid: new Decimal(0),
             amountUnpaid: new Decimal(0),
-            status: '-'
+            status: record.isCompleted ? "PAID" : "WAIT"
 
         })),
         ...deliveryNotes.map(record => ({
@@ -97,9 +101,9 @@ export async function GET(req: NextRequest) {
             forUser: `${record.client?.lastname} ${record.client?.firstname}`,
             amountPaid: new Decimal(0),
             amountUnpaid: new Decimal(0),
-            status: '-'
+            status: record.isCompleted ? "PAID" : "WAIT"
         })),
-    ]
+    ];
 
     return NextResponse.json({
         state: "success",

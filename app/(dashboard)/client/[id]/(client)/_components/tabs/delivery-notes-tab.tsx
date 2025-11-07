@@ -79,9 +79,6 @@ export default function DeliveryNotesTab() {
             <TableHead className="font-medium text-center">
               Date du document
             </TableHead>
-            <TableHead className="font-medium text-center">
-              Montant du document
-            </TableHead>
             <TableHead className="font-medium text-center">Action</TableHead>
           </TableRow>
         </TableHeader>
@@ -114,9 +111,6 @@ export default function DeliveryNotesTab() {
                 </TableCell>
                 <TableCell className="text-neutral-600 text-center">
                   {formatDateToDashModel(deliveryNote.createdAt)}
-                </TableCell>
-                <TableCell className="text-neutral-600 text-center">
-                  {deliveryNote.amountType === "TTC" ? formatNumber(deliveryNote.totalTTC) : formatNumber(deliveryNote.totalHT)} {currency}
                 </TableCell>
                 <TableCell className="text-center">
                   <TableActionButton

@@ -6,6 +6,11 @@ export const categorySchema = z.object({
     companyId: z.string({ error: "Aucune entreprise sélectionnée." })
 });
 
+export const fiscalObjectSchema = z.object({
+    name: z.string({ error: "Le nom de l'objet est obligatoire." }),
+    companyId: z.string({ error: "Aucun objet sélectionné." })
+});
+
 export const natureSchema = z.object({
     name: z.string({ error: "Le nom de la nature est obligatoire." }),
     companyId: z.string({ error: "Aucune entreprise sélectionnée." }),
@@ -30,3 +35,4 @@ export type CategorySchemaType = z.infer<typeof categorySchema>;
 export type NatureSchemaType = z.infer<typeof natureSchema>;
 export type SourceSchemaType = z.infer<typeof sourceSchema>;
 export type AllocationSchemaType = z.infer<typeof allocationSchema>;
+export type FiscalObjectSchemaType = z.infer<typeof fiscalObjectSchema>;

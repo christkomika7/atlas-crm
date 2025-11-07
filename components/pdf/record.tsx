@@ -1,7 +1,7 @@
 import Spinner from "@/components/ui/spinner";
 import { generalSans } from "@/fonts/font";
 import { useCalculateTaxe } from "@/hook/useCalculateTaxe";
-import { formatDateToDashModel } from "@/lib/date";
+import { formatDateToDashModel, getMonthsAndDaysDifference } from "@/lib/date";
 import { getCountryFrenchName } from "@/lib/helper";
 import { cn, formatNumber, getAmountPrice, parseItem, parseItems, resolveImageSrc } from "@/lib/utils";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
@@ -239,6 +239,22 @@ export default function RecordDocument({
                             <td className="px-3 py-2 align-top">
                                 <p className="mb-1 font-semibold">{item.name} {item.hasTax && <span className="text-blue">*</span>}</p>
                                 <p className={`whitespace-pre-wrap mb-2 leading-tight text-sm`}>{item.description}</p>
+                                {item.itemType === "billboard" &&
+                                    <p className={`whitespace-pre-wrap flex flex-col mb-2 leading-tight text-xs`}>
+                                        <span className="font-medium">Durée de la compagne</span>
+                                        <span>{new Date(item.locationStart).toLocaleDateString("fr-fr", {
+                                            day: "numeric",
+                                            month: "long",
+                                            year: "numeric"
+                                        })} au {new Date(item.locationEnd).toLocaleDateString("fr-fr", {
+                                            day: "numeric",
+                                            month: "long",
+                                            year: "numeric"
+                                        })}{" "}
+                                            ({getMonthsAndDaysDifference(new Date(item.locationStart), new Date(item.locationEnd))}).
+                                        </span>
+                                    </p>
+                                }
                             </td>
                             <td className="py-2 text-right align-top">
                                 {item.quantity}

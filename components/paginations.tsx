@@ -41,7 +41,7 @@ function buildPageList(totalPages: number, currentPage: number, maxVisible = 7) 
     return pages;
 }
 
-export default function PaginationComponent({
+export default function Paginations({
     totalItems,
     pageSize = DEFAULT_PAGE_SIZE,
     initialPage = 1,

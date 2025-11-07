@@ -26,6 +26,9 @@ export async function GET(req: NextRequest) {
                     documentModel: true
                 }
             }
+        },
+        orderBy: {
+            createdAt: "desc"
         }
     })
 

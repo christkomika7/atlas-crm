@@ -23,10 +23,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn, cutText, formatNumber } from "@/lib/utils";
 import useTransactionStore from "@/stores/transaction.store";
-import { AllocationType, SourceType, TransactionCategoryType, TransactionDocument, TransactionNatureType, TransactionType } from "@/types/transaction.type";
+import { AllocationType, FiscalObjectType, SourceType, TransactionCategoryType, TransactionDocument, TransactionNatureType, TransactionType } from "@/types/transaction.type";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
-import { createDibursement, getAllocations, getCategories, getDocuments, getNatures, getSources } from "@/action/transaction.action";
+import { createDibursement, getAllocations, getCategories, getDocuments, getFisclaObjects, getNatures, getSources } from "@/action/transaction.action";
 import CategoryModal from "../../../../components/modal/category-modal";
 import NatureModal from "../../../../components/modal/nature-modal";
 import { acceptPayment } from "@/lib/data";
@@ -38,7 +38,9 @@ import { ProjectType } from "@/types/project.types";
 import { getallByCompany } from "@/action/project.action";
 import { SupplierType } from "@/types/supplier.types";
 import { all as getallClients } from "@/action/supplier.action";
-import { DIBURSMENT_CATEGORY, FISCAL_TYPE, TRANSACTION_CATEGORIES } from "@/config/constant";
+import { ADMINISTRATION_CATEGORY, DIBURSMENT_CATEGORY, FISCAL_NATURE, FISCAL_OBJECT, TRANSACTION_CATEGORIES } from "@/config/constant";
+import FiscalObjectModal from "@/components/modal/fiscal-object-modal";
+import { $Enums } from "@/lib/generated/prisma";
 
 type DibursementFormProps = {
   refreshTransaction: () => void
@@ -48,6 +50,8 @@ type DibursementFormProps = {
 export default function DibursementForm({ closeModal, refreshTransaction }: DibursementFormProps) {
   const companyId = useDataStore.use.currentCompany();
 
+  const fiscalObjects = useTransactionStore.use.fiscalObjects();
+  const setFiscalObjects = useTransactionStore.use.setFiscalObjects();
   const categories = useTransactionStore.use.categories();
   const setCategories = useTransactionStore.use.setCategories();
   const natures = useTransactionStore.use.natures();
@@ -66,6 +70,8 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const [paymentMode, setPaymentMode] = useState<"cash" | "check" | "bank-transfer">();
   const [natureId, setNatureId] = useState("");
   const [nature, setNature] = useState("");
+  const [fiscalObject, setFiscalObject] = useState("");
+  const [currentAmountType, setCurrentAmountType] = useState<$Enums.AmountType>();
 
   const form = useForm<DibursementSchemaType>({
     resolver: zodResolver(dibursementSchema)
@@ -78,6 +84,15 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
     getCategories,
     () => { },
     "categories"
+  );
+
+  const {
+    mutate: mutateGetFiscalObjects,
+    isPending: isGettingFiscalObjects,
+  } = useQueryAction<{ companyId: string }, RequestResponse<FiscalObjectType[]>>(
+    getFisclaObjects,
+    () => { },
+    "fiscal-objects"
   );
 
   const {
@@ -158,8 +173,15 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
       mutateGetCategories({ companyId, type: "dibursement" }, {
         onSuccess(data) {
           if (data.data) {
-            console.log({ cate: data.data })
             setCategories(data.data)
+          }
+        },
+      });
+
+      mutateGetFiscalObjects({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setFiscalObjects(data.data)
           }
         },
       });
@@ -254,6 +276,11 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
     const current = natures.find(nature => nature.id === id);
     setNature(current?.name || "");
     setNatureId(id)
+  }
+
+  function getFiscalObjectName(id: string) {
+    const current = fiscalObjects.find(fiscalObject => fiscalObject.id === id);
+    setFiscalObject(current?.name || "");
   }
 
 
@@ -354,33 +381,67 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="project"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      required={false}
-                      isLoading={isGettingProjects}
-                      datas={projects.map(project => ({
-                        id: project.id,
-                        label: `${cutText(project.client.firstname + " " + project.client.lastname)} - ${project.name}`,
-                        value: project.id
-                      }))}
-                      value={field.value || ""}
-                      setValue={e => {
-                        field.onChange(e)
-                      }}
-                      placeholder="Projet"
-                      searchMessage="Rechercher un projet"
-                      noResultsMessage="Aucun projet trouvé."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
+            {ADMINISTRATION_CATEGORY === category && FISCAL_NATURE === nature ?
+              <FormField
+                control={form.control}
+                name="fiscalObject"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <Combobox
+                        required={true}
+                        isLoading={isGettingFiscalObjects}
+                        datas={fiscalObjects.map(fiscalObject => ({
+                          id: fiscalObject.id,
+                          label: `${cutText(fiscalObject.name)}`,
+                          value: fiscalObject.id
+                        }))}
+                        value={field.value || ""}
+                        setValue={e => {
+                          field.onChange(e)
+                          getFiscalObjectName(String(e))
+                        }}
+                        placeholder="Objet du paiement"
+                        searchMessage="Rechercher un objet de paiement"
+                        noResultsMessage="Aucun objet trouvé trouvé."
+                        addElement={<FiscalObjectModal />}
+
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              /> :
+              <FormField
+                control={form.control}
+                name="project"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <Combobox
+                        required={false}
+                        isLoading={isGettingProjects}
+                        datas={projects.map(project => ({
+                          id: project.id,
+                          label: `${cutText(project.client.firstname + " " + project.client.lastname)} - ${project.name}`,
+                          value: project.id
+                        }))}
+                        value={field.value || ""}
+                        setValue={e => {
+                          field.onChange(e)
+                        }}
+                        placeholder="Projet"
+                        searchMessage="Rechercher un projet"
+                        noResultsMessage="Aucun projet trouvé."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            }
+
             <div className="flex gap-x-2">
               <FormField
                 control={form.control}
@@ -413,41 +474,45 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                         onValueChange={field.onChange}
                         className="flex -space-x-2"
                       >
-                        <div className="flex items-center max-h-11 space-x-2">
-                          <RadioGroupItem
-                            value="HT"
-                            id="HT"
-                            className="hidden"
-                          />
-                          <Label
-                            htmlFor="HT"
-                            className={cn(
-                              "flex bg-gray px-3 py-1 rounded-md h-full",
-                              field.value === "HT" && "bg-blue text-white"
-                            )}
-                          >
-                            HT
-                          </Label>
-                        </div>
-                        {!(FISCAL_TYPE.includes(category) && FISCAL_TYPE.includes(nature)) &&
-                          <div className="flex max-h-11 items-center space-x-2">
-                            <RadioGroupItem
-                              value="TTC"
-                              id="TTC"
-                              className="hidden"
-                            />
-                            <Label
-                              htmlFor="TTC"
-                              className={cn(
-                                "flex bg-gray px-3 py-1 rounded-md h-full",
-                                field.value === "TTC" && "bg-blue text-white"
-                              )}
-                            >
-                              TTC
-                            </Label>
-                          </div>
-                        }
+                        {(
+                          FISCAL_OBJECT === fiscalObject ||
+                          currentAmountType === undefined ||
+                          currentAmountType === "HT"
+                        ) && (
+                            <div className="flex items-center max-h-11 space-x-2">
+                              <RadioGroupItem value="HT" id="HT" className="hidden" />
+                              <Label
+                                htmlFor="HT"
+                                className={cn(
+                                  "flex bg-gray px-3 py-1 rounded-md h-full",
+                                  field.value === "HT" && "bg-blue text-white"
+                                )}
+                              >
+                                HT
+                              </Label>
+                            </div>
+                          )}
+
+                        {(
+                          FISCAL_OBJECT !== fiscalObject &&
+                          (currentAmountType === undefined ||
+                            currentAmountType === "TTC")
+                        ) && (
+                            <div className="flex items-center max-h-11 space-x-2">
+                              <RadioGroupItem value="TTC" id="TTC" className="hidden" />
+                              <Label
+                                htmlFor="TTC"
+                                className={cn(
+                                  "flex bg-gray px-3 py-1 rounded-md h-full",
+                                  field.value === "TTC" && "bg-blue text-white"
+                                )}
+                              >
+                                TTC
+                              </Label>
+                            </div>
+                          )}
                       </RadioGroup>
+
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -518,6 +583,11 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                       }))}
                       value={field.value as string}
                       setValue={e => {
+                        const current = documents.find(d => d.id === e)?.amountType;
+                        setCurrentAmountType(current);
+                        if (current) {
+                          form.setValue("amountType", current);
+                        }
                         field.onChange(e)
                       }}
                       placeholder="Référence du document"
@@ -616,7 +686,6 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
 
           </div>
           <div className="gap-4.5 grid grid-cols-2">
-
             <FormField
               control={form.control}
               name="source"

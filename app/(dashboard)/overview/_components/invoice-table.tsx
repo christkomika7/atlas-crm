@@ -35,6 +35,7 @@ export default function InvoiceTable() {
       mutate({ companyId }, {
         onSuccess(data) {
           if (data.data) {
+            console.log({ data: data.data });
             setRecords(data.data);
           }
         },
@@ -95,7 +96,7 @@ export default function InvoiceTable() {
                 <TableCell className="text-neutral-600 text-center">
                   {record.status ?
                     <Badge className="w-[100px]" variant={record.status === "WAIT" ? "TODO" : record.status === "PENDING" ? "IN_PROGRESS" : "DONE"}>
-                      {record.status === "WAIT" ? "En attente" : record.status === "PENDING" ? "En cour" : "Payé"}
+                      {record.status === "WAIT" ? "En attente" : record.status === "PENDING" ? "En cour" : "VALIDER"}
                     </Badge> : "-"
                   }
                 </TableCell>

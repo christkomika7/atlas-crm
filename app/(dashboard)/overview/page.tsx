@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import InvoiceTable from "./_components/invoice-table";
 import SourceInfos from "./_components/source-infos";
 import RecentActivitiesBc from "./_components/recent-activities-bc";
+import ActionButton from "./_components/action-button";
 
 export default function OverviewPage() {
   return (
@@ -18,14 +19,12 @@ export default function OverviewPage() {
           <AccountHeader title="Tableau de bord" />
         </div>
         <SourceInfos />
-        <div className="grid grid-cols-[3fr_1fr] gap-4">
+        <div className="grid grid-cols-[3fr_1fr] min-h-[94px] gap-4">
           <div className="space-y-2">
             <InvoiceInfos />
           </div>
-          <div className="p-4 border h-fit border-neutral-200 flex rounded-lg">
-            <Button variant="primary" className="!h-14">
-              Ajouter <ChevronDownIcon className="!size-4 stroke-white" />
-            </Button>
+          <div className="p-2 border h-full border-neutral-200 flex rounded-lg">
+            <ActionButton />
           </div>
         </div>
         <div className="grid grid-cols-[1.8fr_1fr_1fr] gap-4">

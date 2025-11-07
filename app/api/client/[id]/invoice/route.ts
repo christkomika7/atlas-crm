@@ -8,8 +8,6 @@ export async function GET(req: NextRequest) {
     const id = getIdFromUrl(req.url, 2) as string;
 
 
-    console.log({ id })
-
     const client = await prisma.client.findUnique({ where: { id } });
     if (!client) {
         return NextResponse.json({
@@ -28,6 +26,9 @@ export async function GET(req: NextRequest) {
                     documentModel: true
                 }
             }
+        },
+        orderBy: {
+            createdAt: "desc"
         }
     })
 

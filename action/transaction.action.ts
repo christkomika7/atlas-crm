@@ -4,6 +4,7 @@ import { ReceiptSchemaType } from "@/lib/zod/receipt.schema";
 import {
   AllocationSchemaType,
   CategorySchemaType,
+  FiscalObjectSchemaType,
   NatureSchemaType,
   SourceSchemaType,
 } from "@/lib/zod/transaction.schema";
@@ -14,6 +15,7 @@ import {
   CategoryFilterType,
   DeletedTransactions,
   DividendType,
+  FiscalObjectType,
   GetTransactionsParams,
   SourceTransaction,
   SourceType,
@@ -96,6 +98,29 @@ export async function getCategories({ companyId, type }: { companyId: string, ty
     );
 
     const res: RequestResponse<TransactionCategoryType[]> =
+      await response.json();
+    if (!response.ok) {
+      throw new Error(res.message);
+    }
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getFisclaObjects({ companyId }: { companyId: string }) {
+
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/fiscal-object/${companyId}`;
+
+  try {
+    const response = await fetch(
+      url,
+      {
+        method: "GET",
+      },
+    );
+
+    const res: RequestResponse<FiscalObjectType[]> =
       await response.json();
     if (!response.ok) {
       throw new Error(res.message);
@@ -368,6 +393,35 @@ export async function createCategory(data: CategorySchemaType) {
   }
 }
 
+export async function createFiscalObject(data: FiscalObjectSchemaType) {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/fiscal-object`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      },
+    );
+
+    const res: RequestResponse<FiscalObjectType> = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        res.message ||
+        "Erreur lors de la création de l'objet de paiement",
+      );
+    }
+
+    return res;
+  } catch (error) {
+    console.error("Erreur dans la fonction create:", error);
+    throw error;
+  }
+}
+
 export async function createNature(data: NatureSchemaType) {
   try {
     const response = await fetch(
@@ -520,6 +574,25 @@ export async function deleteCategory({ categoryId }: { categoryId: string }) {
     );
 
     const res: RequestResponse<TransactionCategoryType> = await response.json();
+    if (!response.ok) {
+      throw new Error(res.message);
+    }
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function deleteFiscalObject({ fiscalObjectId }: { fiscalObjectId: string }) {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/fiscal-object/${fiscalObjectId}`,
+      {
+        method: "DELETE",
+      },
+    );
+
+    const res: RequestResponse<FiscalObjectType> = await response.json();
     if (!response.ok) {
       throw new Error(res.message);
     }

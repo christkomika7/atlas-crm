@@ -29,6 +29,7 @@ import { acceptPayment } from "@/lib/data";
 import SourceModal from "../../../../components/modal/source-modal";
 import Spinner from "@/components/ui/spinner";
 import { RECEIPT_CATEGORY } from "@/config/constant";
+import { $Enums } from "@/lib/generated/prisma";
 
 type ReceiptFormProps = {
   closeModal: () => void;
@@ -49,6 +50,8 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
   const [categoryId, setCategoryId] = useState("");
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
   const [paymentMode, setPaymentMode] = useState<"cash" | "check" | "bank-transfer">();
+  const [currentAmountType, setCurrentAmountType] = useState<$Enums.AmountType>();
+
 
   const form = useForm<ReceiptSchemaType>({
     resolver: zodResolver(receiptSchema),
@@ -279,39 +282,36 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                         onValueChange={field.onChange}
                         className="flex -space-x-2"
                       >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem
-                            value="HT"
-                            id="HT"
-                            className="hidden"
-                          />
-                          <Label
-                            htmlFor="HT"
-                            className={cn(
-                              "flex bg-gray px-3 py-1 rounded-md h-full",
-                              field.value === "HT" && "bg-blue text-white"
-                            )}
-                          >
-                            HT
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem
-                            value="TTC"
-                            id="TTC"
-                            className="hidden"
-                          />
-                          <Label
-                            htmlFor="TTC"
-                            className={cn(
-                              "flex bg-gray px-3 py-1 rounded-md h-full",
-                              field.value === "TTC" && "bg-blue text-white"
-                            )}
-                          >
-                            TTC
-                          </Label>
-                        </div>
+                        {(currentAmountType === undefined || currentAmountType === "HT") && (
+                          <div className="flex items-center max-h-11 space-x-2">
+                            <RadioGroupItem value="HT" id="HT" className="hidden" />
+                            <Label
+                              htmlFor="HT"
+                              className={cn(
+                                "flex bg-gray px-3 py-1 rounded-md h-full",
+                                field.value === "HT" && "bg-blue text-white"
+                              )}
+                            >
+                              HT
+                            </Label>
+                          </div>
+                        )}
+                        {(currentAmountType === undefined || currentAmountType === "TTC") && (
+                          <div className="flex items-center max-h-11 space-x-2">
+                            <RadioGroupItem value="TTC" id="TTC" className="hidden" />
+                            <Label
+                              htmlFor="TTC"
+                              className={cn(
+                                "flex bg-gray px-3 py-1 rounded-md h-full",
+                                field.value === "TTC" && "bg-blue text-white"
+                              )}
+                            >
+                              TTC
+                            </Label>
+                          </div>
+                        )}
                       </RadioGroup>
+
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -408,6 +408,11 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                       }))}
                       value={field.value || ""}
                       setValue={e => {
+                        const current = documents.find(d => d.id === e)?.amountType;
+                        setCurrentAmountType(current);
+                        if (current) {
+                          form.setValue("amountType", current);
+                        }
                         field.onChange(e)
                       }}
                       placeholder="Référence du document"

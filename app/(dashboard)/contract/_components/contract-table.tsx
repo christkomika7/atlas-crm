@@ -27,6 +27,8 @@ import { getAllContracts } from "@/action/contract.action";
 import { $Enums } from "@/lib/generated/prisma";
 import { ClientContractType, LessorContractType } from "@/types/contract-types";
 import { formatDateToDashModel } from "@/lib/date";
+import Paginations from "@/components/paginations";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 
 type ContractTableProps = {
   filter: $Enums.ContractType;
@@ -41,41 +43,51 @@ export interface ContractTableRef {
 const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
   ({ selectedContractIds, setSelectedContractIds, filter }, ref) => {
     const id = useDataStore.use.currentCompany();
-    const [contracts, setContracts] = useState<ClientContractType[] | LessorContractType[]>([])
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+    const [totalItems, setTotalItems] = useState<number>(0);
+
+    const skip = (currentPage - 1) * pageSize;
+
+    const [contracts, setContracts] = useState<
+      ClientContractType[] | LessorContractType[]
+    >([]);
 
     const { mutate, isPending } = useQueryAction<
-      { companyId: string; filter: $Enums.ContractType },
+      { companyId: string; filter: $Enums.ContractType; skip?: number; take?: number },
       RequestResponse<ClientContractType[] | LessorContractType[]>
     >(getAllContracts, () => { }, "contracts");
 
     const toggleSelection = (contractId: string, checked: boolean) => {
       setSelectedContractIds((prev) =>
-        checked
-          ? [...prev, contractId]
-          : prev.filter((id) => id !== contractId)
+        checked ? [...prev, contractId] : prev.filter((id) => id !== contractId)
       );
     };
 
     const refreshContract = () => {
-      if (id) {
-        mutate({ companyId: id, filter }, {
+      if (!id) return;
+      mutate(
+        { companyId: id, filter, skip, take: pageSize },
+        {
           onSuccess(data) {
-            if (data.data) {
-              setContracts(data.data);
-            }
+            setContracts(data.data || []);
+            setTotalItems(data.total ?? 0);
           },
-        });
-      }
+        }
+      );
     };
 
     useImperativeHandle(ref, () => ({
       refreshContract,
     }));
 
-
+    // refresh when company id, filter or pagination change
     useEffect(() => {
       refreshContract();
-    }, [id]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, filter, currentPage]);
 
     const isSelected = (id: string) => selectedContractIds.includes(id);
 
@@ -89,22 +101,24 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
           return `${c.lessor?.lastname} ${c.lessor?.firstname}`;
         } else {
           if (c.billboard.lessorSupplier) {
-            return `${c.billboard.lessorSupplier?.lastname} ${c.billboard.lessorSupplier?.firstname}`
+            return `${c.billboard.lessorSupplier?.lastname} ${c.billboard.lessorSupplier?.firstname}`;
           }
-          return `${c.billboard?.lessorName}`
+          return `${c.billboard?.lessorName}`;
         }
       }
     }
 
     return (
-      <div className="border border-neutral-200 rounded-xl">
+      <div className="border border-neutral-200 rounded-xl flex flex-col">
         <Table>
           <TableHeader>
             <TableRow className="h-14">
               <TableHead className="min-w-[50px] font-medium" />
               <TableHead className="font-medium text-center">Date</TableHead>
               <TableHead className="font-medium text-center">Contrat</TableHead>
-              <TableHead className="font-medium text-center">Client | Fournisseur</TableHead>
+              <TableHead className="font-medium text-center">
+                Client | Fournisseur
+              </TableHead>
               <TableHead className="font-medium text-center">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -153,8 +167,8 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
                       deleteTitle="Confirmer la suppression du contrat"
                       deleteMessage={
                         <p>
-                          En supprimant le contrat, toutes les
-                          informations liées seront également supprimées.
+                          En supprimant le contrat, toutes les informations liées
+                          seront également supprimées.
                           <br />
                           <span className="font-semibold text-red-600">
                             Cette action est irréversible.
@@ -180,6 +194,16 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
             )}
           </TableBody>
         </Table>
+
+        <div className="flex justify-end p-4">
+          <Paginations
+            totalItems={totalItems}
+            pageSize={pageSize}
+            controlledPage={currentPage}
+            onPageChange={(page) => setCurrentPage(page)}
+            maxVisiblePages={5}
+          />
+        </div>
       </div>
     );
   }

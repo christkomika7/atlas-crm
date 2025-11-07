@@ -71,8 +71,24 @@ export async function GET(req: NextRequest) {
         where: {
             companyId: id,
             amountType: "HT",
-            category: { name: "Administration" },
-            nature: { name: "Fiscale" },
+            category: {
+                name: {
+                    equals: "Administration",
+                    mode: "insensitive"
+                }
+            },
+            nature: {
+                name: {
+                    equals: "Fiscale",
+                    mode: "insensitive"
+                }
+            },
+            fiscalObject: {
+                name: {
+                    equals: "TVA",
+                    mode: "insensitive"
+                }
+            }
         },
     });
 

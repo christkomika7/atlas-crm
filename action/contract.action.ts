@@ -3,29 +3,41 @@ import { ClientContractSchemaType, LessorContractSchemaType } from "@/lib/zod/co
 import { RequestResponse } from "@/types/api.types";
 import { ClientContractType, LessorContractType } from "@/types/contract-types";
 
-export async function getAllContracts({ companyId, filter }: { companyId: string, filter: $Enums.ContractType }) {
+export async function getAllContracts({
+    companyId,
+    filter,
+    skip = 0,
+    take = 10,
+}: {
+    companyId: string;
+    filter: $Enums.ContractType;
+    skip?: number;
+    take?: number;
+}): Promise<
+    RequestResponse<ClientContractType[] | LessorContractType[]> & { total?: number }
+> {
     const params = new URLSearchParams();
     params.append("type", filter);
+    params.append("skip", String(skip));
+    params.append("take", String(take));
 
     const queryString = params.toString();
 
-    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/contract/${companyId}${queryString ? `?${queryString}` : ""}`;
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/contract/${companyId}${queryString ? `?${queryString}` : ""
+        }`;
     try {
         const response = await fetch(url, {
-            method: 'GET',
+            method: "GET",
         });
-        if (filter === "CLIENT") {
-            const res: RequestResponse<ClientContractType[]> = await response.json()
-            if (!response.ok) {
-                throw new Error(res.message);
-            }
-            return res;
+
+        const res = await response.json();
+
+        if (!response.ok) {
+            // res.message is expected per your API shape
+            throw new Error(res.message || "Erreur lors de la récupération des contrats");
         }
 
-        const res: RequestResponse<LessorContractType[]> = await response.json()
-        if (!response.ok) {
-            throw new Error(res.message);
-        }
+        // On attend que le backend renvoie { state, data, total }
         return res;
     } catch (error) {
         throw error;

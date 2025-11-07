@@ -81,8 +81,14 @@ export type AllocationType = {
   name: string;
 };
 
+export type FiscalObjectType = {
+  id: string;
+  name: string;
+};
+
 export type TransactionDocument = {
   id: string;
+  amountType: $Enums.AmountType
   type: string;
   reference: string;
   price: string;

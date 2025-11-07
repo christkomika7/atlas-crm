@@ -159,6 +159,7 @@ model Company {
   lessorTypes                LessorType[]
   deletions                  Deletion[]
   contracts                  Contract[]
+  fiscalObjects              FiscalObject[]
 
   @@unique([email])
   @@map("company")
@@ -951,6 +952,9 @@ model Dibursement {
   supplierId String?
   supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
+  fiscalObjectId String?
+  fiscalObject   FiscalObject? @relation(fields: [fiscalObjectId], references: [id], onDelete: SetNull)
+
   paymentId String?  @unique
   payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 
@@ -972,6 +976,20 @@ model Source {
   dibursements Dibursement[]
 
   @@map("source")
+}
+
+model FiscalObject {
+  id           String        @id @default(ulid())
+  name         String        @unique
+  dibursements Dibursement[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("fiscal_object")
 }
 
 model TransactionCategory {
