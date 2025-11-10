@@ -76,7 +76,7 @@ export default function PreviewContract() {
                                             Télécharger
                                         </Button>
                                     </div>
-                                    <div className="border rounded-xl border-neutral-100">
+                                    <div className="border rounded-xl overflow-hidden border-neutral-100">
                                         {
                                             contratType === "CLIENT" ?
                                                 <ClientContract contract={contract as ClientContractType} /> :

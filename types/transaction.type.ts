@@ -99,8 +99,8 @@ export type GetTransactionsParams = {
   companyId: string;
 
   // Pagination
-  skip?: number;       // nombre d'éléments à ignorer
-  take?: number;       // nombre d'éléments à récupérer
+  skip?: number;
+  take?: number;
 
   // Filtres
   startDate?: string | null;
