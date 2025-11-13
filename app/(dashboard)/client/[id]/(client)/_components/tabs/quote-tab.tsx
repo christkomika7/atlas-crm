@@ -119,7 +119,7 @@ export default function QuoteTab() {
                 <TableCell className="text-center">
                   <TableActionButton
                     menus={dropdownMenu}
-                    id={quote.id}
+                    data={quote}
                     refreshQuotes={refreshQuotes}
                     deleteTitle="Confirmer la suppression du devis"
                     deleteMessage={

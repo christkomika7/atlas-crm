@@ -135,7 +135,7 @@ export default function InvoiceTab() {
                 <TableCell className="text-center">
                   <TableActionButton
                     menus={dropdownMenu}
-                    id={invoice.id}
+                    data={invoice}
                     refreshInvoices={refreshInvoices}
                     deleteTitle="Confirmer la suppression de la facture"
                     deleteMessage={
