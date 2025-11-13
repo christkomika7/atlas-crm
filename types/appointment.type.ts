@@ -17,3 +17,21 @@ export type AppointmentType = {
     company: CompanyType<string>;
     client: ClientType
 }
+
+export type GetAppointmentsParams = {
+    companyId: string;
+    type: "upcoming" | "past";
+    skip?: number;
+    take?: number;
+    [k: string]: any;
+};
+
+
+export type SortField =
+    | "byDate"
+    | "byClient"
+    | "byEmail"
+    | "byTime"
+    | "byAddress"
+    | "bySubject"
+    | "byTeamMember";

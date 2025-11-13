@@ -21,9 +21,10 @@ import { useForm } from "react-hook-form";
 
 type AddTaskStateProps = {
   id: string;
+  closeModal: () => void
 };
 
-export default function AddTaskState({ id }: AddTaskStateProps) {
+export default function AddTaskState({ id, closeModal }: AddTaskStateProps) {
   const addStep = useTaskStore.use.addStep();
   const form = useForm<TaskStepSchemaType>({
     resolver: zodResolver(taskStepSchema),
@@ -45,7 +46,7 @@ export default function AddTaskState({ id }: AddTaskStateProps) {
   const { mutate, isPending } = useQueryAction<
     TaskStepSchemaType,
     RequestResponse<TaskStepType>
-  >(create, () => {}, "task-steps");
+  >(create, () => { }, "task-steps");
 
   const handleButtonClick = (e: React.SyntheticEvent) => {
     e.stopPropagation();
@@ -61,6 +62,7 @@ export default function AddTaskState({ id }: AddTaskStateProps) {
           if (data.data) {
             addStep(data.data);
             form.reset();
+            closeModal()
           }
         },
       }

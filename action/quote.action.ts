@@ -1,7 +1,7 @@
 import { toDateOnlyString } from "@/lib/date";
 import { QuoteSchemaType, QuoteUpdateSchemaType } from "@/lib/zod/quote.schema";
 import { RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
-import { LocationBillboardDateType } from "@/stores/item.store";
+import { ItemType, LocationBillboardDateType } from "@/stores/item.store";
 import { RequestResponse } from "@/types/api.types";
 import { QuoteType } from "@/types/quote.types";
 
@@ -271,10 +271,14 @@ export async function duplicateQuote({ id, duplicateTo }: { id: string, duplicat
     }
 }
 
-export async function convertQuote({ id }: { id: string }) {
+export async function convertQuote({ id, items }: { id: string, items?: ItemType[] }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/quote/${id}/convert`, {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(items || []),
         });
 
         const res: RequestResponse<string> = await response.json()

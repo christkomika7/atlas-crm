@@ -45,25 +45,12 @@ export async function GET(req: NextRequest) {
 
     ]);
 
-    console.log({
-        invoices, data: invoices.map(record => ({
-            id: record.id,
-            type: "invoice",
-            reference: `${record.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(record.invoiceNumber, false)}`,
-            forUser: `${record.client?.lastname} ${record.client?.firstname}`,
-            amountPaid: new Decimal(record.payee.toString()),
-            amountUnpaid: record.amountType === "TTC" ?
-                new Decimal(record.totalTTC.toString()).minus(record.payee.toString()) :
-                new Decimal(record.totalHT.toString()).minus(record.payee.toString()),
-            status: record.isPaid ? "PAID" : !record.isPaid && new Decimal(record.payee.toString()).gt(0) ? "PENDING" : "WAIT"
-        })),
-    });
-
     const datas: RecordType[] = [
         ...invoices.map(record => ({
             id: record.id,
             type: "invoice",
             reference: `${record.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(record.invoiceNumber, false)}`,
+            company: `${record.client?.companyName}`,
             forUser: `${record.client?.lastname} ${record.client?.firstname}`,
             amountPaid: new Decimal(record.payee.toString()),
             amountUnpaid: record.amountType === "TTC" ?
@@ -75,6 +62,7 @@ export async function GET(req: NextRequest) {
             id: record.id,
             type: "purchase-order",
             reference: `${record.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(record.purchaseOrderNumber, false)}`,
+            company: `${record.supplier?.companyName}`,
             forUser: `${record.supplier?.lastname} ${record.supplier?.firstname}`,
             amountPaid: new Decimal(record.payee.toString()),
             amountUnpaid: record.amountType === "TTC" ?
@@ -88,6 +76,7 @@ export async function GET(req: NextRequest) {
             id: record.id,
             type: "quote",
             reference: `${record.company.documentModel?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(record.quoteNumber, false)}`,
+            company: `${record.client?.companyName}`,
             forUser: `${record.client?.lastname} ${record.client?.firstname}`,
             amountPaid: new Decimal(0),
             amountUnpaid: new Decimal(0),
@@ -98,6 +87,7 @@ export async function GET(req: NextRequest) {
             id: record.id,
             type: "delivery-note",
             reference: `${record.company.documentModel?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(record.deliveryNoteNumber, false)}`,
+            company: `${record.client?.companyName}`,
             forUser: `${record.client?.lastname} ${record.client?.firstname}`,
             amountPaid: new Decimal(0),
             amountUnpaid: new Decimal(0),

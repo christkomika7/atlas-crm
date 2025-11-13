@@ -169,8 +169,8 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
                   </TableCell>
                   <TableCell className="text-center">
                     <TableActionButton
+                      data={invoice}
                       menus={dropdownMenu}
-                      id={invoice.id}
                       refreshInvoices={refreshInvoice}
                       deleteTitle="Confirmer la suppression de la facture"
                       deleteMessage={

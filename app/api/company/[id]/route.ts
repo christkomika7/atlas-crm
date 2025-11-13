@@ -7,7 +7,6 @@ import { editCompanySchema, EditCompanySchemaType } from "@/lib/zod/company.sche
 import { NextResponse, type NextRequest } from "next/server";
 
 import prisma from "@/lib/prisma";
-import { checkAccessDeletion } from "@/lib/server";
 import { getSession } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
@@ -44,7 +43,6 @@ export async function PUT(req: NextRequest) {
 
         const data = parseData<EditCompanySchemaType>(editCompanySchema, companyData) as EditCompanySchemaType
 
-        // Récupération des données initiales
         const [company, companies, users] = await Promise.all([
             prisma.company.findUnique({
                 where: { id },
@@ -149,6 +147,8 @@ export async function PUT(req: NextRequest) {
                 taxIdentificationNumber: data.taxIdentificationNumber,
                 capitalAmount: data.capitalAmount,
                 currency: data.currency,
+                niu: data.niu,
+                legalForms: data.legalForms,
                 bankAccountDetails: data.bankAccountDetails,
                 businessActivityType: data.businessActivityType,
                 fiscalYearStart: data.fiscal.from,
@@ -161,7 +161,6 @@ export async function PUT(req: NextRequest) {
         });
 
 
-        console.log({ companyHasChangeName })
         if (companyHasChangeName) {
             const folder = createFolder([company.companyName]);
             console.log({ OLD_FOLDER: folder })

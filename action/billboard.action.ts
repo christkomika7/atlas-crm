@@ -174,6 +174,8 @@ export async function create(data: BillboardSchemaFormType) {
             formData.append("capital", data.lessor.capital?.toString() || "0");
             formData.append("rccm", data.lessor.rccm as string);
             formData.append("taxIdentificationNumber", data.lessor.taxIdentificationNumber as string);
+            formData.append("niu", data.lessor.niu || "");
+            formData.append("legalForms", data.lessor.legalForms as string);
             formData.append("bankName", data.lessor.bankName as string);
             formData.append("rib", data.lessor.rib as string);
             formData.append("iban", data.lessor.iban as string);
@@ -289,6 +291,8 @@ export async function update(data: EditBillboardSchemaFormType) {
             formData.append("capital", data.lessor.capital?.toString() || "0");
             formData.append("rccm", data.lessor.rccm as string);
             formData.append("taxIdentificationNumber", data.lessor.taxIdentificationNumber as string);
+            formData.append("niu", data.lessor.niu || "");
+            formData.append("legalForms", data.lessor.legalForms as string);
             formData.append("bankName", data.lessor.bankName as string);
             formData.append("rib", data.lessor.rib as string);
             formData.append("iban", data.lessor.iban as string);

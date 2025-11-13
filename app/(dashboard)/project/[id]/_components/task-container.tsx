@@ -38,13 +38,13 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
   const { mutate, isPending, data } = useQueryAction<
     { projectId: string },
     RequestResponse<TaskType[]>
-  >(allTasks, () => {}, "tasks");
+  >(allTasks, () => { }, "tasks");
 
   const { mutate: mutateEditStatusTask, isPending: isUpdatingStatus } =
     useQueryAction<
       { id: string; status: $Enums.ProjectStatus },
       RequestResponse<TaskType>
-    >(updateStatus, () => {}, "task");
+    >(updateStatus, () => { }, "task");
 
   useEffect(() => {
     if (projectId) {
@@ -61,8 +61,8 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
                   task.status === "TODO"
                     ? "todo"
                     : task.status === "IN_PROGRESS"
-                    ? "inProgress"
-                    : "done",
+                      ? "inProgress"
+                      : "done",
                 owner: [],
                 description: task.desc,
                 status: task.status,
@@ -79,6 +79,7 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
       );
     }
   }, [projectId]);
+
 
   function mapColumnToStatus(column: string): $Enums.ProjectStatus {
     switch (column) {

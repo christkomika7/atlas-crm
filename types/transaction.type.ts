@@ -154,9 +154,17 @@ export type CategoryItemType = {
   total: string;
 }
 
+export type NatureItemType = {
+  natureId: string;
+  name: string;
+  total: string;
+  percent: string;
+}
+
 export type CategoryFilterType = {
   total: Decimal;
-  items: CategoryItemType[]
+  categories: CategoryItemType[]
+  natures: NatureItemType[]
 }
 
 export type DividendType = {

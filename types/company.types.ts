@@ -34,6 +34,8 @@ export type CompanyType<E> = {
     website: string;
     businessRegistrationNumber: string;
     taxIdentificationNumber: string;
+    niu: string;
+    legalForms: string;
     capitalAmount: string;
     currency: string;
     bankAccountDetails: string;

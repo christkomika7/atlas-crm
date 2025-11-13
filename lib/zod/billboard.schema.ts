@@ -115,6 +115,8 @@ export const lessorSchemaBase = z.object({
     capital: z.instanceof(Decimal, { error: "La valeur inserer est invalide" }).optional(),
     rccm: z.string().optional(),
     taxIdentificationNumber: z.string().optional(),
+    legalForms: z.string().optional(),
+    niu: z.string().optional(),
     rib: z.string().optional(),
     iban: z.string().optional(),
     bicSwift: z.string().optional(),
@@ -169,6 +171,10 @@ export const lessorSchema = lessorSchemaBase
     .refine(
         (data) => data.lessorSpaceType !== "private" || !!data.taxIdentificationNumber,
         { message: "Le numéro d'identification fiscale est requis pour un espace public.", path: ["taxIdentificationNumber"] }
+    )
+    .refine(
+        (data) => data.lessorSpaceType !== "private" || !!data.legalForms,
+        { message: "Le statut juridique est requis pour un espace public.", path: ["legalForms"] }
     )
     .refine(
         (data) => data.lessorSpaceType !== "private" || !!data.rib,
@@ -402,6 +408,8 @@ export const lessorError = {
     capital: "Capital du bailleur",
     rccm: "Registre du commerce (RCCM)",
     taxIdentificationNumber: "Numéro d'identification fiscale",
+    niu: "NIU",
+    legalForms: "Statut juridique",
     rib: "RIB",
     iban: "IBAN",
     bicSwift: "BIC/SWIFT",

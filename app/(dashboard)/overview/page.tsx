@@ -1,7 +1,5 @@
 import AccountHeader from "@/components/header/account-header";
 import InvoiceInfos from "./_components/invoice-infos";
-import { Button } from "@/components/ui/button";
-import { ChevronDownIcon } from "@/components/icons";
 import SalesChart from "./_components/sales-chart";
 import RecentActivities from "./_components/recent-activities";
 import SalesIndicator from "./_components/sales-indicator";

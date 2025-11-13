@@ -83,6 +83,8 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
         codePostal: company.codePostal,
         email: company.email,
         website: company.website,
+        niu: company.niu,
+        legalForms: company.legalForms,
         businessRegistrationNumber: company.businessRegistrationNumber,
         taxIdentificationNumber: company.taxIdentificationNumber,
         capitalAmount: company.capitalAmount,
@@ -337,6 +339,46 @@ export default function UpdateCompanyForm({ id }: UpdateCompanyFormProps) {
                       value={field.value}
                       handleChange={(value) => {
                         handleData("taxIdentificationNumber", value)
+                        field.onChange(value)
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="niu"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="NIU"
+                      value={field.value}
+                      handleChange={(value) => {
+                        handleData("niu", value)
+                        field.onChange(value)
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="legalForms"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Statut juridique"
+                      value={field.value}
+                      handleChange={(value) => {
+                        handleData("legalForms", value)
                         field.onChange(value)
                       }}
                     />

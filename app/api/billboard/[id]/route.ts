@@ -166,6 +166,8 @@ export async function POST(req: NextRequest) {
                     capital: billboard.capital,
                     rccm: billboard.rccm,
                     taxIdentificationNumber: billboard.taxIdentificationNumber,
+                    niu: billboard.niu,
+                    legalForms: billboard.legalForms,
                     bankName: billboard.bankName,
                     rib: billboard.rib,
                     iban: billboard.iban,
@@ -294,7 +296,8 @@ export async function PUT(req: NextRequest) {
 
     const lessorFields = [
         "lessorSpaceType", "lessorType", "lessorCustomer", "lessorName", "lessorAddress", "lessorCity", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "rib", "iban", "bicSwift", "bankName",
-        "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition"
+        "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition",
+        'niu', "legalForms"
     ];
 
     const billboardData: Record<string, any> = {};
@@ -426,6 +429,8 @@ export async function PUT(req: NextRequest) {
                     capital: data.lessor.capital,
                     rccm: data.lessor.rccm,
                     taxIdentificationNumber: data.lessor.taxIdentificationNumber,
+                    niu: data.lessor.niu,
+                    legalForms: data.lessor.legalForms,
                     bankName: data.lessor.bankName,
                     rib: data.lessor.rib,
                     iban: data.lessor.iban,

@@ -1,18 +1,38 @@
 import { AppointmentSchemaType, EditAppointmentSchemaType } from "@/lib/zod/appointment.schema";
 import { RequestResponse } from "@/types/api.types";
-import { AppointmentType } from "@/types/appointment.type";
+import { AppointmentType, GetAppointmentsParams } from "@/types/appointment.type";
 
-export async function all({ companyId, filter }: { companyId: string, filter: "upcoming" | "past" }) {
+export async function all(params: GetAppointmentsParams) {
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/appointment/${companyId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ data: filter }),
-        });
+        const query = new URLSearchParams();
 
-        const res: RequestResponse<AppointmentType[]> = await response.json()
+        if (params.skip !== undefined) query.set("skip", String(params.skip));
+        if (params.take !== undefined) query.set("take", String(params.take));
+
+        if (params.type) query.set("type", params.type);
+
+        // Sort keys (only one active)
+        const sortKeys: string[] = ["byDate", "byClient", "byEmail", "byTime", "byAddress"];
+
+        for (const key of sortKeys) {
+            if (params[key]) {
+                // params[key] expected to be "asc" | "desc"
+                query.set(key, String(params[key]));
+                break;
+            }
+        }
+
+        const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/appointment/${params.companyId}?${query.toString()}`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            cache: "no-store",
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const res: RequestResponse<AppointmentType[]> = await response.json();
+
         if (!response.ok) {
             throw new Error(res.message);
         }

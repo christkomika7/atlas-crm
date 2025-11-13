@@ -422,10 +422,8 @@ export async function checkBillboardConflicts(
         return { hasConflict: false, conflicts: [] };
     }
 
-    // Récupérer les IDs des billboards
     const billboardIds = validBillboards.map(b => b.billboardId);
 
-    // Récupérer les items existants pour ces billboards
     const existingItems = await prisma.item.findMany({
         where: {
             billboardId: { in: billboardIds },
@@ -440,22 +438,19 @@ export async function checkBillboardConflicts(
     });
 
 
-    console.log({ existingItems });
-
-
     const conflicts: ConflictResult['conflicts'] = [];
 
     // Vérifier chaque nouveau billboard
     for (const newBillboard of validBillboards) {
-        const newStart = parseDate(newBillboard.locationStart);
-        const newEnd = parseDate(newBillboard.locationEnd);
+
+        const newStart = parseDate(new Date(newBillboard.locationStart as Date));
+        const newEnd = parseDate(new Date(newBillboard.locationEnd as Date));
 
         // Ignorer si les dates ne sont pas valides
         if (!newStart || !newEnd) {
             continue;
         }
 
-        console.log({ newStart, newEnd });
 
         // Vérifier que la date de fin est après la date de début
         if (newEnd < newStart) {

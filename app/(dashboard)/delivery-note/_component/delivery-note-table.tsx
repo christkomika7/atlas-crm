@@ -136,7 +136,7 @@ const DeliveryNoteTable = forwardRef<DeliveryNoteTableRef, DeliveryNoteTableProp
                   <TableCell className="text-center">
                     <TableActionButton
                       menus={dropdownMenu}
-                      id={deliveryNote.id}
+                      data={deliveryNote}
                       refreshDeliveryNote={refreshDeliveryNote}
                       deleteTitle="Confirmer la suppression du bon de livraison"
                       deleteMessage={

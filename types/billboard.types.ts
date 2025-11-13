@@ -69,6 +69,8 @@ export type BillboardType = {
     capital?: Decimal;
     rccm?: string;
     taxIdentificationNumber?: string;
+    niu?: string;
+    legalForms: string;
     bankName?: string;
     rib?: string;
     iban?: string;

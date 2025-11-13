@@ -1,4 +1,3 @@
-import { all } from "@/action/billboard.action";
 import BillboardStatus from "@/app/(dashboard)/billboard/_component/billboard-status";
 import { Checkbox } from "@/components/ui/checkbox";
 import Spinner from "@/components/ui/spinner";
@@ -40,7 +39,6 @@ export default function BillboardTab({ isGettingBillboards, billboards }: Billbo
   }
 
   function toggleSelection(check: boolean, billboard: BillboardType) {
-    // Vérifier d'abord si un client est sélectionné
     if (!clientId) {
       return toast.error("Veuillez sélectionner un client en premier.");
     }

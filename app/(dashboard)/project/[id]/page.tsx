@@ -25,7 +25,6 @@ export default function ClientProjectPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* En-tête fixe */}
       <div className="flex-shrink-0 mb-5 ">
         <div>
           <Header back={1} title="Informations du client" />
@@ -54,8 +53,6 @@ export default function ClientProjectPage() {
               )}
             </div>
           </div>
-
-          {/* Container qui prend tout l'espace restant */}
           <div className="flex-1 min-h-0">
             <TaskContainer projectId={data?.data?.id as string} />
           </div>

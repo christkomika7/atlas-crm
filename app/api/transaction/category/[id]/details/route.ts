@@ -19,7 +19,11 @@ export async function GET(req: NextRequest) {
 
     // 1) total général des dibursements (Decimal from Prisma)
     const totalAgg = await prisma.dibursement.aggregate({
-        where: { companyId: id },
+        where: {
+            companyId: id, category: {
+                type: "DISBURSEMENT"
+            }
+        },
         _sum: { amount: true },
     });
 
@@ -29,7 +33,7 @@ export async function GET(req: NextRequest) {
     // 2) somme par catégorie (groupBy)
     const sumsByCategory = await prisma.dibursement.groupBy({
         by: ["categoryId"],
-        where: { companyId: id },
+        where: { companyId: id, category: { type: "DISBURSEMENT" } },
         _sum: { amount: true },
     });
 
@@ -42,7 +46,7 @@ export async function GET(req: NextRequest) {
 
     // 3) récupérer toutes les catégories de la société
     const categories = await prisma.transactionCategory.findMany({
-        where: { companyId: id },
+        where: { companyId: id, type: "DISBURSEMENT" },
         select: { id: true, name: true },
         orderBy: { name: "asc" },
     });

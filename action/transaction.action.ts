@@ -207,6 +207,7 @@ export async function getCategoryDetails({ companyId }: { companyId: string }) {
       url,
       {
         method: "GET",
+        cache: "no-store"
       },
     );
 
@@ -236,6 +237,7 @@ export async function getCategoryByFilters({ companyId, range, category }: { com
       url,
       {
         method: "GET",
+        cache: "no-store"
       },
     );
 

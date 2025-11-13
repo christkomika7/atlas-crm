@@ -101,6 +101,9 @@ export async function POST(req: NextRequest) {
                         discount: deliveryNote.discount!,
                         discountType: deliveryNote.discountType,
                         pathFiles: folderFile,
+                        fromRecordId: deliveryNote.id,
+                        fromRecordName: "Bon de livraison",
+                        fromRecordReference: `${deliveryNote.company.documentModel?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(deliveryNote.deliveryNoteNumber, false)}`,
                         paymentLimit: deliveryNote.paymentLimit,
                         totalTTC: deliveryNote.totalTTC,
                         note: deliveryNote.note!,
@@ -219,7 +222,7 @@ export async function POST(req: NextRequest) {
                         note: deliveryNote.note!,
                         files: savedPaths,
                         fromRecordId: deliveryNote.id,
-                        fromRecordName: "Devis",
+                        fromRecordName: "Bon de livraison",
                         fromRecordReference: `${deliveryNote.company.documentModel?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(deliveryNote.deliveryNoteNumber, false)}`,
                         items: {
                             create: itemForCreate

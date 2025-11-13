@@ -1,7 +1,7 @@
 import { toDateOnlyString } from "@/lib/date";
 import { DeliveryNoteSchemaType, DeliveryNoteUpdateSchemaType } from "@/lib/zod/delivery-note.schema";
 import { RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
-import { LocationBillboardDateType } from "@/stores/item.store";
+import { ItemType, LocationBillboardDateType } from "@/stores/item.store";
 import { RequestResponse } from "@/types/api.types";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 
@@ -276,6 +276,28 @@ export async function duplicateDeliveryNote({ id, duplicateTo }: { id: string, d
         });
 
         const res: RequestResponse<null> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+export async function convertDeliveryNote({ id, items }: { id: string, items?: ItemType[] }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/delivery-note/${id}/convert`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(items || []),
+        });
+
+        const res: RequestResponse<string> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }

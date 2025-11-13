@@ -83,6 +83,8 @@ export async function POST(req: NextRequest) {
         phone: data.phone,
         path: folder,
         website: data.website,
+        niu: data.niu,
+        legalForms: data.legalForms,
         address: data.address,
         businessSector: data.businessSector,
         businessRegistrationNumber: data.businessRegistrationNumber,

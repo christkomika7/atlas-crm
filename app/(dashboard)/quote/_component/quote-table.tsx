@@ -135,7 +135,7 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
                   <TableCell className="text-center">
                     <TableActionButton
                       menus={dropdownMenu}
-                      id={quote.id}
+                      data={quote}
                       refreshQuotes={refreshQuote}
                       deleteTitle="Confirmer la suppression du rendez-vous"
                       deleteMessage={

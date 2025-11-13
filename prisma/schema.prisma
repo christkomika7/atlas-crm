@@ -122,6 +122,8 @@ model Company {
   website                    String?
   businessRegistrationNumber String
   taxIdentificationNumber    String
+  niu                        String?               @default("")
+  legalForms                 String                @default("")
   capitalAmount              String
   currency                   String
   bankAccountDetails         String
@@ -177,6 +179,9 @@ model Supplier {
   website                    String?
   paidAmount                 Decimal  @default(0) @db.Decimal(15, 2)
   due                        Decimal  @default(0) @db.Decimal(15, 2)
+  niu                        String?  @default("")
+  legalForms                 String   @default("")
+  capital                    String   @default("0")
   address                    String
   businessRegistrationNumber String
   taxIdentificationNumber    String
@@ -272,6 +277,9 @@ model Client {
   businessSector             String
   businessRegistrationNumber String
   taxIdentificationNumber    String
+  niu                        String?  @default("")
+  legalForms                 String   @default("")
+  capital                    String   @default("0")
   discount                   String
   paymentTerms               String
   information                String?
@@ -414,6 +422,8 @@ model Billboard {
   lessorPhone             String?
   lessorEmail             String?
   capital                 Decimal? @default(0) @db.Decimal(15, 2)
+  niu                     String?  @default("")
+  legalForms              String   @default("")
   rccm                    String?
   taxIdentificationNumber String?
   bankName                String?

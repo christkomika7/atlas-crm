@@ -33,17 +33,19 @@ export default async function DashboardLayout({
     <div className="relative grid grid-cols-[260px_1fr] bg-dark w-screen h-screen">
       <div className="flex flex-col space-y-6 p-6 h-full overflow-y-auto">
         <div className="flex flex-shrink-0 justify-center">
-          <Logo color="white" />
+          <Logo width={200} height={55} />
         </div>
         <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full max-h-[calc(100vh-150px)] pr-2">
-            <SidebarMenu
-              id={data.user?.id as string}
-              currentCompany={data.user?.currentCompany ?? ""}
-              currency={data.user.currency ?? ""}
-              role={data.user?.role}
-              permissions={data.user?.permissions}
-            />
+          <ScrollArea className="h-full max-h-[calc(100vh-150px)] pl-3" dir="rtl">
+            <div dir="ltr">
+              <SidebarMenu
+                id={data.user?.id as string}
+                currentCompany={data.user?.currentCompany ?? ""}
+                currency={data.user.currency ?? ""}
+                role={data.user?.role}
+                permissions={data.user?.permissions}
+              />
+            </div>
           </ScrollArea>
         </div>
       </div>

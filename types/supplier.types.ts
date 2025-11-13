@@ -12,6 +12,8 @@ export type SupplierType = {
     path: string;
     paidAmount: string;
     due: string;
+    niu?: string;
+    legalForms: string;
     businessSector: string;
     businessRegistrationNumber: string;
     taxIdentificationNumber: string;

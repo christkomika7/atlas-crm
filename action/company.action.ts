@@ -122,6 +122,8 @@ export async function create(data: CompanySchemaType) {
         formData.append("registeredAddress", data.registeredAddress);
         formData.append("phoneNumber", data.phoneNumber);
         formData.append("email", data.email);
+        formData.append("niu", data.niu);
+        formData.append("legalForms", data.legalForms);
         formData.append("website", data.website ?? "");
         formData.append("businessRegistrationNumber", data.businessRegistrationNumber);
         formData.append("taxIdentificationNumber", data.taxIdentificationNumber);
@@ -171,7 +173,6 @@ export async function update(data: EditCompanySchemaType) {
             }
         });
 
-
         formData.append("companyName", data.companyName);
         formData.append("country", data.country);
         formData.append("city", data.city);
@@ -180,6 +181,8 @@ export async function update(data: EditCompanySchemaType) {
         formData.append("phoneNumber", data.phoneNumber);
         formData.append("email", data.email);
         formData.append("website", data.website ?? "");
+        formData.append("niu", data.niu);
+        formData.append("legalForms", data.legalForms);
         formData.append("businessRegistrationNumber", data.businessRegistrationNumber);
         formData.append("taxIdentificationNumber", data.taxIdentificationNumber);
         formData.append("capitalAmount", data.capitalAmount);

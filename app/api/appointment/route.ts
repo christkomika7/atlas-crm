@@ -126,6 +126,7 @@ export async function POST(req: NextRequest) {
 
     } catch (error) {
         await removePath(savedPaths)
+        console.error({ error })
 
         return NextResponse.json({
             status: "error",

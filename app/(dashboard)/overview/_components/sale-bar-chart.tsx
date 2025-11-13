@@ -8,9 +8,8 @@ import {
   ChartConfig,
   ChartContainer,
 } from "@/components/ui/chart";
-import { CategoryItemType } from "@/types/transaction.type";
 import { colors } from "@/lib/data";
-import { formatNumber, toShortNum } from "@/lib/utils";
+import { toShortNum } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
 
 export const description = "A donut chart with text (dépenses)";
@@ -21,9 +20,15 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+type ItemType = {
+  id: string;
+  name: string;
+  total: string;
+}
+
 type SaleBarChartProps = {
   currency: string;
-  items: CategoryItemType[];
+  items: ItemType[];
   isLoading: boolean;
 };
 
@@ -74,9 +79,9 @@ export function SaleBarChart({ items, currency, isLoading }: SaleBarChartProps) 
       const raw = (it.total ?? "0").toString().replace(",", ".");
       const value = new Decimal(raw || "0").toNumber();
       return {
-        name: it.categoryName || it.categoryId,
+        name: it.name || it.id,
         value,
-        id: it.categoryId,
+        id: it.id,
         index,
         isPlaceholder: false,
       };

@@ -241,6 +241,8 @@ export function extractCompanyData(formData: FormData) {
     "phoneNumber",
     "city",
     "codePostal",
+    "niu",
+    "legalForms",
     "email",
     "website",
     "businessRegistrationNumber",

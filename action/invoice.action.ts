@@ -2,7 +2,7 @@ import { toDateOnlyString } from "@/lib/date";
 import { InvoiceSchemaType, InvoiceUpdateSchemaType } from "@/lib/zod/invoice.schema";
 import { InvoicePaymentSchemaType } from "@/lib/zod/payment.schema";
 import { RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
-import { LocationBillboardDateType } from "@/stores/item.store";
+import { ItemType, LocationBillboardDateType } from "@/stores/item.store";
 import { RequestResponse } from "@/types/api.types";
 import { InvoiceType, PaidInfosInvoiceType, RecurrenceType } from "@/types/invoice.types";
 
@@ -354,7 +354,7 @@ export async function share(data: RecordEmailSchemaType) {
     }
 }
 
-export async function duplicateInvoice({ invoiceId, duplicateTo }: { invoiceId: string, duplicateTo?: "invoice" | "quote" | "delivery-note" }) {
+export async function duplicateInvoice({ invoiceId, duplicateTo, items }: { invoiceId: string, duplicateTo?: "invoice" | "quote" | "delivery-note", items?: ItemType[] }) {
     const params = new URLSearchParams();
     if (duplicateTo) params.append("type", duplicateTo);
 
@@ -365,6 +365,10 @@ export async function duplicateInvoice({ invoiceId, duplicateTo }: { invoiceId: 
     try {
         const response = await fetch(url, {
             method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(items || []),
         });
 
         const res: RequestResponse<null> = await response.json();

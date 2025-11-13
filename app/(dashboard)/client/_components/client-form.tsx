@@ -282,25 +282,63 @@ export default function ClientForm({
               )}
             />
           </div>
-          <FormField
-            control={form.control}
-            name="paymentTerms"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <Combobox
-                    datas={paymentTerms}
-                    value={field.value}
-                    setValue={field.onChange}
-                    placeholder="Conditions de paiement"
-                    searchMessage="Rechercher une condition de paiement"
-                    noResultsMessage="Aucune condition trouvé."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="gap-x-2 grid grid-cols-3 w-full">
+            <FormField
+              control={form.control}
+              name="niu"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      required={false}
+                      design="float"
+                      label="NIU"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="legalForms"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Statut juridique"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="paymentTerms"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      datas={paymentTerms}
+                      value={field.value}
+                      setValue={field.onChange}
+                      placeholder="Conditions de paiement"
+                      searchMessage="Rechercher une condition de paiement"
+                      noResultsMessage="Aucune condition trouvé."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+          </div>
           <div className="gap-x-2 grid grid-cols-2 w-full">
             <FormField
               control={form.control}

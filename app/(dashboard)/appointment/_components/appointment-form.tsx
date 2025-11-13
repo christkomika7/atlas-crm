@@ -2,7 +2,6 @@ import { useForm } from "react-hook-form";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -78,11 +77,8 @@ export default function AppointmentForm({
 
   useEffect(() => {
     if (id) {
-      const initForm = {
-        company: id,
-      };
-
-      form.reset(initForm);
+      form.setValue("company", id);
+      form.setValue("notify", false);
     }
   }, [form, id]);
 
@@ -142,7 +138,7 @@ export default function AppointmentForm({
                       datas={
                         clients.map((client) => ({
                           id: client.id,
-                          label: `${client.firstname} ${client.lastname}`,
+                          label: `${client.companyName} - ${client.firstname} ${client.lastname}`,
                           value: client.id,
                         })) ?? []
                       }

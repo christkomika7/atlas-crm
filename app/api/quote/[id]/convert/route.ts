@@ -5,6 +5,7 @@ import { $Enums } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
 import { checkBillboardConflicts } from "@/lib/server";
 import { generateAmaId, generateId, getIdFromUrl } from "@/lib/utils";
+import { ItemType } from "@/stores/item.store";
 import { BillboardItem } from "@/types/invoice.types";
 import Decimal from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
@@ -12,6 +13,8 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function POST(req: NextRequest) {
     await checkAccess(["QUOTES"], "MODIFY");
     const id = getIdFromUrl(req.url, 2) as string;
+
+    const updatedItems = await req.json();
 
     const quote = await prisma.quote.findUnique({
         where: { id },
@@ -40,9 +43,8 @@ export async function POST(req: NextRequest) {
         select: { quoteNumber: true },
     });
 
-    const billboards = quote.items.filter(it => it.itemType === "billboard");
+    const billboards: ItemType[] = (updatedItems as ItemType[]) ? updatedItems : quote.items.filter(it => it.itemType === "billboard");
     const conflictResult = await checkBillboardConflicts(billboards as unknown as BillboardItem[]);
-
 
     if (conflictResult.hasConflict) {
         return NextResponse.json({
@@ -59,7 +61,7 @@ export async function POST(req: NextRequest) {
         const amount = quote.amountType === "TTC" ? quote.totalTTC : quote.totalHT;
 
         const itemForCreate = [
-            ...quote.items.filter(it => it.itemType === "billboard").map(billboard => ({
+            ...billboards.map(billboard => ({
                 state: $Enums.ItemState.APPROVED,
                 name: billboard.name,
                 reference: billboard.reference,

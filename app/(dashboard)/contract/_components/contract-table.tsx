@@ -201,7 +201,7 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
             pageSize={pageSize}
             controlledPage={currentPage}
             onPageChange={(page) => setCurrentPage(page)}
-            maxVisiblePages={5}
+            maxVisiblePages={DEFAULT_PAGE_SIZE}
           />
         </div>
       </div>

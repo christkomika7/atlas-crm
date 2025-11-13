@@ -28,7 +28,7 @@ export const TRANSACTION_CATEGORIES = ["Règlement loyer", "Règlement salaire",
 export const RECEIPT_CATEGORY = ["Règlement client", "Reglement client"]
 export const DIBURSMENT_CATEGORY = ["Règlement fournisseur", "Reglement fournisseur"]
 export const ADMINISTRATION_CATEGORY = "Administration";
-export const FISCAL_NATURE = "Fiscale";
+export const FISCAL_NATURE = "Fiscal";
 export const FISCAL_OBJECT = "TVA"
 // PREFIX
 export const INVOICE_PREFIX = "Facture";

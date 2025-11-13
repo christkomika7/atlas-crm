@@ -88,6 +88,8 @@ export default function CreateCompanyForm() {
       codePostal: company?.codePostal ?? "",
       businessRegistrationNumber: company?.businessRegistrationNumber ?? "",
       taxIdentificationNumber: company?.taxIdentificationNumber ?? "",
+      niu: company?.niu,
+      legalForms: company?.legalForms,
       capitalAmount: company ? company.capitalAmount : "",
       vatRate: taxs,
       currency: company?.currency ?? "",
@@ -350,6 +352,46 @@ export default function CreateCompanyForm() {
                       value={field.value}
                       handleChange={(value) => {
                         handleData("taxIdentificationNumber", value)
+                        field.onChange(value)
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="niu"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="NIU"
+                      value={field.value}
+                      handleChange={(value) => {
+                        handleData("niu", value)
+                        field.onChange(value)
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="legalForms"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Statut juridique"
+                      value={field.value}
+                      handleChange={(value) => {
+                        handleData("legalForms", value)
                         field.onChange(value)
                       }}
                     />

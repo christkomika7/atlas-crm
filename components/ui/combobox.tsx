@@ -40,6 +40,7 @@ type ComboboxProps = {
   inputClassName?: string;
   disabled?: boolean;
   addElement?: React.ReactNode;
+  width?: number
 };
 
 export function Combobox({
@@ -56,11 +57,11 @@ export function Combobox({
   inputClassName = "",
   disabled,
   addElement,
+  width
 }: ComboboxProps) {
   const ref = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
 
-  // Fonction pour obtenir le label affiché
   const getDisplayValue = () => {
     if (!value) return "";
     const selectedData = datas.find((data) => data.value === value);
@@ -89,8 +90,9 @@ export function Combobox({
         </div>
       </PopoverTrigger>
       <PopoverContent
+        align="end"
         className="p-0"
-        style={{ width: ref.current?.offsetWidth }}
+        style={{ width: width ? width : ref.current?.offsetWidth }}
       >
         <Command>
           <CommandInput placeholder={searchMessage} disabled={isLoading} />

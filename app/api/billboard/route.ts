@@ -46,7 +46,8 @@ export async function POST(req: NextRequest) {
 
     const lessorFields = [
         "lessorSpaceType", "lessorType", "lessorCustomer", "lessorName", "lessorAddress", "lessorCity", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "rib", "iban", "bicSwift", "bankName",
-        "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition"
+        "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition",
+        "niu", "legalForms"
     ];
 
     const rentalStartDate = rawData["rentalStartDate"];
@@ -84,8 +85,6 @@ export async function POST(req: NextRequest) {
 
         },
     };
-
-    console.log({ dataToValidate });
 
     const data = parseData<BillboardSchemaFormType>(
         billboardFormSchema,
@@ -188,6 +187,8 @@ export async function POST(req: NextRequest) {
                     capital: data.lessor.capital,
                     rccm: data.lessor.rccm,
                     taxIdentificationNumber: data.lessor.taxIdentificationNumber,
+                    legalForms: data.lessor.legalForms,
+                    niu: data.lessor.niu,
                     bankName: data.lessor.bankName,
                     rib: data.lessor.rib,
                     iban: data.lessor.iban,

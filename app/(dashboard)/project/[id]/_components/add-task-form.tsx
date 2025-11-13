@@ -59,13 +59,13 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
     "collaborators"
   );
 
+  console.log({ param })
+
   useEffect(() => {
-    if (param.projectId) {
-      form.reset({
-        projectId: param.projectId as string,
-      });
+    if (param.id) {
+      form.setValue("projectId", param.id as string)
     }
-  }, [param.projectId, form]);
+  }, [param.id, form]);
 
   useEffect(() => {
     if (id) {
@@ -81,9 +81,9 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
   async function submit(taskData: TaskSchemaType) {
     const { success, data } = taskSchema.safeParse(taskData);
     if (!success) return;
-    if (!param.projectId) return toast.error("Aucun projet trouvé.");
+    if (!param.id) return toast.error("Aucun projet trouvé.");
     mutate(
-      { ...data, projectId: param.projectId as string },
+      { ...data, projectId: param.id as string },
       {
         onSuccess(data) {
           if (data.data) {

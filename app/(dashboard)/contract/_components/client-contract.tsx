@@ -8,8 +8,6 @@ type ClientContractProps = {
 }
 
 export default function ClientContract({ contract }: ClientContractProps) {
-
-
     return (
         <div id="contract" className='w-full'>
             <ContractPage title='Contrat AG-LOC-001' page='1'>

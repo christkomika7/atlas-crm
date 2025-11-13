@@ -166,3 +166,38 @@ export async function removeManyContract({ ids }: { ids: string[] }) {
         throw error;
     }
 }
+
+
+export async function exportToWord(data: { html: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/upload/word`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            const errRes = await response.json().catch(() => null);
+            throw new Error(errRes?.message || "Erreur lors de l'export Word");
+        }
+
+        const blob = await response.blob();
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'export.docx';
+        document.body.appendChild(a);
+        a.click();
+
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        return { status: "success", message: "Fichier téléchargé avec succès" };
+    } catch (error) {
+        console.error("Erreur dans la fonction exportToWord:", error);
+        throw error;
+    }
+}

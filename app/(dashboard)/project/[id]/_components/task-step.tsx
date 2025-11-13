@@ -1,17 +1,17 @@
-import { all, check, remove } from "@/action/step.action";
-import PopoverContainer from "@/components/modal/popover-container";
+import { check, remove } from "@/action/step.action";
 import { Button } from "@/components/ui/button";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
 import { TaskStepType } from "@/types/step.type";
 import { EditIcon, PlusIcon, XIcon } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import AddTaskState from "./add-task-state";
 import { Checkbox } from "@/components/ui/checkbox";
 import Spinner from "@/components/ui/spinner";
 import { cn, sanitize } from "@/lib/utils";
 import useTaskStore from "@/stores/task.store";
 import EditTaskState from "./edit-task-state";
+import ModalContainer from "@/components/modal/modal-container";
 
 type TaskStepProps = {
   id: string;
@@ -22,16 +22,20 @@ export default function TaskStep({ id }: TaskStepProps) {
   const removeStep = useTaskStore.use.removeStep();
   const updateStep = useTaskStore.use.updateStep();
   const [stepData, setStepData] = useState<TaskStepType[] | null>(null);
+  const [open, setOpen] = useState({
+    add: false,
+    edit: false
+  });
 
   const { mutate: mutateRemove, isPending: isPendingRemove } = useQueryAction<
     { id: string },
     RequestResponse<TaskStepType>
-  >(remove, () => {}, "task-steps");
+  >(remove, () => { }, "task-steps");
 
   const { mutate: mutateCheck, isPending: isPendingCheck } = useQueryAction<
     { id: string; check: boolean },
     RequestResponse<TaskStepType>
-  >(check, () => {}, "task-steps");
+  >(check, () => { }, "task-steps");
 
   useEffect(() => {
     if (id) {
@@ -76,8 +80,9 @@ export default function TaskStep({ id }: TaskStepProps) {
           <span>Étape(s)</span>{" "}
           {(isPendingCheck || isPendingRemove) && <Spinner size={10} />}
         </div>
-        <PopoverContainer
-          actionButton={
+        <ModalContainer
+          size="sm"
+          action={
             <Button
               onClick={handleButtonClick}
               onMouseDown={handleButtonClick}
@@ -86,10 +91,19 @@ export default function TaskStep({ id }: TaskStepProps) {
             >
               <PlusIcon className="w-4 h-4" />
             </Button>
+
           }
+          title="Nouvelle étape"
+          open={open.add}
+          setOpen={function (value: SetStateAction<boolean>): void {
+            setOpen({ ...open, add: value as boolean });
+          }}
         >
-          <AddTaskState id={id} />
-        </PopoverContainer>
+
+          <AddTaskState id={id} closeModal={() =>
+            setOpen({ ...open, add: false })
+          } />
+        </ModalContainer>
       </div>
 
       <div className="space-y-1">
@@ -120,8 +134,9 @@ export default function TaskStep({ id }: TaskStepProps) {
                 </span>
               </label>
               <div className="flex items-center gap-x-2">
-                <PopoverContainer
-                  actionButton={
+                <ModalContainer
+                  size="sm"
+                  action={
                     <span
                       onClick={handleButtonClick}
                       onMouseDown={handleButtonClick}
@@ -129,10 +144,19 @@ export default function TaskStep({ id }: TaskStepProps) {
                     >
                       <EditIcon className="w-3.5 h-3.5 text-blue" />
                     </span>
+
                   }
+                  title="Modifier l'étape"
+                  open={open.edit}
+                  setOpen={function (value: SetStateAction<boolean>): void {
+                    setOpen({ ...open, edit: value as boolean });
+                  }}
                 >
-                  <EditTaskState id={step.id} />
-                </PopoverContainer>
+                  <EditTaskState id={step.id} closeModal={() =>
+                    setOpen({ ...open, edit: false })
+                  } />
+                </ModalContainer>
+
 
                 <span
                   onMouseDown={handleButtonClick}

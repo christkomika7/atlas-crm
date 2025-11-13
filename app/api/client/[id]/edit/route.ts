@@ -36,7 +36,6 @@ export async function PUT(req: NextRequest) {
 
     const folder = createFolder([client.company.companyName, "client", `${data.firstname}_${data.lastname}`]);
 
-    // Suppression des fichiers supprimés par l'utilisateur
     const deletedDocs = previousDocs.filter(doc => !data.lastUploadDocuments?.includes(doc));
     await removePath(deletedDocs);
 
@@ -47,13 +46,11 @@ export async function PUT(req: NextRequest) {
 
     const savedPaths: string[] = [];
 
-    // Sauvegarde des nouveaux fichiers
     for (const file of files) {
         const filePath = await saveFile(file, folder);
         savedPaths.push(filePath);
     }
 
-    // 🛠 Construction dynamique de l’objet de mise à jour
     const updateData: Prisma.ClientUpdateInput = {
         companyName: data.companyName,
         lastname: data.lastname,
@@ -61,6 +58,8 @@ export async function PUT(req: NextRequest) {
         email: data.email,
         phone: data.phone,
         website: data.website,
+        niu: data.niu,
+        legalForms: data.legalForms,
         path: folder,
         address: data.address,
         businessSector: data.businessSector,

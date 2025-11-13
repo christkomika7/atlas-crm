@@ -359,6 +359,43 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
 
                 <FormField
                   control={form.control}
+                  name="lessor.niu"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <TextInput
+                          required={false}
+                          design="float"
+                          label="NIU"
+                          value={field.value}
+                          handleChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="lessor.legalForms"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <TextInput
+                          design="float"
+                          label="Statut juridique"
+                          value={field.value}
+                          handleChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="lessor.bankName"
                   render={({ field }) => (
                     <FormItem className="-space-y-2">

@@ -50,6 +50,12 @@ export const companySchema = z.object({
     businessRegistrationNumber: z.string().min(1, {
         message: "Le numéro d’immatriculation (RCCM) est obligatoire."
     }),
+    niu: z.string().min(1, {
+        message: "Le NIU est obligatoire."
+    }),
+    legalForms: z.string().min(1, {
+        message: "Le statut juridique est obligatoire."
+    }),
     taxIdentificationNumber: z.string().min(1, {
         message: "Le numéro d'identification fiscale (NIF) est obligatoire."
     }),
@@ -91,6 +97,12 @@ export const editCompanySchema = z.object({
     codePostal: z.string().optional(),
     registeredAddress: z.string().min(1, {
         message: "L'adresse enregistrée est obligatoire."
+    }),
+    niu: z.string().min(1, {
+        message: "Le NIU est obligatoire."
+    }),
+    legalForms: z.string().min(1, {
+        message: "Le statut juridique est obligatoire."
     }),
     phoneNumber: z.string().min(1, {
         message: "Le numéro de téléphone est obligatoire."

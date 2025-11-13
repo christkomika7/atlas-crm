@@ -70,7 +70,6 @@ export function DatePicker({
     }
   }, [value, mode, isSingle]);
 
-  // --- IMPORTANT FIX: base displayValue on internal state (not only on prop) ---
   let displayValue: string = "";
 
   if (isSingle) {
@@ -120,8 +119,6 @@ export function DatePicker({
     }
   };
 
-  // debug helper — supprime quand tout marche
-  // console.debug("DatePicker internal:", { singleDate, multipleDates, rangeDates, displayValue });
 
   return (
     <Popover>

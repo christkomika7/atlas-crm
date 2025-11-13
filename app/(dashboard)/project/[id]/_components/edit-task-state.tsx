@@ -24,9 +24,10 @@ import { useForm } from "react-hook-form";
 
 type EditTaskStateProps = {
   id: string;
+  closeModal: () => void
 };
 
-export default function EditTaskState({ id }: EditTaskStateProps) {
+export default function EditTaskState({ id, closeModal }: EditTaskStateProps) {
   const updateStep = useTaskStore.use.updateStep();
   const form = useForm<EditTaskStepSchemaType>({
     resolver: zodResolver(editTaskStepSchema),
@@ -42,14 +43,14 @@ export default function EditTaskState({ id }: EditTaskStateProps) {
     data,
   } = useQueryAction<{ id: string }, RequestResponse<TaskStepType>>(
     unique,
-    () => {},
+    () => { },
     "task-step"
   );
 
   const { mutate, isPending } = useQueryAction<
     EditTaskStepSchemaType,
     RequestResponse<TaskStepType>
-  >(update, () => {}, "task-steps");
+  >(update, () => { }, "task-steps");
 
   useEffect(() => {
     if (id) {
@@ -81,6 +82,7 @@ export default function EditTaskState({ id }: EditTaskStateProps) {
         onSuccess(data) {
           if (data.data) {
             updateStep(data.data);
+            closeModal()
           }
         },
       }

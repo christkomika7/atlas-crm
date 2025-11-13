@@ -33,23 +33,7 @@ export default function EditClientPage() {
   const param = useParams();
 
   const form = useForm<EditClientSchemaType>({
-    resolver: zodResolver(editClientSchema),
-    defaultValues: {
-      companyName: "",
-      lastname: "",
-      firstname: "",
-      email: "",
-      phone: "",
-      website: "",
-      address: "",
-      businessSector: "",
-      businessRegistrationNumber: "",
-      taxIdentificationNumber: "",
-      discount: "",
-      paymentTerms: "",
-      information: "",
-      lastUploadDocuments: [],
-    },
+    resolver: zodResolver(editClientSchema)
   });
 
   const {
@@ -58,14 +42,14 @@ export default function EditClientPage() {
     data,
   } = useQueryAction<{ id: string }, RequestResponse<ClientType>>(
     unique,
-    () => {},
+    () => { },
     "client"
   );
 
   const { mutate: updateMutate, isPending: isUpdatedData } = useQueryAction<
     EditClientSchemaType,
     RequestResponse<ClientType[]>
-  >(update, () => {}, "client");
+  >(update, () => { }, "client");
 
   useEffect(() => {
     if (param.id) {
@@ -82,6 +66,8 @@ export default function EditClientPage() {
         companyName: client.companyName,
         lastname: client.lastname,
         firstname: client.firstname,
+        niu: client.niu,
+        legalForms: client.legalForms,
         email: client.email,
         phone: client.phone,
         website: client.website,
@@ -330,25 +316,63 @@ export default function EditClientPage() {
               )}
             />
           </div>
-          <FormField
-            control={form.control}
-            name="paymentTerms"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <Combobox
-                    datas={paymentTerms}
-                    value={field.value}
-                    setValue={field.onChange}
-                    placeholder="Conditions de paiement"
-                    searchMessage="Rechercher une condition de paiement"
-                    noResultsMessage="Aucune condition trouvé."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="gap-x-2 grid grid-cols-3 w-full">
+            <FormField
+              control={form.control}
+              name="niu"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      required={false}
+                      design="float"
+                      label="NIU"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="legalForms"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Statut juridique"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="paymentTerms"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      datas={paymentTerms}
+                      value={field.value}
+                      setValue={field.onChange}
+                      placeholder="Conditions de paiement"
+                      searchMessage="Rechercher une condition de paiement"
+                      noResultsMessage="Aucune condition trouvé."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+          </div>
           <div className="gap-x-2 grid grid-cols-2 w-full">
             <FormField
               control={form.control}
@@ -399,7 +423,7 @@ export default function EditClientPage() {
                 <FormControl>
                   <ul className="space-y-1 bg-gray p-4 border rounded-md w-full text-sm">
                     {lastUploadDocuments.filter((doc) => doc !== "").length >
-                    0 ? (
+                      0 ? (
                       lastUploadDocuments.map((document, index) => {
                         return (
                           <li

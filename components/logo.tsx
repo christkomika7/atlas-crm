@@ -1,30 +1,24 @@
 import Image from "next/image";
 import React from "react";
-import { LogoIcon } from "./icons";
-import clsx from "clsx";
 
 type LogoProps = {
-  color?: "white" | "black";
   width?: number;
   height?: number;
 };
 
 export default function Logo({
-  color = "black",
   width = 120,
   height = 87,
 }: LogoProps) {
   return (
     <span
-      className="flex justify-center items-center"
+      className="flex justify-center items-center relative"
       style={{
         width,
         height,
       }}
     >
-      <LogoIcon
-        className={clsx(color === "white" ? "fill-white" : "fill-black")}
-      />
+      <Image fill alt="Logo" src="/logo.png" className=" w-full h-full object-cover object-center" />
     </span>
   );
 }

@@ -1,19 +1,20 @@
 'use client';
 
-import { getUniqueContract } from '@/action/contract.action';
+import { exportToWord, getUniqueContract } from '@/action/contract.action';
 import Header from '@/components/header/header'
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Spinner from '@/components/ui/spinner';
 import useQueryAction from '@/hook/useQueryAction';
 import { $Enums } from '@/lib/generated/prisma';
-import { downloadComponentAsPDF } from '@/lib/pdf';
 import { RequestResponse } from '@/types/api.types';
 import { ClientContractType, LessorContractType } from '@/types/contract-types';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ClientContract from '../_components/client-contract';
 import LessorContract from '../_components/lessor-contract';
+import { exportHtmlToWord } from '@/lib/word';
+import { toast } from 'sonner';
 
 export default function PreviewContract() {
     const param = useParams();
@@ -28,7 +29,12 @@ export default function PreviewContract() {
             "contract",
         );
 
-    console.log({ param })
+    const { mutate: mutateConvertContract, isPending: isConvertingContract } =
+        useQueryAction<{ html: string }, { status: string, message: string }>(
+            exportToWord,
+            () => { },
+            "contract",
+        );
 
     useEffect(() => {
         if (param.id) {
@@ -53,6 +59,32 @@ export default function PreviewContract() {
         }
     }, [param.id]);
 
+
+    function convertToWord() {
+        // Récupérer le contenu HTML du contrat
+        const contractElement = document.getElementById('contract');
+
+        if (!contractElement) {
+            toast.error("Impossible de trouver le contrat");
+            return;
+        }
+
+        const html = contractElement.innerHTML;
+
+        if (html) {
+            mutateConvertContract({ html }, {
+                onSuccess(data) {
+                    toast.success(data.message);
+                },
+                onError(error) {
+                    toast.error("Erreur lors de l'export du contrat");
+                    console.error(error);
+                }
+            });
+        } else {
+            toast.error("Le contrat est vide");
+        }
+    }
     return (
         <div className="flex flex-col h-full overflow-hidden">
             <Header back={1} title="Aperçu du contrat" />
@@ -66,14 +98,10 @@ export default function PreviewContract() {
                                 <>
                                     <div className="flex justify-end">
                                         <Button variant="primary" className="max-w-xs"
-                                            onClick={() => downloadComponentAsPDF("contract", filename, {
-                                                padding: 0,
-                                                margin: 0,
-                                                quality: 0.98,
-                                                scale: 4
-                                            })}
+                                            onClick={() => convertToWord()}
+                                            disabled={isConvertingContract}
                                         >
-                                            Télécharger
+                                            {isConvertingContract ? <Spinner /> : "Télécharger"}
                                         </Button>
                                     </div>
                                     <div className="border rounded-xl overflow-hidden border-neutral-100">

@@ -65,7 +65,7 @@ export default function EditTaskForm({
     data: taskData,
   } = useQueryAction<{ id: string }, RequestResponse<TaskType>>(
     unique,
-    () => {},
+    () => { },
     "task"
   );
 
@@ -75,14 +75,14 @@ export default function EditTaskForm({
     data,
   } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
     getCollaborators,
-    () => {},
+    () => { },
     "collaborators"
   );
 
   const { mutate, isPending } = useQueryAction<
     EditTaskSchemaType,
     RequestResponse<TaskType>
-  >(update, () => {}, "tasks");
+  >(update, () => { }, "tasks");
 
   useEffect(() => {
     if (taskId) {
@@ -123,11 +123,11 @@ export default function EditTaskForm({
   async function submit(taskData: EditTaskSchemaType) {
     const { success, data } = editTaskSchema.safeParse(taskData);
     if (!success) return;
-    if (!param.projectId) return toast.error("Aucun projet trouvé.");
+    if (!param.id) return toast.error("Aucun projet trouvé.");
     mutate(
       {
         ...data,
-        projectId: param.projectId as string,
+        projectId: param.id as string,
         lastUploadDocuments: lastUploadDocuments,
       },
       {
@@ -141,8 +141,8 @@ export default function EditTaskForm({
                 taskData.status === "TODO"
                   ? "todo"
                   : taskData.status === "IN_PROGRESS"
-                  ? "inProgress"
-                  : "done",
+                    ? "inProgress"
+                    : "done",
               owner: [],
               description: taskData.desc,
               status: taskData.status,

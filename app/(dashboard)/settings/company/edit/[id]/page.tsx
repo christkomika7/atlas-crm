@@ -54,6 +54,8 @@ export default function UpdateCompany() {
               codePostal: company.codePostal,
               email: company.email ?? "",
               website: company.website ?? "",
+              niu: company.niu,
+              legalForms: company.legalForms,
               businessRegistrationNumber:
                 company.businessRegistrationNumber ?? "",
               taxIdentificationNumber: company.taxIdentificationNumber ?? "",

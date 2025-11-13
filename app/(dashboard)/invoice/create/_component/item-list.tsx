@@ -178,6 +178,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                                         'quantity',
                                         duration < 0.5 ? 0.5 : duration
                                     );
+                                    editItemField(item.id, "locationStart", range.from);
                                     editItemField(item.id, "locationEnd", range.to);
                                     return;
                                 }

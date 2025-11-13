@@ -3,7 +3,9 @@ import { checkAccess } from "@/lib/access";
 import { copyTo, createFolder, removePath } from "@/lib/file";
 import { $Enums } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
+import { checkBillboardConflicts } from "@/lib/server";
 import { generateAmaId, generateId, getIdFromUrl } from "@/lib/utils";
+import { ItemType } from "@/stores/item.store";
 import Decimal from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -11,8 +13,8 @@ export async function POST(req: NextRequest) {
     await checkAccess(["INVOICES"], "CREATE");
     const id = getIdFromUrl(req.url, 2) as string;
 
+    const updatedItems = await req.json();
     const type = req.nextUrl.searchParams.get("type")?.trim() ?? "" as "invoice" | "quote" | "delivery-note" | undefined;
-
 
     const invoice = await prisma.invoice.findUnique({
         where: { id },
@@ -47,8 +49,21 @@ export async function POST(req: NextRequest) {
         const folderFile = createFolder([invoice.company.companyName, "invoice", `${invoiceNumber}_----${key}/files`]);
         let savedPaths: string[] = await copyTo(invoice.files, folderFile);
 
+
+
+        const billboards: ItemType[] = (updatedItems as ItemType[]) ? updatedItems : invoice.items.filter(it => it.itemType === "billboard");
+        const conflictResult = await checkBillboardConflicts(billboards);
+
+        if (conflictResult.hasConflict) {
+            return NextResponse.json({
+                status: "error",
+                message: "Conflit de dates détecté pour au moins un panneau.",
+            }, { status: 404 });
+        }
+
+
         const itemForCreate = [
-            ...invoice.items.filter(it => it.itemType === "billboard")?.map(billboard => ({
+            ...billboards.map(billboard => ({
                 state: $Enums.ItemState.APPROVED,
                 reference: billboard.reference,
                 name: billboard.name,
@@ -106,6 +121,9 @@ export async function POST(req: NextRequest) {
                         totalTTC: invoice.totalTTC,
                         amountType: invoice.amountType,
                         note: invoice.note!,
+                        fromRecordId: invoice.id,
+                        fromRecordName: "Facture",
+                        fromRecordReference: `${invoice.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}`,
                         isPaid: false,
                         payee: new Decimal(0),
                         files: savedPaths,

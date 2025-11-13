@@ -1,18 +1,7 @@
 import { checkAccess } from "@/lib/access";
-import prisma from "@/lib/prisma";
 import { getIdFromUrl } from "@/lib/utils";
 import { PeriodType, ReportType } from "@/types/company.types";
 import { NextResponse, type NextRequest } from "next/server";
-import {
-    startOfMonth,
-    endOfMonth,
-    subMonths,
-    startOfYear,
-    endOfYear,
-    subYears,
-    startOfQuarter,
-    endOfQuarter,
-} from "date-fns";
 import { filters } from "@/lib/server";
 
 export async function GET(req: NextRequest) {

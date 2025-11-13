@@ -35,7 +35,6 @@ export default function InvoiceTable() {
       mutate({ companyId }, {
         onSuccess(data) {
           if (data.data) {
-            console.log({ data: data.data });
             setRecords(data.data);
           }
         },
@@ -55,7 +54,7 @@ export default function InvoiceTable() {
           <TableRow className="h-14">
             <TableHead className="min-w-[50px] text-center font-medium">#</TableHead>
             <TableHead className="font-medium text-center">Référence</TableHead>
-            <TableHead className="font-medium text-center">Client | Fournisseur</TableHead>
+            <TableHead className="font-medium text-center">Entreprise</TableHead>
             <TableHead className="font-medium text-center">
               Montant impayé
             </TableHead>
@@ -85,7 +84,7 @@ export default function InvoiceTable() {
                   {record.reference}
                 </TableCell>
                 <TableCell className="text-neutral-600 text-center">
-                  {record.forUser}
+                  {record.company}
                 </TableCell>
                 <TableCell className="text-neutral-600 text-center">
                   {formatNumber(record.amountUnpaid)} {currency}

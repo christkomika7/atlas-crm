@@ -34,49 +34,63 @@ export default function InfoTab() {
             label="Nom de l'entreprise"
             value={client?.companyName}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
           <TextInput
             design="float"
             label="Nom"
             value={client?.lastname}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
           <TextInput
             design="float"
             label="Nom"
             value={client?.firstname}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
           <TextInput
             design="float"
             label="Numéro de téléphone"
             value={client?.phone}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
           <TextInput
             design="float"
             label="Adresse email"
             value={client?.email}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
           <TextInput
             design="float"
             label="Secteur d'activité"
             value={client?.businessSector}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
+          />
+          <TextInput
+            design="float"
+            label="NIU"
+            value={client?.niu}
+            disabled={true}
+            handleChange={() => { }}
+          />
+          <TextInput
+            design="float"
+            label="Statut juridique"
+            value={client?.legalForms}
+            disabled={true}
+            handleChange={() => { }}
           />
           <TextInput
             design="float"
             label="Site internet"
             value={client?.website}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
 
           <TextInput
@@ -84,42 +98,42 @@ export default function InfoTab() {
             label="Adresse enregistrée"
             value={client?.address}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
           <TextInput
             design="float"
             label="Numéro d'immatriculation (RCCM)"
             value={client?.businessRegistrationNumber}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
           <TextInput
             design="float"
             label="Numéro d'identification fiscale (NIF)"
             value={client?.taxIdentificationNumber}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
           <TextInput
             design="float"
             label="Réduction"
             value={client?.discount}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
           <TextInput
             design="float"
             label="Conditions de paiement"
             value={client?.paymentTerms}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
           <TextInput
             design="float"
             label="Information supplémentaire"
             value={client?.information}
             disabled={true}
-            handleChange={() => {}}
+            handleChange={() => { }}
           />
           <ul className="space-y-1 bg-gray p-4 border rounded-md w-full text-sm">
             {client?.uploadDocuments && client.uploadDocuments.length > 0 ? (
