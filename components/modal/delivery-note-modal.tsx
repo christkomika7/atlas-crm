@@ -332,13 +332,15 @@ export default function DeliveryNoteModal({ idClient, closeModal, refreshData }:
             items: parseItems(items),
             taxes: company?.vatRates ?? [],
             amountType: amountType,
+            discount: [clientDiscount.discount || 0, clientDiscount.discountType]
+
         }).totalWithoutTaxes;
 
         const TTCPrice = calculate({
             items: parseItems(items),
             taxes: company?.vatRates ?? [],
             amountType: amountType,
-            discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
+            discount: [clientDiscount.discount || 0, clientDiscount.discountType]
         }).totalWithTaxes
 
         return { HTPrice, TTCPrice };
@@ -453,7 +455,7 @@ export default function DeliveryNoteModal({ idClient, closeModal, refreshData }:
                         </h2>
                         <div className="space-y-2">
                             {items.map((item) => (
-                                <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} calculate={calculate} taxes={company?.vatRates ?? []} locationBillboardDate={locationBillboardDate} />
+                                <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} calculate={calculate} taxes={company?.vatRates ?? []} locationBillboardDate={locationBillboardDate} amountType={amountType} />
                             ))}
                         </div>
 

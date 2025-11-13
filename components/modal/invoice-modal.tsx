@@ -338,6 +338,7 @@ export default function InvoiceModal({ idClient, closeModal, refreshData }: Invo
             items: parseItems(items),
             taxes: company?.vatRates ?? [],
             amountType: amountType,
+            discount: [clientDiscount.discount || 0, clientDiscount.discountType]
         }).totalWithoutTaxes;
 
         const TTCPrice = calculate({

@@ -329,13 +329,14 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
             items: parseItems(items),
             taxes: company?.vatRates ?? [],
             amountType: amountType,
+            discount: [clientDiscount.discount || 0, clientDiscount.discountType]
         }).totalWithoutTaxes;
 
         const TTCPrice = calculate({
             items: parseItems(items),
             taxes: company?.vatRates ?? [],
             amountType: amountType,
-            discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
+            discount: [clientDiscount.discount || 0, clientDiscount.discountType]
         }).totalWithTaxes
 
         return { HTPrice, TTCPrice };
@@ -451,7 +452,7 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
                             </h2>
                             <div className="space-y-2">
                                 {items.map((item) => (
-                                    <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} calculate={calculate} locationBillboardDate={locationBillboardDate} taxes={company?.vatRates ?? []} />
+                                    <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} calculate={calculate} locationBillboardDate={locationBillboardDate} taxes={company?.vatRates ?? []} amountType={amountType} />
                                 ))}
                             </div>
 
