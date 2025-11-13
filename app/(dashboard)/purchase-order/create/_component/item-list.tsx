@@ -15,11 +15,13 @@ export type ItemListProps = {
     calculate(params: {
         items: TaxItem[];
         taxes: VatRateType[];
+        amountType: "HT" | "TTC"
         taxOperation?: "cumul" | "sequence";
     }): CalculateTaxesResult;
     amountPaid?: Decimal;
+    amountType: "TTC" | "HT";
 }
-export default function ItemList({ item, taxes, calculate, amountPaid }: ItemListProps) {
+export default function ItemList({ item, taxes, calculate, amountPaid, amountType }: ItemListProps) {
     const updateItem = usePurchaseItemStore.use.updateItem();
     const removeItem = usePurchaseItemStore.use.removeItem();
     const editItemField = usePurchaseItemStore.use.editItemField();
@@ -110,6 +112,7 @@ export default function ItemList({ item, taxes, calculate, amountPaid }: ItemLis
                 {formatNumber(
                     calculate({
                         items: [parsePurchaseItem(item)],
+                        amountType,
                         taxes,
                     }).totalWithoutTaxes
                 )}{" "}

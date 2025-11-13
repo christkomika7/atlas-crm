@@ -306,13 +306,14 @@ export default function InvoiceTab() {
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
+      discount: [clientDiscount.discount || 0, clientDiscount.discountType]
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
-      discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
+      discount: [clientDiscount.discount || 0, clientDiscount.discountType]
     }).totalWithTaxes
 
     return { HTPrice, TTCPrice };

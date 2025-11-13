@@ -18,13 +18,15 @@ export type ItemListProps = {
     calculate(params: {
         items: TaxItem[];
         taxes: VatRateType[];
+        amountType: "HT" | "TTC"
         taxOperation?: "cumul" | "sequence";
     }): CalculateTaxesResult;
     isCompleted?: boolean;
     locationBillboardDate: LocationBillboardDateType[];
+    amountType: "TTC" | "HT";
 
 }
-export default function ItemList({ item, taxes, calculate, isCompleted, locationBillboardDate }: ItemListProps) {
+export default function ItemList({ item, taxes, calculate, isCompleted, locationBillboardDate, amountType }: ItemListProps) {
     const updateItem = useItemStore.use.updateItem();
     const removeItem = useItemStore.use.removeItem();
     const editItemField = useItemStore.use.editItemField();
@@ -192,6 +194,7 @@ export default function ItemList({ item, taxes, calculate, isCompleted, location
                 {formatNumber(
                     calculate({
                         items: [parseItem(item)],
+                        amountType,
                         taxes,
                     }).totalWithoutTaxes
                 )}{" "}

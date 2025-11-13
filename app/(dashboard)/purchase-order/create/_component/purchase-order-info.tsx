@@ -106,7 +106,7 @@ export default function PurchaseOrderInfo({ isGettingDocument, isGettingPurchase
                         {formatNumber(calculate({
                             items: parsePurchaseItems(items),
                             taxes,
-                            discount: discount.discount && discount.discountType ? [0, discount.discountType] : undefined
+                            discount: discount.discount && discount.discountType ? [discount.discount, discount.discountType] : [0, discount.discountType],
                         }).totalWithoutTaxes)} {" "}
                         {currency}
                     </p>
@@ -127,7 +127,7 @@ export default function PurchaseOrderInfo({ isGettingDocument, isGettingPurchase
                         {calculate({
                             items: parsePurchaseItems(items),
                             taxes,
-                            discount: discount.discount && discount.discountType ? [0, discount.discountType] : undefined
+                            discount: discount.discount && discount.discountType ? [discount.discount, discount.discountType] : [0, discount.discountType],
                         }).taxes.map((tax) => (
                             <li key={tax.taxName} className="flex justify-between text-sm">
                                 <span>{tax.taxName} </span>

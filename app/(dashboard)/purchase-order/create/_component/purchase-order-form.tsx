@@ -260,13 +260,14 @@ export default function PurchaseOrderForm() {
       items: parsePurchaseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
+      discount: [supplierDiscount.discount || 0, supplierDiscount.discountType]
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
       items: parsePurchaseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
-      discount: supplierDiscount.discount && supplierDiscount.discountType ? [supplierDiscount.discount, supplierDiscount.discountType] : undefined
+      discount: [supplierDiscount.discount || 0, supplierDiscount.discountType]
     }).totalWithTaxes
 
     return { HTPrice, TTCPrice };
@@ -380,7 +381,7 @@ export default function PurchaseOrderForm() {
             </h2>
             <div className="space-y-2">
               {items.map((item) => (
-                <ItemList key={item.productServiceId} item={item} calculate={calculate} taxes={company?.vatRates ?? []} amountPaid={new Decimal(0)} />
+                <ItemList key={item.productServiceId} item={item} calculate={calculate} taxes={company?.vatRates ?? []} amountPaid={new Decimal(0)} amountType={amountType} />
               ))}
             </div>
 

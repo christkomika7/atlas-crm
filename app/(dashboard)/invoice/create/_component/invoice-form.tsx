@@ -225,13 +225,6 @@ export default function InvoiceForm() {
 
 
   useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors })
-    })
-  }, [form.watch])
-
-
-  useEffect(() => {
     form.setValue("paymentLimit", paymentLimit);
   }, [paymentLimit])
 
@@ -266,8 +259,7 @@ export default function InvoiceForm() {
               items: [parseItem(item)],
               taxes: company?.vatRates ?? [],
               amountType,
-            }).totalWithoutTaxes
-            ,
+            }).totalWithoutTaxes,
             locationStart: item.locationStart ?? new Date(),
             locationEnd: item.locationEnd ?? new Date(),
             discountType: item.discountType,
@@ -312,6 +304,7 @@ export default function InvoiceForm() {
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
+      discount: [clientDiscount.discount || 0, clientDiscount.discountType]
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
@@ -319,7 +312,7 @@ export default function InvoiceForm() {
       taxes: company?.vatRates ?? [],
       amountType: amountType,
       discount: [clientDiscount.discount || 0, clientDiscount.discountType]
-    }).totalWithTaxes
+    }).totalWithTaxes;
 
     return { HTPrice, TTCPrice };
   }, [items, company?.vatRates, clientDiscount]);

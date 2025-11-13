@@ -263,7 +263,7 @@ export default function QuoteForm() {
             updatedPrice: calculate({
               items: [parseItem(item)],
               taxes: company?.vatRates ?? [],
-              amountType: amountType,
+              amountType,
             }).totalWithoutTaxes,
             locationStart: item.locationStart ?? new Date(),
             locationEnd: item.locationEnd ?? new Date(),
@@ -281,12 +281,11 @@ export default function QuoteForm() {
             name: item.name,
             quantity: item.quantity,
             price: new Decimal(item.price),
-            updatedPrice:
-              calculate({
-                items: [parseItem(item)],
-                taxes: company?.vatRates ?? [],
-                amountType: amountType,
-              }).totalWithoutTaxes
+            updatedPrice: calculate({
+              items: [parseItem(item)],
+              taxes: company?.vatRates ?? [],
+              amountType,
+            }).totalWithoutTaxes
             ,
             locationStart: item.locationStart ?? new Date(),
             locationEnd: item.locationEnd ?? new Date(),
@@ -311,14 +310,15 @@ export default function QuoteForm() {
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
+      discount: [clientDiscount.discount || 0, clientDiscount.discountType]
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
-      discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
-    }).totalWithTaxes
+      discount: [clientDiscount.discount || 0, clientDiscount.discountType]
+    }).totalWithTaxes;
 
     return { HTPrice, TTCPrice };
   }, [items, company?.vatRates, clientDiscount]);
@@ -431,7 +431,7 @@ export default function QuoteForm() {
             </h2>
             <div className="space-y-2">
               {items.map((item) => (
-                <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} calculate={calculate} locationBillboardDate={locationBillboardDate} taxes={company?.vatRates ?? []} />
+                <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} calculate={calculate} locationBillboardDate={locationBillboardDate} taxes={company?.vatRates ?? []} amountType={amountType} />
               ))}
             </div>
 

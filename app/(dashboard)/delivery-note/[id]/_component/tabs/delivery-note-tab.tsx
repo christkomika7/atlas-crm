@@ -379,12 +379,11 @@ export default function DeliveryNoteTab() {
             hasTax: item.hasTax,
             quantity: item.quantity,
             price: new Decimal(item.price),
-            updatedPrice:
-              calculate({
-                items: [parseItem(item)],
-                taxes: company?.vatRates ?? [],
-                amountType: amountType,
-              }).totalWithoutTaxes,
+            updatedPrice: calculate({
+              items: [parseItem(item)],
+              taxes: company?.vatRates ?? [],
+              amountType: amountType,
+            }).totalWithoutTaxes,
             locationStart: new Date(item.locationStart),
             locationEnd: new Date(item.locationEnd),
             itemType: item.itemType,
@@ -420,7 +419,7 @@ export default function DeliveryNoteTab() {
       taxes: company?.vatRates ?? [],
       amountType: amountType,
       discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
-    }).totalWithTaxes
+    }).totalWithTaxes;
 
     return { HTPrice, TTCPrice };
   }, [items, company?.vatRates, clientDiscount]);
@@ -541,7 +540,7 @@ export default function DeliveryNoteTab() {
             </h2>
             <div className="space-y-2">
               {items.map((item) => (
-                <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} isCompleted={isCompleted} locationBillboardDate={locationBillboardDate} />
+                <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} isCompleted={isCompleted} locationBillboardDate={locationBillboardDate} amountType={amountType} />
               ))}
             </div>
             {!isCompleted &&

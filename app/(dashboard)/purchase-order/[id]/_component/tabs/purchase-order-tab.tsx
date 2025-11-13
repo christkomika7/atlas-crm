@@ -254,13 +254,14 @@ export default function PurchaseOrderTab() {
       items: parsePurchaseItems(items),
       amountType: amountType,
       taxes: company?.vatRates ?? [],
+      discount: [supplierDiscount.discount || 0, supplierDiscount.discountType]
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
       items: parsePurchaseItems(items),
       amountType: amountType,
       taxes: company?.vatRates ?? [],
-      discount: supplierDiscount.discount && supplierDiscount.discountType ? [supplierDiscount.discount, supplierDiscount.discountType] : undefined
+      discount: [supplierDiscount.discount || 0, supplierDiscount.discountType]
     }).totalWithTaxes
 
     return { HTPrice, TTCPrice };
@@ -493,7 +494,7 @@ export default function PurchaseOrderTab() {
             </h2>
             <div className="space-y-2">
               {items.map((item) => (
-                <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} amountPaid={amountPaid} />
+                <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} amountPaid={amountPaid} amountType={amountType} />
               ))}
             </div>
             {amountPaid.eq(0) &&

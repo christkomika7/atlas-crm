@@ -539,7 +539,7 @@ export default function QuoteTab() {
             </h2>
             <div className="space-y-2">
               {items.map((item) => (
-                <ItemList key={item.id} item={item} locationBillboardDate={locationBillboardDate} calculate={calculate} taxes={company?.vatRates ?? []} isCompleted={isCompleted} />
+                <ItemList key={item.id} item={item} locationBillboardDate={locationBillboardDate} calculate={calculate} taxes={company?.vatRates ?? []} isCompleted={isCompleted} amountType={amountType} />
               ))}
             </div>
             {!isCompleted &&

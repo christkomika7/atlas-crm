@@ -154,11 +154,10 @@ export default function DeliveryNoteForm() {
 
   useEffect(() => {
     if (companyId) {
-      form.reset({
-        companyId,
-        discount: "0",
-        amountType: "TTC"
-      });
+      form.setValue("companyId", companyId);
+      form.setValue("amountType", "TTC");
+      form.setValue("discount", "0");
+
       mutateGetProductService({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -169,8 +168,10 @@ export default function DeliveryNoteForm() {
             setItemQuantities(mapped);
           }
         },
-      })
+      });
+
       mutateClients({ id: companyId });
+
       mutateGetDeliveryNoteNumber({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -178,6 +179,7 @@ export default function DeliveryNoteForm() {
           }
         },
       });
+
       mutateGetDocument(
         { id: companyId },
         {
@@ -258,7 +260,7 @@ export default function DeliveryNoteForm() {
             updatedPrice: calculate({
               items: [parseItem(item)],
               taxes: company?.vatRates ?? [],
-              amountType: amountType,
+              amountType,
             }).totalWithoutTaxes,
             locationStart: item.locationStart ?? new Date(),
             locationEnd: item.locationEnd ?? new Date(),
@@ -306,13 +308,14 @@ export default function DeliveryNoteForm() {
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
+      discount: [clientDiscount.discount || 0, clientDiscount.discountType]
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
-      discount: clientDiscount.discount && clientDiscount.discountType ? [clientDiscount.discount, clientDiscount.discountType] : undefined
+      discount: [clientDiscount.discount || 0, clientDiscount.discountType]
     }).totalWithTaxes
 
     return { HTPrice, TTCPrice };
@@ -426,7 +429,7 @@ export default function DeliveryNoteForm() {
             </h2>
             <div className="space-y-2">
               {items.map((item) => (
-                <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} calculate={calculate} taxes={company?.vatRates ?? []} locationBillboardDate={locationBillboardDate} />
+                <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} calculate={calculate} taxes={company?.vatRates ?? []} locationBillboardDate={locationBillboardDate} amountType={amountType} />
               ))}
             </div>
 
