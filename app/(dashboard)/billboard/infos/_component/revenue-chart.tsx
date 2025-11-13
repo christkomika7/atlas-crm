@@ -19,20 +19,23 @@ import { Sale } from "@/types/item.type";
 import { getTotalDuration } from "@/lib/date";
 import { useDataStore } from "@/stores/data.store";
 import Decimal from "decimal.js";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, toShortNum } from "@/lib/utils";
+import { MAX_BARS, MS_PER_DAY } from "@/config/constant";
 
 type RevenueChartProps = {
   sales: Sale[];
 };
 
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
 
 function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
+
 function endOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0);
 }
+
 function daysBetweenInclusive(a: Date, b: Date) {
   const ad = new Date(a.getFullYear(), a.getMonth(), a.getDate(), 12);
   const bd = new Date(b.getFullYear(), b.getMonth(), b.getDate(), 12);
@@ -44,7 +47,9 @@ function getMonthKeysBetween(start: Date, end: Date) {
   let cur = startOfMonth(start);
   const last = endOfMonth(end);
   while (cur <= last) {
-    const key = `${cur.getFullYear()}-${(cur.getMonth() + 1).toString().padStart(2, "0")}`;
+    const key = `${cur.getFullYear()}-${(cur.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}`;
     keys.push(key);
     cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
   }
@@ -61,12 +66,13 @@ function formatMonth(monthKey: string) {
 
 export function RevenueChart({ sales }: RevenueChartProps) {
   const currency = useDataStore.use.currency();
-
   const monthMap: Record<string, Decimal> = {};
 
   for (const sale of sales) {
-    const start = sale.startDate instanceof Date ? sale.startDate : new Date(sale.startDate);
-    const end = sale.endDate instanceof Date ? sale.endDate : new Date(sale.endDate);
+    const start =
+      sale.startDate instanceof Date ? sale.startDate : new Date(sale.startDate);
+    const end =
+      sale.endDate instanceof Date ? sale.endDate : new Date(sale.endDate);
 
     const totalDays = daysBetweenInclusive(start, end);
     if (totalDays <= 0) continue;
@@ -86,29 +92,43 @@ export function RevenueChart({ sales }: RevenueChartProps) {
       const daysInThisMonth = daysBetweenInclusive(overlapStart, overlapEnd);
       if (daysInThisMonth <= 0) continue;
 
-      const part = amountDecimal.mul(new Decimal(daysInThisMonth)).div(new Decimal(totalDays));
+      const part = amountDecimal
+        .mul(new Decimal(daysInThisMonth))
+        .div(new Decimal(totalDays));
 
       if (!monthMap[mKey]) monthMap[mKey] = new Decimal(0);
       monthMap[mKey] = monthMap[mKey].plus(part);
     }
   }
 
-  const chartData = Object.entries(monthMap)
-    .sort(([a], [b]) => (a < b ? -1 : 1))
-    .map(([month, amount]) => ({
-      name: formatMonth(month),
-      amount: amount.toNumber(),
-    }));
+  // 👉 tri + limite à 20 barres max
+  const sortedEntries = Object.entries(monthMap).sort(([a], [b]) =>
+    a < b ? -1 : 1
+  );
+
+  const limitedEntries =
+    sortedEntries.length > MAX_BARS
+      ? sortedEntries.slice(-MAX_BARS)
+      : sortedEntries;
+
+  const chartData = limitedEntries.map(([month, amount]) => ({
+    name: formatMonth(month),
+    amount: amount.toNumber(),
+  }));
 
   const totalAmount = chartData.reduce((acc, curr) => acc + curr.amount, 0);
   const totalDuration = getTotalDuration(sales);
 
   return (
     <div className="space-y-4">
+      {/* résumé */}
       <div className="grid grid-cols-[2fr_1.5fr] bg-neutral-100/40 pl-4">
         <p className="flex flex-col px-2 py-2 text-sm">
           <span className="font-medium">Montant moyen par location</span>
-          {sales.length > 0 ? (totalAmount / sales.length).toLocaleString() : 0} {currency}
+          {sales.length > 0
+            ? (totalAmount / sales.length).toLocaleString()
+            : 0}{" "}
+          {currency}
         </p>
         <div className="grid grid-cols-2">
           <p className="flex flex-col bg-neutral-100 px-2 py-2 text-sm">
@@ -121,6 +141,8 @@ export function RevenueChart({ sales }: RevenueChartProps) {
           </p>
         </div>
       </div>
+
+      {/* graphique */}
       <div>
         <ChartContainer
           config={{
@@ -137,7 +159,7 @@ export function RevenueChart({ sales }: RevenueChartProps) {
               margin={{
                 left: 0,
                 right: 0,
-                top: 30, // espace pour les labels
+                top: 30,
                 bottom: 0,
               }}
               data={chartData}
@@ -167,7 +189,7 @@ export function RevenueChart({ sales }: RevenueChartProps) {
                   dataKey="amount"
                   position="top"
                   formatter={(value: number) =>
-                    `${formatNumber(Number(value.toFixed(1)))} ${currency}`
+                    `${toShortNum(Number(value.toFixed(1)))} ${currency}`
                   }
                 />
               </Bar>

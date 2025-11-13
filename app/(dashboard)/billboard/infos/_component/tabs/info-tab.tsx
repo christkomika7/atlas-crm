@@ -140,7 +140,7 @@ export default function InfoTab() {
   return (
     <ScrollArea className="h-[calc(100vh-176px)]">
       <div className="space-y-4 pt-2 pr-4 pb-4">
-        <div className="gap-x-3 grid grid-cols-[1fr_2fr]">
+        <div className="gap-x-3 grid grid-cols-[1fr_2.7fr]">
           <BillboardDetails detail={billboard} />
           <BillboardRevenue
             sales={items.map((item) => ({

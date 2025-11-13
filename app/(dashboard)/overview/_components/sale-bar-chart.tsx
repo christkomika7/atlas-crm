@@ -61,13 +61,12 @@ function CustomTooltip({ active, payload, label, currency }: any) {
 }
 
 export function SaleBarChart({ items, currency, isLoading }: SaleBarChartProps) {
-  // chartData: si items vide => placeholder pour que le donut reste visible
   const chartData = React.useMemo(() => {
     if (!items || items.length === 0) {
       return [
         {
           name: "Aucune dépense",
-          value: 1, // valeur artificielle pour afficher un donut plein
+          value: 1,
           id: "placeholder",
           index: 0,
           isPlaceholder: true,
@@ -88,7 +87,6 @@ export function SaleBarChart({ items, currency, isLoading }: SaleBarChartProps) 
     });
   }, [items]);
 
-  // totalDepenses : si items vide -> 0
   const totalDepenses = React.useMemo(() => {
     if (!items || items.length === 0) return 0;
     return chartData.reduce((acc, cur) => acc + (cur.value ?? 0), 0);
@@ -101,7 +99,6 @@ export function SaleBarChart({ items, currency, isLoading }: SaleBarChartProps) 
         className="mx-auto aspect-square max-h-[250px] relative"
       >
         <PieChart>
-          {/* Tooltip personnalisé avec couleur */}
           <Tooltip content={<CustomTooltip currency={currency} />} />
 
           <Pie
@@ -115,9 +112,8 @@ export function SaleBarChart({ items, currency, isLoading }: SaleBarChartProps) 
             isAnimationActive={false}
           >
             {chartData.map((entry, index) => {
-              // si placeholder -> gris neutre, sinon couleur du tableau
               const col = entry.isPlaceholder
-                ? "#e5e7eb" // neutral-200 gris clair
+                ? "#e5e7eb"
                 : colors[index % colors.length]?.color ?? "#cccccc";
               return <Cell key={`cell-${entry.id}-${index}`} fill={col} />;
             })}
