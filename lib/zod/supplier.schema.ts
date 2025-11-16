@@ -31,7 +31,7 @@ export const supplierSchema = z.object({
         message: "Le numéro d’immatriculation (RCCM) est obligatoire."
     }),
     legalForms: z.string({ error: "Le statut juridique est obligatoire." }),
-    niu: z.string().optional(),
+    job: z.string().optional(),
     taxIdentificationNumber: z.string().min(1, {
         message: "Le numéro d'identification fiscale (NIF) est obligatoire."
     }),
@@ -79,7 +79,7 @@ export const editSupplierSchema = z.object({
         message: "Le secteur d'activité est obligatoire.",
     }),
     legalForms: z.string({ error: "Le statut juridique est obligatoire." }),
-    niu: z.string().optional(),
+    job: z.string().optional(),
     businessRegistrationNumber: z.string().min(1, {
         message: "Le numéro d’immatriculation (RCCM) est obligatoire."
     }),

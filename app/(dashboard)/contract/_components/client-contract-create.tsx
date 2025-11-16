@@ -29,6 +29,7 @@ type ClientContractCreateProps = {
 export default function ClientContractCreate({ refreshContract, closeModal }: ClientContractCreateProps) {
     const companyId = useDataStore.use.currentCompany();
 
+    const [clientId, setClientId] = useState("");
     const [clients, setClients] = useState<ClientType[]>([]);
     const [invoices, setInvoices] = useState<InvoiceType[]>([]);
 
@@ -45,13 +46,13 @@ export default function ClientContractCreate({ refreshContract, closeModal }: Cl
     >(createContract, () => { }, "contract");
 
     const { mutate: mutateGetClients, isPending: isGettingClients } = useQueryAction<
-        { id: string },
+        { id: string, filter: string },
         RequestResponse<ClientType[]>
     >(getAllClients, () => { }, "clients");
 
 
     const { mutate: mutateGetInvoices, isPending: isGettingInvoices } = useQueryAction<
-        { companyId: string },
+        { companyId: string, filter: 'contract', client: string },
         RequestResponse<InvoiceType[]>
     >(getAllInvoices, () => { }, "invoices");
 
@@ -60,15 +61,19 @@ export default function ClientContractCreate({ refreshContract, closeModal }: Cl
         if (companyId) {
             form.setValue('company', companyId);
 
-            mutateGetClients({ id: companyId }, {
+            mutateGetClients({ id: companyId, filter: 'contract' }, {
                 onSuccess(data) {
                     if (data.data) {
                         setClients(data.data);
                     }
                 },
             })
+        }
+    }, [companyId])
 
-            mutateGetInvoices({ companyId }, {
+    useEffect(() => {
+        if (clientId) {
+            mutateGetInvoices({ companyId, filter: 'contract', client: clientId }, {
                 onSuccess(data) {
                     if (data.data) {
                         setInvoices(data.data);
@@ -76,7 +81,8 @@ export default function ClientContractCreate({ refreshContract, closeModal }: Cl
                 },
             })
         }
-    }, [companyId])
+
+    }, [clientId])
 
     async function submit(contractData: ClientContractSchemaType) {
         const { success, data } = clientContractSchema.safeParse(contractData);
@@ -98,7 +104,7 @@ export default function ClientContractCreate({ refreshContract, closeModal }: Cl
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(submit)} className="space-y-4.5 m-2">
-                <div className="space-y-4.5 max-w-full">
+                <div className="space-y-4.5 grid-cols-1 grid">
                     <FormField
                         control={form.control}
                         name="client"
@@ -109,11 +115,14 @@ export default function ClientContractCreate({ refreshContract, closeModal }: Cl
                                         isLoading={isGettingClients}
                                         datas={clients.map((client) => ({
                                             id: client.id,
-                                            label: `${client.lastname} ${client.firstname}`,
+                                            label: `${client.companyName}`,
                                             value: client.id,
                                         }))}
                                         value={field.value}
-                                        setValue={field.onChange}
+                                        setValue={e => {
+                                            field.onChange(e);
+                                            setClientId(e);
+                                        }}
                                         placeholder="Client"
                                         searchMessage="Rechercher un client"
                                         noResultsMessage="Aucun client trouvé."
@@ -142,6 +151,7 @@ export default function ClientContractCreate({ refreshContract, closeModal }: Cl
                                 <FormItem className="-space-y-2">
                                     <FormControl>
                                         <MultipleSelect
+                                            className="max-w-md"
                                             label={
                                                 <span>
                                                     Factures <span className="text-red-500">*</span>

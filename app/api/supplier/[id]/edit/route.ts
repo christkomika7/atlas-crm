@@ -61,7 +61,7 @@ export async function PUT(req: NextRequest) {
         phone: data.phone,
         website: data.website,
         path: folder,
-        niu: data.niu,
+        job: data.job,
         legalForms: data.legalForms,
         address: data.address,
         businessSector: data.businessSector,

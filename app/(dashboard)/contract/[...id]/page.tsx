@@ -8,29 +8,27 @@ import Spinner from '@/components/ui/spinner';
 import useQueryAction from '@/hook/useQueryAction';
 import { $Enums } from '@/lib/generated/prisma';
 import { RequestResponse } from '@/types/api.types';
-import { ClientContractType, LessorContractType } from '@/types/contract-types';
+import { ContractType } from '@/types/contract-types';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import ClientContract from '../_components/client-contract';
-import LessorContract from '../_components/lessor-contract';
-import { exportHtmlToWord } from '@/lib/word';
 import { toast } from 'sonner';
+import Contract from '../_components/contract';
 
 export default function PreviewContract() {
     const param = useParams();
-    const [contract, setContract] = useState<ClientContractType | LessorContractType>();
+    const [contract, setContract] = useState<ContractType>();
     const [filename, setFilename] = useState("");
     const [contratType, setContractType] = useState<$Enums.ContractType>();
 
     const { mutate: mutateGetContract, isPending: isGettingContract } =
-        useQueryAction<{ id: string, filter: $Enums.ContractType }, RequestResponse<ClientContractType | LessorContractType>>(
+        useQueryAction<{ id: string, filter: $Enums.ContractType }, RequestResponse<ContractType>>(
             getUniqueContract,
             () => { },
             "contract",
         );
 
     const { mutate: mutateConvertContract, isPending: isConvertingContract } =
-        useQueryAction<{ html: string }, { status: string, message: string }>(
+        useQueryAction<{ contract: ContractType }, { status: string, message: string }>(
             exportToWord,
             () => { },
             "contract",
@@ -45,13 +43,7 @@ export default function PreviewContract() {
                 {
                     onSuccess(data) {
                         if (data.data) {
-                            if (type === "CLIENT") {
-                                setContract(data.data as ClientContractType);
-                                setFilename("Contrat client");
-                            } else {
-                                setContract(data.data as LessorContractType);
-                                setFilename("Contrat bailleur");
-                            }
+                            setContract(data.data)
                         }
                     },
                 },
@@ -60,30 +52,16 @@ export default function PreviewContract() {
     }, [param.id]);
 
 
-    function convertToWord() {
-        // Récupérer le contenu HTML du contrat
-        const contractElement = document.getElementById('contract');
-
-        if (!contractElement) {
-            toast.error("Impossible de trouver le contrat");
-            return;
-        }
-
-        const html = contractElement.innerHTML;
-
-        if (html) {
-            mutateConvertContract({ html }, {
-                onSuccess(data) {
-                    toast.success(data.message);
-                },
-                onError(error) {
-                    toast.error("Erreur lors de l'export du contrat");
-                    console.error(error);
-                }
-            });
-        } else {
-            toast.error("Le contrat est vide");
-        }
+    function convertToWord(contract: ContractType) {
+        mutateConvertContract({ contract }, {
+            onSuccess(data) {
+                toast.success(data.message);
+            },
+            onError(error) {
+                toast.error("Erreur lors de l'export du contrat");
+                console.error(error);
+            }
+        });
     }
     return (
         <div className="flex flex-col h-full overflow-hidden">
@@ -98,18 +76,14 @@ export default function PreviewContract() {
                                 <>
                                     <div className="flex justify-end">
                                         <Button variant="primary" className="max-w-xs"
-                                            onClick={() => convertToWord()}
+                                            onClick={() => convertToWord(contract as ContractType)}
                                             disabled={isConvertingContract}
                                         >
                                             {isConvertingContract ? <Spinner /> : "Télécharger"}
                                         </Button>
                                     </div>
-                                    <div className="border rounded-xl overflow-hidden border-neutral-100">
-                                        {
-                                            contratType === "CLIENT" ?
-                                                <ClientContract contract={contract as ClientContractType} /> :
-                                                <LessorContract contract={contract as LessorContractType} />
-                                        }
+                                    <div className="overflow-hidden">
+                                        <Contract contract={contract} />
                                     </div>
                                 </>
                             )}

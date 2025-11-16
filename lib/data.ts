@@ -53,6 +53,8 @@ export const rentalDurations = [
     { id: 4, value: "5_years", label: "5 ans" },
 ]
 
+
+
 export const paymentTerms = [
     { id: 1, value: "paiement_7_jours", label: "Paiement sous 7 jours", data: 7 },
     { id: 2, value: "paiement_15_jours", label: "Paiement sous 15 jours", data: 15 },

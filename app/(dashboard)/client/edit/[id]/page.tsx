@@ -66,7 +66,7 @@ export default function EditClientPage() {
         companyName: client.companyName,
         lastname: client.lastname,
         firstname: client.firstname,
-        niu: client.niu,
+        job: client.job,
         legalForms: client.legalForms,
         email: client.email,
         phone: client.phone,
@@ -130,7 +130,7 @@ export default function EditClientPage() {
             )}
           />
 
-          <div className="gap-x-2 grid grid-cols-2 w-full">
+          <div className="gap-x-2 grid grid-cols-3 w-full">
             <FormField
               control={form.control}
               name="lastname"
@@ -157,6 +157,24 @@ export default function EditClientPage() {
                     <TextInput
                       design="float"
                       label="Prénom"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="job"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      required={false}
+                      design="float"
+                      label="Poste"
                       value={field.value}
                       handleChange={field.onChange}
                     />
@@ -316,25 +334,7 @@ export default function EditClientPage() {
               )}
             />
           </div>
-          <div className="gap-x-2 grid grid-cols-3 w-full">
-            <FormField
-              control={form.control}
-              name="niu"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      required={false}
-                      design="float"
-                      label="NIU"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="gap-x-2 grid grid-cols-2 w-full">
             <FormField
               control={form.control}
               name="legalForms"

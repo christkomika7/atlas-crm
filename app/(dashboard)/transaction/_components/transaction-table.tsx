@@ -32,7 +32,7 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
 } from "lucide-react";
-import { formatDateToDashModel } from "@/lib/date";
+import { formatDateToDashModel, getMonthsAndDaysDifference } from "@/lib/date";
 import { cutText, formatNumber } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
 import { $Enums } from "@/lib/generated/prisma";
@@ -175,6 +175,14 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const isSelected = (id: string) =>
       selectedTransactionIds.some((transac) => transac.id === id);
 
+    const period = (start: Date | null, end: Date | null) => {
+      if (start && end) {
+        return getMonthsAndDaysDifference(start, end);
+      }
+      return "-"
+
+    }
+
     return (
       <div className="border border-neutral-200 rounded-xl flex flex-col justify-between h-full">
         <Table>
@@ -194,6 +202,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                 { label: "Référence du document", field: null },
                 { label: "Allocation", field: null },
                 { label: "Source", field: null },
+                { label: "Période", field: null },
                 { label: "Payé pour le compte de", field: null },
                 { label: "Payeur", field: null },
                 { label: "Commentaire", field: null },
@@ -258,6 +267,8 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                   <TableCell className="text-center">{transaction.documentReference}</TableCell>
                   <TableCell className="text-center">{transaction.allocation?.name || "-"}</TableCell>
                   <TableCell className="text-center">{transaction.source?.name || "-"}</TableCell>
+                  <TableCell className="text-center">{period(transaction.periodStart, transaction.periodEnd)}</TableCell>
+
                   <TableCell className="text-center">
                     {transaction.payOnBehalfOf
                       ? cutText(`${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`)

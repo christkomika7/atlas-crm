@@ -1,7 +1,7 @@
 import { $Enums } from "@/lib/generated/prisma";
 import { ClientContractSchemaType, LessorContractSchemaType } from "@/lib/zod/contract.schema";
 import { RequestResponse } from "@/types/api.types";
-import { ClientContractType, LessorContractType } from "@/types/contract-types";
+import { ClientContractType, ContractType, LessorContractType } from "@/types/contract-types";
 
 export async function getAllContracts({
     companyId,
@@ -50,15 +50,7 @@ export async function getUniqueContract({ id, filter }: { id: string; filter: $E
             method: 'GET',
         });
 
-        if (filter === "CLIENT") {
-            const res: RequestResponse<ClientContractType> = await response.json()
-            if (!response.ok) {
-                throw new Error(res.message);
-            }
-            return res;
-        }
-
-        const res: RequestResponse<LessorContractType> = await response.json()
+        const res: RequestResponse<ContractType> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }
@@ -168,7 +160,7 @@ export async function removeManyContract({ ids }: { ids: string[] }) {
 }
 
 
-export async function exportToWord(data: { html: string }) {
+export async function exportToWord(data: { contract: ContractType }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/upload/word`, {
             method: "POST",

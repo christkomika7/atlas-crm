@@ -1,49 +1,35 @@
-// app/api/export-word/route.ts
+import { generateContractDocument } from "@/lib/word";
 import { NextRequest, NextResponse } from "next/server";
-import htmlToDocx from "@turbodocx/html-to-docx";
 
+
+// Route API pour générer et télécharger le contrat
 export async function POST(req: NextRequest) {
     try {
-        const { html } = await req.json();
+        const { contract } = await req.json();
 
-        if (!html) {
+        if (!contract) {
             return NextResponse.json(
-                { status: "error", message: "HTML manquant" },
+                { error: "Données du contrat manquantes" },
                 { status: 400 }
             );
         }
 
-        // Conversion HTML -> DOCX
-        const docxBuffer = await htmlToDocx(html);
+        // Générer le document
+        const buffer = await generateContractDocument(contract);
 
-        let arrayBuffer: ArrayBuffer;
-        if (docxBuffer instanceof ArrayBuffer) {
-            arrayBuffer = docxBuffer;
-        } else if (docxBuffer instanceof Blob) {
-            arrayBuffer = await docxBuffer.arrayBuffer();
-        } else {
-            // Node.js Buffer ou ArrayBufferLike
-            arrayBuffer = new Uint8Array(docxBuffer).buffer;
-        }
-
-        // Créer le Blob
-        const blob = new Blob([arrayBuffer], {
-            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        });
-
-        return new NextResponse(blob, {
-            status: 200,
+        // Retourner le fichier
+        return new NextResponse(buffer, {
             headers: {
-                "Content-Type":
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "Content-Disposition": 'attachment; filename="export.docx"',
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'Content-Disposition': `attachment; filename="Contrat_${contract.client.companyName}_AG-LOC-001.docx"`,
             },
         });
     } catch (error) {
-        console.error("Erreur lors de l'export Word:", error);
+        console.error('Erreur lors de la génération du contrat:', error);
         return NextResponse.json(
-            { status: "error", message: "Erreur lors de l'export Word" },
+            { error: "Erreur lors de la génération du contrat" },
             { status: 500 }
         );
     }
 }
+

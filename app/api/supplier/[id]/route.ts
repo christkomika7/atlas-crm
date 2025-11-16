@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
 
   const companyExist = await prisma.company.findUnique({ where: { id } });
   if (!companyExist) {
-    console.log({ error: "Identifiant invalide." })
     return NextResponse.json({
       status: "error",
       message: "Aucun élément trouvé pour cet identifiant.",
@@ -83,7 +82,7 @@ export async function POST(req: NextRequest) {
         phone: data.phone,
         path: folder,
         website: data.website,
-        niu: data.niu,
+        job: data.job,
         legalForms: data.legalForms,
         address: data.address,
         businessSector: data.businessSector,

@@ -163,7 +163,8 @@ export async function POST(req: NextRequest) {
         const createdContract = await prisma.contract.create({
           data: {
             type: lessorData.type,
-            ...lessorData.lessor ? {
+            lessorType: lessorData.lesortType,
+            ...lessorData.lessor && lessorData.lesortType === 'supplier' ? {
               lessor: {
                 connect: {
                   id: lessorData.lessor

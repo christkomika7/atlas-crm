@@ -94,14 +94,14 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
     function getUser(contract: ClientContractType | LessorContractType) {
       if (contract.type === "CLIENT") {
         const c = contract as ClientContractType;
-        return `${c.client.lastname} ${c.client.firstname}`;
+        return `${c.client.companyName}`;
       } else {
         const c = contract as LessorContractType;
         if (c.lessor) {
-          return `${c.lessor?.lastname} ${c.lessor?.firstname}`;
+          return `${c.lessor?.companyName}`;
         } else {
           if (c.billboard.lessorSupplier) {
-            return `${c.billboard.lessorSupplier?.lastname} ${c.billboard.lessorSupplier?.firstname}`;
+            return `${c.billboard.lessorName}`;
           }
           return `${c.billboard?.lessorName}`;
         }
@@ -117,7 +117,7 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
               <TableHead className="font-medium text-center">Date</TableHead>
               <TableHead className="font-medium text-center">Contrat</TableHead>
               <TableHead className="font-medium text-center">
-                Client | Fournisseur
+                Société
               </TableHead>
               <TableHead className="font-medium text-center">Action</TableHead>
             </TableRow>

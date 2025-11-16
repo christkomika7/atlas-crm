@@ -45,6 +45,9 @@ export type TransactionType = {
   sourceId?: string;
   source?: SourceType;
 
+  periodStart: Date | null;
+  periodEnd: Date | null;
+
   payOnBehalfOfId?: string;
   payOnBehalfOf?: ClientType;
 

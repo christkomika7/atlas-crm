@@ -179,7 +179,7 @@ model Supplier {
   website                    String?
   paidAmount                 Decimal  @default(0) @db.Decimal(15, 2)
   due                        Decimal  @default(0) @db.Decimal(15, 2)
-  niu                        String?  @default("")
+  job                        String?  @default("")
   legalForms                 String   @default("")
   capital                    String   @default("0")
   address                    String
@@ -277,7 +277,7 @@ model Client {
   businessSector             String
   businessRegistrationNumber String
   taxIdentificationNumber    String
-  niu                        String?  @default("")
+  job                        String?  @default("")
   legalForms                 String   @default("")
   capital                    String   @default("0")
   discount                   String
@@ -344,6 +344,8 @@ model Contract {
 
   lessorId String?
   lessor   Supplier? @relation(fields: [lessorId], references: [id], onDelete: SetNull)
+
+  lessorType String?
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)

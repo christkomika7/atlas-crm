@@ -5,7 +5,6 @@ import { generateAmaId, getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  // s'assurer d'attendre la vérification d'accès
   await checkAccess(["TRANSACTION"], "READ");
 
   try {
@@ -19,11 +18,9 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
 
-    // Pagination offset-based avec constante
     const skip = parseInt(searchParams.get("skip") || "0", 10);
     const take = parseInt(searchParams.get("take") || DEFAULT_PAGE_SIZE.toString(), 10);
 
-    // Filtres
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const movementValue = searchParams.get("movementValue");
@@ -32,7 +29,6 @@ export async function GET(req: NextRequest) {
     const paidForValue = searchParams.get("paidForValue");
     const paymentModeValue = searchParams.get("paymentModeValue");
 
-    // Tri
     const sortKeys = [
       "byDate",
       "byAmount",
@@ -49,7 +45,6 @@ export async function GET(req: NextRequest) {
     const activeSort = sortKeys.find((key) => searchParams.has(key));
     const sortOrder = activeSort ? (searchParams.get(activeSort) as "asc" | "desc") : "desc";
 
-    // Construction WHERE
     const baseWhere: any = { companyId };
     const parseIso = (s?: string | null) => {
       if (!s) return null;
@@ -91,9 +86,6 @@ export async function GET(req: NextRequest) {
       company: { select: { documentModel: true } },
     };
 
-    // Récupère receipts et disbursements depuis la DB.
-    // On ordonne déjà par createdAt desc par défaut pour avoir les plus récents en haut.
-    // (L'ordre final peut ensuite être modifié par le tri côté application si demandé).
     const allReceipts = await prisma.receipt.findMany({
       where: baseWhere,
       orderBy: { createdAt: "desc" },
@@ -111,6 +103,8 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       select: {
         ...commonSelect,
+        periodStart: true,
+        periodEnd: true,
         supplier: true,
         client: true,
         allocation: { select: { id: true, name: true } },
@@ -119,6 +113,8 @@ export async function GET(req: NextRequest) {
         referencePurchaseOrder: { select: { id: true, purchaseOrderNumber: true } },
       },
     });
+
+
 
     const normalizedReceipts = allReceipts.map((receipt) => ({
       ...receipt,
@@ -130,6 +126,8 @@ export async function GET(req: NextRequest) {
           false
         )}`
         : "-",
+      periodStart: null,
+      periodEnd: null,
       type: receipt.type.toString(),
       movement: receipt.movement.toString(),
       amountType: receipt.amountType.toString(),
@@ -138,6 +136,8 @@ export async function GET(req: NextRequest) {
     const normalizedDisbursements = allDisbursements.map((disbursement) => ({
       ...disbursement,
       type: disbursement.type.toString(),
+      periodStart: disbursement.periodStart,
+      periodEnd: disbursement.periodEnd,
       movement: disbursement.movement.toString(),
       amountType: disbursement.amountType.toString(),
       documentReference: disbursement.referencePurchaseOrder?.purchaseOrderNumber

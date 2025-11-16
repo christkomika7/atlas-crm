@@ -26,7 +26,8 @@ export const lessorContractSchema = z.object({
     id: z.string().optional(),
     type: z.enum($Enums.ContractType, { error: "Le type de contrat est obligatoire." }),
     company: z.string({ error: "Aucun entreprise trouvée." }),
-    lessor: z.string().optional(),
+    lessor: z.string({ error: 'Le fournisseur est obligatoire.' }),
+    lesortType: z.string({ error: "Le type du fournisseur est obligatoire" }),
     billboard: z.string({ error: "Le panneau d'affichage est obligatoire" }),
 });
 

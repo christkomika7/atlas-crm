@@ -23,14 +23,14 @@ export async function invoiceNumber({ companyId }: { companyId: string }) {
     }
 }
 
-export async function all({ companyId, filter }: { companyId: string, filter?: "unpaid" | "paid" }) {
+export async function all({ companyId, filter, client }: { companyId: string, filter?: "unpaid" | "paid" | 'contract', client?: string }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${companyId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ data: filter }),
+            body: JSON.stringify({ data: filter, client }),
         });
 
         const res: RequestResponse<InvoiceType[]> = await response.json()

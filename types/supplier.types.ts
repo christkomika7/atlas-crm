@@ -12,8 +12,9 @@ export type SupplierType = {
     path: string;
     paidAmount: string;
     due: string;
-    niu?: string;
+    job?: string;
     legalForms: string;
+    capital: string;
     businessSector: string;
     businessRegistrationNumber: string;
     taxIdentificationNumber: string;
@@ -26,6 +27,20 @@ export type SupplierType = {
     updatedAt: Date;
     company: CompanyType<undefined>
 }
+
+
+export type BillboardSupplier = {
+    id: string;
+    type: 'lessor' | 'supplier';
+    company: string;
+    legalForm: string;
+    capital: string;
+    taxIdentificationNumber: string;
+    address: string;
+    representativeName: string;
+    representativeJob: string | null;
+}
+
 
 export type CustomersTableHandle = {
     refetchClients: () => void;

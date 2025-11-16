@@ -10,8 +10,9 @@ export type ClientType = {
     phone: string;
     website: string;
     address: string;
-    niu?: string;
+    job?: string;
     legalForms: string;
+    capital: string;
     path: string;
     paidAmount: string;
     due: string;

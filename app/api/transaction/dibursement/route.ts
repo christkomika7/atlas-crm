@@ -1,4 +1,4 @@
-import { DIBURSMENT_CATEGORY, FISCAL_NATURE, FISCAL_OBJECT } from "@/config/constant";
+import { DIBURSMENT_CATEGORY, FISCAL_NATURE } from "@/config/constant";
 import { checkAccess } from "@/lib/access"
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
@@ -15,18 +15,22 @@ export async function POST(req: NextRequest) {
     const data = parseData<DibursementSchemaType>(dibursementSchema, {
         ...res,
         date: new Date(res.date),
-        period: res.period ? {
-            from: new Date(res.period.from),
-            to: new Date(res.period.to),
-        } : undefined
+        period: res.period
+            ? {
+                from: new Date(res.period.from),
+                to: new Date(res.period.to),
+            }
+            : undefined,
     }) as DibursementSchemaType;
 
     const companyExist = await prisma.company.findUnique({ where: { id: data.companyId } });
 
-    if (!companyExist) return NextResponse.json({
-        status: "error",
-        message: "Identifiant invalide",
-    }, { status: 404 })
+    if (!companyExist) {
+        return NextResponse.json(
+            { status: "error", message: "Identifiant invalide" },
+            { status: 404 }
+        );
+    }
 
     const [category, nature] = await prisma.$transaction([
         prisma.transactionCategory.findUnique({ where: { id: data.category } }),
@@ -34,127 +38,70 @@ export async function POST(req: NextRequest) {
     ]);
 
     if (!category) {
-        return NextResponse.json({
-            status: "error",
-            message: "Catégorie invalide",
-        }, { status: 404 })
+        return NextResponse.json(
+            { status: "error", message: "Catégorie invalide" },
+            { status: 404 }
+        );
     }
 
     if (DIBURSMENT_CATEGORY.includes(category.name) && !data.allocation) {
-        return NextResponse.json({
-            status: "error",
-            message: "L'allocation est obligatoire pour le règlement fournisseur",
-        }, { status: 404 })
+        return NextResponse.json(
+            { status: "error", message: "L'allocation est obligatoire pour le règlement fournisseur" },
+            { status: 400 }
+        );
     }
 
     if (nature?.name === FISCAL_NATURE && !data.fiscalObject) {
-        return NextResponse.json({
-            status: "error",
-            message: "L'objet de paiement est obligatoire",
-        }, { status: 404 })
+        return NextResponse.json(
+            { status: "error", message: "L'objet de paiement est obligatoire" },
+            { status: 400 }
+        );
+    }
+
+    const referenceDocument: Record<string, any> = {};
+
+    if (data.fiscalObject) {
+        Object.assign(referenceDocument, {
+            fiscalObject: { connect: { id: data.fiscalObject } },
+        });
+    }
+
+    if (data.allocation) {
+        Object.assign(referenceDocument, {
+            allocation: { connect: { id: data.allocation } },
+        });
+    }
+
+    if (data.period) {
+        Object.assign(referenceDocument, {
+            periodStart: data.period.from,
+            periodEnd: data.period.to,
+        });
+    }
+
+    if (data.documentRef) {
+        Object.assign(referenceDocument, {
+            referencePurchaseOrder: { connect: { id: data.documentRef } },
+        });
+    }
+
+    if (data.project) {
+        Object.assign(referenceDocument, {
+            project: { connect: { id: data.project } },
+        });
+    }
+
+    if (data.payOnBehalfOf) {
+        Object.assign(referenceDocument, {
+            payOnBehalfOf: { connect: { id: data.payOnBehalfOf } },
+        });
     }
 
     try {
+        const createdDibursement = await prisma.$transaction(async (tx) => {
+            if (data.documentRef) {
+                const purchaseOrderId = data.documentRef;
 
-        const referenceDocument = {};
-
-
-
-        if (data.fiscalObject) {
-            Object.assign(referenceDocument, {
-                fiscalObject: {
-                    connect: {
-                        id: data.fiscalObject
-                    }
-                },
-            })
-        }
-
-        if (data.allocation) {
-            Object.assign(referenceDocument, {
-                allocation: {
-                    connect: {
-                        id: data.allocation
-                    }
-                },
-            })
-        }
-
-        if (data.period) {
-            Object.assign(referenceDocument, {
-                periodStart: data.period.from,
-                periodEnd: data.period.to
-            })
-        }
-
-        if (data.documentRef) {
-            Object.assign(referenceDocument, {
-                referencePurchaseOrder: {
-                    connect: {
-                        id: data.documentRef
-                    }
-                },
-            })
-        }
-
-        if (data.project) {
-            Object.assign(referenceDocument, {
-                project: {
-                    connect: {
-                        id: data.project
-                    }
-                }
-            });
-        }
-
-        if (data.payOnBehalfOf) {
-            Object.assign(referenceDocument, {
-                payOnBehalfOf: {
-                    connect: {
-                        id: data.payOnBehalfOf
-                    }
-                },
-            });
-        }
-
-        const createdDibursement = await prisma.dibursement.create({
-            data: {
-                type: "DISBURSEMENT",
-                date: data.date,
-                movement: 'OUTFLOWS',
-                amount: String(data.amount),
-                amountType: data.amountType,
-                paymentType: data.paymentMode,
-                checkNumber: data.checkNumber,
-                description: data.description,
-                comment: data.comment,
-                category: {
-                    connect: {
-                        id: data.category
-                    }
-                },
-                source: {
-                    connect: {
-                        id: data.source
-                    }
-                },
-                nature: {
-                    connect: {
-                        id: data.nature
-                    }
-                },
-                company: {
-                    connect: {
-                        id: data.companyId
-                    }
-                },
-                ...referenceDocument,
-            }
-        });
-
-        if (data.documentRef) {
-            const purchaseOrderId = data.documentRef;
-            await prisma.$transaction(async (tx) => {
                 const purchaseExist = await tx.purchaseOrder.findUnique({
                     where: { id: purchaseOrderId },
                     select: {
@@ -193,8 +140,7 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                const hasCompletedPayment =
-                    payee.add(newAmount.valueOf()).gte(total.minus(0.01));
+                const hasCompletedPayment = payee.add(newAmount.valueOf()).gte(total.minus(0.01));
 
                 await tx.payment.create({
                     data: {
@@ -212,31 +158,51 @@ export async function POST(req: NextRequest) {
                         isPaid: hasCompletedPayment,
                         payee: payee.add(newAmount.valueOf()),
                     },
-                    include: {
-                        company: {
-                            include: {
-                                documentModel: true
-                            }
-                        },
-                        supplier: true,
-                    },
                 });
+            }
+
+            const dibursement = await tx.dibursement.create({
+                data: {
+                    type: "DISBURSEMENT",
+                    date: data.date,
+                    movement: "OUTFLOWS",
+                    amount: String(data.amount),
+                    amountType: data.amountType,
+                    paymentType: data.paymentMode,
+                    checkNumber: data.checkNumber,
+                    description: data.description,
+                    comment: data.comment,
+                    category: { connect: { id: data.category } },
+                    source: { connect: { id: data.source } },
+                    nature: { connect: { id: data.nature } },
+                    company: { connect: { id: data.companyId } },
+                    ...referenceDocument,
+                },
             });
 
-        }
+            return dibursement;
+        });
 
         return NextResponse.json({
             status: "success",
             message: "Le décaissement crée avec succès.",
             data: createdDibursement,
         });
+    } catch (error: any) {
+        console.error("Error creating disbursement:", error);
 
-    } catch (error) {
-        console.error(error);
-        return NextResponse.json({
-            status: "error",
-            message: "Erreur lors de la création de décaissement.",
-        }, { status: 500 });
+        // Si c'est une erreur lancée volontairement (validation métier), renvoie 400
+        // Sinon 500. On différencie un peu via error.name si souhaité.
+        const isClientError = error instanceof Error && (
+            /Identifiant|dépasse|déjà réglé|obligatoire/i.test(error.message)
+        );
+
+        const status = isClientError ? 400 : 500;
+        const message = error instanceof Error ? error.message : "Erreur lors de la création de décaissement.";
+
+        return NextResponse.json(
+            { status: "error", message },
+            { status }
+        );
     }
-
 }

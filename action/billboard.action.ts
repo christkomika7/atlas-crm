@@ -6,10 +6,12 @@ import { RequestResponse } from "@/types/api.types";
 import { BaseType } from "@/types/base.types";
 import { BillboardType } from "@/types/billboard.types";
 
-export async function all({ companyId, search, limit }: { companyId: string, search?: string, limit?: number }) {
+export async function all({ companyId, search, limit, lessor, lessorType }: { companyId: string, search?: string, limit?: number, lessor?: string, lessorType?: string }) {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
     if (limit) params.append("limit", String(limit));
+    if (lessor) params.append("lessor", String(lessor));
+    if (lessorType) params.append("lessorType", String(lessorType));
 
     const queryString = params.toString();
     const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard/${companyId}${queryString ? `?${queryString}` : ""

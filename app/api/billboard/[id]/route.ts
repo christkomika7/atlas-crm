@@ -19,6 +19,8 @@ export async function GET(req: NextRequest) {
 
         const search = req.nextUrl.searchParams.get("search")?.trim() ?? "";
         const rawLimit = req.nextUrl.searchParams.get("limit") ?? "";
+        const lessor = req.nextUrl.searchParams.get("lessor") ?? "";
+        const lessorType = req.nextUrl.searchParams.get("lessorType") ?? "";
         const DEFAULT_LIMIT = 50;
         const MAX_LIMIT = 200;
 
@@ -52,6 +54,25 @@ export async function GET(req: NextRequest) {
             ];
         }
 
+        if (lessor && lessorType) {
+            if (lessorType === "lessor") {
+                baseWhere.id = lessor
+            } else {
+                const supplier = await prisma.supplier.findUnique({
+                    where: { id: lessor },
+                    include: {
+                        billboards: true
+                    }
+                });
+                const billboardIds = supplier?.billboards.map(b => b.id).filter(b => typeof b === 'string') || []
+
+                baseWhere.id = {
+                    in: billboardIds
+                }
+
+            }
+        }
+
         const billboards = await prisma.billboard.findMany({
             where: baseWhere,
             include: {
@@ -66,9 +87,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(
             {
                 state: "success",
-                data: billboards.map((billboard) => ({
-                    ...billboard,
-                })),
+                data: billboards,
             },
             { status: 200 }
         );

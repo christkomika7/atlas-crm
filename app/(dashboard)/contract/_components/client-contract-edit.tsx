@@ -11,7 +11,7 @@ import { clientContractSchema, ClientContractSchemaType } from "@/lib/zod/contra
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { ClientType } from "@/types/client.types";
-import { ClientContractType, LessorContractType } from "@/types/contract-types";
+import { ClientContractType, ContractType, LessorContractType } from "@/types/contract-types";
 import { InvoiceType } from "@/types/invoice.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
@@ -29,6 +29,7 @@ type ClientContractEditProps = {
 export default function ClientContractEdit({ id, refreshContract, closeModal }: ClientContractEditProps) {
     const companyId = useDataStore.use.currentCompany();
 
+    const [clientId, setClientId] = useState("");
     const [clients, setClients] = useState<ClientType[]>([]);
     const [invoices, setInvoices] = useState<InvoiceType[]>([]);
 
@@ -47,30 +48,31 @@ export default function ClientContractEdit({ id, refreshContract, closeModal }: 
 
     const { mutate: mutateGetClientContracts, isPending: isGettingClientContracts } = useQueryAction<
         { id: string, filter: $Enums.ContractType },
-        RequestResponse<ClientContractType | LessorContractType>
+        RequestResponse<ContractType>
     >(getUniqueContract, () => { }, "contract");
 
-    const { mutate: mutateGetClient, isPending: isGettingClients } = useQueryAction<
-        { id: string },
+    const { mutate: mutateGetClients, isPending: isGettingClients } = useQueryAction<
+        { id: string, filter: string },
         RequestResponse<ClientType[]>
     >(getAllClients, () => { }, "clients");
 
 
     const { mutate: mutateGetInvoices, isPending: isGettingInvoices } = useQueryAction<
-        { companyId: string },
+        { companyId: string, filter: 'contract', client: string },
         RequestResponse<InvoiceType[]>
     >(getAllInvoices, () => { }, "invoices");
 
     useEffect(() => {
         if (id) {
-            mutateGetClientContracts({ id, filter: "LESSOR" }, {
+            mutateGetClientContracts({ id, filter: "CLIENT" }, {
                 onSuccess(data) {
                     if (data.data) {
-                        const clientContrat = data.data as ClientContractType;
-                        console.log({ clientContrat })
+                        const clientContrat = data.data;
+                        setClientId(clientContrat.client.id);
+                        console.log({ invoices: clientContrat.items.map(item => item.id) })
                         form.setValue("id", id);
-                        form.setValue("client", clientContrat.clientId);
-                        form.setValue("invoices", clientContrat.invoices.map(invoice => invoice.id));
+                        form.setValue("client", clientContrat.client.id);
+                        form.setValue("invoices", clientContrat.items.map(item => item.id));
                     }
                 },
             })
@@ -82,16 +84,20 @@ export default function ClientContractEdit({ id, refreshContract, closeModal }: 
     useEffect(() => {
         if (companyId) {
             form.setValue('company', companyId);
-
-            mutateGetClient({ id: companyId }, {
+            mutateGetClients({ id: companyId, filter: 'contract' }, {
                 onSuccess(data) {
                     if (data.data) {
                         setClients(data.data);
                     }
                 },
             })
+        }
+    }, [companyId])
 
-            mutateGetInvoices({ companyId }, {
+
+    useEffect(() => {
+        if (clientId) {
+            mutateGetInvoices({ companyId, filter: 'contract', client: clientId }, {
                 onSuccess(data) {
                     if (data.data) {
                         setInvoices(data.data);
@@ -99,7 +105,8 @@ export default function ClientContractEdit({ id, refreshContract, closeModal }: 
                 },
             })
         }
-    }, [companyId])
+
+    }, [clientId])
 
     async function submit(contractData: ClientContractSchemaType) {
         const { success, data } = clientContractSchema.safeParse(contractData);
@@ -134,11 +141,14 @@ export default function ClientContractEdit({ id, refreshContract, closeModal }: 
                                         isLoading={isGettingClients}
                                         datas={clients.map((client) => ({
                                             id: client.id,
-                                            label: `${client.lastname} ${client.firstname}`,
+                                            label: `${client.companyName}`,
                                             value: client.id,
                                         }))}
                                         value={field.value}
-                                        setValue={field.onChange}
+                                        setValue={e => {
+                                            field.onChange(e);
+                                            setClientId(e);
+                                        }}
                                         placeholder="Client"
                                         searchMessage="Rechercher un client"
                                         noResultsMessage="Aucun client trouvé."

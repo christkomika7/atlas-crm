@@ -45,8 +45,15 @@ export default function InfoTab() {
           />
           <TextInput
             design="float"
-            label="Nom"
+            label="Prénom"
             value={supplier?.firstname}
+            disabled={true}
+            handleChange={() => { }}
+          />
+          <TextInput
+            design="float"
+            label="Poste"
+            value={supplier?.job}
             disabled={true}
             handleChange={() => { }}
           />
@@ -68,13 +75,6 @@ export default function InfoTab() {
             design="float"
             label="Secteur d'activité"
             value={supplier?.businessSector}
-            disabled={true}
-            handleChange={() => { }}
-          />
-          <TextInput
-            design="float"
-            label="NIU"
-            value={supplier?.niu}
             disabled={true}
             handleChange={() => { }}
           />

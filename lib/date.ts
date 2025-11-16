@@ -1,12 +1,14 @@
 import { LocationBillboardDateType } from "@/stores/item.store";
+import { RentalPeriodType } from "@/types/data.type";
 import { Sale } from "@/types/item.type";
-import { isWithinInterval, parse, startOfDay, addDays as addDaysFNS, differenceInDays, isAfter, isBefore, format } from "date-fns";
+import { isWithinInterval, parse, startOfDay, addDays as addDaysFNS, differenceInDays, isAfter, isBefore, format, addMonths, addYears } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 
 type DateRange = {
     startDate?: Date;
     endDate?: Date;
 };
+
 
 export function formatDateToDashModel(date: Date): string {
     return new Date(date).toLocaleDateString().replaceAll("/", "-");
@@ -162,7 +164,6 @@ export function getTotalDuration(sales: Sale[]): string {
     return parts.join(" & ") || "0 j";
 }
 
-
 export function durationInMonths(start: Date, end: Date): number {
     if (end < start) return 0;
 
@@ -185,8 +186,6 @@ export function durationInMonths(start: Date, end: Date): number {
 
     return +(totalMonths + dayFraction).toFixed(2);
 }
-
-
 
 export function getEnableDate(
     locations: LocationBillboardDateType[],
@@ -229,9 +228,6 @@ export function getEnableDate(
     return current;
 }
 
-
-
-// normalise n'importe quelle entrée (string ISO ou Date) en Date à 00:00:00 UTC
 export function toUtcDateOnly(input: string | Date): Date {
     const raw =
         typeof input === "string" ? input.split("T")[0] : input instanceof Date ? input.toISOString().split("T")[0] : String(input);
@@ -243,7 +239,6 @@ export function toUtcDateOnly(input: string | Date): Date {
     // crée une Date à minuit UTC pour éviter les décalages timezone lors de la sauvegarde
     return new Date(Date.UTC(y, m - 1, d));
 };
-
 
 export function toDateOnlyString(value?: string | Date | null) {
     if (!value) return "";
@@ -259,4 +254,22 @@ export function toDateOnlyString(value?: string | Date | null) {
     const d = new Date(s);
     if (!isNaN(d.getTime())) return format(d, "yyyy-MM-dd");
     return s;
+}
+
+export function getEndDate(start: Date, delay: RentalPeriodType) {
+    console.log({ date: addMonths(start, 6), delay })
+    switch (delay) {
+        case "6_months":
+            return addMonths(start, 6);
+        case "1_year":
+            return addYears(start, 1);
+        case "2_years":
+            return addYears(start, 2);
+        case "3_years":
+            return addYears(start, 3);
+        case "5_years":
+            return addYears(start, 5);
+        default:
+            return addMonths(start, 6);
+    }
 }

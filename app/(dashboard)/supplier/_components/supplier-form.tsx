@@ -41,7 +41,7 @@ export default function SupplierForm({
       phone: "",
       website: "",
       address: "",
-      niu: "",
+      job: "",
       legalForms: "",
       businessSector: "",
       businessRegistrationNumber: "",
@@ -98,7 +98,7 @@ export default function SupplierForm({
             )}
           />
 
-          <div className="gap-x-2 grid grid-cols-2 w-full">
+          <div className="gap-x-2 grid grid-cols-3 w-full">
             <FormField
               control={form.control}
               name="firstname"
@@ -125,6 +125,24 @@ export default function SupplierForm({
                     <TextInput
                       design="float"
                       label="Nom"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="job"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      required={false}
+                      design="float"
+                      label="Poste"
                       value={field.value}
                       handleChange={field.onChange}
                     />
@@ -284,25 +302,7 @@ export default function SupplierForm({
               )}
             />
           </div>
-          <div className="gap-x-2 grid grid-cols-3 w-full">
-            <FormField
-              control={form.control}
-              name="niu"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      required={false}
-                      design="float"
-                      label="NIU"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="gap-x-2 grid grid-cols-2 w-full">
             <FormField
               control={form.control}
               name="legalForms"

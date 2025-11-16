@@ -1,7 +1,7 @@
 import { SupplierSchemaType, EditSupplierSchemaType } from "@/lib/zod/supplier.schema";
 import { RequestResponse } from "@/types/api.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
-import { SupplierType } from "@/types/supplier.types";
+import { BillboardSupplier, SupplierType } from "@/types/supplier.types";
 
 export async function all({ id }: { id: string }) {
     try {
@@ -19,6 +19,25 @@ export async function all({ id }: { id: string }) {
         throw error;
     }
 }
+
+export async function getAllBillboardSuppliers({ companyId }: { companyId: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/supplier/${companyId}/lessor`, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<BillboardSupplier[]> = await response.json()
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+
 
 export async function unique({ id }: { id: string }) {
     try {
@@ -47,7 +66,7 @@ export async function create(data: SupplierSchemaType & { id: string }) {
         formData.append("phone", data.phone);
         formData.append("website", data.website ?? "");
         formData.append("address", data.address);
-        formData.append("niu", data.niu || "");
+        formData.append("job", data.job || "");
         formData.append("legalForms", data.legalForms);
         formData.append("businessSector", data.businessSector);
         formData.append("businessRegistrationNumber", data.businessRegistrationNumber);
@@ -90,7 +109,7 @@ export async function update(data: EditSupplierSchemaType) {
         formData.append("firstname", data.firstname);
         formData.append("email", data.email);
         formData.append("phone", data.phone);
-        formData.append("niu", data.niu || "");
+        formData.append("job", data.job || "");
         formData.append("legalForms", data.legalForms);
         formData.append("website", data.website ?? "");
         formData.append("address", data.address);

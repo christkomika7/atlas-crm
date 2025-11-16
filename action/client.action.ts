@@ -5,9 +5,15 @@ import { DeliveryNoteType } from "@/types/delivery-note.types";
 import { InvoiceType } from "@/types/invoice.types";
 import { QuoteType } from "@/types/quote.types";
 
-export async function all({ id }: { id: string }) {
+export async function all({ id, filter }: { id: string, filter?: string }) {
+    const params = new URLSearchParams();
+    if (filter) params.append("filter", filter);
+
+    const queryString = params.toString();
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/client/${id}${queryString ? `?${queryString}` : ""
+        }`;
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/client/${id}`, {
+        const response = await fetch(url, {
             method: 'GET',
         });
 
@@ -49,7 +55,7 @@ export async function create(data: ClientSchemaType & { id: string }) {
         formData.append("phone", data.phone);
         formData.append("website", data.website ?? "");
         formData.append("address", data.address);
-        formData.append("niu", data.niu || "");
+        formData.append("job", data.job || "");
         formData.append("legalForms", data.legalForms);
         formData.append("businessSector", data.businessSector);
         formData.append("businessRegistrationNumber", data.businessRegistrationNumber);
@@ -94,7 +100,7 @@ export async function update(data: EditClientSchemaType) {
         formData.append("phone", data.phone);
         formData.append("website", data.website ?? "");
         formData.append("address", data.address);
-        formData.append("niu", data.niu || "");
+        formData.append("job", data.job || "");
         formData.append("legalForms", data.legalForms);
         formData.append("businessSector", data.businessSector);
         formData.append("businessRegistrationNumber", data.businessRegistrationNumber);

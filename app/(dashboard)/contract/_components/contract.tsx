@@ -1,15 +1,15 @@
 import { getCountryFrenchName } from '@/lib/helper'
 import { formatNumber } from '@/lib/utils'
-import { ClientContractType } from '@/types/contract-types'
+import { ContractType } from '@/types/contract-types'
 import React from 'react'
 
-type ClientContractProps = {
-    contract: ClientContractType
+type ContractProps = {
+    contract: ContractType
 }
 
-export default function ClientContract({ contract }: ClientContractProps) {
+export default function Contract({ contract }: ContractProps) {
     return (
-        <div id="contract" className='w-full'>
+        <div id="contract" className='w-full space-y-2'>
             <ContractPage title='Contrat AG-LOC-001' page='1'>
                 <div className='pt-10 text-sm'>
                     <div className='mb-5 p-6 border-8 border-black'>
@@ -22,21 +22,21 @@ export default function ClientContract({ contract }: ClientContractProps) {
                     <div className='py-4'>
                         <h2 className='mb-5 text-base' ><span className='font-semibold'>D'autre part,</span></h2>
                         <ul className='mb-5'>
-                            <li><span className='font-semibold'>Nom : </span> {contract.client.companyName}</li>
-                            <li><span className='font-semibold'>Type : </span> {contract.client.businessSector}</li>
-                            <li><span className='font-semibold'>Capital : </span> {contract.company.companyName}</li>
-                            <li><span className='font-semibold'>Siège social : </span> {contract.company.companyName}</li>
-                            <li><span className='font-semibold'>RCCM : </span> {contract.company.companyName}</li>
-                            <li><span className='font-semibold'>NIU : </span> {contract.company.companyName}</li>
+                            <li><span className='font-semibold'>Nom : </span> {contract.client.company}</li>
+                            <li><span className='font-semibold'>Type : </span> {contract.client.legalForm}</li>
+                            <li><span className='font-semibold'>Capital : </span> {contract.company.capital}</li>
+                            <li><span className='font-semibold'>Siège social : </span> {contract.company.address}</li>
+                            <li><span className='font-semibold'>RCCM : </span> {contract.company.rccm}</li>
+                            <li><span className='font-semibold'>NIU : </span> {contract.company.niu}</li>
                         </ul>
                         <h2 className='mb-5 text-base'><span className='font-semibold'>Et d'autre part,</span></h2>
                         <ul className='mb-2'>
-                            <li><span className='font-semibold'>Nom : </span> {contract.company.companyName}</li>
-                            <li><span className='font-semibold'>Type : </span> {contract.company.businessActivityType}</li>
-                            <li><span className='font-semibold'>Capital : </span> {formatNumber(contract.company.capitalAmount)} {contract.company.currency}</li>
-                            <li><span className='font-semibold'>Siège social : </span> {contract.company.registeredAddress}</li>
-                            <li><span className='font-semibold'>RCCM : </span> {contract.company.businessRegistrationNumber}</li>
-                            <li><span className='font-semibold'>NIU : </span> {contract.company.taxIdentificationNumber}</li>
+                            <li><span className='font-semibold'>Nom : </span> {contract.company.name}</li>
+                            <li><span className='font-semibold'>Type : </span> {contract.company.legalForm}</li>
+                            <li><span className='font-semibold'>Capital : </span> {formatNumber(contract.company.capital)} {contract.company.currency}</li>
+                            <li><span className='font-semibold'>Siège social : </span> {contract.company.address}</li>
+                            <li><span className='font-semibold'>RCCM : </span> {contract.company.rccm}</li>
+                            <li><span className='font-semibold'>NIU : </span> {contract.company.niu}</li>
                         </ul>
                     </div>
                     <h2><span className='font-semibold'>Il a été convenu et arrêté ce qui suit :</span></h2>
@@ -524,6 +524,7 @@ function ContractPage({ children, title, page }: ContractPageProps) {
         <div className='px-6'>
             {children}
         </div>
+        {/*  */}
         <div className='grid grid-cols-3 text-sm px-6 py-4'>
             <div></div>
             <div className='text-center'>

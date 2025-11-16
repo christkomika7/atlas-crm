@@ -11,6 +11,7 @@ import { $Enums } from "@/lib/generated/prisma";
 export async function GET(req: NextRequest) {
   await checkAccess(["CLIENTS"], "READ");
   const id = getIdFromUrl(req.url, "last") as string;
+  const filter = req.nextUrl.searchParams.get("filter")?.trim() ?? "";
 
   const companyExist = await prisma.company.findUnique({ where: { id } });
   if (!companyExist) {
@@ -20,19 +21,47 @@ export async function GET(req: NextRequest) {
     }, { status: 404 });
   }
 
+  console.log({ filter })
+
+  if (!filter) {
+    const clients = await prisma.client.findMany({
+      where: {
+        companyId: id
+      },
+      include: {
+        company: true
+      }
+    })
+
+    return NextResponse.json({
+      state: "success",
+      data: clients,
+    }, { status: 200 })
+  }
+
   const clients = await prisma.client.findMany({
     where: {
-      companyId: id
+      companyId: id,
+      invoices: {
+        some: {
+          items: {
+            some: {
+              itemType: "billboard"
+            }
+          }
+        }
+      }
     },
-    include: {
-      company: true
-    }
-  })
+    include: { company: true }
+  });
+
+  console.log({ clients })
 
   return NextResponse.json({
     state: "success",
     data: clients,
-  }, { status: 200 })
+  }, { status: 200 });
+
 }
 
 export async function POST(req: NextRequest) {
@@ -82,7 +111,7 @@ export async function POST(req: NextRequest) {
         email: data.email,
         phone: data.phone,
         path: folder,
-        niu: data.niu,
+        job: data.job,
         legalForms: data.legalForms,
         website: data.website,
         address: data.address,

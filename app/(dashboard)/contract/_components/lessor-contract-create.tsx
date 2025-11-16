@@ -1,6 +1,6 @@
 import { all as getAllBillboards } from "@/action/billboard.action";
 import { createContract } from "@/action/contract.action";
-import { all as getAllSuppliers } from "@/action/supplier.action";
+import { getAllBillboardSuppliers } from "@/action/supplier.action";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
@@ -11,7 +11,7 @@ import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { BillboardType } from "@/types/billboard.types";
 import { ClientContractType, LessorContractType } from "@/types/contract-types";
-import { SupplierType } from "@/types/supplier.types";
+import { BillboardSupplier } from "@/types/supplier.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -24,7 +24,9 @@ type LessorContractCreateProps = {
 export default function LessorContractCreate({ refreshContract, closeModal }: LessorContractCreateProps) {
     const companyId = useDataStore.use.currentCompany();
 
-    const [lessors, setLessors] = useState<SupplierType[]>([]);
+    const [lessorId, setLessorId] = useState("");
+    const [lessorType, setLessorType] = useState("");
+    const [lessors, setLessors] = useState<BillboardSupplier[]>([]);
     const [billboards, setBillboards] = useState<BillboardType[]>([]);
 
     const form = useForm<LessorContractSchemaType>({
@@ -40,13 +42,13 @@ export default function LessorContractCreate({ refreshContract, closeModal }: Le
     >(createContract, () => { }, "contract");
 
     const { mutate: mutateGetSuppliers, isPending: isGettingSuppliers } = useQueryAction<
-        { id: string },
-        RequestResponse<SupplierType[]>
-    >(getAllSuppliers, () => { }, "suppliers");
+        { companyId: string },
+        RequestResponse<BillboardSupplier[]>
+    >(getAllBillboardSuppliers, () => { }, "suppliers");
 
 
     const { mutate: mutateGetBillboards, isPending: isGettingBillboards } = useQueryAction<
-        { companyId: string },
+        { companyId: string, lessor?: string, lessorType?: string },
         RequestResponse<BillboardType[]>
     >(getAllBillboards, () => { }, "billboards");
 
@@ -54,16 +56,23 @@ export default function LessorContractCreate({ refreshContract, closeModal }: Le
     useEffect(() => {
         if (companyId) {
             form.setValue('company', companyId);
-
-            mutateGetSuppliers({ id: companyId }, {
+            mutateGetSuppliers({ companyId }, {
                 onSuccess(data) {
                     if (data.data) {
                         setLessors(data.data);
                     }
                 },
             })
+        }
+    }, [companyId])
 
-            mutateGetBillboards({ companyId }, {
+
+    useEffect(() => {
+        if (lessorId) {
+            const type = lessors.find(lessor => lessor.id === lessorId)?.type;
+            form.setValue("lesortType", type || "");
+
+            mutateGetBillboards({ companyId, lessor: lessorId, lessorType }, {
                 onSuccess(data) {
                     if (data.data) {
                         setBillboards(data.data);
@@ -71,7 +80,13 @@ export default function LessorContractCreate({ refreshContract, closeModal }: Le
                 },
             })
         }
-    }, [companyId])
+    }, [lessorId])
+
+    function getLessorType(id: string) {
+        const type = lessors.find(lessor => lessor.id === id)?.type;
+        setLessorId(id);
+        setLessorType(type || "");
+    }
 
     async function submit(contractData: LessorContractSchemaType) {
         const { success, data } = lessorContractSchema.safeParse(contractData);
@@ -104,12 +119,14 @@ export default function LessorContractCreate({ refreshContract, closeModal }: Le
                                         isLoading={isGettingSuppliers}
                                         datas={lessors.map((lessor) => ({
                                             id: lessor.id,
-                                            label: `${lessor.lastname} ${lessor.firstname}`,
+                                            label: lessor.company,
                                             value: lessor.id,
                                         }))}
-                                        required={false}
                                         value={field.value as string}
-                                        setValue={field.onChange}
+                                        setValue={(e) => {
+                                            getLessorType(String(e));
+                                            field.onChange(e);
+                                        }}
                                         placeholder="Bailleur"
                                         searchMessage="Rechercher un bailleur"
                                         noResultsMessage="Aucun bailleur trouvé."
