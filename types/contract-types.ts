@@ -50,6 +50,8 @@ export type ContractClientType = {
     address: string;
     representativeName: string;
     representativeJob: string | null | undefined;
+    phone: string;
+    email: string;
 }
 
 
@@ -63,12 +65,18 @@ export type ContractCompanyType = {
     representativeName: string;
     representativeJob: string;
     currency: string;
+    city: string;
     country: string;
+    phone: string;
+    email: string;
 }
 
 export type ContractType = {
     id: string,
     type: $Enums.ContractType,
+    totalHT: string,
+    totalTTC: string,
+    record: string[],
     client: ContractClientType,
     company: ContractCompanyType,
     items: ContractItemType[],

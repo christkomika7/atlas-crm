@@ -15,7 +15,7 @@ export default function Contract({ contract }: ContractProps) {
                     <div className='mb-5 p-6 border-8 border-black'>
                         <h1 className='text-center'>
                             <span className='text-xl font-black'>
-                                CONTRAT DE LOCATION DE PANNEAUX PUBLICITAIRES <br /> {getCountryFrenchName(contract.company.country)?.toUpperCase()}
+                                CONTRAT DE LOCATION DE PANNEAUX PUBLICITAIRES <br /> {contract.company.country}
                             </span>
                         </h1>
                     </div>

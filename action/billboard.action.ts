@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { BaseSchemaType } from "@/lib/zod/base-type.schema";
 import { BillboardSchemaFormType, EditBillboardSchemaFormType } from "@/lib/zod/billboard.schema";
 import { ContractSchemaType } from "@/lib/zod/contract.schema";
@@ -6,12 +7,14 @@ import { RequestResponse } from "@/types/api.types";
 import { BaseType } from "@/types/base.types";
 import { BillboardType } from "@/types/billboard.types";
 
-export async function all({ companyId, search, limit, lessor, lessorType }: { companyId: string, search?: string, limit?: number, lessor?: string, lessorType?: string }) {
+export async function all({ companyId, search, limit, lessor, lessorType, skip = 0, take = DEFAULT_PAGE_SIZE }: { companyId: string, search?: string, limit?: number, lessor?: string, lessorType?: string, skip?: number, take?: number }) {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
     if (limit) params.append("limit", String(limit));
     if (lessor) params.append("lessor", String(lessor));
     if (lessorType) params.append("lessorType", String(lessorType));
+    params.append("skip", String(skip));
+    params.append("take", String(take));
 
     const queryString = params.toString();
     const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard/${companyId}${queryString ? `?${queryString}` : ""

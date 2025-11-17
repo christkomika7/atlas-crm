@@ -17,6 +17,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function formatList(items: string[]) {
+  if (!items || items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} et ${items[1]}`;
+
+  return items.slice(0, -1).join(", ") + " et " + items[items.length - 1];
+}
+
 export function normalizeName(name?: string) {
   return (name ?? "").trim().toLowerCase();
 }

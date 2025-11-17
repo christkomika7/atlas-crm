@@ -1,7 +1,6 @@
 import { ContractItemType, ContractType } from '@/types/contract-types';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, TableCell, TableRow, Table, WidthType, Footer, PageNumber, PageBreak } from 'docx';
-import { getCountryFrenchName } from './helper';
-import { formatNumber } from './utils';
+import { formatList, formatNumber } from './utils';
 import { TitleContentType, TitleType } from '@/types/word.types';
 
 export async function generateContractDocument(contract: ContractType): Promise<Blob> {
@@ -185,9 +184,9 @@ l’Annonceur sont les suivantes :`),
                     createTitleContent({
                         indent: 720,
                         title: "Montant Total de la Campagne", content: `Le montant total hors taxes (HT) pour l'ensemble de la campagne
-de location des panneaux publicitaires, comme spécifié dans l'Article 2, est de ${'prix total ht'}  ${contract.company.currency}
-En y ajoutant les taxes, le montant total toutes taxes comprises (TTC) pour la campagne est de  ${'prix total ttc'} ${contract.company.currency}
-mentionné dans les factures ${'liste des factures'} AB-101 et AB-102.`, paddingBottom: 100
+de location des panneaux publicitaires, comme spécifié dans l'Article 2, est de ${contract.totalHT}  ${contract.company.currency}
+En y ajoutant les taxes, le montant total toutes taxes comprises (TTC) pour la campagne est de  ${contract.totalTTC} ${contract.company.currency}
+mentionné dans les factures ${formatList(contract.record)}.`, paddingBottom: 100
                     }),
                     createTitleContent({
                         indent: 720,
@@ -195,7 +194,6 @@ mentionné dans les factures ${'liste des factures'} AB-101 et AB-102.`, padding
 publicitaires conformément aux tarifs et périodes spécifiés dans l'Article 2 du présent contrat. Chaque facture
 détaillera les coûts associés à chaque panneau publicitaire et la période correspondante de location.`, paddingBottom: 100
                     }),
-                    // 30 jours
                     createTitleContent({
                         indent: 720,
                         title: "Délai de Paiement", content: `L'Annonceur s'engage à régler chaque facture dans un délai de 30 jours à
@@ -209,7 +207,6 @@ est considéré comme effectué à la date à laquelle les fonds sont reçus sur
 compte indiqué par le Loueur, par cheque à l’ordre indiqué sur la facture ou pas espèces auprès du service
 financier du Loueur. Les frais de virement sont à la charge de l’Annonceur.`, paddingBottom: 100
                     }),
-                    // 30 jours
                     createTitleContent({
                         indent: 720,
                         title: "Retard de Paiement", content: `Si le retard excède 30 jours, le Loueur se réserve le droit de suspendre la
@@ -242,7 +239,6 @@ marketing, détails financiers, et autres informations liées aux activités ou 
 divulguées ou échangées, directement ou indirectement, dans le cadre de ce contrat.`, paddingBottom: 100
                     }),
 
-                    // 3 ans
                     createTitleContent({
                         indent: 720,
                         title: "Obligation de Confidentialité", content: `Les parties s'engagent à maintenir la confidentialité des
@@ -282,7 +278,6 @@ un environnement de con ance mutuelle pour la réalisation ef cace du contrat`, 
                     // Article 7
                     createTitle({ text: "Article 7 - Clause de Non-Contournement", paddingTop: 400, paddingBottom: 100, size: 11, underline: true, bold: true }),
 
-                    // 3 ans
                     createTitleContent({
                         indent: 720,
                         title: "Interdiction de Contournement", content: `L'Annonceur s'engage à ne pas contourner, directement ou
@@ -517,7 +512,7 @@ et qualifié, choisi d'un commun accord par les parties.`, paddingBottom: 100
                         title: "Arbitrage", content: `En cas d'échec de la médiation, ou si les parties choisissent de ne pas opter pour la
 médiation, tout litige sera résolu par arbitrage. L'arbitrage sera mené conformément aux règles d'arbitrage
 de la Chambre de Commerce Internationale ou d'un autre organisme d'arbitrage agréé, avec un siège
-d'arbitrage situé à ${'CITY'}.`, paddingBottom: 100
+d'arbitrage situé à ${contract.company.city}.`, paddingBottom: 100
                     }),
                     createTitleContent({
                         indent: 720,
@@ -545,9 +540,9 @@ ou tout autre moyen permettant de prouver leur réception.`, paddingBottom: 100
                     createTitleContent({
                         indent: 720,
                         title: "Adresses de Notification", content: `Les notifications a l’annonceur doivent être envoyées à l'adresse
-suivante : ${'client email'} ou par téléphone au ${'client phone'}, ou à toute autre adresse que le Bailleur
+suivante : ${contract.client.email} ou par téléphone au ${contract.client.phone}, ou à toute autre adresse que le Bailleur
 pourrait désigner par écrit ultérieurement. Les notifications à La Régie Publicitaire doivent être envoyées à
-l'adresse suivante : ${'company email`} ou au ${`company email phone'}, ou à toute autre adresse que La Régie
+l'adresse suivante : ${contract.company.email} ou au ${contract.company.phone}, ou à toute autre adresse que La Régie
 Publicitaire pourrait désigner par écrit ultérieurement.`, paddingBottom: 100
                     }),
                     createTitleContent({
@@ -730,8 +725,8 @@ function createBillboardParagraphs(item: ContractItemType, currency: string, ind
         createTitleContent({ title: "Éclairage", content: item.lighting, paddingBottom: 40, indent: 1440 }),
         createTitleContent({ title: "Période de location", content: item.location, paddingBottom: 40, indent: 1440 }),
         createTitleContent({ title: "Durée", content: item.delay, paddingBottom: 40, indent: 1440 }),
-        createTitleContent({ title: `Prix de location (${currency} HT)`, content: item.price, paddingBottom: 40, indent: 1440 }),
-        createTitleContent({ title: `Prix total sur la période (${currency} HT)`, content: item.delayPrice, paddingBottom: 40, indent: 1440 }),
+        createTitleContent({ title: `Prix de location (${currency} HT)`, content: `${item.price} ${currency}`, paddingBottom: 40, indent: 1440 }),
+        createTitleContent({ title: `Prix total sur la période (${currency} HT)`, content: `${item.delayPrice} ${currency}`, paddingBottom: 40, indent: 1440 }),
 
     ];
 }
@@ -788,7 +783,7 @@ function creatHeader(country: string) {
                             new Paragraph({
                                 children: [
                                     new TextRun({
-                                        text: `CONTRAT DE LOCATION DE PANNEAUX PUBLICITAIRES\n${getCountryFrenchName(country)?.toUpperCase()}`,
+                                        text: `CONTRAT DE LOCATION DE PANNEAUX PUBLICITAIRES\n${country}`,
                                         bold: true,
                                         size: 30,
                                         font: "Arial"

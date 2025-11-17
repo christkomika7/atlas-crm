@@ -1,9 +1,10 @@
+import { INVOICE_PREFIX } from "@/config/constant";
 import { checkAccess } from "@/lib/access";
 import { durationInMonths, formatDateToDashModel, getEndDate, getMonthsAndDaysDifference } from "@/lib/date";
 import { getCountryFrenchName } from "@/lib/helper";
 import prisma from "@/lib/prisma";
-import { formatNumber, getIdFromUrl } from "@/lib/utils";
-import { ContractItemType, ContractType } from "@/types/contract-types";
+import { formatNumber, generateAmaId, getIdFromUrl } from "@/lib/utils";
+import { ContractItemType } from "@/types/contract-types";
 import { RentalPeriodType } from "@/types/data.type";
 import Decimal from "decimal.js";
 import { NextRequest, NextResponse } from "next/server";
@@ -15,7 +16,11 @@ export async function GET(req: NextRequest) {
     const contract = await prisma.contract.findUnique({
         where: { id },
         include: {
-            company: true,
+            company: {
+                include: {
+                    documentModel: true
+                }
+            },
             client: true,
             invoices: {
                 include: {
@@ -54,13 +59,22 @@ export async function GET(req: NextRequest) {
         for (const invoice of contract.invoices) {
             const items = invoice.items;
             for (const item of items) {
-                const price = new Decimal(item.price.toString()).mul(durationInMonths(item.locationStart, item.locationEnd));
-                const discountType = item.discountType;
-                const discount = item.discount;
-                let delayPrice = new Decimal(0);
+                const price = new Decimal(item.price.toString())
+                    .mul(Math.ceil(durationInMonths(item.locationStart, item.locationEnd)));
 
-                if (discountType === "money") delayPrice = price.minus(discount);
-                else delayPrice = price.mul(discount).div(100);
+                const discountType = item.discountType;
+                const discount = new Decimal(item.discount || 0);
+
+                let delayPrice = price;
+
+                if (discount.gt(0)) {
+                    if (discountType === "money") {
+                        delayPrice = price.minus(discount);
+                    } else if (discountType === "percent") {
+                        const discountValue = price.mul(discount).div(100);
+                        delayPrice = price.minus(discountValue);
+                    }
+                }
 
                 const billboard: ContractItemType = {
                     id: invoice.id as string,
@@ -77,14 +91,14 @@ export async function GET(req: NextRequest) {
                 }
                 updatedItems.push(billboard);
             }
-
         }
-
-
 
         Object.assign(formatContract, {
             id: contract.id,
             type: contract.type,
+            totalHT: formatNumber(contract.invoices.reduce((total, n) => new Decimal(total).add(n.totalHT.toString()), new Decimal(0))),
+            totalTTC: formatNumber(contract.invoices.reduce((total, n) => new Decimal(total).add(n.totalTTC.toString()), new Decimal(0))),
+            record: contract.invoices.map(invoice => `${contract.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}`),
             client: {
                 id: contract.clientId as string,
                 company: contract.client?.companyName as string,
@@ -95,7 +109,8 @@ export async function GET(req: NextRequest) {
                 address: contract.client?.address as string,
                 representativeName: `${contract.client?.firstname} ${contract.client?.lastname}`,
                 representativeJob: contract.client?.job,
-
+                email: contract.client?.email as string,
+                phone: contract.client?.phone as string,
             },
             company: {
                 name: contract.company.companyName,
@@ -106,8 +121,11 @@ export async function GET(req: NextRequest) {
                 niu: contract.company.niu,
                 representativeName: 'M. Ralph PINTO',
                 representativeJob: 'Co-Gérant',
+                email: contract.company.email,
+                phone: contract.company.phoneNumber,
                 currency: contract.company.currency,
-                country: getCountryFrenchName(contract.company.country)?.toUpperCase()
+                city: contract.company.city,
+                country: getCountryFrenchName(contract.company.country)
             },
             items: updatedItems,
             createdAt: contract.createdAt,
@@ -118,11 +136,17 @@ export async function GET(req: NextRequest) {
         const startDate = contract.billboard?.rentalStartDate || new Date();
         const endDate = getEndDate(contract.billboard?.rentalStartDate || new Date(), contract.billboard?.rentalPeriod as RentalPeriodType);
         const price = new Decimal(contract.billboard?.rentalPrice.toString() || 0);
+        const vat = contract.company.vatRates;
+
         const type = contract.lessorType;
+
 
         Object.assign(formatContract, {
             id: contract.id,
             type: contract.type,
+            totalHT: formatNumber(price),
+            totalTTC: formatNumber(price),
+            record: [],
             client: {
                 id: `${type === 'supplier' ? contract.lessorId : contract.billboardId}`,
                 company: `${type === 'supplier' ? contract.lessor?.companyName : contract.billboard?.lessorName}`,
@@ -133,6 +157,9 @@ export async function GET(req: NextRequest) {
                 address: `${type === 'supplier' ? contract.lessor?.address : contract.billboard?.address}`,
                 representativeName: type === 'supplier' ? `${contract.lessor?.firstname} ${contract.lessor?.lastname}` : `${contract.billboard?.representativeFirstName} ${contract.billboard?.representativeLastName}`,
                 representativeJob: `${type === 'supplier' ? contract.lessor?.job : contract.billboard?.representativeJob}`,
+                email: `${type === 'supplier' ? contract.lessor?.email : contract.billboard?.representativeEmail}`,
+                phone: `${type === 'supplier' ? contract.lessor?.phone : contract.billboard?.representativePhone}`,
+
             },
             company: {
                 name: contract.company.companyName,
@@ -144,7 +171,10 @@ export async function GET(req: NextRequest) {
                 representativeName: 'M. Ralph PINTO',
                 representativeJob: 'Co-Gérant',
                 currency: contract.company.currency,
-                country: getCountryFrenchName(contract.company.country)?.toUpperCase()
+                city: contract.company.city,
+                email: contract.company.email,
+                phone: contract.company.phoneNumber,
+                country: getCountryFrenchName(contract.company.country)
             },
             items: [{
                 id: contract.billboardId as string,
@@ -157,7 +187,7 @@ export async function GET(req: NextRequest) {
                 location: `${formatDateToDashModel(startDate)} au ${formatDateToDashModel(endDate)}`,
                 delay: getMonthsAndDaysDifference(startDate, endDate),
                 price: formatNumber(price),
-                delayPrice: formatNumber(price.mul(durationInMonths(startDate, endDate)))
+                delayPrice: formatNumber(price.mul(Math.ceil(durationInMonths(startDate, endDate))))
             }],
             createdAt: contract.createdAt,
         })

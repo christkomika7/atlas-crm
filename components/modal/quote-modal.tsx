@@ -329,7 +329,6 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
             items: parseItems(items),
             taxes: company?.vatRates ?? [],
             amountType: amountType,
-            discount: [clientDiscount.discount || 0, clientDiscount.discountType]
         }).totalWithoutTaxes;
 
         const TTCPrice = calculate({

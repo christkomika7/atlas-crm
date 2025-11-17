@@ -1,11 +1,12 @@
 import { generateContractDocument } from "@/lib/word";
+import { ContractType } from "@/types/contract-types";
 import { NextRequest, NextResponse } from "next/server";
 
 
 // Route API pour générer et télécharger le contrat
 export async function POST(req: NextRequest) {
     try {
-        const { contract } = await req.json();
+        const { contract }: { contract: ContractType } = await req.json();
 
         if (!contract) {
             return NextResponse.json(
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
         return new NextResponse(buffer, {
             headers: {
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'Content-Disposition': `attachment; filename="Contrat_${contract.client.companyName}_AG-LOC-001.docx"`,
+                'Content-Disposition': `attachment; filename="Contrat_AG-LOC-001.docx"`,
             },
         });
     } catch (error) {

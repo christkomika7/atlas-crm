@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { checkAccess } from "@/lib/access";
 import { checkData } from "@/lib/database";
 import { copyTo, createFolder, removePath, updateFiles } from "@/lib/file";
@@ -21,17 +22,32 @@ export async function GET(req: NextRequest) {
         const rawLimit = req.nextUrl.searchParams.get("limit") ?? "";
         const lessor = req.nextUrl.searchParams.get("lessor") ?? "";
         const lessorType = req.nextUrl.searchParams.get("lessorType") ?? "";
-        const DEFAULT_LIMIT = 50;
-        const MAX_LIMIT = 200;
 
-        let limit = DEFAULT_LIMIT;
-        if (rawLimit) {
-            const parsed = Number(rawLimit);
-            if (!Number.isNaN(parsed) && parsed > 0) {
-                limit = Math.min(parsed, MAX_LIMIT);
+        // Pagination defaults / constraints
+        const DEFAULT_LIMIT = 50;   // default number of items when no limit provided
+        const MAX_LIMIT = 200;      // maximum allowed limit
+        const DEFAULT_PAGE_SIZE = DEFAULT_LIMIT;
+
+        const rawSkip = req.nextUrl.searchParams.get("skip");
+        const rawTake = req.nextUrl.searchParams.get("take");
+
+        const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
+
+        // determine take: prefer explicit take, else use rawLimit or DEFAULT_PAGE_SIZE
+        let take = DEFAULT_PAGE_SIZE;
+        if (rawTake) {
+            const parsedTake = parseInt(rawTake, 10);
+            if (!Number.isNaN(parsedTake) && parsedTake > 0) {
+                take = Math.min(parsedTake, MAX_LIMIT);
+            }
+        } else if (rawLimit) {
+            const parsedLimit = Number(rawLimit);
+            if (!Number.isNaN(parsedLimit) && parsedLimit > 0) {
+                take = Math.min(parsedLimit, MAX_LIMIT);
             }
         }
 
+        // Build where clause
         const baseWhere: any = { companyId: id };
 
         if (search) {
@@ -44,7 +60,7 @@ export async function GET(req: NextRequest) {
                     },
                 },
                 {
-                    OR: searchTerms.map((term) => ({
+                    OR: searchTerms.map((term: string) => ({
                         information: {
                             contains: term,
                             mode: "insensitive",
@@ -56,23 +72,27 @@ export async function GET(req: NextRequest) {
 
         if (lessor && lessorType) {
             if (lessorType === "lessor") {
-                baseWhere.id = lessor
+                // si lessor est l'id d'un panneau (ou d'un propriétaire selon ta logique)
+                baseWhere.id = lessor;
             } else {
+                // treat lessor as supplier id and restrict to supplier's billboards
                 const supplier = await prisma.supplier.findUnique({
                     where: { id: lessor },
-                    include: {
-                        billboards: true
-                    }
+                    include: { billboards: { select: { id: true } } },
                 });
-                const billboardIds = supplier?.billboards.map(b => b.id).filter(b => typeof b === 'string') || []
+                const billboardIds = supplier?.billboards.map((b) => b.id).filter(Boolean) || [];
 
-                baseWhere.id = {
-                    in: billboardIds
-                }
-
+                // si pas de billboards trouvés, forcer un WHERE qui retourne rien
+                baseWhere.id = billboardIds.length ? { in: billboardIds } : { in: ["__NONE__"] };
             }
         }
 
+        // total count for pagination meta
+        const total = await prisma.billboard.count({
+            where: baseWhere,
+        });
+
+        // fetch paginated results
         const billboards = await prisma.billboard.findMany({
             where: baseWhere,
             include: {
@@ -80,14 +100,29 @@ export async function GET(req: NextRequest) {
                 type: true,
                 items: { where: { state: "APPROVED" } },
             },
-            take: limit,
+            skip,
+            take,
             orderBy: { createdAt: "desc" },
         });
+
+        const returned = billboards.length;
+        const hasMore = skip + returned < total;
+        const page = take > 0 ? Math.floor(skip / take) + 1 : 1;
+        const totalPages = take > 0 ? Math.ceil(total / take) : 1;
 
         return NextResponse.json(
             {
                 state: "success",
                 data: billboards,
+                meta: {
+                    total,
+                    skip,
+                    take,
+                    returned,
+                    page,
+                    totalPages,
+                    hasMore,
+                },
             },
             { status: 200 }
         );
@@ -99,6 +134,7 @@ export async function GET(req: NextRequest) {
         );
     }
 }
+
 
 export async function POST(req: NextRequest) {
     await checkAccess(["BILLBOARDS"], "CREATE");

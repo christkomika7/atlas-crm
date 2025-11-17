@@ -79,6 +79,7 @@ export async function PUT(req: NextRequest) {
                     where: { id },
                     data: {
                         type: lessorData.type,
+                        lessorType: lessorData.lesortType,
                         ...lessorData.lessor ? {
                             lessor: {
                                 connect: {

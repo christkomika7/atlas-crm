@@ -38,16 +38,29 @@ export async function POST(req: NextRequest) {
 
     const search = req.nextUrl.searchParams.get("search")?.trim() ?? "";
     const rawLimit = req.nextUrl.searchParams.get("limit") ?? "";
-    const rawFilter = req.nextUrl.searchParams.get("filter") as $Enums.ProductServiceType | null;
+    const rawFilter = (req.nextUrl.searchParams.get("filter") ?? null) as $Enums.ProductServiceType | null;
 
+    // pagination defaults / constraints
     const DEFAULT_LIMIT = 50;
     const MAX_LIMIT = 200;
+    const DEFAULT_PAGE_SIZE = DEFAULT_LIMIT;
 
-    let limit = DEFAULT_LIMIT;
-    if (rawLimit) {
-        const parsed = Number(rawLimit);
-        if (!Number.isNaN(parsed) && parsed > 0) {
-            limit = Math.min(parsed, MAX_LIMIT);
+    const rawSkip = req.nextUrl.searchParams.get("skip");
+    const rawTake = req.nextUrl.searchParams.get("take");
+
+    const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
+
+    // determine take: prefer explicit take, else use rawLimit or DEFAULT_PAGE_SIZE
+    let take = DEFAULT_PAGE_SIZE;
+    if (rawTake) {
+        const parsedTake = parseInt(rawTake, 10);
+        if (!Number.isNaN(parsedTake) && parsedTake > 0) {
+            take = Math.min(parsedTake, MAX_LIMIT);
+        }
+    } else if (rawLimit) {
+        const parsedLimit = Number(rawLimit);
+        if (!Number.isNaN(parsedLimit) && parsedLimit > 0) {
+            take = Math.min(parsedLimit, MAX_LIMIT);
         }
     }
 
@@ -67,7 +80,7 @@ export async function POST(req: NextRequest) {
                 },
             },
             {
-                OR: searchTerms.map((term) => ({
+                OR: searchTerms.map((term: string) => ({
                     description: {
                         contains: term,
                         mode: "insensitive",
@@ -78,22 +91,42 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+        // total count for pagination meta
+        const total = await prisma.productService.count({
+            where,
+        });
+
         const productServices = await prisma.productService.findMany({
             where,
             include: { company: true },
-            take: limit,
+            skip,
+            take,
             orderBy: { createdAt: "asc" },
         });
+
+        const returned = productServices.length;
+        const hasMore = skip + returned < total;
+        const page = take > 0 ? Math.floor(skip / take) + 1 : 1;
+        const totalPages = take > 0 ? Math.ceil(total / take) : 1;
 
         return NextResponse.json(
             {
                 state: "success",
                 data: productServices,
+                meta: {
+                    total,
+                    skip,
+                    take,
+                    returned,
+                    page,
+                    totalPages,
+                    hasMore,
+                },
             },
             { status: 200 }
         );
     } catch (error) {
-        console.error(error);
+        console.error("Erreur POST /api/product-services:", error);
         return NextResponse.json(
             {
                 state: "error",
@@ -103,6 +136,7 @@ export async function POST(req: NextRequest) {
         );
     }
 }
+
 
 export async function PUT(req: NextRequest) {
     await checkAccess(["PRODUCT_SERVICES"], "MODIFY") as User;

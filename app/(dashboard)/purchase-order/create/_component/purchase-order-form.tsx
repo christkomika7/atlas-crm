@@ -260,7 +260,6 @@ export default function PurchaseOrderForm() {
       items: parsePurchaseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
-      discount: [supplierDiscount.discount || 0, supplierDiscount.discountType]
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({

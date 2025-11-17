@@ -285,8 +285,6 @@ export default function PurchaseOrderModal({ idSupplier, closeModal, refreshData
             items: parsePurchaseItems(items),
             taxes: company?.vatRates ?? [],
             amountType: amountType,
-            discount: [supplierDiscount.discount || 0, supplierDiscount.discountType]
-
         }).totalWithoutTaxes;
 
         const TTCPrice = calculate({

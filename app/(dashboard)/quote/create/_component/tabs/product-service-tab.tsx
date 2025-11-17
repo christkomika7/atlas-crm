@@ -14,13 +14,20 @@ import { ProductServiceType } from "@/types/product-service.types";
 import useClientIdStore from "@/stores/client-id.store";
 import { toast } from "sonner";
 import Decimal from "decimal.js";
+import Paginations from "@/components/paginations";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
+import { SetStateAction } from "react";
 
 type ProductServiceTabProps = {
   productServices: ProductServiceType[];
   isGettingProductServices: boolean;
+  totalItems: number;
+  pageSize: number;
+  currentPage: number;
+  setCurrentPage: (value: SetStateAction<number>) => void
 }
 
-export default function ProductServiceTab({ productServices, isGettingProductServices }: ProductServiceTabProps) {
+export default function ProductServiceTab({ productServices, isGettingProductServices, totalItems, pageSize, currentPage, setCurrentPage }: ProductServiceTabProps) {
   const clientId = useClientIdStore.use.clientId();
 
   const items = useItemStore.use.items();
@@ -154,6 +161,16 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
           )}
         </TableBody>
       </Table>
+
+      <div className="flex justify-end p-4">
+        <Paginations
+          totalItems={totalItems}
+          pageSize={pageSize}
+          controlledPage={currentPage}
+          onPageChange={(page) => setCurrentPage(page)}
+          maxVisiblePages={DEFAULT_PAGE_SIZE}
+        />
+      </div>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from '@/config/constant';
 import { $Enums } from '@/lib/generated/prisma';
 import { EditProductServiceSchemaType, ProductServiceSchemaType } from "@/lib/zod/product-service.schema";
 import { RequestResponse } from "@/types/api.types";
@@ -20,11 +21,13 @@ export async function getAllProductServices({ companyId }: { companyId: string }
     }
 }
 
-export async function all({ companyId, filter, search, limit }: { companyId: string, search?: string, limit?: number; filter?: $Enums.ProductServiceType }) {
+export async function all({ companyId, filter, search, limit, skip = 0, take = DEFAULT_PAGE_SIZE }: { companyId: string, search?: string, limit?: number; filter?: $Enums.ProductServiceType, skip?: number, take?: number }) {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
     if (limit) params.append("limit", String(limit));
     if (filter) params.append("filter", String(filter))
+    params.append("skip", String(skip));
+    params.append("take", String(take));
 
     const queryString = params.toString();
     const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/product_service/${companyId}${queryString ? `?${queryString}` : ""}`

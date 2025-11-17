@@ -304,7 +304,6 @@ export default function InvoiceForm() {
       items: parseItems(items),
       taxes: company?.vatRates ?? [],
       amountType: amountType,
-      discount: [clientDiscount.discount || 0, clientDiscount.discountType]
     }).totalWithoutTaxes;
 
     const TTCPrice = calculate({

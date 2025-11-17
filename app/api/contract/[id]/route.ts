@@ -119,8 +119,6 @@ export async function POST(req: NextRequest) {
         ...jsonData,
       }) as ClientContractSchemaType
 
-      console.log({ data })
-
       try {
         const createdContract = await prisma.contract.create({
           data: {

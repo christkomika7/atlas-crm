@@ -1,4 +1,5 @@
 import BillboardStatus from "@/app/(dashboard)/billboard/_component/billboard-status";
+import Paginations from "@/components/paginations";
 import { Checkbox } from "@/components/ui/checkbox";
 import Spinner from "@/components/ui/spinner";
 import {
@@ -9,20 +10,28 @@ import {
   TableCell,
   Table,
 } from "@/components/ui/table";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { getEnableDate } from "@/lib/date";
 import { cn, formatNumber } from "@/lib/utils";
 import useClientIdStore from "@/stores/client-id.store";
 import useItemStore from "@/stores/item.store";
 import { BillboardType } from "@/types/billboard.types";
 import Decimal from "decimal.js";
+import { SetStateAction } from "react";
 import { toast } from "sonner";
 
 type BillboardTabProps = {
   billboards: BillboardType[];
   isGettingBillboards: boolean
+  totalItems: number;
+  pageSize: number;
+  currentPage: number;
+  setCurrentPage: (value: SetStateAction<number>) => void
 }
 
-export default function BillboardTab({ isGettingBillboards, billboards }: BillboardTabProps) {
+export default function BillboardTab({ isGettingBillboards, billboards,
+  totalItems, pageSize, currentPage, setCurrentPage
+}: BillboardTabProps) {
   const clientId = useClientIdStore.use.clientId();
 
   const items = useItemStore.use.items();
@@ -150,6 +159,15 @@ export default function BillboardTab({ isGettingBillboards, billboards }: Billbo
           )}
         </TableBody>
       </Table>
+      <div className="flex justify-end p-4">
+        <Paginations
+          totalItems={totalItems}
+          pageSize={pageSize}
+          controlledPage={currentPage}
+          onPageChange={(page) => setCurrentPage(page)}
+          maxVisiblePages={DEFAULT_PAGE_SIZE}
+        />
+      </div>
     </div>
   );
 }

@@ -86,7 +86,6 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
     // refresh when company id, filter or pagination change
     useEffect(() => {
       refreshContract();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, filter, currentPage]);
 
     const isSelected = (id: string) => selectedContractIds.includes(id);

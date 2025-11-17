@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { $Enums } from "@/lib/generated/prisma";
 import { ClientContractSchemaType, LessorContractSchemaType } from "@/lib/zod/contract.schema";
 import { RequestResponse } from "@/types/api.types";
@@ -7,7 +8,7 @@ export async function getAllContracts({
     companyId,
     filter,
     skip = 0,
-    take = 10,
+    take = DEFAULT_PAGE_SIZE,
 }: {
     companyId: string;
     filter: $Enums.ContractType;

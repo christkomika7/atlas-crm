@@ -1,4 +1,3 @@
-import { all } from "@/action/product-service.action";
 import { Checkbox } from "@/components/ui/checkbox";
 import Spinner from "@/components/ui/spinner";
 import {
@@ -9,27 +8,27 @@ import {
   TableCell,
   Table,
 } from "@/components/ui/table";
-import useQueryAction from "@/hook/useQueryAction";
 import { cutText, formatNumber, cn } from "@/lib/utils";
-import { useDataStore } from "@/stores/data.store";
-import { RequestResponse } from "@/types/api.types";
 import { ProductServiceType } from "@/types/product-service.types";
-import { useEffect } from "react";
-import { unique } from "@/action/supplier.action";
-import { toast } from "sonner";
 import Decimal from "decimal.js";
-import useSupplierIdStore from "@/stores/supplier-id.store";
-import { SupplierType } from "@/types/supplier.types";
 import usePurchaseItemStore from "@/stores/purchase-item.store";
+import { SetStateAction } from "react";
+import Paginations from "@/components/paginations";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 
 
 type ProductServiceTabProps = {
   productServices: ProductServiceType[];
   isGettingProductServices: boolean;
+  totalItems: number;
+  pageSize: number;
+  currentPage: number;
+  setCurrentPage: (value: SetStateAction<number>) => void
 }
 
-export default function ProductServiceTab({ productServices, isGettingProductServices }: ProductServiceTabProps) {
-  const supplierId = useSupplierIdStore.use.supplierId();
+export default function ProductServiceTab({ productServices, isGettingProductServices,
+  totalItems, pageSize, currentPage, setCurrentPage
+}: ProductServiceTabProps) {
 
   const items = usePurchaseItemStore.use.items();
   const addItem = usePurchaseItemStore.use.addItem();
@@ -184,6 +183,15 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
           )}
         </TableBody>
       </Table>
+      <div className="flex justify-end p-4">
+        <Paginations
+          totalItems={totalItems}
+          pageSize={pageSize}
+          controlledPage={currentPage}
+          onPageChange={(page) => setCurrentPage(page)}
+          maxVisiblePages={DEFAULT_PAGE_SIZE}
+        />
+      </div>
     </div>
   );
 }
