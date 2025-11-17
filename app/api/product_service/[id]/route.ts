@@ -10,11 +10,22 @@ import prisma from "@/lib/prisma";
 import { checkAccessDeletion } from "@/lib/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["INVOICES"], "MODIFY");
+    await checkAccess(["PRODUCT_SERVICES"], "READ");
 
     const id = getIdFromUrl(req.url, "last") as string;
+    if (!id) {
+        return NextResponse.json(
+            { status: "error", message: "Aucune société trouvée." },
+            { status: 404 }
+        );
+    }
 
-    // Pagination
+    const search = req.nextUrl.searchParams.get("search")?.trim() ?? "";
+    const rawFilter = (req.nextUrl.searchParams.get("filter") ?? null) as
+        | "PRODUCT"
+        | "SERVICE"
+        | null;
+
     const MAX_TAKE = 200;
     const DEFAULT_TAKE = 50;
 
@@ -25,75 +36,9 @@ export async function GET(req: NextRequest) {
 
     let take = DEFAULT_TAKE;
     if (rawTake) {
-        const parsed = parseInt(rawTake, 10);
-        if (!Number.isNaN(parsed) && parsed > 0) {
-            take = Math.min(parsed, MAX_TAKE);
-        }
-    }
-
-    try {
-        // total count for pagination
-        const total = await prisma.productService.count({
-            where: { companyId: id },
-        });
-
-        // paginated results
-        const productServices = await prisma.productService.findMany({
-            where: { companyId: id },
-            skip,
-            take,
-            orderBy: { createdAt: "desc" },
-        });
-
-        return NextResponse.json(
-            {
-                status: "success",
-                data: productServices,
-                total,
-            },
-            { status: 200 }
-        );
-
-    } catch (error) {
-        console.error("Erreur GET /api/invoices/product-services:", error);
-        return NextResponse.json(
-            { status: "error", message: "Erreur lors de la récupération des produits/services." },
-            { status: 500 }
-        );
-    }
-}
-
-
-export async function POST(req: NextRequest) {
-    await checkAccess(["PRODUCT_SERVICES"], "READ");
-
-    const id = getIdFromUrl(req.url, "last") as string;
-
-    const search = req.nextUrl.searchParams.get("search")?.trim() ?? "";
-    const rawLimit = req.nextUrl.searchParams.get("limit") ?? "";
-    const rawFilter = (req.nextUrl.searchParams.get("filter") ?? null) as $Enums.ProductServiceType | null;
-
-    // pagination defaults / constraints
-    const DEFAULT_LIMIT = 50;
-    const MAX_LIMIT = 200;
-    const DEFAULT_PAGE_SIZE = DEFAULT_LIMIT;
-
-    const rawSkip = req.nextUrl.searchParams.get("skip");
-    const rawTake = req.nextUrl.searchParams.get("take");
-
-    const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
-
-    // determine take: prefer explicit take, else use rawLimit or DEFAULT_PAGE_SIZE
-    let take = DEFAULT_PAGE_SIZE;
-    if (rawTake) {
         const parsedTake = parseInt(rawTake, 10);
         if (!Number.isNaN(parsedTake) && parsedTake > 0) {
-            take = Math.min(parsedTake, MAX_LIMIT);
-        }
-    } else if (rawLimit) {
-        const parsedLimit = Number(rawLimit);
-        if (!Number.isNaN(parsedLimit) && parsedLimit > 0) {
-            take = Math.min(parsedLimit, MAX_LIMIT);
+            take = Math.min(parsedTake, MAX_TAKE);
         }
     }
 
@@ -124,10 +69,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        // total count for pagination meta
-        const total = await prisma.productService.count({
-            where,
-        });
+        const total = await prisma.productService.count({ where });
 
         const productServices = await prisma.productService.findMany({
             where,
@@ -137,32 +79,19 @@ export async function POST(req: NextRequest) {
             orderBy: { createdAt: "asc" },
         });
 
-        const returned = productServices.length;
-        const hasMore = skip + returned < total;
-        const page = take > 0 ? Math.floor(skip / take) + 1 : 1;
-        const totalPages = take > 0 ? Math.ceil(total / take) : 1;
-
         return NextResponse.json(
             {
-                state: "success",
+                status: "success",
                 data: productServices,
-                meta: {
-                    total,
-                    skip,
-                    take,
-                    returned,
-                    page,
-                    totalPages,
-                    hasMore,
-                },
+                total,
             },
             { status: 200 }
         );
     } catch (error) {
-        console.error("Erreur POST /api/product-services:", error);
+        console.error("Erreur GET /api/product-services:", error);
         return NextResponse.json(
             {
-                state: "error",
+                status: "error",
                 message: "Erreur lors de la récupération des produits/services.",
             },
             { status: 500 }

@@ -83,7 +83,6 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
       refreshContract,
     }));
 
-    // refresh when company id, filter or pagination change
     useEffect(() => {
       refreshContract();
     }, [id, filter, currentPage]);

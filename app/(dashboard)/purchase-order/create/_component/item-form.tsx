@@ -55,7 +55,7 @@ export default function ItemForm() {
         },
       })
     }
-  }, [debouncedSearch, companyId]);
+  }, [debouncedSearch, companyId, currentPage]);
 
   return (
     <div>

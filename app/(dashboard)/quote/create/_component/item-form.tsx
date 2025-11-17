@@ -23,7 +23,6 @@ export default function ItemForm() {
   const [billboards, setBillboards] = useState<BillboardType[]>([]);
   const [productServices, setProductServices] = useState<ProductServiceType[]>([])
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [totalItems, setTotalItems] = useState<number>(0);
@@ -103,7 +102,7 @@ export default function ItemForm() {
       }
 
     }
-  }, [debouncedSearch, companyId]);
+  }, [debouncedSearch, companyId, currentPage]);
 
   return (
     <div className="relative">

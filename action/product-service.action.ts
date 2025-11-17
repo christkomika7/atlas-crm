@@ -33,7 +33,7 @@ export async function all({ companyId, filter, search, skip = 0, take = DEFAULT_
 
     try {
         const response = await fetch(url, {
-            method: 'POST',
+            method: 'GET',
         });
 
         const res: RequestResponse<ProductServiceType[]> = await response.json()

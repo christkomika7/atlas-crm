@@ -69,7 +69,7 @@ export default function ItemForm() {
       }
 
     }
-  }, [companyId, currentTab]);
+  }, [companyId, currentTab, currentPage]);
 
 
   useEffect(() => {
