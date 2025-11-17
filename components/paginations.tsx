@@ -106,7 +106,7 @@ export default function Paginations({
                             …
                         </span>
                     ) : (
-                        <div className="size-10">
+                        <div key={`e-${idx}`} className="size-10">
                             <Button
                                 key={p}
                                 className="!w-10 !h-10 rounded-md"

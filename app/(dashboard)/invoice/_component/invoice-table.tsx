@@ -29,6 +29,8 @@ import { InvoiceType } from "@/types/invoice.types";
 import { paymentTerms } from "@/lib/data";
 import { addDays } from "date-fns";
 import { checkDeadline } from "@/lib/date";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
+import Paginations from "@/components/paginations";
 
 type InvoiceTableProps = {
   filter: "unpaid" | "paid";
@@ -45,11 +47,17 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
 
     const [invoices, setInvoices] = useState<InvoiceType[]>([]);
 
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+    const [totalItems, setTotalItems] = useState<number>(0);
+
+    const skip = (currentPage - 1) * pageSize;
+
     const id = useDataStore.use.currentCompany();
     const currency = useDataStore.use.currency();
 
     const { mutate: mutateGetInvoice, isPending: isGettingInvoices } = useQueryAction<
-      { companyId: string; filter: "unpaid" | "paid" },
+      { companyId: string; filter: "unpaid" | "paid", skip?: number; take?: number },
       RequestResponse<InvoiceType[]>
     >(all, () => { }, "invoices");
 
@@ -61,10 +69,11 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
 
     const refreshInvoice = () => {
       if (id) {
-        mutateGetInvoice({ companyId: id, filter }, {
+        mutateGetInvoice({ companyId: id, filter, skip, take: pageSize }, {
           onSuccess(data) {
             if (data.data) {
               setInvoices(data.data)
+              setTotalItems(data.total ?? 0)
             }
           },
         });
@@ -77,7 +86,7 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
 
     useEffect(() => {
       refreshInvoice();
-    }, [id]);
+    }, [id, currentPage]);
 
     const isSelected = (id: string) => selectedInvoiceIds.includes(id);
 
@@ -202,6 +211,15 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
             )}
           </TableBody>
         </Table>
+        <div className="flex justify-end p-4">
+          <Paginations
+            totalItems={totalItems}
+            pageSize={pageSize}
+            controlledPage={currentPage}
+            onPageChange={(page) => setCurrentPage(page)}
+            maxVisiblePages={DEFAULT_PAGE_SIZE}
+          />
+        </div>
       </div>
     );
   }

@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { toDateOnlyString } from "@/lib/date";
 import { InvoiceSchemaType, InvoiceUpdateSchemaType } from "@/lib/zod/invoice.schema";
 import { InvoicePaymentSchemaType } from "@/lib/zod/payment.schema";
@@ -23,16 +24,26 @@ export async function invoiceNumber({ companyId }: { companyId: string }) {
     }
 }
 
-export async function all({ companyId, filter, client }: { companyId: string, filter?: "unpaid" | "paid" | 'contract', client?: string }) {
-    try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${companyId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ data: filter, client }),
-        });
+export async function all({ companyId, filter, client, skip = 0,
+    take = DEFAULT_PAGE_SIZE, }: {
+        companyId: string, filter?: "unpaid" | "paid" | 'contract', client?: string, skip?: number;
+        take?: number;
+    }) {
 
+    const params = new URLSearchParams();
+    if (filter) params.append("type", filter);
+    if (client) params.append("client", client)
+    params.append("skip", String(skip));
+    params.append("take", String(take));
+
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/invoice/${companyId}/all${queryString ? `?${queryString}` : ""
+        }`;
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+        });
         const res: RequestResponse<InvoiceType[]> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
