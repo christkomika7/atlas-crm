@@ -49,6 +49,8 @@ const ProductServiceTable = forwardRef<
     ref
   ) => {
     const id = useDataStore.use.currentCompany();
+    const [items, setItems] = useState<ProductServiceType[]>([]);
+
 
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [pageSize] = useState<number>(DEFAULT_PAGE_SIZE);
@@ -71,7 +73,14 @@ const ProductServiceTable = forwardRef<
 
     const refreshProductService = () => {
       if (id) {
-        mutate({ companyId: id, filter, take: pageSize, skip });
+        mutate({ companyId: id, filter, take: pageSize, skip }, {
+          onSuccess(data) {
+            if (data.data) {
+              setItems(data.data);
+              setTotalItems(data.total ?? 0);
+            }
+          },
+        });
       }
     };
 
@@ -116,48 +125,48 @@ const ProductServiceTable = forwardRef<
                   </div>
                 </TableCell>
               </TableRow>
-            ) : data?.data && data.data.length > 0 ? (
-              data.data.map((productService) => (
+            ) : items.length > 0 ? (
+              items.map((item) => (
                 <TableRow
-                  key={productService.id}
-                  className={`h-16 transition-colors ${isSelected(productService.id) ? "bg-neutral-100" : ""
+                  key={item.id}
+                  className={`h-16 transition-colors ${isSelected(item.id) ? "bg-neutral-100" : ""
                     }`}
                 >
                   <TableCell className="text-neutral-600">
                     <div className="flex justify-center items-center">
                       <Checkbox
-                        checked={isSelected(productService.id)}
+                        checked={isSelected(item.id)}
                         onCheckedChange={(checked) =>
-                          toggleSelection(productService.id, !!checked)
+                          toggleSelection(item.id, !!checked)
                         }
                       />
                     </div>
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {productService.reference}
+                    {item.reference}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {productService.category}
+                    {item.category}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {productService.designation}
+                    {item.designation}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(productService.unitPrice)}{" "}
-                    {productService.company.currency}
+                    {formatNumber(item.unitPrice)}{" "}
+                    {item.company.currency}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {productService.quantity}
+                    {item.quantity}
                   </TableCell>
                   <TableCell className="text-center">
                     <TableActionButton
                       filter="SERVICE"
                       menus={dropdownMenu}
-                      id={productService.id}
+                      id={item.id}
                       refreshProductServices={refreshProductService}
                       deleteTitle={cn(
                         "Confirmer la suppression du",
-                        productService.type === "PRODUCT"
+                        item.type === "PRODUCT"
                           ? "produit"
                           : "service"
                       )}
