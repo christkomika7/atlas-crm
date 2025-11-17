@@ -7,10 +7,9 @@ import { RequestResponse } from "@/types/api.types";
 import { BaseType } from "@/types/base.types";
 import { BillboardType } from "@/types/billboard.types";
 
-export async function all({ companyId, search, limit, lessor, lessorType, skip = 0, take = DEFAULT_PAGE_SIZE }: { companyId: string, search?: string, limit?: number, lessor?: string, lessorType?: string, skip?: number, take?: number }) {
+export async function all({ companyId, search, lessor, lessorType, skip = 0, take = DEFAULT_PAGE_SIZE }: { companyId: string, search?: string, limit?: number, lessor?: string, lessorType?: string, skip?: number, take?: number }) {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
-    if (limit) params.append("limit", String(limit));
     if (lessor) params.append("lessor", String(lessor));
     if (lessorType) params.append("lessorType", String(lessorType));
     params.append("skip", String(skip));

@@ -15,6 +15,7 @@ import {
   useEffect,
   forwardRef,
   useImperativeHandle,
+  useState,
 } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
@@ -26,6 +27,8 @@ import { all } from "@/action/product-service.action";
 import { dropdownMenu } from "./table";
 import { cn, formatNumber } from "@/lib/utils";
 import { $Enums } from "@/lib/generated/prisma";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
+import Paginations from "@/components/paginations";
 
 type ProductServiceTableProps = {
   filter: $Enums.ProductServiceType;
@@ -47,10 +50,16 @@ const ProductServiceTable = forwardRef<
   ) => {
     const id = useDataStore.use.currentCompany();
 
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+    const [totalItems, setTotalItems] = useState<number>(0);
+
+    const skip = (currentPage - 1) * pageSize;
+
     const { mutate, isPending, data } = useQueryAction<
-      { companyId: string; filter: $Enums.ProductServiceType },
+      { companyId: string; filter: $Enums.ProductServiceType, skip?: number; take?: number },
       RequestResponse<ProductServiceType[]>
-    >(all, () => {}, "product-services");
+    >(all, () => { }, "product-services");
 
     const toggleSelection = (productServiceId: string, checked: boolean) => {
       setSelectedProductServiceIds((prev) =>
@@ -62,7 +71,7 @@ const ProductServiceTable = forwardRef<
 
     const refreshProductService = () => {
       if (id) {
-        mutate({ companyId: id, filter });
+        mutate({ companyId: id, filter, take: pageSize, skip });
       }
     };
 
@@ -72,7 +81,7 @@ const ProductServiceTable = forwardRef<
 
     useEffect(() => {
       refreshProductService();
-    }, [id]);
+    }, [id, currentPage]);
 
     const isSelected = (id: string) => selectedProductSerciceIds.includes(id);
 
@@ -111,9 +120,8 @@ const ProductServiceTable = forwardRef<
               data.data.map((productService) => (
                 <TableRow
                   key={productService.id}
-                  className={`h-16 transition-colors ${
-                    isSelected(productService.id) ? "bg-neutral-100" : ""
-                  }`}
+                  className={`h-16 transition-colors ${isSelected(productService.id) ? "bg-neutral-100" : ""
+                    }`}
                 >
                   <TableCell className="text-neutral-600">
                     <div className="flex justify-center items-center">
@@ -183,6 +191,15 @@ const ProductServiceTable = forwardRef<
             )}
           </TableBody>
         </Table>
+        <div className="flex justify-end p-4">
+          <Paginations
+            totalItems={totalItems}
+            pageSize={pageSize}
+            controlledPage={currentPage}
+            onPageChange={(page) => setCurrentPage(page)}
+            maxVisiblePages={DEFAULT_PAGE_SIZE}
+          />
+        </div>
       </div>
     );
   }

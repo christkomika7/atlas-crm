@@ -32,13 +32,13 @@ export default function ItemForm() {
 
 
   const { mutate: mutateGetBillboards, isPending: isGettingBillboards } = useQueryAction<
-    { companyId: string, search?: string; limit?: number, skip?: number; take?: number },
+    { companyId: string, search?: string; skip?: number; take?: number },
     RequestResponse<BillboardType[]>
   >(getBillboards, () => { }, "billboards");
 
 
   const { mutate: mutateGetProductServices, isPending: isGettingProductServices } = useQueryAction<
-    { companyId: string, search?: string; limit?: number, skip?: number; take?: number },
+    { companyId: string, search?: string; skip?: number; take?: number },
     RequestResponse<ProductServiceType[]>
   >(getProductServices, () => { }, "product-services");
 
@@ -50,7 +50,7 @@ export default function ItemForm() {
     if (companyId) {
 
       if (currentTab === "billboard") {
-        mutateGetBillboards({ companyId, search: "", limit: DEFAULT_PAGE_SIZE, skip, take: pageSize }, {
+        mutateGetBillboards({ companyId, search: "", skip, take: pageSize }, {
           onSuccess(data) {
             if (data.data) {
               setBillboards(data.data)
@@ -59,7 +59,7 @@ export default function ItemForm() {
           },
         })
       } else {
-        mutateGetProductServices({ companyId, search: "", limit: DEFAULT_PAGE_SIZE, skip, take: pageSize }, {
+        mutateGetProductServices({ companyId, search: "", skip, take: pageSize }, {
           onSuccess(data) {
             if (data.data) {
               setProductServices(data.data);
@@ -83,7 +83,7 @@ export default function ItemForm() {
   useEffect(() => {
     if (companyId) {
       if (currentTab === "billboard") {
-        mutateGetBillboards({ companyId, search: debouncedSearch, limit: DEFAULT_PAGE_SIZE, skip, take: pageSize }, {
+        mutateGetBillboards({ companyId, search: debouncedSearch, skip, take: pageSize }, {
           onSuccess(data) {
             if (data.data) {
               setBillboards(data.data)
@@ -92,7 +92,7 @@ export default function ItemForm() {
           },
         })
       } else {
-        mutateGetProductServices({ companyId, search: debouncedSearch, limit: DEFAULT_PAGE_SIZE, skip, take: pageSize }, {
+        mutateGetProductServices({ companyId, search: debouncedSearch, skip, take: pageSize }, {
           onSuccess(data) {
             if (data.data) {
               setProductServices(data.data);

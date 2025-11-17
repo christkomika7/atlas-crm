@@ -74,6 +74,7 @@ export default function BillboardInfoTab({
 }: BillboardInfoTabProps) {
   const id = useDataStore.use.currentCompany();
   const [cityId, setCityId] = useState(city);
+  const [areaId, setAreaId] = useState("")
 
   const setCities = useCityStore.use.setCity();
   const cities = useCityStore.use.cities();
@@ -137,6 +138,12 @@ export default function BillboardInfoTab({
     () => { },
     "cities"
   );
+
+  useEffect(() => {
+    if (city) {
+      setCityId(city)
+    }
+  }, [city])
 
   useEffect(() => {
     if (id) {

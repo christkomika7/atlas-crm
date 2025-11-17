@@ -25,14 +25,14 @@ export default function ItemForm() {
   const skip = (currentPage - 1) * pageSize;
 
   const { mutate: mutateGetProductServices, isPending: isGettingProductServices } = useQueryAction<
-    { companyId: string, search?: string; limit?: number, skip?: number; take?: number },
+    { companyId: string; search?: string; skip?: number; take?: number },
     RequestResponse<ProductServiceType[]>
   >(getProductServices, () => { }, "product-services");
 
 
   useEffect(() => {
     if (companyId) {
-      mutateGetProductServices({ companyId, search: "", limit: DEFAULT_PAGE_SIZE, skip, take: pageSize }, {
+      mutateGetProductServices({ companyId, search: "", skip, take: pageSize }, {
         onSuccess(data) {
           if (data.data) {
             setProductServices(data.data);
@@ -46,7 +46,7 @@ export default function ItemForm() {
 
   useEffect(() => {
     if (companyId) {
-      mutateGetProductServices({ companyId, search: "", limit: DEFAULT_PAGE_SIZE, skip, take: pageSize }, {
+      mutateGetProductServices({ companyId, search: "", skip, take: pageSize }, {
         onSuccess(data) {
           if (data.data) {
             setProductServices(data.data);

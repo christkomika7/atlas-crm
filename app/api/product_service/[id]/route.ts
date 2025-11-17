@@ -14,20 +14,53 @@ export async function GET(req: NextRequest) {
 
     const id = getIdFromUrl(req.url, "last") as string;
 
-    const productServices = await prisma.productService.findMany({
-        where: { companyId: id },
-        orderBy: {
-            createdAt: "desc"
-        }
-    });
+    // Pagination
+    const MAX_TAKE = 200;
+    const DEFAULT_TAKE = 50;
 
-    return NextResponse.json(
-        {
-            state: "success",
-            data: productServices,
-        },
-        { status: 200 }
-    );
+    const rawSkip = req.nextUrl.searchParams.get("skip");
+    const rawTake = req.nextUrl.searchParams.get("take");
+
+    const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
+
+    let take = DEFAULT_TAKE;
+    if (rawTake) {
+        const parsed = parseInt(rawTake, 10);
+        if (!Number.isNaN(parsed) && parsed > 0) {
+            take = Math.min(parsed, MAX_TAKE);
+        }
+    }
+
+    try {
+        // total count for pagination
+        const total = await prisma.productService.count({
+            where: { companyId: id },
+        });
+
+        // paginated results
+        const productServices = await prisma.productService.findMany({
+            where: { companyId: id },
+            skip,
+            take,
+            orderBy: { createdAt: "desc" },
+        });
+
+        return NextResponse.json(
+            {
+                status: "success",
+                data: productServices,
+                total,
+            },
+            { status: 200 }
+        );
+
+    } catch (error) {
+        console.error("Erreur GET /api/invoices/product-services:", error);
+        return NextResponse.json(
+            { status: "error", message: "Erreur lors de la récupération des produits/services." },
+            { status: 500 }
+        );
+    }
 }
 
 

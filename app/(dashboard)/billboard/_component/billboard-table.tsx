@@ -29,6 +29,8 @@ import { dropdownMenu } from "./table";
 import BillboardPhoto from "./billboard-photo";
 import BillboardStatus from "./billboard-status";
 import { ItemType } from "@/types/item.type";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
+import Paginations from "@/components/paginations";
 
 type BillboardTableProps = {
   selectedBillboardIds: string[];
@@ -44,8 +46,14 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
     const companyId = useDataStore.use.currentCompany();
     const [billboards, setBillboards] = useState<BillboardType[]>([]);
 
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+    const [totalItems, setTotalItems] = useState<number>(0);
+
+    const skip = (currentPage - 1) * pageSize;
+
     const { mutate: mutateGetBillboards, isPending: isGettingBillboards } = useQueryAction<
-      { companyId: string },
+      { companyId: string, skip?: number; take?: number },
       RequestResponse<BillboardType[]>
     >(all, () => { }, "billboards");
 
@@ -59,10 +67,11 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
 
     const refreshBillboard = () => {
       if (companyId) {
-        mutateGetBillboards({ companyId }, {
+        mutateGetBillboards({ companyId, take: pageSize, skip }, {
           async onSuccess(data) {
             if (data.data) {
               setBillboards(data.data);
+              setTotalItems(data.total ?? 0);
             }
           },
         });
@@ -75,7 +84,7 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
 
     useEffect(() => {
       refreshBillboard();
-    }, [companyId]);
+    }, [companyId, currentPage]);
 
     const isSelected = (id: string) => selectedBillboardIds.includes(id);
 
@@ -183,6 +192,16 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
             )}
           </TableBody>
         </Table>
+
+        <div className="flex justify-end p-4">
+          <Paginations
+            totalItems={totalItems}
+            pageSize={pageSize}
+            controlledPage={currentPage}
+            onPageChange={(page) => setCurrentPage(page)}
+            maxVisiblePages={DEFAULT_PAGE_SIZE}
+          />
+        </div>
       </div>
     );
   }

@@ -1,4 +1,3 @@
-import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { checkAccess } from "@/lib/access";
 import { checkData } from "@/lib/database";
 import { copyTo, createFolder, removePath, updateFiles } from "@/lib/file";
@@ -19,31 +18,23 @@ export async function GET(req: NextRequest) {
         const id = getIdFromUrl(req.url, "last") as string;
 
         const search = req.nextUrl.searchParams.get("search")?.trim() ?? "";
-        const rawLimit = req.nextUrl.searchParams.get("limit") ?? "";
         const lessor = req.nextUrl.searchParams.get("lessor") ?? "";
         const lessorType = req.nextUrl.searchParams.get("lessorType") ?? "";
 
-        // Pagination defaults / constraints
-        const DEFAULT_LIMIT = 50;   // default number of items when no limit provided
-        const MAX_LIMIT = 200;      // maximum allowed limit
-        const DEFAULT_PAGE_SIZE = DEFAULT_LIMIT;
+        //pagination
+        const MAX_TAKE = 200;
+        const DEFAULT_TAKE = 50;
 
         const rawSkip = req.nextUrl.searchParams.get("skip");
         const rawTake = req.nextUrl.searchParams.get("take");
 
         const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
 
-        // determine take: prefer explicit take, else use rawLimit or DEFAULT_PAGE_SIZE
-        let take = DEFAULT_PAGE_SIZE;
+        let take = DEFAULT_TAKE;
         if (rawTake) {
-            const parsedTake = parseInt(rawTake, 10);
-            if (!Number.isNaN(parsedTake) && parsedTake > 0) {
-                take = Math.min(parsedTake, MAX_LIMIT);
-            }
-        } else if (rawLimit) {
-            const parsedLimit = Number(rawLimit);
-            if (!Number.isNaN(parsedLimit) && parsedLimit > 0) {
-                take = Math.min(parsedLimit, MAX_LIMIT);
+            const parsed = parseInt(rawTake, 10);
+            if (!Number.isNaN(parsed) && parsed > 0) {
+                take = Math.min(parsed, MAX_TAKE);
             }
         }
 
@@ -72,22 +63,22 @@ export async function GET(req: NextRequest) {
 
         if (lessor && lessorType) {
             if (lessorType === "lessor") {
-                // si lessor est l'id d'un panneau (ou d'un propriétaire selon ta logique)
                 baseWhere.id = lessor;
             } else {
-                // treat lessor as supplier id and restrict to supplier's billboards
                 const supplier = await prisma.supplier.findUnique({
                     where: { id: lessor },
                     include: { billboards: { select: { id: true } } },
                 });
-                const billboardIds = supplier?.billboards.map((b) => b.id).filter(Boolean) || [];
 
-                // si pas de billboards trouvés, forcer un WHERE qui retourne rien
-                baseWhere.id = billboardIds.length ? { in: billboardIds } : { in: ["__NONE__"] };
+                const billboardIds = supplier?.billboards.map(b => b.id).filter(Boolean) || [];
+
+                baseWhere.id = billboardIds.length
+                    ? { in: billboardIds }
+                    : { in: ["__NONE__"] };
             }
         }
 
-        // total count for pagination meta
+        // total count
         const total = await prisma.billboard.count({
             where: baseWhere,
         });
@@ -105,31 +96,19 @@ export async function GET(req: NextRequest) {
             orderBy: { createdAt: "desc" },
         });
 
-        const returned = billboards.length;
-        const hasMore = skip + returned < total;
-        const page = take > 0 ? Math.floor(skip / take) + 1 : 1;
-        const totalPages = take > 0 ? Math.ceil(total / take) : 1;
-
         return NextResponse.json(
             {
-                state: "success",
+                status: "success",
                 data: billboards,
-                meta: {
-                    total,
-                    skip,
-                    take,
-                    returned,
-                    page,
-                    totalPages,
-                    hasMore,
-                },
+                total,
             },
             { status: 200 }
         );
+
     } catch (error) {
         console.error("Erreur GET /api/billboard:", error);
         return NextResponse.json(
-            { state: "error", message: "Erreur lors de la récupération des panneaux publicitaires." },
+            { status: "error", message: "Erreur lors de la récupération des panneaux publicitaires." },
             { status: 500 }
         );
     }

@@ -21,10 +21,9 @@ export async function getAllProductServices({ companyId }: { companyId: string }
     }
 }
 
-export async function all({ companyId, filter, search, limit, skip = 0, take = DEFAULT_PAGE_SIZE }: { companyId: string, search?: string, limit?: number; filter?: $Enums.ProductServiceType, skip?: number, take?: number }) {
+export async function all({ companyId, filter, search, skip = 0, take = DEFAULT_PAGE_SIZE }: { companyId: string, search?: string, limit?: number; filter?: $Enums.ProductServiceType, skip?: number, take?: number }) {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
-    if (limit) params.append("limit", String(limit));
     if (filter) params.append("filter", String(filter))
     params.append("skip", String(skip));
     params.append("take", String(take));
