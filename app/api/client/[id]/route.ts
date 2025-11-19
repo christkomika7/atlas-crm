@@ -21,8 +21,6 @@ export async function GET(req: NextRequest) {
     }, { status: 404 });
   }
 
-  console.log({ filter })
-
   if (!filter) {
     const clients = await prisma.client.findMany({
       where: {

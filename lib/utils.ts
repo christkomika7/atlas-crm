@@ -46,7 +46,6 @@ export function getLabelByValue(lists: DataListType[], value: string): string {
   return lists.find((l) => l.value === value)?.label || value;
 }
 
-
 export function checkDeadline(dateStr: string | Date) {
   const targetDate = new Date(dateStr);
   const today = new Date();
@@ -93,7 +92,6 @@ export function calculatePrice(
   return finalPrice;
 }
 
-
 export function formatNumber(value: string | number | Decimal): string {
   const str = value.toString().replace(/\s+/g, "");
 
@@ -139,8 +137,6 @@ export function getFirstValidCompanyId(items: any): string | null {
   }
   return null;
 }
-
-
 
 export function generateAmaId(id: number, withText: boolean = true) {
   if (withText) return `AMA-${String(id).padStart(3, "0")}`;
@@ -190,7 +186,6 @@ export async function urlToFile(path: string): Promise<File> {
     return new File([], "invalide", { type: "application/octet-stream" });
   }
 }
-
 
 export function getIdFromUrl(
   reqUrl: string,
@@ -598,15 +593,6 @@ export function formatMonthsToYears(months: number): string {
   return result;
 }
 
-// await generateAndDownloadPDF({
-//   baseUrl: env.NEXT_PUBLIC_BETTER_AUTH_URL,
-//   resourcePath: "admin/real-state/export",
-//   apiConvertPath: "api/realstate/convert",
-//   resourceId: query.data.data.id,
-//   fileName: `${query.data.data.title}.pdf`,
-//   toast,
-//   setIsLoading,
-// });
 
 export async function generateAndDownloadPDF(params: {
   resourcePath: string; // chemin relatif API, ex: "billboard/contract"
