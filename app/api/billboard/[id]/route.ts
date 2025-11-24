@@ -158,12 +158,10 @@ export async function POST(req: NextRequest) {
                     },
                     name: billboard.name,
                     locality: billboard.locality,
-                    zone: billboard.zone,
                     area: { connect: { id: billboard.areaId } },
                     visualMarker: billboard.visualMarker,
                     displayBoard: { connect: { id: billboard.displayBoardId } },
 
-                    address: billboard.address,
                     city: { connect: { id: billboard.cityId } },
                     orientation: billboard.orientation,
                     gmaps: billboard.gmaps,
@@ -235,12 +233,10 @@ export async function POST(req: NextRequest) {
                     },
                     name: billboard.name,
                     locality: billboard.locality,
-                    zone: billboard.zone,
                     area: { connect: { id: billboard.areaId } },
                     visualMarker: billboard.visualMarker,
                     displayBoard: { connect: { id: billboard.displayBoardId } },
 
-                    address: billboard.address,
                     city: { connect: { id: billboard.cityId } },
                     orientation: billboard.orientation,
                     gmaps: billboard.gmaps,
@@ -322,8 +318,8 @@ export async function PUT(req: NextRequest) {
     });
 
     const billboardFields = [
-        "id", "companyId", "reference", "hasTax", "type", "name", "locality", "zone", "area", "visualMarker",
-        "displayBoard", "address", "city", "gmaps", "orientation",
+        "id", "companyId", "reference", "hasTax", "type", "name", "locality", "area", "visualMarker",
+        "displayBoard", "city", "gmaps", "orientation",
         "rentalPrice", "installationCost", "maintenance", "width", "height", "lighting",
         "structureType", "panelCondition", "decorativeElement", "foundations", "electricity", "framework", "note", "lastPhotos", "lastPhotos", "lastBrochures"
     ];
@@ -415,12 +411,10 @@ export async function PUT(req: NextRequest) {
                 },
                 name: data.billboard.name,
                 locality: data.billboard.locality,
-                zone: data.billboard.zone,
                 area: { connect: { id: data.billboard.area } },
                 visualMarker: data.billboard.visualMarker,
                 displayBoard: { connect: { id: data.billboard.displayBoard } },
 
-                address: data.billboard.address,
                 city: { connect: { id: data.billboard.city } },
                 orientation: data.billboard.orientation,
                 gmaps: data.billboard.gmaps,

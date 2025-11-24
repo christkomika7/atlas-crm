@@ -26,7 +26,7 @@ export type ClientType = {
     companyId: string;
     createdAt: Date;
     updatedAt: Date;
-    company: CompanyType<undefined>
+    company: CompanyType
 }
 
 export type ClientsTableHandle = {

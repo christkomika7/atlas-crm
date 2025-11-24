@@ -39,7 +39,6 @@ export default function ItemList({ item, taxes, calculate, isCompleted, location
         : 0;
 
     function getDisabledRanges() {
-        console.log({ locationBillboardDate });
         const disabledData = locationBillboardDate.filter(billboard => billboard.billboardReference === item.billboardId);
         return disabledData.map(
             (item) => item.locationDate

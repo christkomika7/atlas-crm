@@ -1,12 +1,9 @@
-import { Prisma, Role, User as PrismaUser } from "@/lib/generated/prisma"; // adapte ce chemin si besoin
+import { Prisma, Role } from "@/lib/generated/prisma"; // adapte ce chemin si besoin
 import { auth } from "./auth";
 import { NextResponse } from "next/server";
 import { APIError } from "better-auth/api";
-import { UserEditSchemaType } from "./zod/user.schema";
-import { createFile, createFolder, moveTo, removePath } from "./file";
+import { removePath } from "./file";
 import prisma from "./prisma";
-import { createPermissionsData } from "./utils";
-import { Decimal } from "decimal.js";
 
 type User = {
     name: string;
@@ -16,24 +13,24 @@ type User = {
 };
 
 export async function createUser(data: User) {
-
     try {
-        const { user } = await auth.api.signUpEmail({
+
+        const result = await auth.api.signUpEmail({
             body: {
                 name: data.name,
                 role: data.role,
                 email: data.email,
-                password: data.password,
                 emailVerified: true,
-            },
-        });
+                password: data.password
+            }
+        })
 
-        return user
+        return result.user
     } catch (error: unknown) {
         if (error instanceof APIError) {
             return NextResponse.json({
                 status: "fail",
-                message: error.body?.message ?? error.message,
+                message: "Une erreur est survenue lors de la création du nouveau collaborateur",
             }, { status: error.statusCode ?? 400 });
         }
         console.error("Erreur inattendue lors de createUser:", error);
@@ -97,142 +94,6 @@ export async function checkData<
 
     return item;
 }
-
-
-export async function createEmployee(employee: UserEditSchemaType, companyName: string, createdUserIds: string[], uploadedPaths: string[], uploadedPassportPaths: string[], uploadedDocumentPaths: string[]): Promise<string> {
-    let imagePath = "";
-    let passportPath = "";
-    let documentPath = "";
-
-
-    console.log({ employee })
-
-    // Crée le dossier upload basé sur companyName et user
-    const folder = createFolder([companyName, "user", `${employee.firstname}_${employee.lastname}`]);
-
-    try {
-        // Uploads des fichiers
-        imagePath = await createFile(employee.image, folder, "profile");
-        passportPath = await createFile(employee.passport, folder, "passport");
-        documentPath = await createFile(employee.document, folder, "reglement_interieur");
-
-        uploadedPaths.push(imagePath);
-        uploadedPassportPaths.push(passportPath);
-        uploadedDocumentPaths.push(documentPath);
-
-
-        // Création utilisateur via ton système d’auth
-        const user = await createUser({
-            name: `${employee.firstname} ${employee.lastname}`,
-            role: Role.USER,
-            email: employee.email,
-            password: employee.password ?? "",
-        }) as PrismaUser;
-
-        createdUserIds.push(user.id);
-
-        // Mise à jour Prisma avec profile, permissions et paths fichiers
-        await prisma.user.update({
-            where: { id: user.id },
-            data: {
-                image: imagePath,
-                path: folder,
-                profile: {
-                    create: {
-                        lastname: employee.lastname,
-                        firstname: employee.firstname,
-                        phone: employee.phone,
-                        job: employee.job,
-                        salary: employee.salary,
-                        passport: passportPath,
-                        internalRegulations: documentPath,
-                    },
-                },
-                permissions: {
-                    deleteMany: {},
-                    createMany: {
-                        data: createPermissionsData(employee),
-                    },
-                },
-            },
-        });
-
-        return user.id;
-    } catch (err) {
-        await removePath([imagePath, passportPath, documentPath])
-        throw err;
-    }
-}
-
-
-export async function updateEmployee(employee: UserEditSchemaType, companyName: string, oldPath: string, createdUserIds: string[], uploadedPaths: string[], uploadedPassportPaths: string[], uploadedDocumentPaths: string[]): Promise<string> {
-    let imagePath = "";
-    let passportPath = "";
-    let documentPath = "";
-
-    const hash = employee.password ? await (await auth.$context).password.hash(employee.password) : null;
-
-    const folder = createFolder([companyName, "user", `${employee.firstname}_${employee.lastname}`]);
-
-    if (oldPath !== folder) {
-        console.log({ MOVE_TO: oldPath !== folder, FROM: oldPath, TO: folder })
-        moveTo(oldPath, folder)
-    }
-
-    try {
-        // Uploads des fichiers
-        imagePath = await createFile(employee.image, folder, "profile");
-        passportPath = await createFile(employee.passport, folder, "passport");
-        documentPath = await createFile(employee.document, folder, "reglement_interieur");
-
-        uploadedPaths.push(imagePath);
-        uploadedPassportPaths.push(passportPath);
-        uploadedDocumentPaths.push(documentPath);
-
-        const updatedUser = await prisma.user.update({
-            where: { id: employee.id },
-            data: {
-                name: `${employee.firstname} ${employee.lastname}`,
-                email: employee.email,
-                image: imagePath,
-                path: folder,
-                profile: {
-                    update: {
-                        lastname: employee.lastname,
-                        firstname: employee.firstname,
-                        phone: employee.phone,
-                        job: employee.job,
-                        salary: employee.salary,
-                        passport: passportPath,
-                        internalRegulations: documentPath
-                    },
-                },
-                permissions: {
-                    deleteMany: {},
-                    createMany: {
-                        data: createPermissionsData(employee),
-                    },
-                },
-                ...(hash && {
-                    account: {
-                        updateMany: {
-                            where: { userId: employee.id },
-                            data: { password: hash },
-                        },
-                    },
-                }),
-            },
-        });
-
-        createdUserIds.push(updatedUser.id);
-        return updatedUser.id;
-    } catch (err) {
-        // Nettoyage en cas d’erreur
-        await removePath([imagePath, passportPath, documentPath])
-        throw err;
-    }
-}
-
 
 export async function initializeCurrentCompany(currentCompany: string, createdUserIds: string[]) {
     // Mise à jour des users créés sans currentCompany

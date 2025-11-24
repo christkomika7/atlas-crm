@@ -32,7 +32,7 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
 } from "lucide-react";
-import { isToday } from "date-fns"; // ✅ import de date-fns
+import { isToday } from "date-fns";
 
 type AppointmentTableProps = {
   filter: "upcoming" | "past";
@@ -240,7 +240,7 @@ const AppointmentTable = forwardRef<AppointmentTableRef, AppointmentTableProps>(
                       <TableActionButton
                         menus={dropdownMenu}
                         id={appointment.id}
-                        refreshClients={refreshAppointment}
+                        refreshAppointment={refreshAppointment}
                         deleteTitle="Confirmer la suppression du rendez-vous"
                         deleteMessage={
                           <p>

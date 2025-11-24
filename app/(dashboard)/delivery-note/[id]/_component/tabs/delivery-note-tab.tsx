@@ -57,7 +57,6 @@ import { getBillboardItemLocations } from "@/action/delivery-note.action";
 export default function DeliveryNoteTab() {
   const param = useParams();
 
-  // STORE
   const isFirstLoadingDiscount = useRef(true);
   const isFirstLoadingClientDiscount = useRef(true);
 
@@ -86,7 +85,7 @@ export default function DeliveryNoteTab() {
   const [paymentLimit, setPaymentLimit] = useState("");
 
   const [amountType, setAmountType] = useState<"HT" | "TTC">("TTC");
-  const [company, setCompany] = useState<CompanyType<string>>();
+  const [company, setCompany] = useState<CompanyType>();
   const [clientDiscount, setClientDiscount] = useState<DiscountType>({ discount: 0, discountType: "purcent" });
   const [client, setClient] = useState<ClientType>();
   const [deliveryNoteNumber, setDeliverNoteNumber] = useState(0);
@@ -131,7 +130,7 @@ export default function DeliveryNoteTab() {
     mutate: mutateGetDocument,
     isPending: isGettingDocument,
     data: documentData,
-  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
     getDocument,
     () => { },
     "document"
@@ -327,7 +326,7 @@ export default function DeliveryNoteTab() {
                 isFirstLoadingDiscount.current = false;
                 return;
               }
-              updateDiscount(data.data.discount);
+              // updateDiscount(data.data.discount);
             }
           },
         }
@@ -445,12 +444,6 @@ export default function DeliveryNoteTab() {
       });
     }
   }, [client]);
-
-  useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors })
-    })
-  }, [form.watch])
 
   function removeLastUpload(name: string) {
     setLastUploadFiles((prev) => prev.filter((d) => d !== name));

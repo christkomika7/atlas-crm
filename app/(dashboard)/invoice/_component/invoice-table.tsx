@@ -28,7 +28,7 @@ import { cutText, formatNumber, generateAmaId } from "@/lib/utils";
 import { InvoiceType } from "@/types/invoice.types";
 import { paymentTerms } from "@/lib/data";
 import { addDays } from "date-fns";
-import { checkDeadline } from "@/lib/date";
+import { checkDeadline, formatDateToDashModel } from "@/lib/date";
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import Paginations from "@/components/paginations";
 
@@ -153,16 +153,12 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {cutText(
-                      `${invoice.client.firstname} ${invoice.client.lastname}`,
+                      `${invoice.client.companyName}`,
                       20
                     )}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {new Date(invoice.createdAt).toLocaleDateString("fr-FR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
+                    {formatDateToDashModel(invoice.createdAt)}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {formatNumber(invoice.amountType === "TTC" ? invoice.totalTTC : invoice.totalHT)} {currency}

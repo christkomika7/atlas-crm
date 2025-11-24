@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     }) as PurchaseOrderPaymentSchemaType;
 
     try {
-        const { purchaseOrder } = await prisma.$transaction(async (tx) => {
+        const { purchaseOrder, payment } = await prisma.$transaction(async (tx) => {
             const purchaseExist = await tx.purchaseOrder.findUnique({
                 where: { id },
                 select: {
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
             const hasCompletedPayment =
                 data.isPaid || payee.add(newAmount.valueOf()).gte(total.minus(0.01));
 
-            await tx.payment.create({
+            const payment = await tx.payment.create({
                 data: {
                     createdAt: data.date,
                     amount: String(data.isPaid ? remaining : data.amount),
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
                 },
             });
 
-            return { purchaseOrder };
+            return { purchaseOrder, payment };
         });
 
         // Créer le disbursement avec les IDs récupérés ou créés
@@ -127,6 +127,11 @@ export async function POST(req: NextRequest) {
                     source: {
                         connect: {
                             id: data.source
+                        }
+                    },
+                    payment: {
+                        connect: {
+                            id: payment.id
                         }
                     },
                     company: {

@@ -40,7 +40,7 @@ export default function TableActionButton({
 
   const { mutate, isPending } = useQueryAction<
     { id: string },
-    RequestResponse<CompanyType<UserType>[]>
+    RequestResponse<CompanyType[]>
   >(remove, () => { }, "companies");
 
   function handleDelete() {

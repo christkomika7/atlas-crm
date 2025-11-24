@@ -58,7 +58,7 @@ export default function DeliveryNoteModal({ idClient, closeModal, refreshData }:
     const router = useRouter();
 
     const [amountType, setAmountType] = useState<"HT" | "TTC">("TTC");
-    const [company, setCompany] = useState<CompanyType<string>>();
+    const [company, setCompany] = useState<CompanyType>();
     const [paymentLimit, setPaymentLimit] = useState("");
 
     const companyId = useDataStore.use.currentCompany();
@@ -122,7 +122,7 @@ export default function DeliveryNoteModal({ idClient, closeModal, refreshData }:
         mutate: mutateGetDocument,
         isPending: isGettingDocument,
         data: documentData,
-    } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+    } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
         unique,
         () => { },
         "document"
@@ -241,14 +241,6 @@ export default function DeliveryNoteModal({ idClient, closeModal, refreshData }:
             );
         }
     }, [clientId, idClient]);
-
-
-    useEffect(() => {
-        form.watch(() => {
-            console.log({ errors: form.formState.errors })
-        })
-    }, [form.watch])
-
 
     useEffect(() => {
         form.setValue("paymentLimit", paymentLimit);
@@ -486,7 +478,6 @@ export default function DeliveryNoteModal({ idClient, closeModal, refreshData }:
                                             required={false}
                                             value={field.value}
                                             handleChange={(e) => {
-                                                console.log({ e });
                                                 field.onChange(e);
                                             }}
                                         />

@@ -19,6 +19,7 @@ export default function UpcomingTab({
         ref={appointmentTableRef}
         selectedAppointmentIds={selectedAppointmentIds}
         setSelectedAppointmentIds={setSelectedAppointmentIds}
+
       />
     </div>
   );

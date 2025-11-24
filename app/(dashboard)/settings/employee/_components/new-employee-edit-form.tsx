@@ -13,284 +13,128 @@ import { Button } from "@/components/ui/button";
 import {
   userEditSchema,
   UserEditSchemaType,
-  UserSchemaType,
 } from "@/lib/zod/user.schema";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useParams } from "next/navigation";
 import { RequestResponse } from "@/types/api.types";
-import { hasEmail } from "@/action/user.action";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { getUser, updateUserByCompany } from "@/action/user.action";
+import { useEffect, useState } from "react";
 
 import TextInput from "@/components/ui/text-input";
 import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
-import { useEmployeeStore } from "@/stores/employee.store";
-import { getFileByType, removeFile, setFile } from "@/lib/file-storage";
 import ProfileInput from "@/components/ui/profile-input";
 import { Label } from "@/components/ui/label";
 import { PlusIcon } from "lucide-react";
+import { ProfileType } from "@/types/user.types";
+import { formatPermissions } from "@/lib/permission";
+import { resolveImageSrc, urlToFile } from "@/lib/utils";
 
 export default function NewEmployeeEditForm() {
   const param = useParams();
-  const [data, setData] = useState<UserSchemaType | undefined>(undefined);
-  const [preview, setPreview] = useState<string | undefined>(undefined);
-  const emailExists = useEmployeeStore.use.emailExists();
-  const updateEmployee = useEmployeeStore.use.updateEmployee();
-  const [isLoading, setIsLoading] = useState(true);
-
-  const getEmployeeById = useEmployeeStore.use.getEmployeeById();
-
-  // Refs pour éviter les fuites mémoire
-  const previewUrlRef = useRef<string | undefined>(undefined);
+  const [image, setImage] = useState("");
+  const [preview, setPreview] = useState("");
 
   const form = useForm<UserEditSchemaType>({
     resolver: zodResolver(userEditSchema),
     defaultValues: {
-      image: undefined,
-      lastname: "",
-      firstname: "",
-      email: "",
-      phone: "",
-      job: "",
-      salary: "",
-      password: "",
-      dashboard: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      clients: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      suppliers: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      invoices: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      quotes: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      deliveryNotes: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      projects: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      appointment: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      contract: {
-        create: false,
-        edit: false,
-        read: false
-      },
-      transaction: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-      setting: {
-        create: false,
-        edit: false,
-        read: false,
-      },
-    },
+      dashboard: { create: false, edit: false, read: false },
+      clients: { create: false, edit: false, read: false, },
+      suppliers: { create: false, edit: false, read: false },
+      invoices: { create: false, edit: false, read: false },
+      quotes: { create: false, edit: false, read: false },
+      deliveryNotes: { create: false, edit: false, read: false },
+      creditNotes: { create: false, edit: false, read: false, },
+      purchaseOrder: { create: false, edit: false, read: false, },
+      productServices: { create: false, edit: false, read: false, },
+      billboards: { create: false, edit: false, read: false, },
+      projects: { create: false, edit: false, read: false },
+      appointment: { create: false, edit: false, read: false, },
+      contract: { create: false, edit: false, read: false, },
+      transaction: { create: false, edit: false, read: false, },
+      setting: { create: false, edit: false, read: false, },
+    }
   });
 
-  const { mutate, isPending } = useQueryAction<
-    { id: string; email: string },
-    RequestResponse<undefined>
-  >(hasEmail, () => { }, "employee");
+  const { mutate: mutateGetUser, isPending: isGetingUser } = useQueryAction<
+    { id: string },
+    RequestResponse<ProfileType>
+  >(getUser, () => { }, "user");
 
-  // Fonction utilitaire pour nettoyer les URLs
-  const cleanupPreviewUrl = (urlRef: React.RefObject<string | undefined>) => {
-    if (urlRef.current) {
-      URL.revokeObjectURL(urlRef.current);
-      urlRef.current = undefined;
-    }
-  };
-
-  // Fonction utilitaire pour créer une preview URL
-  const createPreviewUrl = (
-    file: File,
-    urlRef: React.MutableRefObject<string | undefined>
-  ) => {
-    cleanupPreviewUrl(urlRef);
-    const url = URL.createObjectURL(file);
-    urlRef.current = url;
-    return url;
-  };
+  const { mutate: mutateUpdateUser, isPending: isUpdatingUser } = useQueryAction<
+    { profileId: string, data: UserEditSchemaType },
+    RequestResponse<ProfileType>
+  >(updateUserByCompany, () => { }, "user");
 
   useEffect(() => {
-    const fetchEmployee = async () => {
-      if (!param.id) return;
+    getImage()
+  }, [image])
 
-      const employee = getEmployeeById(Number(param.id));
-      if (!employee) return;
-      setData(employee);
+  useEffect(() => {
+    if (param.id) {
+      initialize()
+    }
 
-      try {
-        // Profile
-        const profileFile = await getFileByType(employee.email, "profile");
-        if (profileFile) {
-          const url = createPreviewUrl(profileFile, previewUrlRef);
-          setPreview(url);
+  }, [param])
+
+  function initialize() {
+    mutateGetUser({ id: param.id as string }, {
+      onSuccess(data) {
+        if (data.data) {
+          const profile = data.data;
+          setImage(profile.image || "");
+          form.reset({
+            image: undefined,
+            lastname: profile.lastname,
+            firstname: profile.firstname,
+            email: profile.user.email,
+            phone: profile.phone ?? "",
+            job: profile.job,
+            salary: profile.salary,
+            dashboard: { create: false, edit: false, read: false },
+            clients: { create: false, edit: false, read: false, },
+            suppliers: { create: false, edit: false, read: false },
+            invoices: { create: false, edit: false, read: false },
+            quotes: { create: false, edit: false, read: false },
+            deliveryNotes: { create: false, edit: false, read: false },
+            creditNotes: { create: false, edit: false, read: false, },
+            purchaseOrder: { create: false, edit: false, read: false, },
+            productServices: { create: false, edit: false, read: false, },
+            billboards: { create: false, edit: false, read: false, },
+            projects: { create: false, edit: false, read: false },
+            appointment: { create: false, edit: false, read: false, },
+            contract: { create: false, edit: false, read: false, },
+            transaction: { create: false, edit: false, read: false, },
+            setting: { create: false, edit: false, read: false, },
+            ...formatPermissions(profile.permissions)
+          })
         }
-      } catch (error) {
-        console.error("Erreur lors du chargement des fichiers:", error);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    })
+  }
 
-    fetchEmployee();
-
-    return () => {
-      cleanupPreviewUrl(previewUrlRef);
-    };
-  }, [param.id, getEmployeeById]);
-
-  useEffect(() => {
-    if (data) {
-      const defaultValues: UserSchemaType = {
-        id: data.id,
-        image: undefined,
-        lastname: data.lastname,
-        firstname: data.firstname,
-        email: data.email,
-        phone: data.phone ?? "",
-        job: data.job,
-        salary: data.salary,
-        password: data.password,
-        dashboard: data.dashboard || {
-          create: false,
-          edit: false,
-          read: false,
-        },
-        clients: data.clients || { create: false, edit: false, read: false },
-        suppliers: data.suppliers || {
-          create: false,
-          edit: false,
-          read: false,
-        },
-        invoices: data.invoices || { create: false, edit: false, read: false },
-        quotes: data.quotes || { create: false, edit: false, read: false },
-        deliveryNotes: data.deliveryNotes || {
-          create: false,
-          edit: false,
-          read: false,
-        },
-        purchaseOrder: data.purchaseOrder || {
-          create: false,
-          edit: false,
-          read: false,
-        },
-        creditNotes: data.creditNotes || {
-          create: false,
-          edit: false,
-          read: false,
-        },
-        productServices: data.productServices || {
-          create: false,
-          edit: false,
-          read: false,
-        },
-        billboards: data.billboards || {
-          create: false,
-          edit: false,
-          read: false,
-        },
-        projects: data.projects || { create: false, edit: false, read: false },
-        appointment: data.appointment || {
-          create: false,
-          edit: false,
-          read: false,
-        },
-        transaction: data.transaction || {
-          create: false,
-          edit: false,
-          read: false,
-        },
-        setting: data.setting || { create: false, edit: false, read: false },
-      };
-
-      form.reset(defaultValues);
+  async function getImage() {
+    if (image) {
+      const file = await urlToFile(image);
+      const resolveImage = resolveImageSrc(file);
+      if (resolveImage) {
+        setPreview(resolveImage)
+      }
     }
-  }, [data, form]);
+  }
 
-  const handleProfileChange = async (newProfile: File | null) => {
-    if (!data?.email) return;
-
-    if (newProfile) {
-      await setFile(data.email, { type: "profile", file: newProfile });
-      setPreview(createPreviewUrl(newProfile, previewUrlRef));
-    } else {
-      await removeFile(data.email, "profile");
-      cleanupPreviewUrl(previewUrlRef);
-      setPreview(undefined);
-    }
-  };
 
   async function submit(formData: UserEditSchemaType) {
     const { success, data } = userEditSchema.safeParse(formData);
     if (!success) return;
-
-    const path = `${crypto.randomUUID()}_${data.firstname}_${data.lastname
-      }`.toLowerCase();
-
-    const newUser = {
-      ...data,
-      path,
-    };
-    mutate(
-      { email: data.email, id: data.id ?? "" },
-      {
-        async onSuccess() {
-          const employeeId = Number(param.id);
-
-          const isExist = emailExists(data.email, employeeId);
-          if (isExist)
-            return toast.error("Cette adresse mail est déjà utilisée");
-
-          if (newUser.image) {
-            await setFile(newUser.email, {
-              type: "profile",
-              file: newUser.image,
-            });
-          }
-
-          const success = updateEmployee(employeeId, {
-            ...newUser,
-            password: newUser.password ?? "",
-          });
-
-          if (success) {
-            toast.success("Employé mis à jour avec succès.");
-          } else {
-            toast.error("Erreur lors de la mise à jour de l'employé.");
-          }
-        },
-      }
-    );
+    if (param.id) {
+      mutateUpdateUser(
+        { profileId: param.id as string, data },
+      );
+    }
   }
 
-  if (isLoading) return <Spinner />;
+  if (isGetingUser) return <Spinner />;
 
   return (
     <Form {...form}>
@@ -306,7 +150,8 @@ export default function NewEmployeeEditForm() {
                     <div className="w-28 h-28">
                       <ProfileInput
                         initialImage={preview}
-                        onChange={handleProfileChange}
+
+                        onChange={(file) => field.onChange(file)}
                         label={
                           <Label
                             htmlFor="profile"
@@ -442,6 +287,24 @@ export default function NewEmployeeEditForm() {
                     <TextInput
                       design="float"
                       label="Mot de passe"
+                      value={field.value ?? ""}
+                      handleChange={field.onChange}
+                      required={false}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="newPassword"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Nouveau mot de passe"
                       value={field.value ?? ""}
                       handleChange={field.onChange}
                       required={false}
@@ -1183,7 +1046,7 @@ export default function NewEmployeeEditForm() {
 
         <div className="flex justify-center pt-2 max-w-xl">
           <Button type="submit" variant="primary" className="max-w-sm">
-            {isPending ? <Spinner /> : "Mettre à jour"}
+            {isUpdatingUser ? <Spinner /> : "Valider"}
           </Button>
         </div>
       </form>

@@ -24,7 +24,7 @@ import { downloadFile } from "@/lib/utils";
 import { DownloadIcon, XIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { UserType } from "@/types/user.types";
+import { ProfileType } from "@/types/user.types";
 import { useDataStore } from "@/stores/data.store";
 import { editProjectSchema, EditProjectSchemaType } from "@/lib/zod/project.schema";
 import { ProjectType } from "@/types/project.types";
@@ -45,7 +45,7 @@ export default function ProjectEditForm({
   const companyId = useDataStore.use.currentCompany();
 
   const [lastUploadDocuments, setLastUploadDocuments] = useState<string[]>([]);
-  const [collaborators, setCollaborators] = useState<UserType[]>([]);
+  const [collaborators, setCollaborators] = useState<ProfileType[]>([]);
   const [clients, setClients] = useState<ClientType[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,7 +76,7 @@ export default function ProjectEditForm({
   const {
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
-  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
     getCollaborators,
     () => { },
     "collaborators"
@@ -115,7 +115,6 @@ export default function ProjectEditForm({
           if (data.data) {
             const project = data.data;
             setLastUploadDocuments(project.files.filter((doc) => Boolean(doc)));
-            console.log({ project });
             const initForm: EditProjectSchemaType = {
               id: project.id,
               company: project.company.id,
@@ -334,7 +333,7 @@ export default function ProjectEditForm({
               render={({ field }) => {
                 const allOptions: Option[] =
                   collaborators.map((user) => ({
-                    label: user.name,
+                    label: `${user.firstname} ${user.lastname}`,
                     value: user.id,
                   })) ?? [];
 

@@ -80,7 +80,7 @@ export default function QuoteTab() {
   const [paymentLimit, setPaymentLimit] = useState("");
 
   const [amountType, setAmountType] = useState<"HT" | "TTC">("TTC");
-  const [company, setCompany] = useState<CompanyType<string>>();
+  const [company, setCompany] = useState<CompanyType>();
   const [clientDiscount, setClientDiscount] = useState<DiscountType>({ discount: 0, discountType: "purcent" });
   const [client, setClient] = useState<ClientType>();
   const [quoteNumber, setQuoteNumber] = useState(0);
@@ -137,7 +137,7 @@ export default function QuoteTab() {
     mutate: mutateGetDocument,
     isPending: isGettingDocument,
     data: documentData,
-  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
     getDocument,
     () => { },
     "document"
@@ -326,7 +326,7 @@ export default function QuoteTab() {
                 isFirstLoadingDiscount.current = false;
                 return;
               }
-              updateDiscount(data.data.discount);
+              // updateDiscount(data.data.discount);
             }
           },
         }
@@ -444,12 +444,6 @@ export default function QuoteTab() {
       });
     }
   }, [client]);
-
-  useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors })
-    })
-  }, [form.watch])
 
   function removeLastUpload(name: string) {
     setLastUploadFiles((prev) => prev.filter((d) => d !== name));

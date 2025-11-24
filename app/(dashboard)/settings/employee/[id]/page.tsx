@@ -3,216 +3,201 @@
 import LogoutButton from "@/components/logout-button";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Edit3Icon, EditIcon } from "lucide-react";
+import { EditIcon } from "lucide-react";
 import Link from "next/link";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import EmployeeList from "../_components/employee-list";
-import ProfileInput from "@/components/ui/profile-input";
-import { Label } from "@/components/ui/label";
-import UploadDocument from "../_components/upload-document";
-import { useEmployeeStore } from "@/stores/employee.store";
 import { useParams } from "next/navigation";
-import { getFileByType, removeFile, setFile } from "@/lib/file-storage";
 import Spinner from "@/components/ui/spinner";
-import { UserSchemaType } from "@/lib/zod/user.schema";
+import useQueryAction from "@/hook/useQueryAction";
+import { ProfileType } from "@/types/user.types";
+import { RequestResponse } from "@/types/api.types";
+import { editProfileDocument, getUser } from "@/action/user.action";
+import { formatNumber, generateAmaId, initialName, resolveImageSrc, urlToFile } from "@/lib/utils";
+import UploadDocument from "../_components/upload-document";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function NewEmployeeInfo() {
   const param = useParams();
-  const [data, setData] = useState<UserSchemaType | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState<ProfileType>();
+  const [document, setDocument] = useState("");
+  const [passport, setPassport] = useState("");
+  const [image, setImage] = useState("");
+  const [documentPreview, setDocumentPreview] = useState("");
+  const [passportPreview, setPassportPreview] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
+  const [isLoadingDoc, setIsLoadingDoc] = useState(false);
+  const [isLoadingPassport, setIsLoadingPassport] = useState(false);
 
-  const [preview, setPreview] = useState<string | undefined>(undefined);
+  const { mutate: mutateGetUser, isPending } = useQueryAction<
+    { id: string },
+    RequestResponse<ProfileType>
+  >(getUser, () => { }, "user");
 
-  const [passport, setPassport] = useState<File | null>(null);
-  const [passportPreview, setPassportPreview] = useState<string | undefined>();
 
-  const [document, setDocument] = useState<File | null>(null);
-  const [documentPreview, setDocumentPreview] = useState<string | undefined>();
+  const { mutate: mutateEditDocumentUser } = useQueryAction<
+    { profileId: string; document?: File; type: "doc" | "passport", state: "update" | "delete" },
+    RequestResponse<ProfileType>
+  >(editProfileDocument, () => { }, "document");
 
-  const { getEmployeeById } = useEmployeeStore();
-  const updateEmployee = useEmployeeStore((state) => state.updateEmployee);
 
-  const previewUrlRef = useRef<string | undefined>(undefined);
-  const passportPreviewUrlRef = useRef<string | undefined>(undefined);
-  const documentPreviewUrlRef = useRef<string | undefined>(undefined);
-
-  const cleanupPreviewUrl = (urlRef: React.RefObject<string | undefined>) => {
-    if (urlRef.current) {
-      URL.revokeObjectURL(urlRef.current);
-      urlRef.current = undefined;
-    }
-  };
-
-  const createPreviewUrl = (
-    file: File,
-    urlRef: React.RefObject<string | undefined>
-  ) => {
-    cleanupPreviewUrl(urlRef);
-    const url = URL.createObjectURL(file);
-    urlRef.current = url;
-    return url;
-  };
 
   useEffect(() => {
-    const fetchEmployee = async () => {
-      if (!param.id) return;
-
-      const employee = getEmployeeById(Number(param.id));
-      if (!employee) return;
-
-      setData(employee);
-
-      try {
-        const profileFile = await getFileByType(employee.email, "profile");
-        if (profileFile) {
-          setPreview(createPreviewUrl(profileFile, previewUrlRef));
+    if (param.id) {
+      mutateGetUser({ id: param.id as string }, {
+        onSuccess(data) {
+          if (data.data) {
+            const profile = data.data;
+            setProfile(profile);
+            setImage(profile.image || "");
+            setPassport(profile.passport || "");
+            setDocument(profile.internalRegulations || "");
+          }
         }
-
-        const passportFile = await getFileByType(employee.email, "passport");
-        if (passportFile) {
-          setPassport(passportFile);
-          setPassportPreview(
-            createPreviewUrl(passportFile, passportPreviewUrlRef)
-          );
-        }
-
-        const docFile = await getFileByType(employee.email, "doc");
-        if (docFile) {
-          setDocument(docFile);
-          setDocumentPreview(createPreviewUrl(docFile, documentPreviewUrlRef));
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchEmployee();
-
-    return () => {
-      cleanupPreviewUrl(previewUrlRef);
-      cleanupPreviewUrl(passportPreviewUrlRef);
-      cleanupPreviewUrl(documentPreviewUrlRef);
-    };
-  }, [param.id, getEmployeeById]);
-
-  const handleProfileChange = async (newProfile: File | null) => {
-    if (!data?.email) return;
-
-    if (newProfile) {
-      await setFile(data.email, { type: "profile", file: newProfile });
-      setPreview(createPreviewUrl(newProfile, previewUrlRef));
-    } else {
-      await removeFile(data.email, "profile");
-      cleanupPreviewUrl(previewUrlRef);
-      setPreview(undefined);
+      })
     }
-  };
 
-  const handlePassportUpload = async (file: File) => {
-    if (!data?.email) return;
-    await setFile(data.email, { type: "passport", file });
-    setPassport(file);
-    setPassportPreview(createPreviewUrl(file, passportPreviewUrlRef));
-  };
+  }, [param])
 
-  const handlePassportDelete = async () => {
-    if (!data?.email) return;
-    await removeFile(data.email, "passport");
-    cleanupPreviewUrl(passportPreviewUrlRef);
-    setPassport(null);
-    setPassportPreview(undefined);
-  };
+  useEffect(() => {
+    getDocument();
+  }, [document])
 
-  const handleDocumentUpload = async (file: File) => {
-    if (!data?.email) return;
-    await setFile(data.email, { type: "doc", file });
-    setDocument(file);
-    setDocumentPreview(createPreviewUrl(file, documentPreviewUrlRef));
-  };
+  useEffect(() => {
+    getPassport();
+  }, [passport])
 
-  const handleDocumentDelete = async () => {
-    if (!data?.email) return;
-    await removeFile(data.email, "doc");
-    cleanupPreviewUrl(documentPreviewUrlRef);
-    setDocument(null);
-    setDocumentPreview(undefined);
-  };
+  useEffect(() => {
+    getImage()
+  }, [image])
 
-  if (isLoading) return <Spinner />;
 
+  async function getDocument() {
+    if (document) {
+      const file = await urlToFile(document);
+      const resolveImage = resolveImageSrc(file);
+      if (resolveImage) {
+        setDocumentPreview(resolveImage)
+      }
+    }
+  }
+
+  async function getPassport() {
+    if (passport) {
+      const file = await urlToFile(passport);
+      const resolveImage = resolveImageSrc(file);
+      if (resolveImage) {
+        setPassportPreview(resolveImage)
+      }
+    }
+  }
+
+  async function getImage() {
+    if (image) {
+      const file = await urlToFile(image);
+      const resolveImage = resolveImageSrc(file);
+      if (resolveImage) {
+        setImagePreview(resolveImage)
+      }
+    }
+  }
+
+
+  function editDocument(type: "doc" | "passport", state: "update" | "delete", document?: File) {
+    if (type === "doc") setIsLoadingDoc(true);
+    if (type === "passport") setIsLoadingPassport(true);
+    if (param.id) {
+      mutateEditDocumentUser({ profileId: param.id as string, document, type, state }, {
+        onSuccess(data) {
+          const profile = data.data;
+          if (profile) {
+            if (type === "doc") {
+              setDocument(profile.internalRegulations || "");
+            } else {
+              setPassport(profile.passport || "");
+            }
+          }
+        },
+        onSettled() {
+          if (type === "doc") setIsLoadingDoc(false);
+          if (type === "passport") setIsLoadingPassport(false);
+        }
+      })
+    }
+  }
   return (
-    <div className="h-full">
-      <ScrollArea className="pr-4 h-full">
-        <div className="p-3.5 border border-neutral-100 rounded-xl">
-          <div className="flex items-center">
-            <div className="flex flex-1 justify-end gap-x-2">
-              <Link href={`/settings/employee/${param.id}/edit`}>
-                <Button variant="primary" className="rounded-lg w-fit !h-10">
-                  <EditIcon className="size-4" />
-                  Modifier
-                </Button>
-              </Link>
-              <LogoutButton />
-            </div>
-          </div>
-
-          <div className="max-w-xl">
-            <EmployeeList value="Commission : 200$">
-              <div className="w-28 h-28">
-                <ProfileInput
-                  initialImage={preview}
-                  onChange={handleProfileChange}
-                  label={
-                    <Label
-                      htmlFor="profile"
-                      className="right-2 bottom-2 z-20 absolute flex justify-center items-center cursor-pointer"
-                    >
-                      <span className="flex justify-center items-center bg-white shadow-slate-400/30 shadow-sm rounded-full size-5.5">
-                        <Edit3Icon className="size-3" />
-                      </span>
-                    </Label>
-                  }
-                />
+    <>
+      {isPending && <Spinner />}
+      <div className="h-full">
+        <ScrollArea className="pr-4 h-full">
+          <div className="p-3.5 border border-neutral-100 rounded-xl">
+            <div className="flex items-center">
+              <div className="flex flex-1 justify-end gap-x-2">
+                <Link href={`/settings/employee/${param.id}/edit`}>
+                  <Button variant="primary" className="rounded-lg w-fit !h-10">
+                    <EditIcon className="size-4" />
+                    Modifier
+                  </Button>
+                </Link>
+                <LogoutButton />
               </div>
-            </EmployeeList>
-            <EmployeeList value={data?.firstname}>Prénom</EmployeeList>
-            <EmployeeList value={data?.lastname}>Nom</EmployeeList>
-            <EmployeeList value="-">Identifiant</EmployeeList>
-            <EmployeeList value={data?.email}>Adresse mail</EmployeeList>
-            <EmployeeList value={data?.job}>Emploi</EmployeeList>
-            <EmployeeList value={data?.salary}>Salaire</EmployeeList>
-            <EmployeeList
-              value={
-                <UploadDocument
-                  id="document"
-                  defaultDoc={document?.name || undefined}
-                  previewUrl={documentPreview}
-                  handleDelete={handleDocumentDelete}
-                  handleDownload={(url) => window.open(url, "_blank")}
-                  handleUpload={handleDocumentUpload}
-                />
-              }
-            >
-              Règlement intérieur
-            </EmployeeList>
-            <EmployeeList
-              value={
-                <UploadDocument
-                  id="passport"
-                  defaultDoc={passport?.name || undefined}
-                  previewUrl={passportPreview}
-                  handleDelete={() => handlePassportDelete()}
-                  handleDownload={(url) => window.open(url, "_blank")}
-                  handleUpload={(file) => handlePassportUpload(file)}
-                />
-              }
-              className="border-none"
-            >
-              Passport
-            </EmployeeList>
+            </div>
+            {!isPending && !profile ? <p className="p-4 bg-neutral-50 mx-6 rounded-sm text-sm text-neutral-600">Aucune donnée trouvée</p>
+              :
+              <div className="max-w-xl">
+
+                <EmployeeList value="Commission : 200$">
+                  <Avatar className="size-28">
+                    <AvatarImage className="bg-gray object-cover" src={imagePreview} />
+                    <AvatarFallback>{initialName(`${profile?.firstname} ${profile?.lastname}`)}</AvatarFallback>
+                  </Avatar>
+                </EmployeeList>
+                <EmployeeList value={profile?.firstname || "-"}>Prénom</EmployeeList>
+                <EmployeeList value={profile?.lastname || "-"}>Nom</EmployeeList>
+                <EmployeeList value={generateAmaId(profile?.key || 0)}>Identifiant</EmployeeList>
+                <EmployeeList value={profile?.user.email || "-"}>Adresse mail</EmployeeList>
+                <EmployeeList value={profile?.job || "-"}>Emploi</EmployeeList>
+                <EmployeeList value={`${profile?.salary ? formatNumber(profile.salary) : "-"} ${profile?.company?.currency || ""}`}>Salaire</EmployeeList>
+
+                <EmployeeList
+                  value={
+                    <UploadDocument
+                      id="document"
+                      defaultDoc={document.split("/")[2] || undefined}
+                      previewUrl={documentPreview}
+                      handleDelete={() => editDocument('doc', 'delete')}
+                      handleDownload={(url) => window.open(url, "_blank")}
+                      handleUpload={(file) => editDocument("doc", "update", file)}
+                      isLoading={isLoadingDoc}
+                    />
+                  }
+                >
+                  Règlement intérieur
+                </EmployeeList>
+                <EmployeeList
+                  value={
+                    <UploadDocument
+                      id="passport"
+                      defaultDoc={passport.split("/")[2] || undefined}
+                      previewUrl={passportPreview}
+                      handleDelete={() => editDocument('passport', 'delete')}
+                      handleDownload={(url) => window.open(url, "_blank")}
+                      handleUpload={(file) => editDocument("passport", "update", file)}
+                      isLoading={isLoadingPassport}
+
+                    />
+                  }
+                  className="border-none"
+                >
+                  Passport
+                </EmployeeList>
+              </div>
+
+            }
           </div>
-        </div>
-      </ScrollArea>
-    </div>
+        </ScrollArea >
+      </div >
+
+    </>
   );
 }

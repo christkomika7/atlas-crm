@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
         path: folder,
         website: data.website,
         job: data.job,
+        capital: data.capital,
         legalForms: data.legalForms,
         address: data.address,
         businessSector: data.businessSector,

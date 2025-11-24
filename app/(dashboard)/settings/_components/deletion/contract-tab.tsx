@@ -33,7 +33,6 @@ export default function ContractTab() {
             mutateGetDeletions({ companyId, type: "CONTRACT" }, {
                 onSuccess(data) {
                     if (data.data) {
-                        console.log({ data: data.data })
                         setDeletions(data.data);
                     }
                 },

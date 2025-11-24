@@ -28,7 +28,7 @@ export type PurchaseOrderType = {
     project: ProjectType,
     items: ItemType[],
     companyId: string,
-    company: CompanyType<string>,
+    company: CompanyType,
     createdAt: Date,
     updatedAt: Date,
 

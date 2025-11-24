@@ -51,6 +51,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
   const [paymentMode, setPaymentMode] = useState<"cash" | "check" | "bank-transfer">();
   const [currentAmountType, setCurrentAmountType] = useState<$Enums.AmountType>();
+  const [maxAmount, setMaxAmount] = useState<number | undefined>();
 
 
   const form = useForm<ReceiptSchemaType>({
@@ -258,6 +259,8 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                   <FormItem className="-space-y-2 w-full">
                     <FormControl>
                       <TextInput
+                        min={0}
+                        max={maxAmount}
                         type="number"
                         design="float"
                         label="Montant"
@@ -408,11 +411,15 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                       }))}
                       value={field.value || ""}
                       setValue={e => {
-                        const current = documents.find(d => d.id === e)?.amountType;
-                        setCurrentAmountType(current);
-                        if (current) {
-                          form.setValue("amountType", current);
+                        const doc = documents.find(d => d.id === e);
+                        setCurrentAmountType(doc?.amountType);
+                        if (doc) {
+                          setMaxAmount(Number(doc.payee))
+                          form.setValue("amountType", doc.amountType);
+                        } else {
+                          setMaxAmount(undefined)
                         }
+
                         field.onChange(e)
                       }}
                       placeholder="Référence du document"

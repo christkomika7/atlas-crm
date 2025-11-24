@@ -66,6 +66,7 @@ export async function create(data: SupplierSchemaType & { id: string }) {
         formData.append("phone", data.phone);
         formData.append("website", data.website ?? "");
         formData.append("address", data.address);
+        formData.append("capital", data.capital || "0");
         formData.append("job", data.job || "");
         formData.append("legalForms", data.legalForms);
         formData.append("businessSector", data.businessSector);
@@ -110,6 +111,7 @@ export async function update(data: EditSupplierSchemaType) {
         formData.append("email", data.email);
         formData.append("phone", data.phone);
         formData.append("job", data.job || "");
+        formData.append("capital", data.capital || "0");
         formData.append("legalForms", data.legalForms);
         formData.append("website", data.website ?? "");
         formData.append("address", data.address);

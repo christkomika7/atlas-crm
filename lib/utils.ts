@@ -12,6 +12,8 @@ import { TaxItem } from "@/types/tax.type";
 import Decimal from "decimal.js";
 import { PurchaseItemType } from "@/stores/purchase-item.store";
 import { INVOICE_PREFIX, PURCHASE_ORDER_PREFIX } from "@/config/constant";
+import { website } from "@/config/website";
+import { notFound } from "next/navigation";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -128,9 +130,7 @@ export function initialName(name: string): string {
 }
 
 export function getFirstValidCompanyId(items: any): string | null {
-  console.log({ items })
   for (const item of items) {
-    console.log({ item })
     if (item.company?.id) {
       return item.company.id;
     }
@@ -144,8 +144,6 @@ export function generateAmaId(id: number, withText: boolean = true) {
 }
 
 export async function urlToFile(path: string): Promise<File> {
-  console.log({ urlToFile: path });
-
   try {
     // 1. Vérification basique du path
     if (!path || typeof path !== "string" || path.trim() === "") {
@@ -290,8 +288,6 @@ export function extractCompanyData(formData: FormData) {
 
       const parsed = JSON.parse(employeeJson.toString());
 
-      console.log({ parsed })
-
       const image = formData.get(`images[${index}]`);
       if (image instanceof File) {
         parsed.image = image;
@@ -422,6 +418,58 @@ export function isRestrictedToAdminPath(
 
   return true; // Accès autorisé car ce chemin n'est pas restreint
 }
+
+export function hasAccessToDashboard(user: any) {
+  if (!user) return false;
+  if (user.role === "ADMIN") return true;
+
+  return website.sidebarMenu.some((menu) => canAccessResource(user, 'DASHBOARD'));
+}
+
+export function canAccessResource(
+  user: any,
+  resource: string
+): boolean {
+  if (!user) return false;
+
+  // Admin = accès total
+  if (user.role === "ADMIN") return true;
+
+  // Dashboard doit toujours être accessible
+  if (resource === "DASHBOARD") return true;
+
+
+  // Recherche de permission pour ce module
+  const permission = user.permissions?.find((p: any) => p.resource === resource);
+
+  // Si aucune permission → accès refusé
+  if (!permission) return false;
+
+  // L'utilisateur a au moins une action autorisée
+  return permission.actions.length > 0;
+}
+
+export function assertUserCanAccessPage(user: any, pathname: string) {
+  // Si pas d'utilisateur → laisser layout gérer redirect("/")
+  if (!user) return;
+
+  // Admin → accès total
+  if (user.role === "ADMIN") return;
+
+  // Trouver la ressource correspondant au path
+  const route = website.sidebarMenu.find((item) => item.path === pathname);
+
+  // Si aucune route trouvée → laisser Next gérer la 404 native
+  if (!route) return;
+
+  // Vérifier l'accès
+  const allowed = canAccessResource(user, route.resource);
+
+  if (!allowed) {
+    notFound();
+  }
+}
+
 
 export function sanitize(value: string): string {
   return value
@@ -593,7 +641,6 @@ export function formatMonthsToYears(months: number): string {
   return result;
 }
 
-
 export async function generateAndDownloadPDF(params: {
   resourcePath: string; // chemin relatif API, ex: "billboard/contract"
   apiConvertPath: string; // chemin API de conversion, ex: "api/convert"
@@ -694,23 +741,6 @@ export async function generateAndDownloadPDF(params: {
   }
 }
 
-// Fonction utilitaire pour déboguer les éléments présents sur la page
-export async function debugPageElements(resourcePath: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_AUTH_URL || window.location.origin;
-  const fullResourceUrl = `${baseUrl}/${resourcePath}`;
-
-  try {
-    const response = await fetch(
-      `${baseUrl}/api/debug-page?url=${encodeURIComponent(fullResourceUrl)}`,
-    );
-    const debug = await response.json();
-    console.log("Debug de la page:", debug);
-    return debug;
-  } catch (error) {
-    console.error("Erreur lors du débogage:", error);
-    return null;
-  }
-}
 
 export function getPrefix(
   itemType: $Enums.ItemInvoiceType,

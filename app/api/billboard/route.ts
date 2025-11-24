@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
     });
 
     const billboardFields = [
-        "companyId", "reference", "hasTax", "type", "name", "locality", "zone", "area", "visualMarker",
-        "displayBoard", "address", "city", "gmaps", "orientation",
+        "companyId", "reference", "hasTax", "type", "name", "locality", "area", "visualMarker",
+        "displayBoard", "city", "gmaps", "orientation",
         "rentalPrice", "installationCost", "maintenance", "width", "height", "lighting",
         "structureType", "panelCondition", "decorativeElement", "foundations", "electricity", "framework", "note"
     ];
@@ -110,8 +110,6 @@ export async function POST(req: NextRequest) {
         }, { status: 404 });
     }
 
-    console.log("HI")
-
     const key = generateId();
     const folderPhoto = createFolder([companyExist.companyName, "billboard", "photo", `${data.billboard.name}_----${key}`]);
     const folderBrochure = createFolder([companyExist.companyName, "billboard", "brochure", `${data.billboard.name}_----${key}`]);
@@ -145,12 +143,10 @@ export async function POST(req: NextRequest) {
                     },
                     name: data.billboard.name,
                     locality: data.billboard.locality,
-                    zone: data.billboard.zone,
                     area: { connect: { id: data.billboard.area } },
                     visualMarker: data.billboard.visualMarker,
                     displayBoard: { connect: { id: data.billboard.displayBoard } },
 
-                    address: data.billboard.address,
                     city: { connect: { id: data.billboard.city } },
                     orientation: data.billboard.orientation,
                     gmaps: data.billboard.gmaps,
@@ -230,12 +226,10 @@ export async function POST(req: NextRequest) {
                     },
                     name: data.billboard.name,
                     locality: data.billboard.locality,
-                    zone: data.billboard.zone,
                     area: { connect: { id: data.billboard.area } },
                     visualMarker: data.billboard.visualMarker,
                     displayBoard: { connect: { id: data.billboard.displayBoard } },
 
-                    address: data.billboard.address,
                     city: { connect: { id: data.billboard.city } },
                     orientation: data.billboard.orientation,
                     gmaps: data.billboard.gmaps,

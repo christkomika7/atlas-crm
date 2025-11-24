@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { cache } from "react";
 import { headers } from "next/headers";
-import { customSession } from "better-auth/plugins";
+import { customSession, multiSession } from "better-auth/plugins";
 
 import prisma from "./prisma";
 
@@ -17,7 +17,11 @@ export const auth = betterAuth({
                     id: user.id,
                 },
                 include: {
-                    permissions: true,
+                    profiles: {
+                        include: {
+                            permissions: true
+                        }
+                    }
                 }
             });
 
@@ -45,7 +49,8 @@ export const auth = betterAuth({
                 session
             }
 
-        })
+        }),
+        multiSession()
     ],
     emailAndPassword: {
         enabled: true,
@@ -53,14 +58,6 @@ export const auth = betterAuth({
     user: {
         additionalFields: {
             role: {
-                type: "string",
-                required: false,
-            },
-            key: {
-                type: "string",
-                required: false,
-            },
-            path: {
                 type: "string",
                 required: false,
             },

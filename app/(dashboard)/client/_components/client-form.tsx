@@ -39,6 +39,7 @@ export default function ClientForm({
       firstname: "",
       email: "",
       phone: "",
+      capital: "0",
       website: "",
       address: "",
       businessSector: "",
@@ -150,7 +151,24 @@ export default function ClientForm({
               )}
             />
           </div>
-          <div className="gap-x-2 grid grid-cols-2 w-full">
+          <div className="gap-x-2 grid grid-cols-3 w-full">
+            <FormField
+              control={form.control}
+              name="capital"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Capital"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="phone"

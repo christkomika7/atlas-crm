@@ -6,7 +6,6 @@ import { type NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
     await checkAccess(["DASHBOARD"], "READ");
     const id = getIdFromUrl(req.url, 2) as string;
-    console.log({ id });
 
     if (!id) {
         return NextResponse.json(
@@ -18,8 +17,6 @@ export async function GET(req: NextRequest) {
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
-
-    console.log({ startOfYear, startOfNextYear })
 
     // On fait les deux agrégations en parallèle (seulement pour l'année en cours)
     const [receiptsAgg, dibursementsAgg] = await Promise.all([

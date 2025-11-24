@@ -25,7 +25,7 @@ export default function PreviewTab() {
 
   const [filename, setFilename] = useState("");
   const [quote, setQuote] = useState<QuoteType | undefined>(undefined);
-  const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
+  const [document, setDocument] = useState<ModelDocumentType | undefined>(
     undefined,
   );
 
@@ -41,7 +41,7 @@ export default function PreviewTab() {
   const { mutate: mutateGetDocument, isPending: isGettingDocument } =
     useQueryAction<
       { id: string },
-      RequestResponse<ModelDocumentType<File>>
+      RequestResponse<ModelDocumentType>
     >(uniqueDocument, () => { }, ["model-document"]);
 
   useEffect(() => {

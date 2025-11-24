@@ -47,9 +47,6 @@ export async function GET(req: NextRequest) {
         }
     });
 
-    console.log({ categories })
-
-
     return NextResponse.json({
         state: "success",
         data: categories,

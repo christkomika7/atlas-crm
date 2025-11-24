@@ -4,6 +4,7 @@ import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { formatNumber } from "@/lib/utils";
 import { dibursementSchema, DibursementSchemaType } from "@/lib/zod/dibursement.schema";
+import { PaymentType } from "@/types/payment.types";
 import Decimal from "decimal.js";
 import { type NextRequest, NextResponse } from "next/server"
 
@@ -98,89 +99,116 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const createdDibursement = await prisma.$transaction(async (tx) => {
-            if (data.documentRef) {
-                const purchaseOrderId = data.documentRef;
+        let paymentId = "";
+        if (data.documentRef) {
+            const purchaseOrderId = data.documentRef;
 
-                const purchaseExist = await tx.purchaseOrder.findUnique({
-                    where: { id: purchaseOrderId },
-                    select: {
-                        id: true,
-                        amountType: true,
-                        payee: true,
-                        totalTTC: true,
-                        totalHT: true,
-                        isPaid: true,
-                        company: { select: { id: true, currency: true } },
-                    },
-                });
-
-                if (!purchaseExist) {
-                    throw new Error("Identifiant de facture invalide.");
-                }
-
-                if (purchaseExist.isPaid) {
-                    throw new Error("Ce bon de commande est déjà réglé et ne peut pas recevoir de nouveau paiement.");
-                }
-
-                const total =
-                    purchaseExist.amountType === "HT"
-                        ? purchaseExist.totalHT
-                        : purchaseExist.totalTTC;
-
-                const payee = purchaseExist.payee;
-                const remaining = total.minus(payee);
-                const newAmount = new Decimal(data.amount);
-
-                if (newAmount.gt(remaining.valueOf())) {
-                    throw new Error(
-                        `Le montant saisi dépasse le solde restant à payer (${formatNumber(
-                            remaining.toString()
-                        )} ${purchaseExist.company.currency}).`
-                    );
-                }
-
-                const hasCompletedPayment = payee.add(newAmount.valueOf()).gte(total.minus(0.01));
-
-                await tx.payment.create({
-                    data: {
-                        createdAt: data.date,
-                        amount: String(data.amount),
-                        paymentMode: data.paymentMode,
-                        infos: data.description,
-                        purchaseOrder: { connect: { id: purchaseOrderId } },
-                    },
-                });
-
-                await tx.purchaseOrder.update({
-                    where: { id: purchaseOrderId },
-                    data: {
-                        isPaid: hasCompletedPayment,
-                        payee: payee.add(newAmount.valueOf()),
-                    },
-                });
-            }
-
-            const dibursement = await tx.dibursement.create({
-                data: {
-                    type: "DISBURSEMENT",
-                    date: data.date,
-                    movement: "OUTFLOWS",
-                    amount: String(data.amount),
-                    amountType: data.amountType,
-                    paymentType: data.paymentMode,
-                    checkNumber: data.checkNumber,
-                    description: data.description,
-                    comment: data.comment,
-                    category: { connect: { id: data.category } },
-                    source: { connect: { id: data.source } },
-                    nature: { connect: { id: data.nature } },
-                    company: { connect: { id: data.companyId } },
-                    ...referenceDocument,
+            const purchaseExist = await prisma.purchaseOrder.findUnique({
+                where: { id: purchaseOrderId },
+                select: {
+                    id: true,
+                    amountType: true,
+                    payee: true,
+                    totalTTC: true,
+                    totalHT: true,
+                    isPaid: true,
+                    company: { select: { id: true, currency: true } },
                 },
             });
 
-            return dibursement;
+            if (!purchaseExist) {
+                return NextResponse.json({
+                    status: "error",
+                    message: "Identifiant du bon de commande invalide.",
+                }, { status: 400 });
+            }
+
+            if (purchaseExist.isPaid) {
+                return NextResponse.json({
+                    status: "error",
+                    message: "Ce bon de commande a déjà réglée et ne peut pas recevoir de nouveau paiement.",
+                }, { status: 400 });
+            }
+
+            const total =
+                purchaseExist.amountType === "HT"
+                    ? purchaseExist.totalHT
+                    : purchaseExist.totalTTC;
+
+            const payee = purchaseExist.payee;
+            const remaining = total.minus(payee);
+            const newAmount = new Decimal(data.amount);
+
+            if (newAmount.gt(remaining.valueOf())) {
+                return NextResponse.json({
+                    status: "error",
+                    message: `Le montant saisi dépasse le solde restant à payer (${formatNumber(
+                        remaining.toString()
+                    )} ${purchaseExist.company.currency}).`,
+                }, { status: 400 });
+            }
+
+            const hasCompletedPayment = payee.add(newAmount.valueOf()).gte(total.minus(0.01));
+
+            const newPayment = await prisma.payment.create({
+                data: {
+                    createdAt: data.date,
+                    amount: String(data.amount),
+                    paymentMode: data.paymentMode,
+                    infos: data.description,
+                    purchaseOrder: { connect: { id: purchaseOrderId } },
+                },
+            });
+
+            paymentId = newPayment.id;
+
+            const purchaseOrder = await prisma.purchaseOrder.update({
+                where: { id: purchaseOrderId },
+                data: {
+                    isPaid: hasCompletedPayment,
+                    payee: payee.add(newAmount.valueOf()),
+                },
+                include: {
+                    supplier: true
+                }
+
+            });
+
+            if (purchaseOrder.supplierId) {
+                await prisma.supplier.update({
+                    where: { id: purchaseOrder.supplierId },
+                    data: {
+                        due: { decrement: data.amount },
+                        paidAmount: { increment: data.amount }
+                    }
+                })
+            }
+        }
+
+
+        if (paymentId) {
+            Object.assign(referenceDocument, {
+                payment: { connect: { id: paymentId } },
+            });
+        }
+
+        const createdDibursement = await prisma.dibursement.create({
+            data: {
+                type: "DISBURSEMENT",
+                date: data.date,
+                movement: "OUTFLOWS",
+                amount: String(data.amount),
+                amountType: data.amountType,
+                paymentType: data.paymentMode,
+                checkNumber: data.checkNumber,
+                description: data.description,
+                comment: data.comment,
+                category: { connect: { id: data.category } },
+                source: { connect: { id: data.source } },
+                nature: { connect: { id: data.nature } },
+                company: { connect: { id: data.companyId } },
+                ...referenceDocument,
+            },
         });
 
         return NextResponse.json({
@@ -190,9 +218,6 @@ export async function POST(req: NextRequest) {
         });
     } catch (error: any) {
         console.error("Error creating disbursement:", error);
-
-        // Si c'est une erreur lancée volontairement (validation métier), renvoie 400
-        // Sinon 500. On différencie un peu via error.name si souhaité.
         const isClientError = error instanceof Error && (
             /Identifiant|dépasse|déjà réglé|obligatoire/i.test(error.message)
         );

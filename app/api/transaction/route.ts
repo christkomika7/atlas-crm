@@ -9,6 +9,7 @@ import { type NextRequest, NextResponse } from "next/server";
 export async function DELETE(req: NextRequest) {
   checkAccess(["TRANSACTION"], "MODIFY");
 
+  const companyId = req.nextUrl.searchParams.get("companyId")?.trim() ?? "";
   const { data }: { data: DeletedTransactions[] } = await req.json();
 
   const receipts = data.filter((item) => item.transactionType === "RECEIPT");
@@ -16,7 +17,6 @@ export async function DELETE(req: NextRequest) {
     (item) => item.transactionType === "DISBURSEMENT",
   );
 
-  const companyId = req.nextUrl.searchParams.get("companyId")?.trim() ?? "";
 
   if (!companyId) {
     return NextResponse.json({
@@ -31,9 +31,6 @@ export async function DELETE(req: NextRequest) {
     where: {
       id: session?.user.id
     },
-    include: {
-      company: true
-    }
   });
 
   if (!user) {
@@ -99,9 +96,13 @@ export async function DELETE(req: NextRequest) {
       for (const receipt of receipts) {
         const receiptExist = await tx.receipt.findUnique({
           where: { id: receipt.id }, include: {
-            referenceInvoice: true,
+            referenceInvoice: {
+              include: {
+                client: true,
+                project: true
+              }
+            },
             payment: true,
-            client: true
           }
         });
 
@@ -109,11 +110,12 @@ export async function DELETE(req: NextRequest) {
           throw new Error("Identifiant de l'encaissement invalide.");
         }
 
-        const amount = receiptExist.payment?.amount || new Decimal(0);
+        const amount = receiptExist.amount || new Decimal(0);
 
-        if (receiptExist.referenceInvoice && receiptExist.payment) {
+        if (receiptExist.referenceInvoice) {
+          const invoice = receiptExist.referenceInvoice;
           await tx.invoice.update({
-            where: { id: receiptExist.referenceInvoice.id },
+            where: { id: invoice.id },
             data: {
               isPaid: false,
               payee: {
@@ -121,27 +123,45 @@ export async function DELETE(req: NextRequest) {
               }
             }
           });
-          await tx.payment.delete({ where: { id: receiptExist.payment.id } });
 
-          if (receiptExist.client) {
-            await prisma.client.update({
-              where: { id: receiptExist.client.id },
+          if (invoice.clientId) {
+            await tx.client.update({
+              where: { id: invoice.clientId },
               data: {
                 due: { increment: amount },
                 paidAmount: { decrement: amount }
               }
             })
           }
+
+          if (invoice.projectId) {
+            await tx.project.update({
+              where: { id: invoice.projectId },
+              data: {
+                balance: {
+                  decrement: amount
+                }
+              }
+            })
+          }
         }
+
+        if (receiptExist.payment) {
+          await tx.payment.delete({ where: { id: receiptExist.payment.id } });
+        }
+
         await tx.receipt.delete({ where: { id: receipt.id } })
       }
 
       for (const disbursement of disbursements) {
         const disbursementExist = await tx.dibursement.findUnique({
           where: { id: disbursement.id }, include: {
-            referencePurchaseOrder: true,
+            referencePurchaseOrder: {
+              include: {
+                supplier: true
+              }
+            },
             payment: true,
-            supplier: true
           }
         });
 
@@ -149,11 +169,12 @@ export async function DELETE(req: NextRequest) {
           throw new Error("Identifiant du décaissement invalide.");
         }
 
-        const amount = disbursementExist.payment?.amount || new Decimal(0);
+        const amount = disbursementExist.amount || new Decimal(0);
 
-        if (disbursementExist.referencePurchaseOrder && disbursementExist.payment) {
+        if (disbursementExist.referencePurchaseOrder) {
+          const purchaseOrder = disbursementExist.referencePurchaseOrder;
           await tx.purchaseOrder.update({
-            where: { id: disbursementExist.referencePurchaseOrder.id },
+            where: { id: purchaseOrder.id },
             data: {
               isPaid: false,
               payee: {
@@ -161,17 +182,20 @@ export async function DELETE(req: NextRequest) {
               }
             }
           });
-          await tx.payment.delete({ where: { id: disbursementExist.payment.id } });
 
-          if (disbursementExist.supplier) {
-            await prisma.supplier.update({
-              where: { id: disbursementExist.supplier.id },
+          if (purchaseOrder.supplier) {
+            await tx.supplier.update({
+              where: { id: purchaseOrder.supplier.id },
               data: {
                 due: { increment: amount },
                 paidAmount: { decrement: amount }
               }
             })
           }
+        }
+
+        if (disbursementExist.payment) {
+          await tx.payment.delete({ where: { id: disbursementExist.payment.id } });
         }
         await tx.dibursement.delete({ where: { id: disbursementExist.id } })
       }

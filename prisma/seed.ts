@@ -4,10 +4,14 @@ import crypto from 'crypto';
 import prisma from "@/lib/prisma";
 
 export async function main() {
-  const existingUser = await prisma.user.findUnique({
+  const existingUser = await prisma.user.findFirst({
     where: {
+      role: "ADMIN",
       email: process.env.USER_EMAIL!,
     },
+    include: {
+      profiles: true
+    }
   });
 
   if (
@@ -36,23 +40,19 @@ export async function main() {
         email: process.env.USER_EMAIL!,
         password: process.env.USER_PASSWORD!,
         role: Role.ADMIN,
-        path,
         emailVerified: true,
       },
     });
     if (response.user) {
-      await prisma.user.update({
-        where: { id: response.user.id },
+      const profile = await prisma.profile.create({
         data: {
-          profile: {
-            create: {
-              firstname: process.env.USER_FIRSTNAME!,
-              lastname: process.env.USER_LASTNAME!,
-              phone: "",
-              job: "",
-              salary: "",
-            }
-          },
+          user: { connect: { id: response.user.id } },
+          firstname: process.env.USER_FIRSTNAME!,
+          lastname: process.env.USER_LASTNAME!,
+          path,
+          phone: "",
+          job: "",
+          salary: "",
           permissions: {
             createMany: {
               data: [
@@ -179,6 +179,12 @@ export async function main() {
               ]
             }
           }
+        }
+      })
+      await prisma.user.update({
+        where: { id: response.user.id },
+        data: {
+          currentProfile: profile.id
         }
       })
       return console.log("Le seed à été réalisé avec succès.");

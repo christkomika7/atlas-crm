@@ -33,7 +33,7 @@ import { acceptPayment } from "@/lib/data";
 import SourceModal from "../../../../components/modal/source-modal";
 import AllocationModal from "../../../../components/modal/allocation-modal";
 import { getCollaborators } from "@/action/user.action";
-import { UserType } from "@/types/user.types";
+import { ProfileType } from "@/types/user.types";
 import { ProjectType } from "@/types/project.types";
 import { getallByCompany } from "@/action/project.action";
 import { SupplierType } from "@/types/supplier.types";
@@ -63,7 +63,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
 
   const [categoryId, setCategoryId] = useState("");
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
-  const [collaborators, setCollaborators] = useState<UserType[]>([]);
+  const [collaborators, setCollaborators] = useState<ProfileType[]>([]);
   const [partners, setPartners] = useState<SupplierType[]>([]);
   const [projects, setProjects] = useState<ProjectType[]>([]);
   const [category, setCategory] = useState("");
@@ -72,6 +72,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const [nature, setNature] = useState("");
   const [fiscalObject, setFiscalObject] = useState("");
   const [currentAmountType, setCurrentAmountType] = useState<$Enums.AmountType>();
+  const [maxAmount, setMaxAmount] = useState<number | undefined>(undefined);
 
   const form = useForm<DibursementSchemaType>({
     resolver: zodResolver(dibursementSchema)
@@ -135,7 +136,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const {
     mutate: mutateGetCollborators,
     isPending: isGettingCollaborators,
-  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
     getCollaborators,
     () => { },
     "collaborators"
@@ -450,6 +451,8 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                   <FormItem className="-space-y-2 w-full">
                     <FormControl>
                       <TextInput
+                        min={0}
+                        max={maxAmount}
                         type="number"
                         design="float"
                         label="Montant"
@@ -583,10 +586,13 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                       }))}
                       value={field.value as string}
                       setValue={e => {
-                        const current = documents.find(d => d.id === e)?.amountType;
-                        setCurrentAmountType(current);
-                        if (current) {
-                          form.setValue("amountType", current);
+                        const doc = documents.find(d => d.id === e);
+                        setCurrentAmountType(doc?.amountType);
+                        if (doc) {
+                          setMaxAmount(Number(doc.payee));
+                          form.setValue("amountType", doc.amountType);
+                        } else {
+                          setMaxAmount(undefined)
                         }
                         field.onChange(e)
                       }}
@@ -723,7 +729,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                       isLoading={isGettingCollaborators}
                       datas={collaborators.map(collaborator => ({
                         id: collaborator.id,
-                        label: collaborator.name,
+                        label: `${collaborator.firstname} ${collaborator.lastname}`,
                         value: collaborator.id
                       }))}
                       value={field.value ?? ""}

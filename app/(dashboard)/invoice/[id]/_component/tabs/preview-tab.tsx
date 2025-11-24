@@ -30,7 +30,7 @@ export default function PreviewTab() {
 
   const [invoice, setInvoice] = useState<InvoiceType | undefined>(undefined);
   const [filename, setFilename] = useState("");
-  const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
+  const [document, setDocument] = useState<ModelDocumentType | undefined>(
     undefined,
   );
   const [open, setOpen] = useState({
@@ -51,7 +51,7 @@ export default function PreviewTab() {
   const { mutate: mutateGetDocument, isPending: isGettingDocument } =
     useQueryAction<
       { id: string },
-      RequestResponse<ModelDocumentType<File>>
+      RequestResponse<ModelDocumentType>
     >(uniqueDocument, () => { }, ["model-document"]);
 
   useEffect(() => {

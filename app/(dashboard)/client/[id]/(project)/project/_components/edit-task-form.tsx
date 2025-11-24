@@ -21,7 +21,7 @@ import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { priority, status } from "@/lib/data";
 import { MultipleSelect, Option } from "@/components/ui/multi-select";
 import { getCollaborators } from "@/action/user.action";
-import { UserType } from "@/types/user.types";
+import { ProfileType } from "@/types/user.types";
 import { unique, update } from "@/action/task.action";
 import { TaskType } from "@/types/task.type";
 import { useParams } from "next/navigation";
@@ -65,7 +65,7 @@ export default function EditTaskForm({
     data: taskData,
   } = useQueryAction<{ id: string }, RequestResponse<TaskType>>(
     unique,
-    () => {},
+    () => { },
     "task"
   );
 
@@ -73,16 +73,16 @@ export default function EditTaskForm({
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
     data,
-  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
     getCollaborators,
-    () => {},
+    () => { },
     "collaborators"
   );
 
   const { mutate, isPending } = useQueryAction<
     EditTaskSchemaType,
     RequestResponse<TaskType>
-  >(update, () => {}, "tasks");
+  >(update, () => { }, "tasks");
 
   useEffect(() => {
     if (taskId) {
@@ -141,8 +141,8 @@ export default function EditTaskForm({
                 taskData.status === "TODO"
                   ? "todo"
                   : taskData.status === "IN_PROGRESS"
-                  ? "inProgress"
-                  : "done",
+                    ? "inProgress"
+                    : "done",
               owner: [],
               description: taskData.desc,
               status: taskData.status,
@@ -295,7 +295,7 @@ export default function EditTaskForm({
                 render={({ field }) => {
                   const allOptions: Option[] =
                     data?.data?.map((user) => ({
-                      label: user.name,
+                      label: `${user.firstname} ${user.lastname}`,
                       value: user.id,
                     })) ?? [];
 

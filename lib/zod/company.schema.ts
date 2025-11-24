@@ -1,5 +1,4 @@
 import { string, z } from "zod";
-import { userEditSchema, userSchema } from "./user.schema";
 
 export const taxSchema = z.object({
     id: string(),
@@ -66,8 +65,6 @@ export const companySchema = z.object({
     currency: z.string().min(1, {
         message: "La devise est obligatoire."
     }),
-    employees: z.array(userSchema).min(1,
-        { message: "Veuillez ajouter au moins un employé." }),
     fiscal: z.object({
         from: z.date(),
         to: z.date(),
@@ -126,8 +123,6 @@ export const editCompanySchema = z.object({
     currency: z.string().min(1, {
         message: "La devise est obligatoire."
     }),
-    employees: z.array(userEditSchema).min(1,
-        { message: "Veuillez ajouter au moins un employé." }),
     fiscal: z.object({
         from: z.date(),
         to: z.date(),

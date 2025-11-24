@@ -57,7 +57,7 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
     const router = useRouter();
 
     const [amountType, setAmountType] = useState<"HT" | "TTC">("TTC");
-    const [company, setCompany] = useState<CompanyType<string>>();
+    const [company, setCompany] = useState<CompanyType>();
     const [paymentLimit, setPaymentLimit] = useState("");
 
     const companyId = useDataStore.use.currentCompany();
@@ -122,7 +122,7 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
         mutate: mutateGetDocument,
         isPending: isGettingDocument,
         data: documentData,
-    } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+    } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
         unique,
         () => { },
         "document"
@@ -484,7 +484,6 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
                                                 required={false}
                                                 value={field.value}
                                                 handleChange={(e) => {
-                                                    console.log({ e });
                                                     field.onChange(e);
                                                 }}
                                             />

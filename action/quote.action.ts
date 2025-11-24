@@ -214,7 +214,6 @@ export async function removeManyQuotes({ ids }: { ids: string[] }) {
 }
 
 export async function shareQuote(data: RecordEmailSchemaType) {
-    console.log({ data })
     const formData = new FormData();
 
     formData.append("companyId", data.companyId);

@@ -113,7 +113,6 @@ export default function BillboardCreateBrochureForm({
       async onSuccess(data) {
         if (data.data) {
           const billboards = data.data;
-          console.log({ billboards });
           switch (action) {
             case "download":
               // await downloadPdf(data.data);

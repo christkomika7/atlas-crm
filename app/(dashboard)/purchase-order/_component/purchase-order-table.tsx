@@ -26,7 +26,7 @@ import { dropdownMenu } from "./table";
 import { cutText, formatNumber, generateAmaId } from "@/lib/utils";
 import { paymentTerms } from "@/lib/data";
 import { addDays } from "date-fns";
-import { checkDeadline } from "@/lib/date";
+import { checkDeadline, formatDateToDashModel } from "@/lib/date";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
 
@@ -135,16 +135,12 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {cutText(
-                      `${purchaseOrder.supplier.firstname} ${purchaseOrder.supplier.lastname}`,
+                      `${purchaseOrder.supplier.companyName}`,
                       20
                     )}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {new Date(purchaseOrder.createdAt).toLocaleDateString("fr-FR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
+                    {formatDateToDashModel(purchaseOrder.createdAt)}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {formatNumber(purchaseOrder.amountType === "TTC" ? purchaseOrder.totalTTC : purchaseOrder.totalHT)} {currency}

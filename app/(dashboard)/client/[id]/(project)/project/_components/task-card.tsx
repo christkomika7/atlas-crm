@@ -21,7 +21,7 @@ import useTaskStore from "@/stores/task.store";
 import TaskModal from "./task-modal";
 import TaskStep from "./task-step";
 import { KanbanTask } from "@/components/ui/shadcn-io/kanban";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ta } from "zod/v4/locales";
 
 export type TaskCardProps = {
@@ -31,11 +31,12 @@ export type TaskCardProps = {
 export default function TaskCard({ task }: TaskCardProps) {
   const retrieveTask = useTaskStore.use.removeTask();
   const setStep = useTaskStore.use.setStep();
+  const [preview, setPreview] = useState("");
 
   const { mutate: mutateRemoveTask, isPending: isPendingRemoveTask } =
     useQueryAction<{ id: string }, RequestResponse<TaskType>>(
       remove,
-      () => {},
+      () => { },
       "tasks"
     );
 

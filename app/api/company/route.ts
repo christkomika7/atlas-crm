@@ -1,5 +1,4 @@
 import { checkAccess } from "@/lib/access";
-import { checkIfExists, createEmployee, initializeCurrentCompany } from "@/lib/database";
 import { removePath } from "@/lib/file";
 import { extractCompanyData } from "@/lib/utils";
 import { companySchema, CompanySchemaType } from "@/lib/zod/company.schema";
@@ -7,7 +6,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
 import { parseData } from "@/lib/parse";
-import { Company } from "@/lib/generated/prisma";
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 
 export async function GET(req: NextRequest) {
@@ -19,15 +17,14 @@ export async function GET(req: NextRequest) {
         const skip = parseInt(searchParams.get("skip") || "0", 10);
         const take = parseInt(searchParams.get("take") || DEFAULT_PAGE_SIZE.toString(), 10);
 
-        // Total companies count
         const total = await prisma.company.count();
 
-        // Companies with pagination
         const companies = await prisma.company.findMany({
             skip,
             take,
-            orderBy: { createdAt: "desc" }, // Pour que les plus récents soient en premier
+            orderBy: { createdAt: "desc" },
         });
+
 
         return NextResponse.json(
             {
@@ -50,33 +47,45 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["DASHBOARD"], "CREATE");
+    await checkAccess(["SETTING"], "CREATE");
 
     let uploadedPaths: string[] = [];
     let uploadedPassportPaths: string[] = [];
     let uploadedDocumentPaths: string[] = [];
-    let createdUserIds: string[] = [];
+
+    const formData = await req.formData();
+    const companyData = extractCompanyData(formData);
+    const data = parseData<CompanySchemaType>(companySchema, {
+        ...companyData,
+    }) as CompanySchemaType;
+
+    const [companyNameExist, emailExist] = await prisma.$transaction([
+        prisma.company.findFirst({
+            where: { companyName: data.companyName }
+        }),
+        prisma.company.findFirst({
+            where: { email: data.email }
+        }),
+    ]);
+
+    if (companyNameExist) {
+        return NextResponse.json(
+            { state: "error", message: "Une entreprise porte déjà ce nom." },
+            { status: 404 }
+        );
+    }
+
+    if (emailExist) {
+        return NextResponse.json(
+            { state: "error", message: "Cet adresse mail est déjà utilisé." },
+            { status: 404 }
+        );
+    }
+
 
     try {
-        const formData = await req.formData();
-        const companyData = extractCompanyData(formData);
-        const data = parseData<CompanySchemaType>(companySchema, {
-            ...companyData,
-        }) as CompanySchemaType
-
-        await checkIfExists(prisma.company, { where: { companyName: data.companyName } }, "entreprise", data.companyName);
-        await checkIfExists(prisma.company, { where: { email: data.email } }, "entreprise", data.email);
-
-        const employeesWithAuth = await Promise.all(
-            data.employees.map(async (employee) => {
-                return await createEmployee(employee, data.companyName, createdUserIds, uploadedPaths, uploadedPassportPaths, uploadedDocumentPaths);
-            })
-        );
-
-        let company: Company | null = null
-
-        try {
-            company = await prisma.company.create({
+        const [company, admin] = await prisma.$transaction([
+            prisma.company.create({
                 data: {
                     companyName: data.companyName,
                     country: data.country,
@@ -97,44 +106,79 @@ export async function POST(req: NextRequest) {
                     fiscalYearStart: data.fiscal.from,
                     fiscalYearEnd: data.fiscal.to,
                     vatRates: data.vatRate,
-                    employees: {
-                        connect: employeesWithAuth.map((id) => ({ id })),
-                    },
-                },
-            });
-            if (company) {
-                await initializeCurrentCompany(company.id, createdUserIds)
-                await prisma.documentModel.create({
-                    data: {
-                        position: "Center",
-                        size: "Medium",
-                        primaryColor: "#fbbf24",
-                        secondaryColor: "#fef3c7",
-                        company: {
-                            connect: {
-                                id: company.id
-                            }
+                    documentModel: {
+                        create: {
+                            position: "Center",
+                            size: "Medium",
+                            primaryColor: "#fbbf24",
+                            secondaryColor: "#fef3c7",
                         }
                     }
-                })
-            }
-
-        } catch (err) {
-            await prisma.user.deleteMany({ where: { id: { in: createdUserIds.filter(v => Boolean(v)) } } });
-            if (company && company.id) {
-                await prisma.company.delete({ where: { id: company.id } })
-
-            }
-            await removePath([...uploadedPaths, ...uploadedPassportPaths, ...uploadedDocumentPaths]);
-
-            console.warn(err)
-            return NextResponse.json(
-                {
-                    message: "Erreur lors de la création de l'entreprise. Les utilisateurs ont été supprimés.",
-                    state: "error",
                 },
-                { status: 500 }
-            );
+            }),
+            prisma.user.findUnique({
+                where: {
+                    role: "ADMIN",
+                    email: process.env.USER_EMAIL!
+                }
+            })
+        ]);
+
+        await prisma.$transaction([
+            prisma.transactionCategory.create({
+                data: {
+                    company: { connect: { id: company.id } },
+                    name: "Règlement loyer",
+                    type: "DISBURSEMENT"
+                }
+            }),
+            prisma.transactionCategory.create({
+                data: {
+                    company: { connect: { id: company.id } },
+                    name: "Règlement salaire",
+                    type: "DISBURSEMENT"
+                }
+            }),
+            prisma.transactionCategory.create({
+                data: {
+                    company: { connect: { id: company.id } },
+                    name: "Règlement prestation de service",
+                    type: "DISBURSEMENT"
+                }
+            }),
+            prisma.transactionCategory.create({
+                data: {
+                    company: { connect: { id: company.id } },
+                    name: "Administration",
+                    type: "DISBURSEMENT",
+                    natures: {
+                        create: { name: "Fiscal", company: { connect: { id: company.id } } }
+                    }
+                }
+            }),
+            prisma.transactionCategory.create({
+                data: {
+                    company: { connect: { id: company.id } },
+                    name: "Règlement fournisseur",
+                    type: "DISBURSEMENT"
+                }
+            }),
+            prisma.transactionCategory.create({
+                data: {
+                    company: { connect: { id: company.id } },
+                    name: "Règlement client",
+                    type: "RECEIPT"
+                }
+            }),
+        ]);
+
+        if (admin && !admin.currentCompany) {
+            await prisma.user.update({
+                where: { id: admin.id },
+                data: {
+                    currentCompany: company.id
+                }
+            })
         }
 
         return NextResponse.json(
@@ -147,9 +191,7 @@ export async function POST(req: NextRequest) {
         );
     } catch (error) {
         console.log({ error })
-        await prisma.user.deleteMany({ where: { id: { in: createdUserIds.filter(v => Boolean(v)) } } });
         await removePath([...uploadedPaths, ...uploadedPassportPaths, ...uploadedDocumentPaths]);
-
         return NextResponse.json(
             {
                 message: "Erreur interne du serveur. Les utilisateurs et fichiers ont été supprimés.",

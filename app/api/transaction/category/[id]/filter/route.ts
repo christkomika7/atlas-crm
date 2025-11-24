@@ -49,8 +49,6 @@ export async function GET(req: NextRequest) {
         if (start || end) baseWhere.createdAt = whereCreatedAt;
         if (category) baseWhere.categoryId = category;
 
-        console.log({ baseWhere });
-
         // --- 1) total général (somme sur amount) pour les dibursements (selon filtres) ---
         const totalAgg = await prisma.dibursement.aggregate({
             where: baseWhere,
@@ -162,12 +160,6 @@ export async function GET(req: NextRequest) {
                 };
             });
         }
-
-        console.log({
-            total: formatAmount(totalAmountDecimal),
-            categories: items,
-            natures: category ? naturesResult : []
-        })
 
         return NextResponse.json(
             {

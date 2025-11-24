@@ -46,14 +46,6 @@ export default function CreateForm() {
   }, [companyId, form]);
 
 
-  useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors })
-    })
-
-  }, [form.watch])
-
-
   function submit(formData: BillboardSchemaFormType) {
     const validateData = billboardFormSchema.safeParse(formData);
 

@@ -6,7 +6,6 @@ import { type NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
     await checkAccess(["DASHBOARD"], "READ");
     const id = getIdFromUrl(req.url, 2) as string;
-    console.log({ id });
 
     if (!id) {
         return NextResponse.json(

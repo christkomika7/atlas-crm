@@ -9,7 +9,7 @@ import { useDataStore } from "@/stores/data.store";
 import useTransactionStore from "@/stores/transaction.store";
 import { RequestResponse } from "@/types/api.types";
 import { SourceType, TransactionCategoryType, TransactionNatureType } from "@/types/transaction.type";
-import { UserType } from "@/types/user.types";
+import { ProfileType } from "@/types/user.types";
 import { useRouter } from "next/navigation";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 
@@ -41,7 +41,7 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
   const [paidForValue, setPaidForValue] = useState<string>("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [collaborators, setCollaborators] = useState<UserType[]>([]);
+  const [collaborators, setCollaborators] = useState<ProfileType[]>([]);
 
   const { mutate: mutateGetCategories, isPending: isGettingCategories } =
     useQueryAction<
@@ -63,7 +63,7 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
     );
 
   const { mutate: mutateGetCollborators, isPending: isGettingCollaborators } =
-    useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+    useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
       getCollaborators,
       () => { },
       "collaborators",
@@ -265,7 +265,7 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
           isLoading={isGettingCollaborators}
           datas={collaborators.map((collaborator) => ({
             id: collaborator.id,
-            label: collaborator.name,
+            label: `${collaborator.firstname} ${collaborator.lastname}`,
             value: collaborator.id,
           }))}
           required={false}

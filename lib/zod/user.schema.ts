@@ -3,7 +3,6 @@ import { z } from "zod";
 import { validateMimeType } from "../utils";
 
 export const userSchema = z.object({
-    id: z.string().optional(),
     image: z
         .instanceof(File, {
             message: "La valeur inserer n'est pas une image."
@@ -16,7 +15,6 @@ export const userSchema = z.object({
         // })
         .optional()
         .nullable(),
-    path: z.string().optional(),
     lastname: z.string().min(1, {
         message: "Le nom de famille est obligatoire."
     }),
@@ -28,6 +26,7 @@ export const userSchema = z.object({
     }).email({
         message: "Cette adresse mail est invalide."
     }),
+    userId: z.string().optional(),
     phone: z.string().min(1, {
         message: "Le numéro de téléphone est obligatoire."
     }),
@@ -153,7 +152,6 @@ export const userEditSchema = z.object({
         // })
         .optional()
         .nullable(),
-    path: z.string().optional(),
     lastname: z.string().min(1, {
         message: "Le nom de famille est obligatoire."
     }),
@@ -173,6 +171,7 @@ export const userEditSchema = z.object({
     }),
     salary: z.string({ error: "Le salaire est obligatoire." }),
     password: z.string().optional(),
+    newPassword: z.string().optional(),
 
     passport: z
         .instanceof(File, {
@@ -275,7 +274,16 @@ export const userEditSchema = z.object({
         edit: z.boolean(),
         read: z.boolean(),
     }).optional(),
-});
+}).refine(
+    (data) => {
+        if (data.password && !data.newPassword) return false;
+        return true;
+    },
+    {
+        message: "Le nouveau mot de passe est obligatoire lorsque l'ancien mot de passe est renseigné.",
+        path: ["newPassword"],
+    }
+);
 
 export const userIdSchema = z.string()
 

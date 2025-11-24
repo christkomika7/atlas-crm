@@ -78,7 +78,6 @@ export async function PUT(req: NextRequest) {
         }
     });
     if (!projectExist) {
-        console.log({ error: "Identifiant invalide." })
         return NextResponse.json({
             status: "error",
             message: "Aucun élément trouvé pour cet identifiant.",
@@ -125,8 +124,6 @@ export async function PUT(req: NextRequest) {
         status: parsedData.status as $Enums.ProjectStatus,
         file: [...savedPaths],
     };
-
-    console.log({ updateData });
 
     try {
         const updatedAppointment = await prisma.task.update({

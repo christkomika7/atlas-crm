@@ -8,7 +8,7 @@ import { BillboardType } from "./billboard.types";
 export type ClientContractType = {
     id: string;
     type: $Enums.ContractType;
-    company: CompanyType<string>;
+    company: CompanyType;
     clientId: string;
     client: ClientType;
     invoices: InvoiceType[];
@@ -18,7 +18,7 @@ export type ClientContractType = {
 export type LessorContractType = {
     id: string;
     type: $Enums.ContractType;
-    company: CompanyType<string>;
+    company: CompanyType;
     lessorId: string;
     lessor?: SupplierType;
     billboardId: string;

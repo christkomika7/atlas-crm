@@ -37,7 +37,6 @@ export async function PUT(req: NextRequest) {
         where: { id }
     });
     if (!stepExist) {
-        console.log({ error: "Identifiant invalide." })
         return NextResponse.json({
             status: "error",
             message: "Aucun élément trouvé pour cet identifiant.",

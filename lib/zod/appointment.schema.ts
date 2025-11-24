@@ -70,7 +70,7 @@ export const editAppointmentSchema = z.object({
     address: z.string().min(1, {
         message: "L'adresse du rendez-vous est requise.",
     }),
-    notify: z.boolean(),
+    notify: z.boolean().optional(),
     uploadDocuments: z
         .array(z.instanceof(File))
         .optional(),

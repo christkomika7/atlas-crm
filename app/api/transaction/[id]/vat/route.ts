@@ -1,3 +1,4 @@
+import { ADMINISTRATION_CATEGORY, FISCAL_NATURE, FISCAL_OBJECT } from "@/config/constant";
 import { checkAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
 import { getIdFromUrl } from "@/lib/utils";
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest) {
 
     if (!id) {
         return NextResponse.json(
-            { status: "error", message: "identifiant invalide." },
+            { status: "error", message: "Identifiant invalide." },
             { status: 404 }
         );
     }
@@ -19,12 +20,12 @@ export async function GET(req: NextRequest) {
     const company = await prisma.company.findUnique({ where: { id } });
     if (!company) {
         return NextResponse.json(
-            { status: "error", message: "identifiant invalide." },
+            { status: "error", message: "Entreprise introuvable." },
             { status: 404 }
         );
     }
 
-    // Récupérer la liste des taxes et la TVA (cas où vatRates est un array)
+    // -------- TVA --------
     const vats: TaxInput[] = Array.isArray(company.vatRates)
         ? (company.vatRates as any[])
         : typeof company.vatRates === "string"
@@ -35,7 +36,18 @@ export async function GET(req: NextRequest) {
         (v) => typeof v.taxName === "string" && v.taxName.toLowerCase() === "tva"
     );
 
-    // parse TVA pour obtenir un ratio (ex: "2%" -> 0.02). Défaut 0 si absent.
+    // Aucune TVA enregistrée
+    if (!tvaEntry) {
+        return NextResponse.json(
+            {
+                status: "success",
+                message: "Aucun taux de TVA défini pour cette entreprise.",
+                data: 0,
+            },
+            { status: 200 }
+        );
+    }
+
     const parsePercent = (s: string | number | undefined): Decimal => {
         if (!s && s !== 0) return new Decimal(0);
         try {
@@ -48,8 +60,21 @@ export async function GET(req: NextRequest) {
         }
     };
 
-    const tvaRate = parsePercent(tvaEntry?.taxValue);
+    const tvaRate = parsePercent(tvaEntry.taxValue);
 
+    // TVA = 0%
+    if (tvaRate.equals(0)) {
+        return NextResponse.json(
+            {
+                status: "success",
+                message: "Aucun taux de TVA actif (0%).",
+                data: 0,
+            },
+            { status: 200 }
+        );
+    }
+
+    // -------- SUMS --------
     const receiptsSum = await prisma.receipt.aggregate({
         _sum: { amount: true },
         where: {
@@ -71,24 +96,9 @@ export async function GET(req: NextRequest) {
         where: {
             companyId: id,
             amountType: "HT",
-            category: {
-                name: {
-                    equals: "Administration",
-                    mode: "insensitive"
-                }
-            },
-            nature: {
-                name: {
-                    equals: "Fiscale",
-                    mode: "insensitive"
-                }
-            },
-            fiscalObject: {
-                name: {
-                    equals: "TVA",
-                    mode: "insensitive"
-                }
-            }
+            category: { name: { equals: ADMINISTRATION_CATEGORY, mode: "insensitive" } },
+            nature: { name: { equals: FISCAL_NATURE, mode: "insensitive" } },
+            fiscalObject: { name: { equals: FISCAL_OBJECT, mode: "insensitive" } }
         },
     });
 
@@ -96,13 +106,28 @@ export async function GET(req: NextRequest) {
     const totalDibursements = new Decimal(dibursementsSum._sum.amount?.toString() ?? 0);
     const totalFiscal = new Decimal(fiscalDibursementsSum._sum.amount?.toString() ?? 0);
 
+    // Aucun mouvement enregistré
+    if (totalReceipts.equals(0) && totalDibursements.equals(0) && totalFiscal.equals(0)) {
+        return NextResponse.json(
+            {
+                status: "success",
+                message: "",
+                data: 0,
+            },
+            { status: 200 }
+        );
+    }
+
+    // -------- TVA CALCULATION --------
     const tvaOnReceipts = totalReceipts.mul(tvaRate);
     const tvaOnDibursements = totalDibursements.mul(tvaRate);
-    const result = tvaOnReceipts.sub(tvaOnDibursements).sub(totalFiscal);
+
+    const result = tvaOnReceipts.sub(tvaOnDibursements).abs().sub(totalFiscal);
 
     return NextResponse.json(
         {
             status: "success",
+            message: "",
             data: result,
         },
         { status: 200 }

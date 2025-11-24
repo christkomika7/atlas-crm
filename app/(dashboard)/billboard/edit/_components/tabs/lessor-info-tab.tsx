@@ -620,8 +620,6 @@ export default function LessorInfoTab({
                     field.value?.includes(opt.value)
                   );
 
-                  console.log({ value: field.value, selectedOptions })
-
                   return (
                     <FormItem className="-space-y-2">
                       <FormControl>
@@ -634,7 +632,6 @@ export default function LessorInfoTab({
                           options={acceptPayment}
                           value={selectedOptions}
                           onChange={(options) => {
-                            console.log({ options })
                             field.onChange(options.map((opt) => opt.value))
                           }
                           }

@@ -1,4 +1,5 @@
 "use client";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,179 +16,123 @@ import { RequestResponse } from "@/types/api.types";
 import { useEffect, useState } from "react";
 import { CompanyCountriesType } from "@/types/company.types";
 import { getCountryFrenchName, getFlagUrl } from "@/lib/helper";
-import { Role } from "@/lib/generated/prisma";
 import { useDataStore } from "@/stores/data.store";
 
 export default function CountrySelect() {
   const [companyCountries, setCompanyCountries] =
     useState<CompanyCountriesType[]>();
-  const [companyCountry, setCompanyCountry] = useState<CompanyCountriesType>();
 
-  const id = useDataStore.use.id();
-  const role = useDataStore.use.role();
+  const userId = useDataStore.use.id();
   const currentCompany = useDataStore.use.currentCompany();
   const setCurrentCompany = useDataStore.use.setCurrentCompany();
   const setCurrency = useDataStore.use.setCurrency();
-  const { mutate, isPending, data } = useQueryAction<
+
+  const { mutate, isPending } = useQueryAction<
     { id: string; currentCompany?: string },
-    RequestResponse<CompanyCountriesType | CompanyCountriesType[]>
-  >(countries, () => {}, "countries");
+    RequestResponse<CompanyCountriesType[]>
+  >(countries, () => { }, "countries");
 
+  // ---------- LOAD USER COMPANIES ----------
   useEffect(() => {
-    if (id) {
-      mutate(
-        { id },
-        {
-          onSuccess(data) {
-            const companyData = data.data;
-            if (companyData && Array.isArray(companyData)) {
-              setCompanyCountries(companyData);
-            } else {
-              setCompanyCountry(companyData);
-            }
-          },
-        }
-      );
-    }
-  }, [id]);
+    if (!userId) return;
 
-  function handleCompany(current: string) {
-    if (id) {
-      mutate(
-        { id, currentCompany: current },
-        {
-          onSuccess(data) {
-            const companyData = data.data;
-            setCurrentCompany(current);
-            if (companyData && Array.isArray(companyData)) {
-              setCompanyCountries(companyData);
-              setCurrency(
-                companyData.find((c) => c.id === current)?.currency ?? ""
-              );
-            } else {
-              setCompanyCountry(companyData);
-              setCurrency(companyData?.currency ?? "");
-            }
-          },
-        }
-      );
-    }
-  }
+    mutate(
+      { id: userId },
+      {
+        onSuccess(res) {
+          const companies = res.data ?? []; // 🔥 FIX TYPE
+          setCompanyCountries(companies);
 
-  if (isPending && (!companyCountry || !companyCountries))
+          if (!currentCompany && companies.length > 0) {
+            setCurrentCompany(companies[0].id);
+            setCurrency(companies[0].currency);
+          }
+        },
+      }
+    );
+  }, [userId]);
+
+  // ---------- CHANGE CURRENT COMPANY ----------
+  const handleCompany = (companyId: string) => {
+    if (!userId) return;
+
+    mutate(
+      { id: userId, currentCompany: companyId },
+      {
+        onSuccess(res) {
+          const companies = res.data ?? []; // 🔥 FIX TYPE
+          setCompanyCountries(companies);
+          setCurrentCompany(companyId);
+
+          const selected = companies.find((c) => c.id === companyId);
+          setCurrency(selected?.currency ?? "");
+        },
+      }
+    );
+  };
+
+  // ---------- LOADING ----------
+  if (isPending && !companyCountries)
     return <Skeleton className="rounded-lg w-[200px] h-11" />;
 
-  if (!data?.data || (Array.isArray(data.data) && data.data.length === 0)) {
-    return null;
-  }
+  if (!companyCountries || companyCountries.length === 0) return null;
+
+  const current = companyCountries.find((c) => c.id === currentCompany);
 
   return (
-    <>
-      {role === Role.USER && companyCountry && (
-        <span className="flex items-center space-x-2 bg-neutral-100 p-2 rounded-md w-full h-11">
-          <span className="flex rounded w-12 h-7">
-            {getFlagUrl(companyCountry!.country) && (
-              <Image
-                src={getFlagUrl(companyCountry!.country) as string}
-                alt={companyCountry!.country}
-                width={48}
-                height={28}
-                className="rounded w-full h-full overflow-hidden"
-              />
-            )}
-          </span>
-          <span className="flex flex-col justify-start items-start font-semibold">
-            {companyCountry!.country &&
-              getCountryFrenchName(companyCountry!.country)}
-            <small className="font-normal text-xs">
-              {companyCountry.companyName}
-            </small>
-          </span>
-        </span>
-      )}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="select" className="w-[230px] !h-12">
+          <div className="flex justify-between items-center pr-1 w-full">
+            <span className="flex items-center gap-x-2">
+              <span className="rounded w-12 h-8">
+                {current?.country && (
+                  <Image
+                    src={getFlagUrl(current.country) as string}
+                    alt={current.country}
+                    width={48}
+                    height={28}
+                    className="rounded w-full h-full overflow-hidden"
+                  />
+                )}
+              </span>
+              <span className="flex flex-col justify-start items-start font-semibold">
+                {current?.country && getCountryFrenchName(current.country)}
+                <small className="font-normal text-xs">
+                  {current?.companyName}
+                </small>
+              </span>
+            </span>
+            <span className="!size-4 flex justify-center items-center">
+              <ChevronDownIcon className="stroke-neutral-600 w-3 h-3" />
+            </span>
+          </div>
+        </Button>
+      </DropdownMenuTrigger>
 
-      {role === Role.ADMIN &&
-        Array.isArray(companyCountries) &&
-        currentCompany && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="select" className="w-[230px] !h-12">
-                <div className="flex justify-between items-center pr-1 w-full">
-                  <span className="flex items-center gap-x-2">
-                    <span className="rounded w-12 h-8">
-                      {getFlagUrl(
-                        companyCountries.find((c) => c.id === currentCompany)
-                          ?.country ?? ""
-                      ) && (
-                        <Image
-                          src={
-                            getFlagUrl(
-                              companyCountries.find(
-                                (c) => c.id === currentCompany
-                              )?.country ?? ""
-                            ) as string
-                          }
-                          alt={
-                            companyCountries.find(
-                              (c) => c.id === currentCompany
-                            )?.country ?? ""
-                          }
-                          width={48}
-                          height={28}
-                          className="rounded w-full h-full overflow-hidden"
-                        />
-                      )}
-                    </span>
-                    <span className="flex flex-col justify-start items-start font-semibold">
-                      {companyCountries.find((c) => c.id === currentCompany)
-                        ?.country &&
-                        getCountryFrenchName(
-                          companyCountries.find((c) => c.id === currentCompany)
-                            ?.country ?? ""
-                        )}
-                      <small className="font-normal text-xs">
-                        {
-                          companyCountries.find((c) => c.id === currentCompany)
-                            ?.companyName
-                        }
-                      </small>
-                    </span>
-                  </span>
-                  <span className="top-0.5 relative flex w-3 h-3">
-                    <ChevronDownIcon className="stroke-neutral-600" />
-                  </span>
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-[230px]">
-              {(data?.data as CompanyCountriesType[])?.map(
-                ({ id, country, companyName }) => (
-                  <DropdownMenuItem key={id} onClick={() => handleCompany(id)}>
-                    <span className="items-center space-x-2 grid grid-cols-[48px_1fr]">
-                      <span className="flex rounded h-8">
-                        {getFlagUrl(country) && (
-                          <Image
-                            src={getFlagUrl(country) as string}
-                            alt={country}
-                            width={48}
-                            height={32}
-                            className="rounded w-full h-full overflow-hidden"
-                          />
-                        )}
-                      </span>
-                      <span className="flex flex-col justify-start items-start font-medium text-sm">
-                        {country && getCountryFrenchName(country)}
-                        <small className="font-normal text-xs">
-                          {companyName}
-                        </small>
-                      </span>
-                    </span>
-                  </DropdownMenuItem>
-                )
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-    </>
+      <DropdownMenuContent className="w-[230px]">
+        {companyCountries.map(({ id, country, companyName }) => (
+          <DropdownMenuItem key={id} onClick={() => handleCompany(id)}>
+            <span className="grid grid-cols-[48px_1fr] items-center gap-x-2">
+              <span className="rounded h-8 overflow-hidden flex">
+                {country && (
+                  <Image
+                    src={getFlagUrl(country) as string}
+                    alt={country}
+                    width={48}
+                    height={32}
+                    className="rounded w-full h-full"
+                  />
+                )}
+              </span>
+              <span className="flex flex-col justify-start items-start font-medium text-sm">
+                {getCountryFrenchName(country)}
+                <small className="font-normal text-xs">{companyName}</small>
+              </span>
+            </span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

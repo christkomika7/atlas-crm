@@ -25,7 +25,7 @@ export default function PreviewTab() {
 
   const [filename, setFilename] = useState("");
   const [deliveryNote, setDeliverNote] = useState<DeliveryNoteType | undefined>(undefined);
-  const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
+  const [document, setDocument] = useState<ModelDocumentType | undefined>(
     undefined,
   );
   const idCompany = useDataStore.use.currentCompany();
@@ -40,7 +40,7 @@ export default function PreviewTab() {
   const { mutate: mutateGetDocument, isPending: isGettingDocument } =
     useQueryAction<
       { id: string },
-      RequestResponse<ModelDocumentType<File>>
+      RequestResponse<ModelDocumentType>
     >(uniqueDocument, () => { }, ["model-document"]);
 
   useEffect(() => {

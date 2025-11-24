@@ -91,7 +91,7 @@ export type BillboardType = {
     specificCondition?: string;
 
     companyId: string;
-    company: CompanyType<string>;
+    company: CompanyType;
     clientId: string;
     client: ClientType;
 

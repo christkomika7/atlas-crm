@@ -3,7 +3,7 @@ import { generalSans } from "@/fonts/font";
 import { useCalculateTaxe } from "@/hook/useCalculateTaxe";
 import { formatDateToDashModel, getMonthsAndDaysDifference } from "@/lib/date";
 import { getCountryFrenchName } from "@/lib/helper";
-import { cn, formatNumber, getAmountPrice, parseItem, parseItems, resolveImageSrc } from "@/lib/utils";
+import { cn, formatNumber, getAmountPrice, parseItem, parseItems, resolveImageSrc, urlToFile } from "@/lib/utils";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 import { InvoiceType } from "@/types/invoice.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
@@ -19,7 +19,7 @@ type DocumentPreviewProps = {
     type: string;
     firstColor: string;
     secondColor: string;
-    logo?: File;
+    logo?: string;
     logoSize?: string;
     logoPosition?: string;
     orderValue: string;
@@ -57,17 +57,23 @@ export default function RecordDocument({
     payee,
     moreInfos = true
 }: DocumentPreviewProps) {
-    const [logoURL, setLogoURL] = useState<string | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
     const { calculate } = useCalculateTaxe();
 
-    useEffect(() => {
-        if (logo && logo instanceof File) {
-            setLogoURL(resolveImageSrc(logo) as string);
-        } else {
-            setLogoURL(null);
+    async function getProfil() {
+        if (logo) {
+            const file = await urlToFile(logo);
+            const resolveImage = resolveImageSrc(file);
+            if (resolveImage) {
+                setLogoPreview(resolveImage)
+            }
         }
-    }, [logo]);
+    }
+
+    useEffect(() => {
+        getProfil()
+    }, [logo])
 
     // Fonction pour récupérer les infos du destinataire
     const getRecipientInfo = () => {
@@ -124,9 +130,9 @@ export default function RecordDocument({
                         logoSize === "Large" && "h-[160px]"
                     )}
                 >
-                    {logoURL ? (
+                    {logoPreview ? (
                         <Image
-                            src={logoURL}
+                            src={logoPreview}
                             alt="Logo"
                             width={160}
                             height={160}

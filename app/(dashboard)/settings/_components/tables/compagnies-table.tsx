@@ -15,16 +15,11 @@ import { useQuery } from "@tanstack/react-query";
 import { all } from "@/action/company.action";
 import Spinner from "@/components/ui/spinner";
 import { getCountryFrenchName } from "@/lib/helper";
-import { clearAllFiles } from "@/lib/file-storage";
-import useCompanyStore from "@/stores/company.store";
-import { useEmployeeStore } from "@/stores/employee.store";
 import useTaxStore from "@/stores/tax.store";
 import Paginations from "@/components/paginations";
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 
 export default function CompagniesTable() {
-  const resetCompany = useCompanyStore.use.clearCompany();
-  const resetEmployee = useEmployeeStore.use.resetEmployees();
   const resetTax = useTaxStore.use.clearTaxs();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -39,10 +34,7 @@ export default function CompagniesTable() {
   });
 
   useEffect(() => {
-    resetCompany();
-    resetEmployee();
     resetTax();
-    clearAllFiles();
   }, []);
 
   useEffect(() => {
@@ -50,8 +42,6 @@ export default function CompagniesTable() {
       setTotalItems(query.data.total || 0);
     }
   }, [query.data]);
-
-  console.log({ totalItems });
 
   return (
     <div className="flex flex-col justify-between h-[calc(100vh-168px)]">

@@ -26,6 +26,7 @@ import { cutText, formatNumber, generateAmaId } from "@/lib/utils";
 import { DELIVERY_NOTE_PREFIX } from "@/config/constant";
 import { getAllDeliveryNote } from "@/action/delivery-note.action";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
+import { formatDateToDashModel } from "@/lib/date";
 
 type DeliveryNoteTableProps = {
   filter: "progress" | "complete";
@@ -116,16 +117,12 @@ const DeliveryNoteTable = forwardRef<DeliveryNoteTableRef, DeliveryNoteTableProp
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {cutText(
-                      `${deliveryNote.client.firstname} ${deliveryNote.client.lastname}`,
+                      `${deliveryNote.client.companyName}`,
                       20
                     )}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {new Date(deliveryNote.createdAt).toLocaleDateString("fr-FR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
+                    {formatDateToDashModel(deliveryNote.createdAt)}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {formatNumber(deliveryNote.amountType === "TTC" ? deliveryNote.totalTTC : deliveryNote.totalHT)} {currency}

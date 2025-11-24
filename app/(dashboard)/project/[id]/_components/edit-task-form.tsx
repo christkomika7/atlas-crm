@@ -21,7 +21,7 @@ import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { priority, status } from "@/lib/data";
 import { MultipleSelect, Option } from "@/components/ui/multi-select";
 import { getCollaborators } from "@/action/user.action";
-import { UserType } from "@/types/user.types";
+import { ProfileType } from "@/types/user.types";
 import { unique, update } from "@/action/task.action";
 import { TaskType } from "@/types/task.type";
 import { useParams } from "next/navigation";
@@ -73,7 +73,7 @@ export default function EditTaskForm({
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
     data,
-  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
     getCollaborators,
     () => { },
     "collaborators"
@@ -295,7 +295,7 @@ export default function EditTaskForm({
                 render={({ field }) => {
                   const allOptions: Option[] =
                     data?.data?.map((user) => ({
-                      label: user.name,
+                      label: `${user.firstname} ${user.lastname}`,
                       value: user.id,
                     })) ?? [];
 

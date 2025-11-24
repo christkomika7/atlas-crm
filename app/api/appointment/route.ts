@@ -1,6 +1,6 @@
 import { checkAccess } from "@/lib/access";
 import { formatDateToDashModel, parseDateTime } from "@/lib/date";
-import { base64ToBuffer, sendMail } from "@/lib/email";
+import { sendMail } from "@/lib/email";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
@@ -12,7 +12,7 @@ import { User } from "better-auth";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-    const user = await checkAccess(["APPOINTMENT"], "CREATE") as User;
+    const session = await checkAccess(["APPOINTMENT"], "CREATE") as User;
 
     const formData = await req.formData();
     const rawData: any = {};
@@ -60,6 +60,16 @@ export async function POST(req: NextRequest) {
             savedPaths = [...savedPaths, upload]
         }
 
+        const user = await prisma.user.findUnique({ where: { id: session.id } });
+
+        if (!user) {
+            return NextResponse.json({
+                status: "error",
+                message: "Aucun élément trouvé pour cet identifiant.",
+            }, { status: 404 });
+
+        }
+
         const createdAppointment = await prisma.appointment.create({
             data: {
                 email: data.email,
@@ -72,7 +82,7 @@ export async function POST(req: NextRequest) {
                 documents: savedPaths,
                 teamMemberName: user.name,
                 teamMember: {
-                    connect: { id: user.id }
+                    connect: { id: user.currentProfile as string }
                 },
                 client: {
                     connect: {

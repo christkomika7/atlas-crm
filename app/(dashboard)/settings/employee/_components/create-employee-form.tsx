@@ -17,76 +17,109 @@ import ProfileInput from "@/components/ui/profile-input";
 import { PlusIcon } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { useEmployeeStore } from "@/stores/employee.store";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
-import { hasEmail } from "@/action/user.action";
+import { createUserByCompany, getAllUsers, getUsersByCompany } from "@/action/user.action";
 import Spinner from "@/components/ui/spinner";
-import { setFile } from "@/lib/file-storage";
+import { ProfileType, UserType } from "@/types/user.types";
+import { useParams } from "next/navigation";
+import { Combobox } from "@/components/ui/combobox";
 
 export default function CreateEmployeeForm() {
   const [resetKey, setResetKey] = useState(0);
-  const addEmployee = useEmployeeStore.use.addEmployee();
-  const emailExist = useEmployeeStore.use.emailExists();
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [user, setUser] = useState<UserType>();
+
+
+  const param = useParams();
+
 
   const form = useForm<UserSchemaType>({
     resolver: zodResolver(userSchema),
     defaultValues: {
       dashboard: { create: false, edit: false, read: false },
-      clients: { create: false, edit: false, read: false },
+      clients: { create: false, edit: false, read: false, },
       suppliers: { create: false, edit: false, read: false },
       invoices: { create: false, edit: false, read: false },
       quotes: { create: false, edit: false, read: false },
       deliveryNotes: { create: false, edit: false, read: false },
-      purchaseOrder: { create: false, edit: false, read: false },
-      creditNotes: { create: false, edit: false, read: false },
-      productServices: { create: false, edit: false, read: false },
-      billboards: { create: false, edit: false, read: false },
+      creditNotes: { create: false, edit: false, read: false, },
+      purchaseOrder: { create: false, edit: false, read: false, },
+      productServices: { create: false, edit: false, read: false, },
+      billboards: { create: false, edit: false, read: false, },
       projects: { create: false, edit: false, read: false },
-      appointment: { create: false, edit: false, read: false },
-      contract: { create: false, edit: false, read: false },
-      transaction: { create: false, edit: false, read: false },
-      setting: { create: false, edit: false, read: false },
+      appointment: { create: false, edit: false, read: false, },
+      contract: { create: false, edit: false, read: false, },
+      transaction: { create: false, edit: false, read: false, },
+      setting: { create: false, edit: false, read: false, },
     }
   });
 
+
+  const { mutate: mutateGetUsers, isPending: isGettingUsers } = useQueryAction<
+    null,
+    RequestResponse<UserType[]>
+  >(getAllUsers, () => { }, "users");
+
+
   const { mutate, isPending } = useQueryAction<
-    { id: string; email: string },
-    RequestResponse<undefined>
-  >(hasEmail, () => { }, "employee");
+    { companyId: string, data: UserSchemaType },
+    RequestResponse<ProfileType>
+  >(createUserByCompany, () => { }, "user");
+
+
+  useEffect(() => {
+    getUsers();
+  }, [param])
+
+
+
+  function getUsers() {
+    if (param.id) {
+      mutateGetUsers(null, {
+        onSuccess(data) {
+          if (data.data) {
+            setUsers(data.data);
+          }
+        }
+      });
+    }
+  }
+
+  function getCurrentUser(userId: string) {
+    const data = users.find(p => p.id === userId);
+
+    const email = data?.email ?? "";
+    const firstname = data?.profiles?.find(p => p.firstname)?.firstname || "";
+    const lastname = data?.profiles?.find(p => p.lastname)?.lastname || "";
+
+
+    form.setValue("email", email);
+    form.setValue("lastname", lastname);
+    form.setValue("firstname", firstname);
+
+    setUser(data);
+  }
+
+
 
   async function submit(userData: UserSchemaType) {
     const { success, data } = userSchema.safeParse(userData);
     if (!success) return;
+    if (param.id) {
+      mutate(
+        { companyId: param.id as string, data },
+        {
+          async onSuccess() {
+            setResetKey((prev) => prev + 1);
+            setUser(undefined);
+            getUsers()
+            form.reset();
 
-    const path = `${crypto.randomUUID()}_${data.firstname}_${data.lastname
-      }`.toLowerCase();
-
-    const newUser = {
-      ...data,
-      path,
-    };
-
-    mutate(
-      { id: "", email: data.email },
-      {
-        async onSuccess() {
-          const isExist = emailExist(data.email);
-          if (isExist) return toast.error("Cet adresse mail est déjà utilisé.");
-          if (newUser.image) {
-            await setFile(newUser.email, {
-              type: "profile",
-              file: newUser.image,
-            });
-          }
-          addEmployee({ ...newUser });
-          toast.success("Employé ajouté avec succès.");
-          form.reset();
-          setResetKey((prev) => prev + 1);
-        },
-      }
-    );
+          },
+        }
+      );
+    }
   }
 
   return (
@@ -102,8 +135,8 @@ export default function CreateEmployeeForm() {
                   <FormControl>
                     <div className="w-28 h-28">
                       <ProfileInput
-                        onChange={(file) => field.onChange(file)}
                         resetKey={resetKey}
+                        onChange={(file) => field.onChange(file)}
                         label={
                           <Label
                             htmlFor="profile"
@@ -121,6 +154,36 @@ export default function CreateEmployeeForm() {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="userId"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      required={false}
+                      isLoading={isGettingUsers}
+                      datas={users.map(user => ({
+                        id: user.id,
+                        label: user.name,
+                        value: user.id
+                      }))}
+                      value={field.value || ""}
+                      setValue={e => {
+                        getCurrentUser(String(e))
+                        field.onChange(e)
+
+                      }}
+                      placeholder="Collaborateur"
+                      searchMessage="Rechercher un collaborateur"
+                      noResultsMessage="Aucun collaborateur trouvé."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="lastname"
@@ -128,6 +191,7 @@ export default function CreateEmployeeForm() {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      disabled={!!user}
                       design="float"
                       label="Nom"
                       value={field.value}
@@ -145,6 +209,7 @@ export default function CreateEmployeeForm() {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      disabled={!!user}
                       design="float"
                       label="Prénom"
                       value={field.value}
@@ -162,6 +227,7 @@ export default function CreateEmployeeForm() {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      disabled={!!user}
                       type="email"
                       design="float"
                       label="Adresse mail"

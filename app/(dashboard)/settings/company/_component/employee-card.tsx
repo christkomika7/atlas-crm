@@ -1,72 +1,75 @@
+import { deleteUser } from "@/action/user.action";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getFileByType } from "@/lib/file-storage";
-import { cutText, initialName, resolveImageSrc } from "@/lib/utils";
-import { useEmployeeStore } from "@/stores/employee.store";
+import Spinner from "@/components/ui/spinner";
+import useQueryAction from "@/hook/useQueryAction";
+import { cutText, initialName, resolveImageSrc, urlToFile } from "@/lib/utils";
+import { RequestResponse } from "@/types/api.types";
+import { ProfileType } from "@/types/user.types";
 import { XIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type EmployeeCardProps = {
-  id: string | number;
-  name: string;
-  imageKey: string;
+  profile: ProfileType;
+  refresh: () => void;
 };
 
 export default function EmployeeCard({
-  id,
-  name,
-  imageKey,
+  profile,
+  refresh
 }: EmployeeCardProps) {
   const [image, setImage] = useState<string | undefined>("");
-  const removeEmployee = useEmployeeStore.use.removeEmployee()
 
-  async function getFile(name: string) {
-    const file = await getFileByType(name, "profile");
-    return resolveImageSrc(file);
+  const { mutate, isPending } = useQueryAction<
+    { id: string },
+    RequestResponse<ProfileType>
+  >(deleteUser, () => { }, "users");
+
+
+  async function getProfil() {
+    if (profile.image) {
+      const file = await urlToFile(profile.image);
+      const resolveImage = resolveImageSrc(file);
+      if (resolveImage) {
+        setImage(resolveImage)
+      }
+    }
   }
 
   useEffect(() => {
-    const isKey = imageKey.includes("@");
+    getProfil()
+  }, [profile])
 
-    const fetchImage = async () => {
-      if (isKey) {
-        const file = await getFile(imageKey);
-        if (file) {
-          setImage(file);
+
+  function removeUser(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    if (profile.user.id) {
+      mutate({ id: profile.id }, {
+        onSuccess() {
+          refresh();
         }
-      } else {
-        setImage(imageKey);
-      }
-    };
-
-    fetchImage();
-  }, [imageKey]);
-
-  function deleteEmployee(e: React.SyntheticEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    removeEmployee(id as number);
+      });
+    }
   }
 
   return (
     <div className="flex flex-col items-center space-y-1">
       <div className="relative">
         <button
-          onClick={deleteEmployee}
+          onClick={(e) => removeUser(e)}
           className="top-0 -right-1 z-20 absolute flex justify-center items-center bg-red border-2 border-white rounded-full size-4.5 cursor-pointer"
         >
-          <XIcon className="size-3 text-white" />
+          {isPending ? <Spinner size={10} /> :
+            <XIcon className="size-3 text-white" />
+          }
         </button>
-        <Link href={`/settings/employee/${id}`}>
+        <Link href={`/settings/employee/${profile.id}`}>
           <Avatar className="size-14">
-            {imageKey && (
-              <AvatarImage className="bg-gray object-cover" src={image} />
-            )}
-            <AvatarFallback>{initialName(name)}</AvatarFallback>
+            <AvatarImage className="bg-gray object-cover" src={image} />
+            <AvatarFallback>{initialName(`${profile.firstname} ${profile.lastname}`)}</AvatarFallback>
           </Avatar>
         </Link>
       </div>
-      <p className="font-medium text-sm">{cutText(name)}</p>
+      <p className="font-medium text-sm">{cutText(`${profile.firstname} ${profile.lastname}`, 14)}</p>
     </div>
   );
 }

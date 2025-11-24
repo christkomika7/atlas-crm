@@ -25,7 +25,7 @@ export type SupplierType = {
     companyId: string;
     createdAt: Date;
     updatedAt: Date;
-    company: CompanyType<undefined>
+    company: CompanyType
 }
 
 

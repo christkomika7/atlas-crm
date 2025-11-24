@@ -22,7 +22,7 @@ import { ClientType } from "@/types/client.types";
 import { useEffect, useState } from "react";
 import { projectSchema, ProjectSchemaType } from "@/lib/zod/project.schema";
 import { getCollaborators } from "@/action/user.action";
-import { UserType } from "@/types/user.types";
+import { ProfileType } from "@/types/user.types";
 import { ProjectType } from "@/types/project.types";
 import { MultipleSelect } from "@/components/ui/multi-select";
 
@@ -37,7 +37,7 @@ export default function ProjectForm({
 }: ProjectFormProps) {
   const companyId = useDataStore.use.currentCompany();
 
-  const [collaborators, setCollaborators] = useState<UserType[]>([]);
+  const [collaborators, setCollaborators] = useState<ProfileType[]>([]);
   const [clients, setClients] = useState<ClientType[]>([]);
 
   const form = useForm<ProjectSchemaType>({
@@ -63,7 +63,7 @@ export default function ProjectForm({
   const {
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
-  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
     getCollaborators,
     () => { },
     "collaborators"
@@ -248,7 +248,7 @@ export default function ProjectForm({
                     isLoading={isLoadingCollaborators}
                     options={
                       collaborators.map((user) => ({
-                        label: user.name,
+                        label: `${user.firstname} ${user.lastname}`,
                         value: user.id,
                       })) ?? []
                     }

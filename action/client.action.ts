@@ -56,6 +56,7 @@ export async function create(data: ClientSchemaType & { id: string }) {
         formData.append("website", data.website ?? "");
         formData.append("address", data.address);
         formData.append("job", data.job || "");
+        formData.append("capital", data.capital || "0");
         formData.append("legalForms", data.legalForms);
         formData.append("businessSector", data.businessSector);
         formData.append("businessRegistrationNumber", data.businessRegistrationNumber);
@@ -101,6 +102,7 @@ export async function update(data: EditClientSchemaType) {
         formData.append("website", data.website ?? "");
         formData.append("address", data.address);
         formData.append("job", data.job || "");
+        formData.append("capital", data.capital || "0");
         formData.append("legalForms", data.legalForms);
         formData.append("businessSector", data.businessSector);
         formData.append("businessRegistrationNumber", data.businessRegistrationNumber);

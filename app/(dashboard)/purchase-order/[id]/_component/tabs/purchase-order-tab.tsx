@@ -83,7 +83,7 @@ export default function PurchaseOrderTab() {
   const [amountDue, setAmountDue] = useState<Decimal>(new Decimal(0));
   const [payee, setPayee] = useState<Decimal>(new Decimal(0));
   const [amountType, setAmountType] = useState<"HT" | "TTC">("TTC");
-  const [company, setCompany] = useState<CompanyType<string>>();
+  const [company, setCompany] = useState<CompanyType>();
   const [supplierDiscount, setSupplierDiscount] = useState<DiscountType>({ discount: 0, discountType: "purcent" });
   const [supplier, setSupplier] = useState<SupplierType>();
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState(0);
@@ -126,7 +126,7 @@ export default function PurchaseOrderTab() {
     mutate: mutateGetDocument,
     isPending: isGettingDocument,
     data: documentData,
-  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
     getDocument,
     () => { },
     "document"
@@ -196,7 +196,7 @@ export default function PurchaseOrderTab() {
                 isFirstLoadingDiscount.current = false;
                 return;
               }
-              updateDiscount(data.data.discount);
+              // updateDiscount(data.data.discount);
             }
           },
         }
@@ -288,13 +288,6 @@ export default function PurchaseOrderTab() {
       });
     }
   }, [supplier]);
-
-  useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors })
-    })
-  }, [form.watch])
-
 
   function initPurchaseOrder() {
     mutateGetPurchaseOrder({ id: param.id as string }, {

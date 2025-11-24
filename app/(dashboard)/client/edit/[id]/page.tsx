@@ -68,6 +68,7 @@ export default function EditClientPage() {
         firstname: client.firstname,
         job: client.job,
         legalForms: client.legalForms,
+        capital: client.capital,
         email: client.email,
         phone: client.phone,
         website: client.website,
@@ -184,7 +185,24 @@ export default function EditClientPage() {
               )}
             />
           </div>
-          <div className="gap-x-2 grid grid-cols-2 w-full">
+          <div className="gap-x-2 grid grid-cols-3 w-full">
+            <FormField
+              control={form.control}
+              name="capital"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Capital"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="phone"

@@ -291,24 +291,6 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
 
             <FormField
               control={form.control}
-              name="billboard.zone"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      design="float"
-                      label="Zone"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="billboard.city"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
@@ -401,24 +383,6 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
                       searchMessage="Rechercher un support"
                       noResultsMessage="Aucun support trouvé."
                       addElement={<DisplayBoardModal />}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="billboard.address"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      design="float"
-                      label="Adresse"
-                      value={field.value}
-                      handleChange={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />

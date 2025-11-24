@@ -22,7 +22,7 @@ export default function TaskInfo({ id, closeModal }: TaskInfoProps) {
   const { mutate, isPending, data } = useQueryAction<
     { id: string },
     RequestResponse<TaskType>
-  >(unique, () => {}, "task");
+  >(unique, () => { }, "task");
 
   useEffect(() => {
     if (id) {
@@ -119,7 +119,7 @@ export default function TaskInfo({ id, closeModal }: TaskInfoProps) {
                         key={index}
                         className="flex justify-between items-center hover:bg-white/50 px-2 py-1 rounded"
                       >
-                        {index + 1}. {user.name}
+                        {index + 1}. {user.firstname} {user.lastname}
                       </li>
                     );
                   })

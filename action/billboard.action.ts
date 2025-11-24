@@ -124,13 +124,11 @@ export async function create(data: BillboardSchemaFormType) {
         formData.append("type", data.billboard.type);
         formData.append("name", data.billboard.name);
         formData.append("locality", data.billboard.locality);
-        formData.append("zone", data.billboard.zone);
         formData.append("area", data.billboard.area);
         formData.append("visualMarker", data.billboard.visualMarker);
         formData.append("displayBoard", data.billboard.displayBoard);
 
 
-        formData.append("address", data.billboard.address);
         formData.append("orientation", data.billboard.orientation);
         formData.append("city", data.billboard.city);
         formData.append("gmaps", data.billboard.gmaps);
@@ -240,13 +238,11 @@ export async function update(data: EditBillboardSchemaFormType) {
         formData.append("type", data.billboard.type);
         formData.append("name", data.billboard.name);
         formData.append("locality", data.billboard.locality);
-        formData.append("zone", data.billboard.zone);
         formData.append("area", data.billboard.area);
         formData.append("visualMarker", data.billboard.visualMarker);
         formData.append("displayBoard", data.billboard.displayBoard);
 
 
-        formData.append("address", data.billboard.address);
         formData.append("orientation", data.billboard.orientation);
         formData.append("city", data.billboard.city);
         formData.append("gmaps", data.billboard.gmaps);

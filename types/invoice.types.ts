@@ -32,7 +32,7 @@ export type InvoiceType = {
     project: ProjectType,
     items: ItemType[],
     companyId: string,
-    company: CompanyType<string>,
+    company: CompanyType,
     createdAt: Date,
     updatedAt: Date,
 

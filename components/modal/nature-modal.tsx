@@ -115,7 +115,7 @@ export default function NatureModal({ categoryId }: NatureModalProps) {
                         <ul>
                             {natures.length === 0 ? (
                                 <li className="bg-neutral-50 p-3 rounded-lg text-sm text-center">
-                                    Aucune catégorie trouvé.
+                                    Aucune nature trouvée.
                                 </li>
                             ) : (
                                 natures.map((nature) => (

@@ -19,7 +19,6 @@ const Calendar = ({
     endDate?: string;
   }>;
 }) => {
-  console.log({ params })
   const [year, setYear] = useState(new Date().getFullYear());
   const days = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
   const months = [
@@ -37,17 +36,8 @@ const Calendar = ({
     "Décembre",
   ];
 
-  const toUtcMidnight = (dateString: string) => {
-    const datePart = dateString.split("T")[0]; // "YYYY-MM-DD"
-    const [y, m, d] = datePart.split("-").map((v) => Number(v));
-    // Date.UTC(year, monthIndex, day) -> timestamp à 00:00:00 UTC
-    return Date.UTC(y, m - 1, d);
-  };
-
-
-  // Fonction pour vérifier si une date est comprise dans un intervalle
   const isDateInRange = (
-    targetDateIso: string, // ex: "2025-10-15"
+    targetDateIso: string,
     startDateString?: string,
     endDateString?: string
   ) => {
@@ -56,11 +46,6 @@ const Calendar = ({
     const target = normalizeDateOnly(targetDateIso);
     const start = normalizeDateOnly(startDateString);
     const end = normalizeDateOnly(endDateString);
-
-    // debug utile pour repérer l'origine du décalage
-    // supprime ou commente ces logs en production
-    console.debug("isDateInRange:", { target, start, end, result: target >= start && target <= end });
-
     return target >= start && target <= end;
   };
 
@@ -82,8 +67,6 @@ const Calendar = ({
 
     return params.filter((param) => {
       if (param.startDate && param.endDate) {
-        console.log({ start: param.startDate, end: param.endDate });
-        console.log({ date: isDateInRange(dateKey, param.startDate, param.endDate) })
         return isDateInRange(dateKey, param.startDate, param.endDate);
       }
       return param.id === dateKey;
@@ -93,9 +76,8 @@ const Calendar = ({
   const getDaysInMonth = (month: number, year: number) => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0).getDate();
-    const startDayOfWeek = (firstDay.getDay() + 6) % 7; // Ajustement pour commencer par lundi (0=Lun, 6=Dim)
+    const startDayOfWeek = (firstDay.getDay() + 6) % 7;
 
-    // Dates du mois précédent
     const prevMonth = month === 0 ? 11 : month - 1;
     const prevYear = month === 0 ? year - 1 : year;
     const prevMonthLastDay = new Date(prevYear, prevMonth + 1, 0).getDate();

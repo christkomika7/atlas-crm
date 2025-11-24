@@ -52,7 +52,7 @@ export default function DeliveryNoteForm() {
   const router = useRouter();
 
   const [amountType, setAmountType] = useState<"HT" | "TTC">("TTC");
-  const [company, setCompany] = useState<CompanyType<string>>();
+  const [company, setCompany] = useState<CompanyType>();
   const [paymentLimit, setPaymentLimit] = useState("");
 
   const companyId = useDataStore.use.currentCompany();
@@ -117,7 +117,7 @@ export default function DeliveryNoteForm() {
     mutate: mutateGetDocument,
     isPending: isGettingDocument,
     data: documentData,
-  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
     unique,
     () => { },
     "document"
@@ -210,21 +210,13 @@ export default function DeliveryNoteForm() {
           onSuccess(data) {
             if (data.data) {
               setPaymentLimit(data.data.paymentTerms);
-              updateDiscount(data.data.discount);
+              // updateDiscount(data.data.discount);
             }
           },
         }
       );
     }
   }, [clientId]);
-
-
-  useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors })
-    })
-  }, [form.watch])
-
 
   useEffect(() => {
     form.setValue("paymentLimit", paymentLimit);
@@ -461,7 +453,6 @@ export default function DeliveryNoteForm() {
                       required={false}
                       value={field.value}
                       handleChange={(e) => {
-                        console.log({ e });
                         field.onChange(e);
                       }}
                     />

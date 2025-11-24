@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { projectSchema, ProjectSchemaType } from "@/lib/zod/project.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getCollaborators } from "@/action/user.action";
-import { UserType } from "@/types/user.types";
+import { ProfileType } from "@/types/user.types";
 import { ProjectType } from "@/types/project.types";
 import {
   Form,
@@ -62,7 +62,7 @@ export default function ProjectModal({ clientId }: ProjectModalProps) {
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
     data,
-  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
     getCollaborators,
     () => { },
     "collaborators"
@@ -281,7 +281,7 @@ export default function ProjectModal({ clientId }: ProjectModalProps) {
                           isLoading={isLoadingCollaborators}
                           options={
                             data?.data?.map((user) => ({
-                              label: user.name,
+                              label: `${user.firstname} ${user.lastname}`,
                               value: user.id,
                             })) ?? []
                           }

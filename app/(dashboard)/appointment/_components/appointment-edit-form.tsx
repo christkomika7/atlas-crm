@@ -64,7 +64,7 @@ export default function AppointmentForm({
     data: appointmentData,
   } = useQueryAction<{ id: string }, RequestResponse<AppointmentType>>(
     unique,
-    () => {},
+    () => { },
     "appointments"
   );
 
@@ -74,7 +74,7 @@ export default function AppointmentForm({
     data,
   } = useQueryAction<{ id: string }, RequestResponse<ClientType[]>>(
     all,
-    () => {},
+    () => { },
     "clients"
   );
 
@@ -116,7 +116,7 @@ export default function AppointmentForm({
   const { mutate, isPending } = useQueryAction<
     EditAppointmentSchemaType,
     RequestResponse<AppointmentType[]>
-  >(update, () => {}, "appointments");
+  >(update, () => { }, "appointments");
 
   function removeLastUploadDocuments(name: string) {
     setLastUploadDocuments((prev) => prev.filter((d) => d !== name));

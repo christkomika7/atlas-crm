@@ -43,7 +43,7 @@ export default function ShareTab() {
     defaultValues: {},
   });
 
-  const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
+  const [document, setDocument] = useState<ModelDocumentType | undefined>(
     undefined,
   );
 
@@ -51,7 +51,7 @@ export default function ShareTab() {
   const { mutate: mutateGetDocument } =
     useQueryAction<
       { id: string },
-      RequestResponse<ModelDocumentType<File>>
+      RequestResponse<ModelDocumentType>
     >(uniqueDocument, () => { }, ["model-document"]);
 
   const { mutate: mutateGetInvoice, isPending: isGettingInvoice } =
@@ -94,7 +94,6 @@ export default function ShareTab() {
             if (data.data) {
               const invoice = data.data;
               const emails = form.getValues().emails ?? [];
-              console.log({ emails })
               setInvoice(invoice);
               form.setValue("emails", [...emails, invoice.client.email])
             };

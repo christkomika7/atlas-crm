@@ -1,7 +1,7 @@
 import { $Enums } from '@/lib/generated/prisma';
 import { ProjectType } from './project.types';
-import { UserType } from './user.types';
 import { TaskStepType } from './step.type';
+import { ProfileType } from './user.types';
 
 export type TaskType = {
     id: string;
@@ -14,6 +14,6 @@ export type TaskType = {
     status: $Enums.ProjectStatus;
     file: string[];
     project: ProjectType;
-    users: UserType[];
+    users: ProfileType[];
     steps: TaskStepType[]
 }

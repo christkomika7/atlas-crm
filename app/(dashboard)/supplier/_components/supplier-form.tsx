@@ -41,6 +41,7 @@ export default function SupplierForm({
       phone: "",
       website: "",
       address: "",
+      capital: "0",
       job: "",
       legalForms: "",
       businessSector: "",
@@ -152,7 +153,24 @@ export default function SupplierForm({
               )}
             />
           </div>
-          <div className="gap-x-2 grid grid-cols-2 w-full">
+          <div className="gap-x-2 grid grid-cols-3 w-full">
+            <FormField
+              control={form.control}
+              name="capital"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Capital"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="phone"
@@ -189,6 +207,7 @@ export default function SupplierForm({
               )}
             />
           </div>
+
 
           <div className="gap-x-2 grid grid-cols-3 w-full">
             <FormField

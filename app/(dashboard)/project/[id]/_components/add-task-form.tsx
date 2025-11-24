@@ -21,7 +21,7 @@ import { taskSchema, TaskSchemaType } from "@/lib/zod/task.schema";
 import { priority, status } from "@/lib/data";
 import { MultipleSelect } from "@/components/ui/multi-select";
 import { getCollaborators } from "@/action/user.action";
-import { UserType } from "@/types/user.types";
+import { ProfileType } from "@/types/user.types";
 import { create } from "@/action/task.action";
 import { TaskType } from "@/types/task.type";
 import { useParams } from "next/navigation";
@@ -53,13 +53,11 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
     data,
-  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
     getCollaborators,
     () => { },
     "collaborators"
   );
-
-  console.log({ param })
 
   useEffect(() => {
     if (param.id) {
@@ -247,7 +245,7 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
                       isLoading={isLoadingCollaborators}
                       options={
                         data?.data?.map((user) => ({
-                          label: user.name,
+                          label: `${user.firstname} ${user.lastname}`,
                           value: user.id,
                         })) ?? []
                       }

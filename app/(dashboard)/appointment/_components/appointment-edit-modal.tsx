@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,19 +6,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { EditIcon, PlusCircle } from "lucide-react";
+import { EditIcon } from "lucide-react";
 import React, { useState } from "react";
 import AppointmentEditForm from "./appointment-edit-form";
-import { AppointmentType } from "@/types/appointment.type";
 
 type AppointmentCreateModalProps = {
-  onAppointmentAdded?: () => void;
+  refreshAppointment?: () => void;
   id: string;
   title: string;
 };
 
 export default function AppointmentsEditModal({
-  onAppointmentAdded,
+  refreshAppointment,
   id,
   title,
 }: AppointmentCreateModalProps) {
@@ -39,7 +37,7 @@ export default function AppointmentsEditModal({
         </DialogHeader>
         <AppointmentEditForm
           closeModal={setOpen}
-          onAppointmentAdded={onAppointmentAdded}
+          onAppointmentAdded={refreshAppointment}
           id={id}
         />
       </DialogContent>

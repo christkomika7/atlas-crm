@@ -76,13 +76,3 @@ export async function clearFiles(key: string) {
     const db = await getFileDB();
     await db.delete(STORE_NAME, key);
 }
-
-
-// Vide complètement le store : supprime toutes les entrées du store "files"
-export async function clearAllFiles() {
-    const db = await getFileDB();
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    await store.clear();
-    await tx.done;
-}

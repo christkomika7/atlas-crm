@@ -22,10 +22,11 @@ import { useDataStore } from "@/stores/data.store";
 import Spinner from "@/components/ui/spinner";
 import TableActionButton from "./table-action-button";
 import { dropdownMenu } from "./table";
-import { checkDeadline, cutText, formatNumber, generateAmaId } from "@/lib/utils";
+import { cutText, formatNumber, generateAmaId } from "@/lib/utils";
 import { QuoteType } from "@/types/quote.types";
 import { getAllQuotes } from "@/action/quote.action";
 import { QUOTE_PREFIX } from "@/config/constant";
+import { formatDateToDashModel } from "@/lib/date";
 
 type QuoteTableProps = {
   filter: "progress" | "complete";
@@ -115,16 +116,12 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {cutText(
-                      `${quote.client.firstname} ${quote.client.lastname}`,
+                      `${quote.client.companyName}`,
                       20
                     )}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {new Date(quote.createdAt).toLocaleDateString("fr-FR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
+                    {formatDateToDashModel(quote.createdAt)}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {formatNumber(quote.amountType === "TTC" ? quote.totalTTC : quote.totalHT)} {currency}

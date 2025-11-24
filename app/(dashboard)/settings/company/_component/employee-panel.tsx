@@ -2,23 +2,54 @@
 
 import EmployeeCard from "./employee-card";
 import AddEmployee from "./add-employee";
-import { useEmployeeStore } from "@/stores/employee.store";
+import useQueryAction from "@/hook/useQueryAction";
+import { useEffect, useState } from "react";
+import { ProfileType } from "@/types/user.types";
+import { RequestResponse } from "@/types/api.types";
+import { getUsersByCompany } from "@/action/user.action";
+import { useParams } from "next/navigation";
+import Spinner from "@/components/ui/spinner";
 
 export default function EmployeePanel() {
-  const employees = useEmployeeStore.use.employees();
+  const param = useParams();
+  const [profiles, setProfiles] = useState<ProfileType[]>([])
+
+  const { mutate, isPending } = useQueryAction<
+    { companyId: string },
+    RequestResponse<ProfileType[]>
+  >(getUsersByCompany, () => { }, "users");
+
+  function getUsers() {
+    if (param.id) {
+      mutate({ companyId: param.id as string }, {
+        onSuccess(data) {
+          if (data.data) {
+            setProfiles(data.data);
+          }
+        }
+      });
+    }
+  }
+
+  useEffect(() => {
+    getUsers();
+  }, [param])
 
 
   return (
     <div className="flex flex-wrap items-center gap-6">
-      {employees.map((employee, index) => (
-        <EmployeeCard
-          key={index}
-          id={index}
-          name={employee.firstname + " " + employee.lastname}
-          imageKey={employee.email}
-        />
-      ))}
-      <AddEmployee />
+      {isPending ? <Spinner /> :
+        <>
+          {profiles.map((profile) => (
+            <EmployeeCard
+              key={profile.id}
+              profile={profile}
+              refresh={getUsers}
+            />
+          ))}
+        </>
+      }
+      <AddEmployee companyId={param.id as string} />
     </div>
   );
 }

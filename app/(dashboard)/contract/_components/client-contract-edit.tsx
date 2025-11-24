@@ -69,7 +69,6 @@ export default function ClientContractEdit({ id, refreshContract, closeModal }: 
                     if (data.data) {
                         const clientContrat = data.data;
                         setClientId(clientContrat.client.id);
-                        console.log({ invoices: clientContrat.items.map(item => item.id) })
                         form.setValue("id", id);
                         form.setValue("client", clientContrat.client.id);
                         form.setValue("invoices", clientContrat.items.map(item => item.id));

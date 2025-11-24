@@ -1,10 +1,8 @@
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { toDateOnlyString } from "@/lib/date";
-import { urlToFile } from "@/lib/utils";
 import { CompanySchemaType, EditCompanySchemaType } from "@/lib/zod/company.schema";
 import { RequestResponse } from "@/types/api.types";
 import { CompanyType, FilterDataType } from "@/types/company.types";
-import { UserType } from "@/types/user.types";
 
 export async function all(skip = 0, take = DEFAULT_PAGE_SIZE) {
     try {
@@ -15,7 +13,7 @@ export async function all(skip = 0, take = DEFAULT_PAGE_SIZE) {
             }
         );
 
-        const res: RequestResponse<CompanyType<UserType>[]> = await response.json();
+        const res: RequestResponse<CompanyType[]> = await response.json();
         if (!response.ok) {
             throw new Error(res.message);
         }
@@ -55,38 +53,8 @@ export async function unique({ id }: { id: string }) {
         const res = await response.json();
 
         if (!response.ok) throw new Error(res.message);
+        return res
 
-        const employees = res.data.employees || [];
-
-        // Pour chaque employé, on reconstruit les fichiers (image, passport, document)
-        const updatedEmployees = await Promise.all(
-            employees.map(async (emp: any) => {
-                const profile = emp.profile;
-                const [image, passport, document] = await Promise.all([
-                    emp?.image ? urlToFile(emp.image) : null,
-                    profile?.passport ? urlToFile(profile.passport) : null,
-                    profile?.internalRegulations ? urlToFile(profile.internalRegulations) : null,
-                ]);
-
-                return {
-                    ...emp,
-                    image,
-                    profile: {
-                        ...profile,
-                        passport,
-                        internalRegulations: document,
-                    },
-                };
-            })
-        );
-
-        return {
-            ...res,
-            data: {
-                ...res.data,
-                employees: updatedEmployees,
-            },
-        };
     } catch (error) {
         throw error;
     }
@@ -97,23 +65,8 @@ export async function create(data: CompanySchemaType) {
 
         const formData = new FormData();
 
-        const employeesData = data.employees;
         const vatRateData = data.vatRate;
         const fiscalData = data.fiscal;
-
-        employeesData.forEach((employee, index) => {
-            formData.append(`employees[${index}]`, JSON.stringify({ ...employee, image: undefined }));
-            if (employee.image instanceof File) {
-                formData.append(`images[${index}]`, employee.image);
-            }
-            if (employee.passport instanceof File) {
-                formData.append(`passport[${index}]`, employee.passport);
-            }
-            if (employee.document instanceof File) {
-                formData.append(`document[${index}]`, employee.document);
-            }
-        });
-
 
         formData.append("companyName", data.companyName);
         formData.append("country", data.country);
@@ -132,7 +85,6 @@ export async function create(data: CompanySchemaType) {
         formData.append("bankAccountDetails", data.bankAccountDetails);
         formData.append("businessActivityType", data.businessActivityType);
 
-        formData.append('employees', JSON.stringify(employeesData));
         formData.append('vatRate', JSON.stringify(vatRateData));
         formData.append('fiscal', JSON.stringify(fiscalData));
 
@@ -141,7 +93,7 @@ export async function create(data: CompanySchemaType) {
             body: formData,
         });
 
-        const res: RequestResponse<CompanyType<UserType>> = await response.json()
+        const res: RequestResponse<CompanyType> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }
@@ -156,22 +108,8 @@ export async function update(data: EditCompanySchemaType) {
 
         const formData = new FormData();
 
-        const employeesData = data.employees;
         const vatRateData = data.vatRate;
         const fiscalData = data.fiscal;
-
-        employeesData.forEach((employee, index) => {
-            formData.append(`employees[${index}]`, JSON.stringify({ ...employee, image: undefined }));
-            if (employee.image instanceof File) {
-                formData.append(`images[${index}]`, employee.image);
-            }
-            if (employee.passport instanceof File) {
-                formData.append(`passport[${index}]`, employee.passport);
-            }
-            if (employee.document instanceof File) {
-                formData.append(`document[${index}]`, employee.document);
-            }
-        });
 
         formData.append("companyName", data.companyName);
         formData.append("country", data.country);
@@ -190,7 +128,6 @@ export async function update(data: EditCompanySchemaType) {
         formData.append("bankAccountDetails", data.bankAccountDetails);
         formData.append("businessActivityType", data.businessActivityType);
 
-        formData.append('employees', JSON.stringify(employeesData));
         formData.append('vatRate', JSON.stringify(vatRateData));
         formData.append('fiscal', JSON.stringify(fiscalData));
 
@@ -199,7 +136,7 @@ export async function update(data: EditCompanySchemaType) {
             body: formData,
         });
 
-        const res: RequestResponse<CompanyType<UserType>[]> = await response.json()
+        const res: RequestResponse<CompanyType[]> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }
@@ -215,7 +152,7 @@ export async function remove({ id }: { id: string }) {
             method: 'DELETE',
         });
 
-        const res: RequestResponse<CompanyType<UserType>[]> = await response.json()
+        const res: RequestResponse<CompanyType[]> = await response.json()
         if (!response.ok) {
             throw new Error(res.message);
         }

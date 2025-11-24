@@ -60,7 +60,6 @@ export async function PUT(req: NextRequest) {
         prisma.documentModel.findUnique({ where: { id } })
     ])
     if (!companyExist || !documentExist) {
-        console.log({ error: "Identifiant invalide." })
         return NextResponse.json({
             status: "error",
             message: "Aucun élément trouvé pour cet identifiant.",
@@ -74,8 +73,6 @@ export async function PUT(req: NextRequest) {
     let savedPath = "";
 
     await removePath(documentExist.logo);
-
-    console.log("UPDATE -> ", { data });
 
     try {
 

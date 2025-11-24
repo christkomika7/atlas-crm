@@ -3,7 +3,7 @@ import { DocumentSchemaType } from "@/lib/zod/document.schema";
 import { RequestResponse } from "@/types/api.types";
 import { ModelDocumentType } from "@/types/document.types";
 
-export async function unique({ id }: { id: string }): Promise<RequestResponse<ModelDocumentType<File>>> {
+export async function unique({ id }: { id: string }): Promise<RequestResponse<ModelDocumentType>> {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/document/${id}`, {
             method: 'GET',
@@ -13,31 +13,8 @@ export async function unique({ id }: { id: string }): Promise<RequestResponse<Mo
         if (!response.ok) {
             throw new Error(res.message);
         }
-        const logo = res.data?.logo ? await urlToFile(res.data.logo) : undefined;
 
-
-        return {
-            ...res,
-            data: {
-                ...res.data,
-                logo,
-                company: res.data?.company!,
-                id: res.data?.id ?? "",
-                companyId: res.data?.companyId ?? "",
-                position: res.data?.position ?? "",
-                size: res.data?.size ?? "",
-                primaryColor: res.data?.primaryColor ?? "#fbbf24",
-                secondaryColor: res.data?.secondaryColor ?? "#fef3c7",
-                quotesPrefix: res.data?.quotesPrefix ?? "",
-                invoicesPrefix: res.data?.invoicesPrefix ?? "",
-                deliveryNotesPrefix: res.data?.deliveryNotesPrefix ?? "",
-                purchaseOrderPrefix: res.data?.purchaseOrderPrefix ?? "",
-                quotesInfo: res.data?.quotesInfo ?? "",
-                invoicesInfo: res.data?.invoicesInfo ?? "",
-                deliveryNotesInfo: res.data?.deliveryNotesInfo ?? "",
-                purchaseOrderInfo: res.data?.purchaseOrderInfo ?? ""
-            }
-        };
+        return res;
 
     } catch (error) {
         throw error;

@@ -59,6 +59,13 @@ export default function InfoTab() {
           />
           <TextInput
             design="float"
+            label="Capital"
+            value={client?.capital}
+            disabled={true}
+            handleChange={() => { }}
+          />
+          <TextInput
+            design="float"
             label="Numéro de téléphone"
             value={client?.phone}
             disabled={true}

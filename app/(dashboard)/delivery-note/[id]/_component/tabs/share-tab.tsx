@@ -41,7 +41,7 @@ export default function ShareTab() {
     defaultValues: {},
   });
 
-  const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
+  const [document, setDocument] = useState<ModelDocumentType | undefined>(
     undefined,
   );
 
@@ -49,7 +49,7 @@ export default function ShareTab() {
   const { mutate: mutateGetDocument } =
     useQueryAction<
       { id: string },
-      RequestResponse<ModelDocumentType<File>>
+      RequestResponse<ModelDocumentType>
     >(uniqueDocument, () => { }, ["model-document"]);
 
   const { mutate: mutateGetDeliveryNote, isPending: isGettingDeliveryNote } =
@@ -104,14 +104,6 @@ export default function ShareTab() {
     }
   }, [param.id]);
 
-
-  useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors })
-    })
-
-  }, [form.watch])
-
   useEffect(() => {
     if (document && deliveryNote) {
       async function convertPdfToFile() {
@@ -140,7 +132,6 @@ export default function ShareTab() {
           })
 
         const blob = new Blob([pdfData], { type: "application/pdf" });
-        console.log({ blob })
         form.setValue("blob", blob);
       }
 

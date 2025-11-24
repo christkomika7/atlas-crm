@@ -36,13 +36,7 @@ export const documentSchema = z.object({
         .instanceof(File, {
             message: "Le fichier du logo est requis et doit être une image.",
         })
-        .refine(
-            (file) =>
-                ["image/jpeg", "image/jpg", "image/png"].includes(file.type),
-            {
-                message: "Le fichier doit être une image PNG ou JPEG.",
-            }
-        ),
+        .optional()
 });
 
 export type DocumentSchemaType = z.infer<typeof documentSchema>;

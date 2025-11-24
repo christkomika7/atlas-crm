@@ -66,7 +66,7 @@ export default function PurchaseOrderForm() {
   const projects = useProjectStore.use.projects();
 
   const [amountType, setAmountType] = useState<"HT" | "TTC">("TTC");
-  const [company, setCompany] = useState<CompanyType<string>>();
+  const [company, setCompany] = useState<CompanyType>();
   const [paymentLimit, setPaymentLimit] = useState("");
 
   const [supplierDiscount, setSupplierDiscount] = useState<DiscountType>({ discount: 0, discountType: "purcent" });
@@ -112,7 +112,7 @@ export default function PurchaseOrderForm() {
     mutate: mutateGetDocument,
     isPending: isGettingDocument,
     data: documentData,
-  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
     unique,
     () => { },
     "document"
@@ -191,21 +191,13 @@ export default function PurchaseOrderForm() {
           onSuccess(data) {
             if (data.data) {
               setPaymentLimit(data.data.paymentTerms);
-              updateDiscount(data.data.discount);
+              // updateDiscount(data.data.discount);
             }
           },
         }
       );
     }
   }, [supplierId]);
-
-
-  useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors })
-    })
-  }, [form.watch])
-
 
   useEffect(() => {
     form.setValue("paymentLimit", paymentLimit);
@@ -413,7 +405,6 @@ export default function PurchaseOrderForm() {
                       required={false}
                       value={field.value}
                       handleChange={(e) => {
-                        console.log({ e });
                         field.onChange(e);
                       }}
                     />

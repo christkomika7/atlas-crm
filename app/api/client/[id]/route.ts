@@ -53,8 +53,6 @@ export async function GET(req: NextRequest) {
     include: { company: true }
   });
 
-  console.log({ clients })
-
   return NextResponse.json({
     state: "success",
     data: clients,
@@ -111,6 +109,7 @@ export async function POST(req: NextRequest) {
         path: folder,
         job: data.job,
         legalForms: data.legalForms,
+        capital: data.capital,
         website: data.website,
         address: data.address,
         businessSector: data.businessSector,

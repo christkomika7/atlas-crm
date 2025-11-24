@@ -113,7 +113,7 @@ export default function CategoryModal({ type }: CategoryModalProps) {
                         <ul>
                             {categories.length === 0 ? (
                                 <li className="bg-neutral-50 p-3 rounded-lg text-sm text-center">
-                                    Aucune catégorie trouvé.
+                                    Aucune catégorie trouvée.
                                 </li>
                             ) : (
                                 categories.map((category) => (

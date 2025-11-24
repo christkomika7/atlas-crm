@@ -14,129 +14,158 @@ import { userEditSchema, UserEditSchemaType } from "@/lib/zod/user.schema";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useParams } from "next/navigation";
 import { RequestResponse } from "@/types/api.types";
-import { ResourceType, UserType } from "@/types/user.types";
-import { edit, unique } from "@/action/user.action";
+import { ProfileType } from "@/types/user.types";
+import { getUser, updateUserByCompany } from "@/action/user.action";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { useUploadProfile } from "@/hook/useUploadProfile";
 
 import TextInput from "@/components/ui/text-input";
 import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
+import { PlusIcon } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import ProfileInput from "@/components/ui/profile-input";
+import { formatPermissions } from "@/lib/permission";
+import { resolveImageSrc, urlToFile } from "@/lib/utils";
 
 export default function EditEmployeeForm() {
   const param = useParams();
-  const [employee, setEmployee] = useState<UserType>();
-  const { handleUpload, loading } = useUploadProfile();
+  const [image, setImage] = useState("");
+  const [preview, setPreview] = useState("");
 
   const form = useForm<UserEditSchemaType>({
-    resolver: zodResolver(userEditSchema)
+    resolver: zodResolver(userEditSchema),
+    defaultValues: {
+      dashboard: { create: false, edit: false, read: false },
+      clients: { create: false, edit: false, read: false, },
+      suppliers: { create: false, edit: false, read: false },
+      invoices: { create: false, edit: false, read: false },
+      quotes: { create: false, edit: false, read: false },
+      deliveryNotes: { create: false, edit: false, read: false },
+      creditNotes: { create: false, edit: false, read: false, },
+      purchaseOrder: { create: false, edit: false, read: false, },
+      productServices: { create: false, edit: false, read: false, },
+      billboards: { create: false, edit: false, read: false, },
+      projects: { create: false, edit: false, read: false },
+      appointment: { create: false, edit: false, read: false, },
+      contract: { create: false, edit: false, read: false, },
+      transaction: { create: false, edit: false, read: false, },
+      setting: { create: false, edit: false, read: false, },
+    }
   });
 
-  const {
-    mutate: mutateGetEmployees,
-    isPending: isGettingEmployees,
-  } = useQueryAction<{ id: string }, RequestResponse<UserType>>(
-    unique,
-    () => { },
-    "employee"
-  );
+  const { mutate: mutateGetUser, isPending: isGetingUser } = useQueryAction<
+    { id: string },
+    RequestResponse<ProfileType>
+  >(getUser, () => { }, "user");
 
-  const { mutate: mutateEditEmployee, isPending: isPendingEditEmployee } =
-    useQueryAction<UserEditSchemaType, RequestResponse<UserType>>(
-      edit,
-      () => { },
-      "employee"
-    );
+  const { mutate: mutateUpdateUser, isPending: isUpdatingUser } = useQueryAction<
+    { profileId: string, data: UserEditSchemaType },
+    RequestResponse<ProfileType>
+  >(updateUserByCompany, () => { }, "update-user");
+
+  useEffect(() => {
+    getImage()
+  }, [image])
 
   useEffect(() => {
     if (param.id) {
-      mutateGetEmployees({ id: param.id as string }, {
-        onSuccess(data) {
-          if (data.data) {
-            setEmployee(data.data);
-          }
-        },
-      })
-    };
-  }, [param.id]);
-
-  useEffect(() => {
-    if (employee) {
-      const defaultValues: UserEditSchemaType = {
-        id: employee.id,
-        image: undefined,
-        lastname: employee.profile.lastname,
-        firstname: employee.profile.firstname,
-        email: employee.email,
-        phone: employee.profile.phone ?? "",
-        job: employee.profile.job,
-        salary: employee.profile.salary,
-        password: "",
-        dashboard: { create: false, edit: false, read: false },
-        clients: { create: false, edit: false, read: false },
-        suppliers: { create: false, edit: false, read: false },
-        invoices: { create: false, edit: false, read: false },
-        quotes: { create: false, edit: false, read: false },
-        deliveryNotes: { create: false, edit: false, read: false },
-        purchaseOrder: { create: false, edit: false, read: false },
-        creditNotes: { create: false, edit: false, read: false },
-        productServices: { create: false, edit: false, read: false },
-        billboards: { create: false, edit: false, read: false },
-        projects: { create: false, edit: false, read: false },
-        appointment: { create: false, edit: false, read: false },
-        contract: { create: false, edit: false, read: false },
-        transaction: { create: false, edit: false, read: false },
-        setting: { create: false, edit: false, read: false },
-      };
-
-      employee.permissions.forEach((permission) => {
-        const resource = permission.resource
-          .toLowerCase()
-          .replace(/_([a-z])/g, (_, letter) =>
-            letter.toUpperCase()
-          ) as ResourceType;
-        defaultValues[resource] = {
-          create: permission.actions.includes("CREATE"),
-          edit: permission.actions.includes("MODIFY"),
-          read: permission.actions.includes("READ"),
-        };
-      });
-
-      form.reset(defaultValues);
+      initialize()
     }
-  }, [employee, form]);
 
-  async function submit(formData: UserEditSchemaType) {
-    const { success, data } = userEditSchema.safeParse(formData);
-    if (success && employee?.path) {
-      if (loading) {
-        toast.loading("Téléversement de la photo de profil en cours...");
+  }, [param])
+
+  function initialize() {
+    mutateGetUser({ id: param.id as string }, {
+      onSuccess(data) {
+        if (data.data) {
+          const profile = data.data;
+          setImage(profile.image || "");
+          form.reset({
+            image: undefined,
+            lastname: profile.lastname,
+            firstname: profile.firstname,
+            email: profile.user.email,
+            phone: profile.phone ?? "",
+            job: profile.job,
+            salary: profile.salary,
+            dashboard: { create: false, edit: false, read: false },
+            clients: { create: false, edit: false, read: false, },
+            suppliers: { create: false, edit: false, read: false },
+            invoices: { create: false, edit: false, read: false },
+            quotes: { create: false, edit: false, read: false },
+            deliveryNotes: { create: false, edit: false, read: false },
+            creditNotes: { create: false, edit: false, read: false, },
+            purchaseOrder: { create: false, edit: false, read: false, },
+            productServices: { create: false, edit: false, read: false, },
+            billboards: { create: false, edit: false, read: false, },
+            projects: { create: false, edit: false, read: false },
+            appointment: { create: false, edit: false, read: false, },
+            contract: { create: false, edit: false, read: false, },
+            transaction: { create: false, edit: false, read: false, },
+            setting: { create: false, edit: false, read: false, },
+            ...formatPermissions(profile.permissions)
+          })
+        }
       }
+    })
+  }
 
-      const result = await handleUpload({
-        folder: employee.path!,
-        image: data.image,
-      });
-
-      if (!result.success) {
-        toast.error("Échec du téléversement de la photo de profil.");
+  async function getImage() {
+    if (image) {
+      const file = await urlToFile(image);
+      const resolveImage = resolveImageSrc(file);
+      if (resolveImage) {
+        setPreview(resolveImage)
       }
-      mutateEditEmployee({
-        ...data,
-        image: undefined,
-        path: result.path,
-      });
     }
   }
 
-  if (isGettingEmployees && !employee) return <Spinner />;
+
+  async function submit(formData: UserEditSchemaType) {
+    const { success, data } = userEditSchema.safeParse(formData);
+    if (!success) return;
+    if (param.id) {
+      mutateUpdateUser(
+        { profileId: param.id as string, data },
+      );
+    }
+  }
+
+  if (isGetingUser) return <Spinner />;
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)} className="space-y-4.5 m-2">
         <div className="p-3.5 border border-neutral-100 rounded-xl">
           <div className="space-y-4.5 max-w-xl">
+            <FormField
+              control={form.control}
+              name="image"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <div className="w-28 h-28">
+                      <ProfileInput
+                        initialImage={preview}
+
+                        onChange={(file) => field.onChange(file)}
+                        label={
+                          <Label
+                            htmlFor="profile"
+                            className="right-2 bottom-2 z-20 absolute flex justify-center items-center"
+                          >
+                            <span className="flex justify-center items-center bg-blue border-2 border-white rounded-full size-5 text-white">
+                              <PlusIcon className="size-4" />
+                            </span>
+                          </Label>
+                        }
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="lastname"
@@ -235,11 +264,11 @@ export default function EditEmployeeForm() {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
-                      type="number"
                       design="float"
                       label="Salaire"
                       value={field.value}
                       handleChange={e => field.onChange(String(e))}
+                      required={false}
                     />
                   </FormControl>
                   <FormMessage />
@@ -255,6 +284,24 @@ export default function EditEmployeeForm() {
                     <TextInput
                       design="float"
                       label="Mot de passe"
+                      value={field.value ?? ""}
+                      handleChange={field.onChange}
+                      required={false}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="newPassword"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Nouveau mot de passe"
                       value={field.value ?? ""}
                       handleChange={field.onChange}
                       required={false}
@@ -527,7 +574,7 @@ export default function EditEmployeeForm() {
                   </FormItem>
                 )}
               />
-              {/* Delivery Order */}
+              {/* Delivery notes */}
               <FormField
                 control={form.control}
                 name="deliveryNotes"
@@ -562,6 +609,214 @@ export default function EditEmployeeForm() {
                         />
                         <Controller
                           name="deliveryNotes.read"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Purchase order */}
+              <FormField
+                control={form.control}
+                name="purchaseOrder"
+                render={() => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <div className="grid grid-cols-[200px_80px_80px_80px]">
+                        <p className="font-medium text-sm">Bons de commande</p>
+                        <Controller
+                          name="purchaseOrder.create"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="purchaseOrder.edit"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="purchaseOrder.read"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Credit notes */}
+              <FormField
+                control={form.control}
+                name="creditNotes"
+                render={() => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <div className="grid grid-cols-[200px_80px_80px_80px]">
+                        <p className="font-medium text-sm">Avoirs</p>
+                        <Controller
+                          name="creditNotes.create"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="creditNotes.edit"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="creditNotes.read"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Products & Services */}
+              <FormField
+                control={form.control}
+                name="productServices"
+                render={() => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <div className="grid grid-cols-[200px_80px_80px_80px]">
+                        <p className="font-medium text-sm">
+                          Produits & Services
+                        </p>
+                        <Controller
+                          name="productServices.create"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="productServices.edit"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="productServices.read"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Billboards */}
+              <FormField
+                control={form.control}
+                name="billboards"
+                render={() => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <div className="grid grid-cols-[200px_80px_80px_80px]">
+                        <p className="font-medium text-sm">
+                          Panneaux d'affichage
+                        </p>
+                        <Controller
+                          name="billboards.create"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="billboards.edit"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="billboards.read"
                           control={form.control}
                           render={({ field }) => (
                             <div className="flex justify-center">
@@ -668,60 +923,6 @@ export default function EditEmployeeForm() {
                           render={({ field }) => (
                             <div className="flex justify-center">
                               <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </div>
-                          )}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {/* Contract */}
-              <FormField
-                control={form.control}
-                name="contract"
-                render={() => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <div className="grid grid-cols-[200px_80px_80px_80px]">
-                        <p className="font-medium text-sm">Contrat</p>
-                        <Controller
-                          name="contract.create"
-                          control={form.control}
-                          render={({ field }) => (
-                            <div className="flex justify-center">
-                              <Checkbox
-                                className="cursor-pointer"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </div>
-                          )}
-                        />
-                        <Controller
-                          name="contract.edit"
-                          control={form.control}
-                          render={({ field }) => (
-                            <div className="flex justify-center">
-                              <Checkbox
-                                className="cursor-pointer"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </div>
-                          )}
-                        />
-                        <Controller
-                          name="contract.read"
-                          control={form.control}
-                          render={({ field }) => (
-                            <div className="flex justify-center">
-                              <Checkbox
-                                className="cursor-pointer"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
                               />
@@ -842,7 +1043,7 @@ export default function EditEmployeeForm() {
 
         <div className="flex justify-center pt-2 max-w-xl">
           <Button type="submit" variant="primary" className="max-w-sm">
-            {isPendingEditEmployee ? <Spinner /> : "Enregistrer"}
+            {isUpdatingUser ? <Spinner /> : "Valider"}
           </Button>
         </div>
       </form>

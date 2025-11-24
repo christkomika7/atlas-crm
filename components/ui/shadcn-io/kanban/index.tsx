@@ -32,7 +32,7 @@ import tunnel from "tunnel-rat";
 import { Card } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { UserType } from "@/types/user.types";
+import { ProfileType } from "@/types/user.types";
 import { $Enums } from "@/lib/generated/prisma";
 import { TaskStepType } from "@/types/step.type";
 
@@ -47,7 +47,7 @@ export interface KanbanTask extends KanbanItemProps {
   priority: $Enums.Priority;
   status: $Enums.ProjectStatus;
   steps: TaskStepType[];
-  users: UserType[];
+  users: ProfileType[];
 }
 
 export type KanbanItemProps = {

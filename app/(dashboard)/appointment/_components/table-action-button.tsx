@@ -10,7 +10,6 @@ import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "lucide-react";
 import { remove } from "@/action/appointment.action";
-import { useRouter } from "next/navigation";
 import { AppointmentType } from "@/types/appointment.type";
 import AppointmentsEditModal from "./appointment-edit-modal";
 
@@ -19,7 +18,7 @@ type TableActionButtonProps = {
   menus: TableActionButtonType[];
   deleteTitle: string;
   deleteMessage: string | React.ReactNode;
-  refreshClients: () => void;
+  refreshAppointment: () => void;
 };
 
 export default function TableActionButton({
@@ -27,13 +26,12 @@ export default function TableActionButton({
   id,
   deleteTitle,
   deleteMessage,
-  refreshClients,
+  refreshAppointment,
 }: TableActionButtonProps) {
-  const router = useRouter();
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<AppointmentType[]>
-  >(remove, () => {}, "appointments");
+  >(remove, () => { }, "appointments");
 
   function handleDelete() {
     if (id) {
@@ -41,7 +39,7 @@ export default function TableActionButton({
         { id },
         {
           onSuccess() {
-            refreshClients();
+            refreshAppointment();
           },
         }
       );
@@ -71,7 +69,7 @@ export default function TableActionButton({
               );
             return (
               <li key={menu.id}>
-                <AppointmentsEditModal id={id} title={menu.title} />
+                <AppointmentsEditModal id={id} title={menu.title} refreshAppointment={refreshAppointment} />
               </li>
             );
           })}

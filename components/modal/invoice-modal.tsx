@@ -59,7 +59,7 @@ export default function InvoiceModal({ idClient, closeModal, refreshData }: Invo
 
     const amountType = useAmountTypeStore.use.amountType();
     const setAmountType = useAmountTypeStore.use.setAmountType();
-    const [company, setCompany] = useState<CompanyType<string>>();
+    const [company, setCompany] = useState<CompanyType>();
     const [paymentLimit, setPaymentLimit] = useState("");
 
     const companyId = useDataStore.use.currentCompany();
@@ -127,7 +127,7 @@ export default function InvoiceModal({ idClient, closeModal, refreshData }: Invo
         mutate: mutateGetDocument,
         isPending: isGettingDocument,
         data: documentData,
-    } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+    } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
         unique,
         () => { },
         "document"
@@ -248,13 +248,6 @@ export default function InvoiceModal({ idClient, closeModal, refreshData }: Invo
             );
         }
     }, [clientId, idClient]);
-
-
-    useEffect(() => {
-        form.watch(() => {
-            console.log({ errors: form.formState.errors })
-        })
-    }, [form.watch])
 
 
     useEffect(() => {
@@ -492,7 +485,6 @@ export default function InvoiceModal({ idClient, closeModal, refreshData }: Invo
                                                 required={false}
                                                 value={field.value}
                                                 handleChange={(e) => {
-                                                    console.log({ e });
                                                     field.onChange(e);
                                                 }}
                                             />

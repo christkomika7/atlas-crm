@@ -1,7 +1,7 @@
 import { checkAccess } from "@/lib/access";
 import { checkData } from "@/lib/database";
 import { getCurrentDateTime, parseDateTime } from "@/lib/date";
-import { createFolder, moveTo, removePath, saveFile } from "@/lib/file";
+import { createFolder, removePath, updateFiles } from "@/lib/file";
 import { $Enums, Prisma, User } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import { getIdFromUrl } from "@/lib/utils";
@@ -82,8 +82,6 @@ export async function GET(req: NextRequest) {
             ...(take !== undefined ? { take } : {}),
         });
 
-        console.log({ appointments });
-
         return NextResponse.json({ state: "success", data: appointments, total }, { status: 200 });
     } catch (err: any) {
         console.error("GET /api/appointment/[id] error:", err);
@@ -94,7 +92,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        // compatibilité rétro : si tu envoies POST { data: "upcoming" | "past" }
         await checkAccess(["APPOINTMENT"], "READ");
         const id = getIdFromUrl(req.url, "last") as string;
         const body = await req.json();
@@ -149,7 +146,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-    const user = await checkAccess(["APPOINTMENT"], "MODIFY") as User;
+    const session = await checkAccess(["APPOINTMENT"], "MODIFY") as User;
 
     const id = getIdFromUrl(req.url, "last") as string;
 
@@ -175,14 +172,16 @@ export async function PUT(req: NextRequest) {
         date: date,
         lastUploadDocuments: rawData.lastUploadDocuments.split(";"),
         uploadDocuments: files,
+        notify: false
     }) as EditAppointmentSchemaType;
 
-    const [companyExist, clientExist] = await prisma.$transaction([
+    const [companyExist, clientExist, appointmentExist] = await prisma.$transaction([
         prisma.company.findUnique({ where: { id: data.company } }),
-        prisma.client.findUnique({ where: { id: data.client } })
+        prisma.client.findUnique({ where: { id: data.client } }),
+        prisma.appointment.findUnique({ where: { id: data.id } })
     ]);
 
-    if (!companyExist || !clientExist) {
+    if (!companyExist || !clientExist || !appointmentExist) {
         return NextResponse.json({
             status: "error",
             message: "Aucun élément trouvé pour cet identifiant.",
@@ -191,31 +190,17 @@ export async function PUT(req: NextRequest) {
 
     const previousDocs = appointment.documents ?? [];
 
-    const key = appointment.path.split("_----")[1];
-    const folder = createFolder([companyExist.companyName, "appointment", `${clientExist.firstname}_${clientExist.lastname}_----${key}`]);
+    const folder = createFolder([companyExist.companyName, "appointment", `${clientExist.firstname}_${clientExist.lastname}_----${appointmentExist?.path.split("_----")[1]}`]);
+    let savedDocuments: string[] = await updateFiles({ folder: folder, outdatedData: { id: appointmentExist.id, path: appointmentExist.path || "", files: appointmentExist.documents }, updatedData: { id: data.id, lastUploadDocuments: data.lastUploadDocuments }, files: data.uploadDocuments ?? [] });
 
-    // Suppression des fichiers supprimés par l'utilisateur
-    const deletedDocs = previousDocs.filter(doc => !data.lastUploadDocuments?.includes(doc));
-    const updatedDocs = previousDocs.filter(doc => data.lastUploadDocuments?.includes(doc))
-    await removePath(deletedDocs);
+    const user = await prisma.user.findUnique({ where: { id: session.id } });
 
-    if ((data.id === appointment.id) && (appointment.path !== folder)) {
-        await moveTo(appointment.path, folder)
-    }
+    if (!user) {
+        return NextResponse.json({
+            status: "error",
+            message: "Aucun élément trouvé pour cet identifiant.",
+        }, { status: 404 });
 
-
-    let savedPaths: string[] = [];
-
-    // Mise a jour des anciens fichiers
-    savedPaths = [...updatedDocs.map(doc => {
-        const filename = doc.split("_----")[1];
-        return createFolder([companyExist.companyName, "appointment", `${clientExist.firstname}_${clientExist.lastname}`, "_----", filename])
-    })]
-
-    // Sauvegarde des nouveaux fichiers
-    for (const file of files) {
-        const filePath = await saveFile(file, folder);
-        savedPaths.push(filePath);
     }
 
     // 🛠 Construction dynamique de l’objet de mise à jour
@@ -226,7 +211,7 @@ export async function PUT(req: NextRequest) {
         path: folder,
         address: data.address,
         subject: data.subject,
-        documents: [...savedPaths, ...(data.lastUploadDocuments ?? [])],
+        documents: savedDocuments,
     };
 
     try {
@@ -246,7 +231,7 @@ export async function PUT(req: NextRequest) {
                 },
                 teamMember: {
                     connect: {
-                        id: user.id
+                        id: user.currentProfile as string
                     }
                 }
             },
@@ -258,7 +243,7 @@ export async function PUT(req: NextRequest) {
             data: updatedAppointment,
         });
     } catch (error) {
-        await removePath(savedPaths);
+        await removePath(savedDocuments);
         console.error({ error });
 
         return NextResponse.json({

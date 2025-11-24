@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 type DocumentPreviewProps = {
   firstColor: string;
   secondColor: string;
-  logo?: File;
+  logo?: string;
   logoSize?: string;
   logoPosition?: string;
 };
@@ -17,15 +17,7 @@ export default function DocumentPreview({
   logoSize,
   logoPosition,
 }: DocumentPreviewProps) {
-  const [logoURL, setLogoURL] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (logo && logo instanceof File) {
-      setLogoURL(resolveImageSrc(logo) as string);
-    } else {
-      setLogoURL(null);
-    }
-  }, [logo]);
 
   return (
     <div>
@@ -49,9 +41,9 @@ export default function DocumentPreview({
             logoSize === "Large" && "h-[160px]"
           )}
         >
-          {logoURL ? (
+          {logo ? (
             <Image
-              src={logoURL}
+              src={logo}
               alt="Logo"
               width={160}
               height={160}

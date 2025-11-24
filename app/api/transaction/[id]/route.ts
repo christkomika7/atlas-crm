@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
         supplier: true,
         client: true,
         allocation: { select: { id: true, name: true } },
-        payOnBehalfOf: { select: { id: true, profile: { select: { firstname: true, lastname: true } } } },
+        payOnBehalfOf: { select: { id: true, firstname: true, lastname: true } },
         referencePurchaseOrderId: true,
         referencePurchaseOrder: { select: { id: true, purchaseOrderNumber: true } },
       },
@@ -149,8 +149,8 @@ export async function GET(req: NextRequest) {
       payOnBehalfOf: disbursement.payOnBehalfOf
         ? {
           id: disbursement.payOnBehalfOf.id,
-          firstname: disbursement.payOnBehalfOf.profile?.firstname || "",
-          lastname: disbursement.payOnBehalfOf.profile?.lastname || "",
+          firstname: disbursement.payOnBehalfOf.firstname || "",
+          lastname: disbursement.payOnBehalfOf.lastname || "",
         }
         : null,
     }));

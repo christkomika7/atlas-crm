@@ -1,13 +1,11 @@
 import { checkAccess } from "@/lib/access";
-import { createEmployee, updateEmployee } from "@/lib/database";
 import { createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import { extractCompanyData, getIdFromUrl } from "@/lib/utils";
 import { editCompanySchema, EditCompanySchemaType } from "@/lib/zod/company.schema";
 import { NextResponse, type NextRequest } from "next/server";
-
-import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
     const id = getIdFromUrl(req.url, "last") as string;
@@ -16,14 +14,6 @@ export async function GET(req: NextRequest) {
 
     const company = await prisma.company.findUnique({
         where: { id },
-        include: {
-            employees: {
-                include: {
-                    profile: true,
-                    permissions: true
-                }
-            }
-        },
     });
 
     return NextResponse.json({
@@ -43,95 +33,50 @@ export async function PUT(req: NextRequest) {
 
         const data = parseData<EditCompanySchemaType>(editCompanySchema, companyData) as EditCompanySchemaType
 
-        const [company, companies, users] = await Promise.all([
+        const [company, companies] = await Promise.all([
             prisma.company.findUnique({
-                where: { id },
-                include: {
-                    employees: {
-                        include: { profile: true },
-                    },
-                },
+                where: { id }
             }),
             prisma.company.findMany({
                 where: { id: { not: id } },
                 select: { id: true, email: true, companyName: true }
             }),
-            prisma.user.findMany({
-                select: { id: true, email: true }
-            })
         ]);
 
         if (!company) {
-            throw new Error("Entreprise introuvable.");
+            return NextResponse.json(
+                {
+                    state: "error",
+                    message: "Entreprise introuvable.",
+                },
+                { status: 400 }
+            )
         }
 
-        // Vérifications des doublons
         const emailConflict = companies.find(comp => comp.email === data.email);
         if (emailConflict) {
-            throw new Error("L'adresse mail de l'entreprise est déjà utilisée.");
+            return NextResponse.json(
+                {
+                    state: "error",
+                    message: "L'adresse mail de l'entreprise est déjà utilisée.",
+                },
+                { status: 400 }
+            )
         }
 
         const nameConflict = companies.find(comp => comp.companyName === data.companyName);
         if (nameConflict) {
-            throw new Error("Le nom de l'entreprise est déjà utilisé.");
+            return NextResponse.json(
+                {
+                    state: "error",
+                    message: "Le nom de l'entreprise est déjà utilisé.",
+                },
+                { status: 400 }
+            )
         }
 
-        // Paths
-        const uploadedPaths: string[] = [];
-        const uploadedPassportPaths: string[] = [];
-        const uploadedDocumentPaths: string[] = [];
-
-
-        // Préparer les données pour optimiser les opérations
-        const existingUsers = company.employees;
         const companyHasChangeName = company.companyName.toLowerCase() !== data.companyName.toLowerCase();
-        const oldUsersMap = new Map<string, typeof existingUsers[0]>();
-        for (const user of existingUsers) {
-            oldUsersMap.set(user.id, user);
-        }
-        const currentUsers = data.employees.map(employee => employee.id).filter(id => id !== undefined);
-        const existingUsersIds = existingUsers.map(user => user.id);
 
-        const usersToRemove = existingUsers.filter(user => !currentUsers.includes(user.id));
-        const usersToAdd = data.employees.filter(user => user.id === undefined);
-        const usersToUpdate = data.employees.filter(user =>
-            user.id !== undefined && existingUsersIds.includes(user.id ?? "")
-        );
-
-
-        // Vérification des emails des employés
-        for (const user of data.employees) {
-            const emailConflict = users.find(u => u.id !== user.id && u.email === user.email);
-            if (emailConflict) {
-                throw new Error(`L'email ${user.email} est déjà utilisé.`);
-            }
-        }
-
-        // OPTIMISATION: Traiter les suppressions d'abord (plus rapide)
-        for (const user of usersToRemove) {
-            const deletedUser = await prisma.user.delete({ where: { id: user.id }, include: { profile: true } });
-            await removePath([deletedUser.image, deletedUser.profile?.passport, deletedUser.profile?.internalRegulations]);
-        }
-
-        // Traiter les ajouts d'utilisateurs
-        const newUsersIds: string[] = [];
-        for (const user of usersToAdd) {
-            await createEmployee(user, data.companyName, newUsersIds, uploadedPaths, uploadedPassportPaths, uploadedDocumentPaths)
-        }
-
-        // Traiter les mises à jour d'utilisateurs
-        for (const user of usersToUpdate) {
-            const oldUser = oldUsersMap.get(user.id!);
-            if (!oldUser) {
-                console.warn(`Ancien utilisateur non trouvé pour l'id: ${user.id}`);
-                continue;
-            }
-            // Suppression des anciens fichiers
-            await removePath([oldUser.image, oldUser.profile?.passport, oldUser.profile?.internalRegulations])
-            await updateEmployee(user, data.companyName, oldUser.path ?? "", [], uploadedPaths, uploadedPassportPaths, uploadedDocumentPaths)
-        }
-
-        // Mise à jour de l'entreprise
         await prisma.company.update({
             where: { id },
             data: {
@@ -154,16 +99,12 @@ export async function PUT(req: NextRequest) {
                 fiscalYearStart: data.fiscal.from,
                 fiscalYearEnd: data.fiscal.to,
                 vatRates: data.vatRate,
-                employees: {
-                    connect: newUsersIds.map((id) => ({ id })),
-                }
             },
         });
 
 
         if (companyHasChangeName) {
             const folder = createFolder([company.companyName]);
-            console.log({ OLD_FOLDER: folder })
             await removePath(folder)
         }
 
@@ -214,7 +155,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({
         state: "success",
-        message: "Employé supprimé avec succès.",
+        message: "Entreprise supprimée avec succès.",
     }, { status: 200 })
 
 }

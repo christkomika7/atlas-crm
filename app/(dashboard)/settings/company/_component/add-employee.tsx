@@ -1,10 +1,13 @@
 import { PlusIcon } from "lucide-react";
 import Link from "next/link";
-import React from "react";
 
-export default function AddEmployee() {
+type AddEmployeeProps = {
+  companyId: string;
+}
+
+export default function AddEmployee({ companyId }: AddEmployeeProps) {
   return (
-    <Link href="/settings/employee/create">
+    <Link href={`/settings/employee/${companyId}/create`}>
       <button className="flex flex-col items-center space-y-1 cursor-pointer">
         <div className="flex justify-center items-center bg-black rounded-full size-14">
           <PlusIcon className="text-white" />

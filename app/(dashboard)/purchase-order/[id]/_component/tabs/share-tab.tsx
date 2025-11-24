@@ -44,7 +44,7 @@ export default function ShareTab() {
     defaultValues: {},
   });
 
-  const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
+  const [document, setDocument] = useState<ModelDocumentType | undefined>(
     undefined,
   );
 
@@ -52,7 +52,7 @@ export default function ShareTab() {
   const { mutate: mutateGetDocument } =
     useQueryAction<
       { id: string },
-      RequestResponse<ModelDocumentType<File>>
+      RequestResponse<ModelDocumentType>
     >(uniqueDocument, () => { }, ["model-document"]);
 
   const { mutate: mutateGetPurchaseOrder, isPending: isGettingPurchaseOrder } =
@@ -95,7 +95,6 @@ export default function ShareTab() {
             if (data.data) {
               const purchaseOrder = data.data;
               const emails = form.getValues().emails ?? [];
-              console.log({ emails })
               setPurchaseOrder(purchaseOrder);
               form.setValue("emails", [...emails, purchaseOrder.supplier.email])
             };
@@ -135,7 +134,6 @@ export default function ShareTab() {
             scale: 4
           })
         const blob = new Blob([pdfData], { type: "application/pdf" });
-        console.log({ blob });
         form.setValue("blob", blob);
       }
 

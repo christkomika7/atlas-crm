@@ -15,14 +15,13 @@ import PaymentForm from "../../../_component/payment-form";
 import RecurrenceForm from "../../../_component/recurrence-form";
 import { useParams, useRouter } from "next/navigation";
 import { formatNumber, generateAmaId, getAmountPrice } from "@/lib/utils";
-import { downloadComponentAsPDF, downloadInvisibleComponentAsPDF } from "@/lib/pdf";
+import { downloadComponentAsPDF } from "@/lib/pdf";
 import Decimal from "decimal.js";
 import RecordDocument from "@/components/pdf/record";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { unique } from "@/action/purchase-order.action";
 import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
 import { InvoiceType } from "@/types/invoice.types";
-import PurchaseOrderContract from "../purchase-order-contract";
 import PaymentHistoryModal from "@/components/modal/payment-history-modal";
 
 export default function PreviewTab() {
@@ -31,7 +30,7 @@ export default function PreviewTab() {
 
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrderType | undefined>(undefined);
   const [filename, setFilename] = useState("");
-  const [document, setDocument] = useState<ModelDocumentType<File> | undefined>(
+  const [document, setDocument] = useState<ModelDocumentType | undefined>(
     undefined,
   );
   const [open, setOpen] = useState({
@@ -52,7 +51,7 @@ export default function PreviewTab() {
   const { mutate: mutateGetDocument, isPending: isGettingDocument } =
     useQueryAction<
       { id: string },
-      RequestResponse<ModelDocumentType<File>>
+      RequestResponse<ModelDocumentType>
     >(uniqueDocument, () => { }, ["model-document"]);
 
   useEffect(() => {
@@ -214,7 +213,7 @@ export default function PreviewTab() {
                 setOpen={(value) =>
                   setOpen({ ...open, paymentHistory: value as boolean })
                 }
-                onClose={() => setOpen({ ...open, payment: false })}
+                onClose={() => setOpen({ ...open, paymentHistory: false })}
               >
                 <PaymentHistoryModal
                   refresh={refresh}
@@ -235,21 +234,6 @@ export default function PreviewTab() {
               >
                 <PaymentForm purchaseOrderId={purchaseOrder?.id as string} refresh={refresh} closeModal={() => setOpen({ ...open, payment: false })} />
               </ModalContainer>
-              <Button variant="primary"
-                onClick={() =>
-                  downloadInvisibleComponentAsPDF(
-                    <PurchaseOrderContract id="purchase-order" />,
-                    "bon-de-commande.pdf", {
-                    padding: 20,
-                    margin: 0,
-                    quality: 0.98,
-                    scale: 4
-                  }
-                  )
-                }
-              >
-                Générer un contrat
-              </Button>
               <Button
                 onClick={close}
                 variant="primary"

@@ -21,9 +21,9 @@ export default function AppointmentPage() {
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },
     RequestResponse<AppointmentType[]>
-  >(removeMany, () => {}, "appointments");
+  >(removeMany, () => { }, "appointments");
 
-  const handleAppointmentAdded = () => {
+  const refreshAppointment = () => {
     appointmentTableRef.current?.refreshAppointment();
   };
 
@@ -34,7 +34,7 @@ export default function AppointmentPage() {
         {
           onSuccess() {
             setSelectedClientIds([]);
-            handleAppointmentAdded();
+            refreshAppointment();
           },
         }
       );
@@ -61,7 +61,7 @@ export default function AppointmentPage() {
             )}
           </Button>
           <AppointmentsCreateModal
-            onAppointmentAdded={handleAppointmentAdded}
+            onAppointmentAdded={refreshAppointment}
           />
         </div>
       </Header>

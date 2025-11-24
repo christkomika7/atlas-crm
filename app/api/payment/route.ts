@@ -20,8 +20,6 @@ export async function GET(req: NextRequest) {
             orderBy: { createdAt: "asc" },
         });
 
-        console.log({ payments })
-
         return NextResponse.json(
             {
                 state: "success",

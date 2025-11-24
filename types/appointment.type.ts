@@ -14,7 +14,7 @@ export type AppointmentType = {
     companyId: string;
     clientId: string;
     teamMemberId: string;
-    company: CompanyType<string>;
+    company: CompanyType;
     client: ClientType
 }
 

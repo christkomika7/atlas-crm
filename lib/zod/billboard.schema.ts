@@ -16,19 +16,12 @@ export const billboardSchema = z.object({
     locality: z.string().min(1, {
         message: "Le lieu est requis.",
     }),
-    zone: z.string().min(1, {
-        message: "La zone du panneau publicitaire est requise.",
-    }),
     area: z.string().min(1, {
         message: "Le quartier est requis.",
     }),
     visualMarker: z.string({ error: "Le repère visuel est requis." }),
     displayBoard: z.string({ error: "Le support d'affichage est requis." }),
 
-
-    address: z.string({
-        error: "L'adresse du panneau publicitaire est requise.",
-    }),
     city: z.string({
         error: "La ville est requis.",
     }),
@@ -271,19 +264,12 @@ export const editBillboardSchema = z.object({
     locality: z.string().min(1, {
         message: "Le lieu est requis.",
     }),
-    zone: z.string().min(1, {
-        message: "La zone du panneau publicitaire est requise.",
-    }),
     area: z.string().min(1, {
         message: "Le quartier est requis.",
     }),
     visualMarker: z.string({ error: "Le repère visuel est requis." }),
     displayBoard: z.string({ error: "Le support d'affichage est requis." }),
 
-
-    address: z.string({
-        error: "L'adresse du panneau publicitaire est requise.",
-    }),
     city: z.string({
         error: "La ville est requis.",
     }),
@@ -369,11 +355,9 @@ export const billboardError = {
     type: "Type du panneau ",
     name: "Nom du panneau ",
     locality: "Lieu",
-    zone: "Zone",
     area: "Quartier",
     visualMarker: "Repère visuel",
     displayBoard: "Support d'affichage",
-    address: "Adresse du panneau ",
     city: "Ville",
     orientation: "Orientation du panneau ",
     gmaps: "Lien Google Maps",

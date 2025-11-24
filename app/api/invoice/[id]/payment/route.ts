@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     }) as InvoicePaymentSchemaType;
 
     try {
-        const { invoice } = await prisma.$transaction(async (tx) => {
+        const { invoice, payment } = await prisma.$transaction(async (tx) => {
             const invoiceExist = await tx.invoice.findUnique({
                 where: { id },
                 select: {
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
             const hasCompletedPayment =
                 data.isPaid || payee.add(newAmount.valueOf()).gte(total.minus(0.01));
 
-            await tx.payment.create({
+            const payment = await tx.payment.create({
                 data: {
                     createdAt: data.date,
                     amount: String(data.isPaid ? remaining : data.amount),
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
                 },
             });
 
-            return { invoice };
+            return { invoice, payment };
         });
 
 
@@ -182,6 +182,11 @@ export async function POST(req: NextRequest) {
                     source: {
                         connect: {
                             id: data.source
+                        }
+                    },
+                    payment: {
+                        connect: {
+                            id: payment.id
                         }
                     },
                     company: {

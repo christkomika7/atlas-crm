@@ -54,6 +54,112 @@ export async function POST(req: NextRequest) {
             })
         }
 
+
+        let paymentId = "";
+        if (data.documentRef) {
+            const invoiceExist = await prisma.invoice.findUnique({
+                where: { id: data.documentRef },
+                include: {
+                    company: true,
+                    project: true,
+                    client: true
+                }
+            });
+
+            if (!invoiceExist) {
+                return NextResponse.json({
+                    status: "error",
+                    message: "Identifiant de facture invalide.",
+                }, { status: 400 });
+            }
+
+            if (invoiceExist.isPaid) {
+                return NextResponse.json({
+                    status: "error",
+                    message: "Cette facture est déjà réglée et ne peut pas recevoir de nouveau paiement.",
+                }, { status: 400 });
+            }
+
+            const total =
+                invoiceExist.amountType === "HT"
+                    ? invoiceExist.totalHT
+                    : invoiceExist.totalTTC;
+
+            const payee = invoiceExist.payee;
+            const remaining = total.minus(payee);
+            const newAmount = new Decimal(data.amount);
+
+            if (newAmount.gt(remaining.valueOf())) {
+                return NextResponse.json({
+                    status: "error",
+                    message: `Le montant saisi dépasse le solde restant à payer (${formatNumber(
+                        remaining.toString()
+                    )} ${invoiceExist.company.currency}).`,
+                }, { status: 400 });
+            }
+
+            const hasCompletedPayment =
+                payee.add(newAmount.valueOf()).gte(total.minus(0.01));
+
+
+            const newPayment = await prisma.payment.create({
+                data: {
+                    createdAt: data.date,
+                    amount: String(data.amount),
+                    paymentMode: data.paymentMode,
+                    infos: data.description,
+                    invoice: { connect: { id: data.documentRef } },
+                },
+            });
+
+            paymentId = newPayment.id;
+
+            const invoice = await prisma.invoice.update({
+                where: { id: data.documentRef },
+                data: {
+                    isPaid: hasCompletedPayment,
+                    payee: payee.add(newAmount.valueOf()),
+                },
+                include: {
+                    company: {
+                        include: {
+                            documentModel: true
+                        }
+                    },
+                    client: true,
+
+                },
+            });
+
+            if (invoice.clientId) {
+                await prisma.client.update({
+                    where: { id: invoice.clientId },
+                    data: {
+                        due: { decrement: data.amount },
+                        paidAmount: { increment: data.amount }
+                    }
+                })
+
+            }
+
+            if (invoice.projectId) {
+                await prisma.project.update({
+                    where: { id: invoice.projectId },
+                    data: {
+                        balance: {
+                            increment: data.amount
+                        }
+                    }
+                })
+            }
+        }
+
+        if (paymentId) {
+            Object.assign(referenceDocument, {
+                payment: { connect: { id: paymentId } },
+            });
+        }
+
         const createdReceipt = await prisma.receipt.create({
             data: {
                 type: "RECEIPT",
@@ -88,71 +194,6 @@ export async function POST(req: NextRequest) {
                 ...referenceDocument,
             }
         });
-
-        if (data.documentRef) {
-            const invoiceExist = await prisma.invoice.findUnique({
-                where: { id: data.documentRef }, include: {
-                    company: true
-                }
-            });
-
-            if (!invoiceExist) {
-                throw new Error("Identifiant de facture invalide.");
-            }
-
-            if (invoiceExist.isPaid) {
-                throw new Error("Cette facture est déjà réglée et ne peut pas recevoir de nouveau paiement.");
-            }
-
-            const total =
-                invoiceExist.amountType === "HT"
-                    ? invoiceExist.totalHT
-                    : invoiceExist.totalTTC;
-
-            const payee = invoiceExist.payee;
-            const remaining = total.minus(payee);
-            const newAmount = new Decimal(data.amount);
-
-            if (newAmount.gt(remaining.valueOf())) {
-                throw new Error(
-                    `Le montant saisi dépasse le solde restant à payer (${formatNumber(
-                        remaining.toString()
-                    )} ${invoiceExist.company.currency}).`
-                );
-            }
-
-            const hasCompletedPayment =
-                payee.add(newAmount.valueOf()).gte(total.minus(0.01));
-
-
-            await prisma.payment.create({
-                data: {
-                    createdAt: data.date,
-                    amount: String(data.amount),
-                    paymentMode: data.paymentMode,
-                    infos: data.description,
-                    invoice: { connect: { id: data.documentRef } },
-                },
-            });
-
-            await prisma.invoice.update({
-                where: { id: data.documentRef },
-                data: {
-                    isPaid: hasCompletedPayment,
-                    payee: payee.add(newAmount.valueOf()),
-                },
-                include: {
-                    company: {
-                        include: {
-                            documentModel: true
-                        }
-                    },
-                    client: true,
-
-                },
-            });
-
-        }
 
 
         return NextResponse.json({

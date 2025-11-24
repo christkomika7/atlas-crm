@@ -70,7 +70,7 @@ export default function PurchaseOrderModal({ idSupplier, closeModal, refreshData
     const projects = useProjectStore.use.projects();
 
     const [amountType, setAmountType] = useState<"HT" | "TTC">("TTC");
-    const [company, setCompany] = useState<CompanyType<string>>();
+    const [company, setCompany] = useState<CompanyType>();
     const [paymentLimit, setPaymentLimit] = useState("");
 
     const [supplierDiscount, setSupplierDiscount] = useState<DiscountType>({ discount: 0, discountType: "purcent" });
@@ -116,7 +116,7 @@ export default function PurchaseOrderModal({ idSupplier, closeModal, refreshData
         mutate: mutateGetDocument,
         isPending: isGettingDocument,
         data: documentData,
-    } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+    } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
         unique,
         () => { },
         "document"
@@ -222,14 +222,6 @@ export default function PurchaseOrderModal({ idSupplier, closeModal, refreshData
             );
         }
     }, [supplierId, idSupplier]);
-
-
-
-    useEffect(() => {
-        form.watch(() => {
-            console.log({ errors: form.formState.errors })
-        })
-    }, [form.watch])
 
 
     useEffect(() => {
@@ -439,7 +431,6 @@ export default function PurchaseOrderModal({ idSupplier, closeModal, refreshData
                                                 required={false}
                                                 value={field.value}
                                                 handleChange={(e) => {
-                                                    console.log({ e });
                                                     field.onChange(e);
                                                 }}
                                             />

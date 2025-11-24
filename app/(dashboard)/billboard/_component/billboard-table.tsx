@@ -151,7 +151,7 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
                     {billboard.name}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(getGenerateRevenue(billboard.items))}
+                    {formatNumber(getGenerateRevenue(billboard.items))}{" "}
                     {billboard.company.currency}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">

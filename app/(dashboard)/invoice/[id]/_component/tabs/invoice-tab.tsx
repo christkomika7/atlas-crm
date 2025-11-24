@@ -89,7 +89,7 @@ export default function InvoiceTab() {
   const [amountDue, setAmountDue] = useState<Decimal>(new Decimal(0));
   const [payee, setPayee] = useState<Decimal>(new Decimal(0));
 
-  const [company, setCompany] = useState<CompanyType<string>>();
+  const [company, setCompany] = useState<CompanyType>();
   const [clientDiscount, setClientDiscount] = useState<DiscountType>({ discount: 0, discountType: "purcent" });
   const [client, setClient] = useState<ClientType>();
   const [invoiceNumber, setInvoiceNumber] = useState(0);
@@ -144,7 +144,7 @@ export default function InvoiceTab() {
     mutate: mutateGetDocument,
     isPending: isGettingDocument,
     data: documentData,
-  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
     getDocument,
     () => { },
     "document"
@@ -220,7 +220,7 @@ export default function InvoiceTab() {
                 isFirstLoadingDiscount.current = false;
                 return;
               }
-              updateDiscount(data.data.discount);
+              // updateDiscount(data.data.discount);
             }
           },
         }
@@ -347,7 +347,6 @@ export default function InvoiceTab() {
       onSuccess(data) {
         if (data.data) {
           const invoice = data.data;
-          console.log({ invoice });
           setAmountDue(
             invoice.amountType === "TTC" ? new Decimal(invoice.totalTTC).minus(invoice.payee) : new Decimal(invoice.totalHT).minus(invoice.payee)
           )

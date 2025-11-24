@@ -62,6 +62,17 @@ export async function DELETE(req: NextRequest) {
                 );
             }
 
+            if (payment.invoice?.projectId) {
+                ops.push(
+                    prisma.project.update({
+                        where: { id: payment.invoice.projectId },
+                        data: {
+                            balance: { decrement: payment.amount }
+                        }
+                    })
+                );
+            }
+
             ops.push(prisma.payment.delete({ where: { id: payment.id } }));
 
         } else if (payment.purchaseOrderId) {

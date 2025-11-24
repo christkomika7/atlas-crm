@@ -41,6 +41,7 @@ export default function EditSupplierPage() {
       email: "",
       phone: "",
       job: "",
+      capital: "0",
       legalForms: "",
       website: "",
       address: "",
@@ -87,6 +88,7 @@ export default function EditSupplierPage() {
         email: supplier.email,
         phone: supplier.phone,
         job: supplier.job,
+        capital: supplier.capital,
         legalForms: supplier.legalForms,
         website: supplier.website,
         address: supplier.address,
@@ -202,7 +204,24 @@ export default function EditSupplierPage() {
               )}
             />
           </div>
-          <div className="gap-x-2 grid grid-cols-2 w-full">
+          <div className="gap-x-2 grid grid-cols-3 w-full">
+            <FormField
+              control={form.control}
+              name="capital"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      label="Capital"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="phone"
@@ -239,6 +258,7 @@ export default function EditSupplierPage() {
               )}
             />
           </div>
+
 
           <div className="gap-x-2 grid grid-cols-3 w-full">
             <FormField

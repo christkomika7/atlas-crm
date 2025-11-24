@@ -50,7 +50,7 @@ export default function InfoTab() {
   >(allBillboardItem, () => { }, "items");
 
   const { mutate: getDocumentModel, isPending: isLoadingDocumentModel } =
-    useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+    useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
       getUniqueDocument,
       () => { },
       "document"

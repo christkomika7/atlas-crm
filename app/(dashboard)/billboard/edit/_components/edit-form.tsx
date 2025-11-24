@@ -77,12 +77,10 @@ export default function EditForm() {
           type: billboard.typeId,
           name: billboard.name,
           locality: billboard.locality,
-          zone: billboard.zone,
           area: billboard.areaId,
           visualMarker: billboard.visualMarker,
           displayBoard: billboard.displayBoardId,
 
-          address: billboard.address,
           city: billboard.cityId,
           orientation: billboard.orientation,
           gmaps: billboard.gmaps,
@@ -148,12 +146,6 @@ export default function EditForm() {
     }
   }, [data, form]);
 
-  useEffect(() => {
-    form.watch(() => {
-      console.log({ errors: form.formState.errors });
-    })
-  }, [form.watch]);
-
   const handleReset = () => {
     if (fileInputRef.current) {
       fileInputRef.current.files = null;
@@ -177,12 +169,10 @@ export default function EditForm() {
             type: validateData.data.billboard.type,
             name: validateData.data.billboard.name,
             locality: validateData.data.billboard.locality,
-            zone: validateData.data.billboard.zone,
             area: validateData.data.billboard.area,
             visualMarker: validateData.data.billboard.visualMarker,
             displayBoard: validateData.data.billboard.displayBoard,
 
-            address: validateData.data.billboard.address,
             city: validateData.data.billboard.city,
             orientation: validateData.data.billboard.orientation,
             gmaps: validateData.data.billboard.gmaps,

@@ -53,7 +53,7 @@ export default function InvoiceForm() {
 
   const amountType = useAmountTypeStore.use.amountType();
   const setAmountType = useAmountTypeStore.use.setAmountType();
-  const [company, setCompany] = useState<CompanyType<string>>();
+  const [company, setCompany] = useState<CompanyType>();
   const [paymentLimit, setPaymentLimit] = useState("");
 
   const companyId = useDataStore.use.currentCompany();
@@ -122,7 +122,7 @@ export default function InvoiceForm() {
     mutate: mutateGetDocument,
     isPending: isGettingDocument,
     data: documentData,
-  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
     unique,
     () => { },
     "document"
@@ -215,7 +215,7 @@ export default function InvoiceForm() {
           onSuccess(data) {
             if (data.data) {
               setPaymentLimit(data.data.paymentTerms);
-              updateDiscount(data.data.discount);
+              // updateDiscount(data.data.discount);
             }
           },
         }
@@ -456,7 +456,6 @@ export default function InvoiceForm() {
                       required={false}
                       value={field.value}
                       handleChange={(e) => {
-                        console.log({ e });
                         field.onChange(e);
                       }}
                     />

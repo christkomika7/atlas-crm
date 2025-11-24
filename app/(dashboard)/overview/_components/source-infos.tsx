@@ -37,8 +37,6 @@ export default function SourceInfos() {
         }
     }, [companyId])
 
-    console.log({ transactions })
-
     return (
         <ScrollArea className="w-(--left-sidebar-width) overflow-x-hidden pb-2">
             {isPending ? <Spinner /> :

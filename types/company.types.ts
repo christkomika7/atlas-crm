@@ -20,9 +20,7 @@ export type VatRateType = {
     cumul?: CumulType[] | undefined;
 }
 
-
-
-export type CompanyType<E> = {
+export type CompanyType = {
     id: string;
     companyName: string;
     country: string;
@@ -43,8 +41,7 @@ export type CompanyType<E> = {
     fiscalYearStart: Date;
     fiscalYearEnd: Date;
     vatRates: VatRateType[];
-    employees: E[]
-    documentModel: ModelDocumentType<string>
+    documentModel: ModelDocumentType
 }
 
 export type CompanyCountriesType = {

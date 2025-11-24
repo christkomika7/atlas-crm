@@ -11,8 +11,9 @@ interface UploadDocumentProps {
   handleChange?: (file: File | null) => void;
   handleDelete: () => void;
   handleDownload: (url: string) => void;
-  handleUpload: (file: File) => Promise<void>;
+  handleUpload: (file: File) => void;
   id?: string;
+  isLoading: boolean;
 }
 
 export default function UploadDocument({
@@ -23,9 +24,9 @@ export default function UploadDocument({
   handleDownload,
   handleUpload,
   id = "doc",
+  isLoading
 }: UploadDocumentProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [currentDoc, setCurrentDoc] = useState(defaultDoc);
 
   useEffect(() => {
@@ -38,21 +39,17 @@ export default function UploadDocument({
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setIsLoading(true);
-
     try {
       handleChange?.(file);
-      await handleUpload(file);
+      handleUpload(file);
       toast.success("Fichier chargé avec succès.");
     } catch (error) {
       toast.error("Erreur lors du chargement du fichier.");
     } finally {
       toast.dismiss();
-      setIsLoading(false);
     }
   };
 

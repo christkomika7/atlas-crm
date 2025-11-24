@@ -21,7 +21,7 @@ import { projectSchema, ProjectSchemaType } from "@/lib/zod/project.schema";
 import { ProjectType } from "@/types/project.types";
 import { create } from "@/action/project.action";
 import { useParams, useRouter } from "next/navigation";
-import { UserType } from "@/types/user.types";
+import { ProfileType } from "@/types/user.types";
 import { getCollaborators } from "@/action/user.action";
 import { MultipleSelect } from "@/components/ui/multi-select";
 
@@ -45,7 +45,7 @@ export default function ProjectForm() {
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
     data,
-  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
     getCollaborators,
     () => { },
     "collaborators"
@@ -182,7 +182,7 @@ export default function ProjectForm() {
                     isLoading={isLoadingCollaborators}
                     options={
                       data?.data?.map((user) => ({
-                        label: user.name,
+                        label: `${user.firstname} ${user.lastname}`,
                         value: user.id,
                       })) ?? []
                     }

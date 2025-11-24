@@ -2,7 +2,7 @@
 
 import { website } from "@/config/website";
 import { $Enums, Role } from "@/lib/generated/prisma";
-import { isRestrictedToAdminPath } from "@/lib/utils";
+import { canAccessResource, isRestrictedToAdminPath } from "@/lib/utils";
 import { useDataStore } from "@/stores/data.store";
 import clsx from "clsx";
 import Link from "next/link";
@@ -14,16 +14,14 @@ type SidebarMenuProps = {
   role: string | null | undefined;
   currentCompany: string;
   currency: string;
-  permissions:
-  | {
+  permissions: {
     id: string;
     createdAt: Date;
     updatedAt: Date;
-    userId: string;
+    profileId: string;
     resource: $Enums.Resource;
     actions: $Enums.Action[];
-  }[]
-  | undefined;
+  }[] | undefined
 };
 
 export default function SidebarMenu({
@@ -70,16 +68,15 @@ export default function SidebarMenu({
     notFound();
   }
 
-  const hasPermission = (resource: $Enums.Resource) => {
-    if (role === "ADMIN") return true;
-    const found = permissions?.find((p) => p.resource === resource);
-    return !!found && found.actions.length > 0;
-  };
-
   return (
     <ul className="space-y-0.5">
       {website.sidebarMenu.map((menu) => {
-        if (!hasPermission(menu.resource as $Enums.Resource)) return null;
+        const allowed = canAccessResource({
+          role,
+          permissions
+        }, menu.resource);
+
+        if (!allowed) return null;
 
         return (
           <li key={menu.id}>
@@ -97,5 +94,6 @@ export default function SidebarMenu({
         );
       })}
     </ul>
+
   );
 }

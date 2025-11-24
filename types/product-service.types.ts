@@ -15,5 +15,5 @@ export type ProductServiceType = {
     cost: Decimal;
     unitType: string;
     companyId: string;
-    company: CompanyType<string>
+    company: CompanyType
 }

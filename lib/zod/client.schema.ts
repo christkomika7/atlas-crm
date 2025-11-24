@@ -15,6 +15,7 @@ export const clientSchema = z.object({
     }).email({
         message: "Cette adresse mail est invalide."
     }),
+    capital: z.string().optional(),
     phone: z.string().min(1, {
         message: "Le numéro de téléphone est obligatoire."
     }),
@@ -66,6 +67,7 @@ export const editClientSchema = z.object({
     }).email({
         message: "Cette adresse mail est invalide."
     }),
+    capital: z.string().optional(),
     phone: z.string().min(1, {
         message: "Le numéro de téléphone est obligatoire."
     }),

@@ -1,10 +1,10 @@
 import { CompanyType } from "./company.types";
 
-export type ModelDocumentType<T = string> = {
+export type ModelDocumentType = {
     id: string;
     companyId: string;
-    company: CompanyType<string>
-    logo?: T;
+    company: CompanyType
+    logo?: string;
     position: string | null;
     size: string | null;
     primaryColor: string;

@@ -1,6 +1,5 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ImageIcon, XCircleIcon } from "lucide-react";
 import Image from "next/image";
@@ -33,7 +32,7 @@ const ImagePreview = ({
 
 type ProfileInputProps = {
   label?: React.ReactNode;
-  onChange: (file: File | null) => void;
+  onChange: (file: File | null | undefined) => void;
   rounded?: boolean;
   initialImage?: string | null;
   resetKey?: string | number;

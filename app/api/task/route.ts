@@ -40,7 +40,6 @@ export async function POST(req: NextRequest) {
         }
     });
     if (!projectExist) {
-        console.log({ error: "Identifiant invalide." })
         return NextResponse.json({
             status: "error",
             message: "Aucun élément trouvé pour cet identifiant.",

@@ -14,6 +14,6 @@ export type ProjectType = {
     files: string[];
     photos: string[];
     collaborators: UserType[];
-    company: CompanyType<string>;
+    company: CompanyType;
     client: ClientType
 }

@@ -20,12 +20,17 @@ import { documentSchema, DocumentSchemaType } from "@/lib/zod/document.schema";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
 import { ModelDocumentType } from "@/types/document.types";
-import { create, unique, update } from "@/action/document.action";
+import { unique, update } from "@/action/document.action";
 import Spinner from "@/components/ui/spinner";
+import { resolveImageSrc, urlToFile } from "@/lib/utils";
+import { getSession } from "@/lib/auth-client";
 
 export default function DocumentTab() {
   const idCompany = useDataStore.use.currentCompany();
+
   const [documentId, setDocumentId] = useState<string | null>(null);
+  const [preview, setPreview] = useState("");
+  const [logo, setLogo] = useState<File | string>();
 
   const [quotes, setQuotes] = useState({
     prefix: "",
@@ -52,14 +57,13 @@ export default function DocumentTab() {
     secondary: "#fef3c7",
   });
 
-  const [logo, setLogo] = useState<{
-    file?: File;
+  const [dimension, setDimension] = useState<{
     size: string;
     position: string;
   }>({ size: "Medium", position: "Center" });
 
   const { mutate: mutateDocument, isPending: isDocumentPending } =
-    useQueryAction<{ id: string }, RequestResponse<ModelDocumentType<File>>>(
+    useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
       unique,
       () => { },
       ["model-document"]
@@ -68,7 +72,7 @@ export default function DocumentTab() {
   const { mutate: updateDocument, isPending: updateDocumentPending } =
     useQueryAction<
       DocumentSchemaType & { id: string },
-      RequestResponse<ModelDocumentType<string>>
+      RequestResponse<ModelDocumentType>
     >(update, () => { }, ["model-document"]);
 
   useEffect(() => {
@@ -79,7 +83,6 @@ export default function DocumentTab() {
           onSuccess(data) {
             if (data.data) {
               const doc = data.data;
-              console.log({ doc })
               setDocumentId(doc?.id || "");
 
               setQuotes({
@@ -103,8 +106,8 @@ export default function DocumentTab() {
                 secondary: doc!.secondaryColor,
               });
 
-              setLogo({
-                file: doc?.logo,
+              setLogo(doc?.logo);
+              setDimension({
                 size: doc?.size || "Medium",
                 position: doc?.position || "Center",
               });
@@ -115,30 +118,38 @@ export default function DocumentTab() {
     }
   }, [idCompany]);
 
-  if (isDocumentPending) {
-    return <Spinner />;
-  }
+  useEffect(() => {
+    getLogo()
+  }, [logo])
 
-  if (!idCompany) {
-    return (
-      <Alert variant="primary">
-        <MessageCircleWarningIcon />
-        <AlertTitle>Entreprise non sélectionnée</AlertTitle>
-        <AlertDescription>
-          Veuillez choisir une entreprise avant de poursuivre la configuration
-          des documents.
-        </AlertDescription>
-      </Alert>
-    );
+
+
+  async function getLogo() {
+    if (!logo) {
+      setPreview("")
+    }
+
+    if (logo && typeof logo === "string") {
+      const file = await urlToFile(logo);
+      const resolveImage = resolveImageSrc(file);
+      if (resolveImage) {
+        setPreview(resolveImage)
+      }
+    }
+
+    if (logo && logo instanceof File) {
+      setPreview(resolveImageSrc(logo) as string);
+    }
   }
 
   function submit(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.preventDefault();
+    const file = logo instanceof File ? logo : undefined
     const data: DocumentSchemaType = {
       companyId: idCompany,
-      logo: logo.file as File,
-      size: logo.size,
-      position: logo.position,
+      logo: file,
+      size: dimension.size,
+      position: dimension.position,
       primaryColor: colors.primary,
       secondaryColor: colors.secondary,
       quotes: {
@@ -173,6 +184,23 @@ export default function DocumentTab() {
     return toast.error("Aucun document trouvé.");
   }
 
+  if (isDocumentPending) {
+    return <Spinner />;
+  }
+
+  if (!idCompany) {
+    return (
+      <Alert variant="primary">
+        <MessageCircleWarningIcon />
+        <AlertTitle>Entreprise non sélectionnée</AlertTitle>
+        <AlertDescription>
+          Veuillez choisir une entreprise avant de poursuivre la configuration
+          des documents.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <ScrollArea className="pr-4 h-full">
       <div className="gap-x-2 grid grid-cols-[1fr_1.3fr] pt-4 h-full">
@@ -180,13 +208,10 @@ export default function DocumentTab() {
           <h2 className="font-semibold text-xl">Configuration</h2>
           <TextInput
             type="file"
-            value={logo.file}
+            value={logo}
             accept="image/png, image/jpeg, image/jpg"
             handleChange={(file) =>
-              setLogo({
-                ...logo,
-                file: file as File,
-              })
+              setLogo(file as File)
             }
           />
           <Combobox
@@ -196,9 +221,9 @@ export default function DocumentTab() {
               { id: 2, value: "Right", label: "Droite" },
               { id: 3, value: "Center", label: "Centre" },
             ]}
-            value={logo?.position ?? "Center"}
+            value={dimension?.position ?? "Center"}
             setValue={(value) =>
-              setLogo({ ...logo, position: value as string })
+              setDimension({ ...dimension, position: value as string })
             }
             placeholder="Position du logo"
             searchMessage="Rechercher une position"
@@ -211,8 +236,8 @@ export default function DocumentTab() {
               { id: 2, value: "Medium", label: "Moyenne" },
               { id: 3, value: "Large", label: "Grande" },
             ]}
-            value={logo?.size ?? "Medium"}
-            setValue={(value) => setLogo({ ...logo, size: value as string })}
+            value={dimension?.size ?? "Medium"}
+            setValue={(value) => setDimension({ ...dimension, size: value as string })}
             placeholder="Taille du logo"
             searchMessage="Rechercher une taille"
             noResultsMessage="Aucune taille trouvée."
@@ -326,9 +351,9 @@ export default function DocumentTab() {
           <DocumentPreview
             firstColor={colors.primary}
             secondColor={colors.secondary}
-            logo={logo?.file}
-            logoSize={logo?.size}
-            logoPosition={logo?.position}
+            logo={preview}
+            logoSize={dimension?.size}
+            logoPosition={dimension?.position}
           />
         </div>
       </div>

@@ -25,8 +25,6 @@ export async function GET(req: NextRequest) {
         }
     });
 
-    console.log({ invoice })
-
     return NextResponse.json({
         state: "success",
         data: invoice,

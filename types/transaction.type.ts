@@ -55,7 +55,7 @@ export type TransactionType = {
   comment?: string;
 
   companyId: string;
-  company: CompanyType<string>;
+  company: CompanyType;
 
   updatedAt: Date;
   createdAt: Date;
@@ -95,6 +95,7 @@ export type TransactionDocument = {
   type: string;
   reference: string;
   price: string;
+  payee: string;
   currency: string;
 };
 

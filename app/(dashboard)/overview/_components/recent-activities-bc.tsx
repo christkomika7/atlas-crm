@@ -42,7 +42,7 @@ export default function RecentActivitiesBc() {
       {isPending ? <Spinner /> :
         <ul className="space-y-3">
           {purchaseOrders.map(purchaseOrder => (
-            <li>
+            <li key={purchaseOrder.id}>
               <p className="text-sm flex gap-x-2 justify-between items-center text-neutral-700">
                 <span>BC n° {generateAmaId(purchaseOrder.purchaseOrderNumber, false)}</span>
                 <span>{formatNumber(purchaseOrder.amountType === "TTC" ? purchaseOrder.totalTTC : purchaseOrder.totalHT)} {purchaseOrder.company.currency}</span>

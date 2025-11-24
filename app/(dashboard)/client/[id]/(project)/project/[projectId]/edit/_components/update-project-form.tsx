@@ -25,7 +25,7 @@ import {
 import { ProjectType } from "@/types/project.types";
 import { unique, update } from "@/action/project.action";
 import { useParams } from "next/navigation";
-import { UserType } from "@/types/user.types";
+import { ProfileType } from "@/types/user.types";
 import { getCollaborators } from "@/action/user.action";
 import { MultipleSelect, Option } from "@/components/ui/multi-select";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +55,7 @@ export default function UpdateProjectForm() {
     data: projectData,
   } = useQueryAction<{ id: string }, RequestResponse<ProjectType>>(
     unique,
-    () => {},
+    () => { },
     "project"
   );
 
@@ -63,16 +63,16 @@ export default function UpdateProjectForm() {
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
     data,
-  } = useQueryAction<{ id: string }, RequestResponse<UserType[]>>(
+  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
     getCollaborators,
-    () => {},
+    () => { },
     "collaborators"
   );
 
   const { mutate, isPending } = useQueryAction<
     EditProjectSchemaType,
     RequestResponse<ProjectType[]>
-  >(update, () => {}, "projects");
+  >(update, () => { }, "projects");
 
   useEffect(() => {
     if (id) {
@@ -233,7 +233,7 @@ export default function UpdateProjectForm() {
               render={({ field }) => {
                 const allOptions: Option[] =
                   data?.data?.map((user) => ({
-                    label: user.name,
+                    label: `${user.firstname} ${user.lastname}`,
                     value: user.id,
                   })) ?? [];
 

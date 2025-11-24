@@ -184,7 +184,7 @@ export function durationInMonths(start: Date, end: Date): number {
         dayFraction = dayDiff / prevMonthDays;
     }
 
-    return +(totalMonths + dayFraction).toFixed(2);
+    return Math.ceil(+(totalMonths + dayFraction).toFixed(2));
 }
 
 export function getEnableDate(
@@ -257,7 +257,6 @@ export function toDateOnlyString(value?: string | Date | null) {
 }
 
 export function getEndDate(start: Date, delay: RentalPeriodType) {
-    console.log({ date: addMonths(start, 6), delay })
     switch (delay) {
         case "6_months":
             return addMonths(start, 6);

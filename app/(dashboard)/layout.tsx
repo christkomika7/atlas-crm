@@ -2,10 +2,11 @@ import Logo from "@/components/logo";
 import SidebarMenu from "@/components/menu/sidebar-menu";
 import { website } from "@/config/website";
 import { getSession } from "@/lib/auth";
-import { isRestrictedToAdminPath } from "@/lib/utils";
+import { assertUserCanAccessPage, isRestrictedToAdminPath } from "@/lib/utils";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import prisma from "@/lib/prisma";
 
 export default async function DashboardLayout({
   children,
@@ -28,6 +29,16 @@ export default async function DashboardLayout({
   if (!data?.session) {
     return redirect("/");
   }
+  assertUserCanAccessPage(data.user, pathname);
+
+  const profile = await prisma.profile.findFirst({
+    where: { id: data.user.currentProfile as string },
+    include: {
+      permissions: true
+    }
+  });
+
+  const permissions = profile?.permissions;
 
   return (
     <div className="relative grid grid-cols-[260px_1fr] bg-dark w-screen h-screen">
@@ -43,7 +54,7 @@ export default async function DashboardLayout({
                 currentCompany={data.user?.currentCompany ?? ""}
                 currency={data.user.currency ?? ""}
                 role={data.user?.role}
-                permissions={data.user?.permissions}
+                permissions={permissions}
               />
             </div>
           </ScrollArea>

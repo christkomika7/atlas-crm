@@ -63,9 +63,6 @@ export default function SalesChart() {
     }
   }, [companyId, range, category])
 
-  console.log({ categoryFilters })
-
-
   return (
     <div className="p-4 border border-neutral-200 rounded-lg">
       <div className="flex justify-between items-center ">

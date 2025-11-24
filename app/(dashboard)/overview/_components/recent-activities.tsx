@@ -42,7 +42,7 @@ export default function RecentActivities() {
       {isPending ? <Spinner /> :
         <ul className="space-y-3">
           {invoices.map(invoice => (
-            <li>
+            <li key={invoice.id}>
               <p className="text-sm flex gap-x-2 justify-between items-center text-neutral-700">
                 <span>Facture n° {generateAmaId(invoice.invoiceNumber, false)}</span>
                 <span>{formatNumber(invoice.amountType === "TTC" ? invoice.totalTTC : invoice.totalHT)} {invoice.company.currency}</span>

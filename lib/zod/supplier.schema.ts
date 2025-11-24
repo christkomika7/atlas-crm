@@ -19,6 +19,7 @@ export const supplierSchema = z.object({
         message: "Le numéro de téléphone est obligatoire."
     }),
     website: z.string().optional(),
+    capital: z.string().optional(),
     address: z.string().min(1, {
         message: "L'adresse enregistrée est obligatoire."
     }),
@@ -70,6 +71,7 @@ export const editSupplierSchema = z.object({
         message: "Le numéro de téléphone est obligatoire."
     }),
     website: z.string().optional(),
+    capital: z.string().optional(),
     address: z.string().min(1, {
         message: "L'adresse enregistrée est obligatoire."
     }),

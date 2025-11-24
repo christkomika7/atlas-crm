@@ -63,8 +63,8 @@ export default function PaymentHistoryModal({ recordId, recordType, closeModal, 
             mutateRemovePayment({ id }, {
                 onSuccess() {
                     setCurrentId("");
-                    initPayment()
                     refresh()
+                    initPayment()
                 },
             })
         }

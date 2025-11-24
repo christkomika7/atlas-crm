@@ -154,7 +154,7 @@ export async function GET(req: NextRequest) {
                 capital: type === 'supplier' ? formatNumber(contract.lessor?.capital || 0) : formatNumber(contract.billboard?.capital?.toString() || 0),
                 rccm: `${type === 'supplier' ? contract.lessor?.businessRegistrationNumber : contract.billboard?.rccm}`,
                 nif: `${type === 'supplier' ? contract.lessor?.taxIdentificationNumber : contract.billboard?.taxIdentificationNumber}`,
-                address: `${type === 'supplier' ? contract.lessor?.address : contract.billboard?.address}`,
+                address: `${type === 'supplier' ? contract.lessor?.address : contract.billboard?.lessorAddress}`,
                 representativeName: type === 'supplier' ? `${contract.lessor?.firstname} ${contract.lessor?.lastname}` : `${contract.billboard?.representativeFirstName} ${contract.billboard?.representativeLastName}`,
                 representativeJob: `${type === 'supplier' ? contract.lessor?.job : contract.billboard?.representativeJob}`,
                 email: `${type === 'supplier' ? contract.lessor?.email : contract.billboard?.representativeEmail}`,
