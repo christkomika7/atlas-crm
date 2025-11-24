@@ -1,196 +1,110 @@
 import { auth } from "@/lib/auth";
 import { Action, Resource, Role } from "@/lib/generated/prisma";
-import crypto from 'crypto';
+import crypto from "crypto";
 import prisma from "@/lib/prisma";
 
 export async function main() {
+  const email = process.env.USER_EMAIL!;
+  const firstName = process.env.USER_FIRSTNAME!;
+  const lastName = process.env.USER_LASTNAME!;
+  const password = process.env.USER_PASSWORD!;
+
   const existingUser = await prisma.user.findFirst({
     where: {
-      role: "ADMIN",
-      email: process.env.USER_EMAIL!,
+      email,
     },
     include: {
-      profiles: true
-    }
+      profiles: true,
+    },
   });
 
-  if (
-    existingUser &&
-    existingUser.email !== process.env.USER_EMAIL! &&
-    existingUser.emailVerified
-  ) {
-    await prisma.user.update({
-      where: {
-        id: existingUser.id,
-      },
-      data: {
-        email: process.env.USER_EMAIL!,
-      },
-    });
-    return console.log("Le seed à été modifié avec succès.");
-  }
-
-  if (!existingUser) {
-    const username = `${process.env.USER_FIRSTNAME!} ${process.env.USER_LASTNAME!}`
-    const path = `${crypto.randomUUID()}_${process.env.USER_FIRSTNAME!}_${process.env.USER_LASTNAME!}`.toLowerCase();
-
-    const response = await auth.api.signUpEmail({
-      body: {
-        name: username,
-        email: process.env.USER_EMAIL!,
-        password: process.env.USER_PASSWORD!,
-        role: Role.ADMIN,
-        emailVerified: true,
-      },
-    });
-    if (response.user) {
+  if (existingUser) {
+    console.log("L'utilisateur existe déjà. Vérification des profils...");
+    if (!existingUser.profiles || existingUser.profiles.length === 0) {
+      const path = `${crypto.randomUUID()}_${firstName}_${lastName}`.toLowerCase();
       const profile = await prisma.profile.create({
         data: {
-          user: { connect: { id: response.user.id } },
-          firstname: process.env.USER_FIRSTNAME!,
-          lastname: process.env.USER_LASTNAME!,
+          user: { connect: { id: existingUser.id } },
+          firstname: firstName,
+          lastname: lastName,
           path,
           phone: "",
           job: "",
           salary: "",
           permissions: {
             createMany: {
-              data: [
-                {
-                  resource: Resource.DASHBOARD,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.CLIENTS,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.SUPPLIERS,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.INVOICES,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.QUOTES,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.DELIVERY_NOTES,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.PURCHASE_ORDER,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.CREDIT_NOTES,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.PRODUCT_SERVICES,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.BILLBOARDS,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.PROJECTS,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.APPOINTMENT,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.CONTRACT,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.TRANSACTION,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-                {
-                  resource: Resource.SETTING,
-                  actions: [
-                    Action.READ,
-                    Action.MODIFY,
-                    Action.CREATE
-                  ]
-                },
-              ]
-            }
-          }
-        }
-      })
+              data: Object.values(Resource).flatMap((resource) => {
+                return [
+                  {
+                    resource: resource as Resource,
+                    actions: [Action.READ, Action.CREATE, Action.MODIFY],
+                  },
+                ];
+              }),
+            },
+          },
+        },
+      });
       await prisma.user.update({
-        where: { id: response.user.id },
-        data: {
-          currentProfile: profile.id
-        }
-      })
-      return console.log("Le seed à été réalisé avec succès.");
+        where: { id: existingUser.id },
+        data: { currentProfile: profile.id },
+      });
+      return console.log("Profil ajouté à l'utilisateur existant.");
     }
-    console.log("Erreur lors de la réalisation du seed.");
+    return console.log("Seed déjà réalisé auparavant.");
   }
-  return console.log("Seed déjà réalisé auparavant");
+
+  // Si l'utilisateur n'existe pas
+  const username = `${firstName} ${lastName}`;
+  const path = `${crypto.randomUUID()}_${firstName}_${lastName}`.toLowerCase();
+
+  const response = await auth.api.signUpEmail({
+    body: {
+      name: username,
+      email,
+      password,
+      role: Role.ADMIN,
+      emailVerified: true,
+    },
+  });
+
+  if (!response.user) {
+    return console.log("Erreur lors de la création de l'utilisateur.");
+  }
+
+  const profile = await prisma.profile.create({
+    data: {
+      user: { connect: { id: response.user.id } },
+      firstname: firstName,
+      lastname: lastName,
+      path,
+      phone: "",
+      job: "",
+      salary: "",
+      permissions: {
+        createMany: {
+          data: Object.values(Resource).flatMap((resource) => {
+            return [
+              {
+                resource: resource as Resource,
+                actions: [Action.READ, Action.CREATE, Action.MODIFY],
+              },
+            ];
+          }),
+        },
+      },
+    },
+  });
+
+  await prisma.user.update({
+    where: { id: response.user.id },
+    data: { currentProfile: profile.id },
+  });
+
+  console.log("Le seed a été réalisé avec succès.");
 }
-main();
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
