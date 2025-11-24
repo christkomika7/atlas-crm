@@ -45,7 +45,6 @@ export async function main() {
     });
 
     console.log({ response })
-    console.log({ process: process.env })
 
     if (response.user) {
       const profile = await prisma.profile.create({
@@ -184,13 +183,17 @@ export async function main() {
             }
           }
         }
-      })
-      await prisma.user.update({
+      });
+
+      console.log({ profile })
+      const user = await prisma.user.update({
         where: { id: response.user.id },
         data: {
+          emailVerified: true,
           currentProfile: profile.id
         }
       })
+      console.log({ user })
       return console.log("Le seed à été réalisé avec succès.");
     }
     console.log("Erreur lors de la réalisation du seed.");
