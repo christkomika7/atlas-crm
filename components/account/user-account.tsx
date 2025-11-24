@@ -20,12 +20,10 @@ export default function UserAccount() {
   const { mutate, isPending, data } = useQueryAction<
     { companyId: string, userId: string },
     RequestResponse<ProfileType>
-  >(getUserByCurrentCompany, () => { }, "employee");
-
-
+  >(getUserByCurrentCompany, () => { }, "user");
 
   useEffect(() => {
-    if (userId && companyId) {
+    if (userId) {
       mutate({ userId, companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -34,7 +32,7 @@ export default function UserAccount() {
         },
       });
     }
-  }, [userId, companyId]);
+  }, [userId]);
 
 
   useEffect(() => {

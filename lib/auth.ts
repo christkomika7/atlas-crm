@@ -14,7 +14,7 @@ export const auth = betterAuth({
         customSession(async ({ user, session }) => {
             const newUser = await prisma.user.findUnique({
                 where: {
-                    id: user.id,
+                    email: user.email
                 },
                 include: {
                     profiles: {
