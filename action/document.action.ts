@@ -40,7 +40,7 @@ export async function create(data: DocumentSchemaType) {
         formData.append("secondaryColor", data.secondaryColor ?? "#fef3c7");
         formData.append("position", data.position ?? "");
         formData.append("size", data.size ?? "");
-        formData.append("logo", data.logo);
+        formData.append("logo", data.logo instanceof File ? data.logo : "");
 
 
 
@@ -80,7 +80,8 @@ export async function update(data: DocumentSchemaType & { id: string }) {
         formData.append("secondaryColor", data.secondaryColor ?? "#fef3c7");
         formData.append("position", data.position ?? "");
         formData.append("size", data.size ?? "");
-        formData.append("logo", data.logo);
+        formData.append("logo", data.logo instanceof File ? data.logo : "");
+
 
 
 
