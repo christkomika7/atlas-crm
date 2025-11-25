@@ -12,7 +12,15 @@ import { Decimal } from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["BILLBOARDS"], "READ");
+    const result = await checkAccess("BILLBOARDS", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     try {
         const id = getIdFromUrl(req.url, "last") as string;
@@ -116,7 +124,16 @@ export async function GET(req: NextRequest) {
 
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["BILLBOARDS"], "CREATE");
+    const result = await checkAccess("BILLBOARDS", "CREATE");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     const billboard = await prisma.billboard.findUnique({
@@ -297,7 +314,15 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-    await checkAccess(["BILLBOARDS"], "MODIFY");
+    const result = await checkAccess("BILLBOARDS", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const id = getIdFromUrl(req.url, "last") as string;
     const billboard = await checkData(prisma.billboard, { where: { id } }, "identifiant") as BillboardType;
@@ -496,7 +521,16 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["BILLBOARDS"], "MODIFY");
+    const result = await checkAccess("BILLBOARDS", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     const billboard = await prisma.billboard.findUnique({

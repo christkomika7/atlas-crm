@@ -4,7 +4,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { checkAccess } from "@/lib/access";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["INVOICES"], "READ");
+    const result = await checkAccess("CLIENTS", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, 2) as string;
 
     const client = await prisma.client.findUnique({ where: { id } });

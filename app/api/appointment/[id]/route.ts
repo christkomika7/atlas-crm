@@ -1,8 +1,8 @@
-import { checkAccess } from "@/lib/access";
+import { checkAccess, sessionAccess } from "@/lib/access";
 import { checkData } from "@/lib/database";
 import { getCurrentDateTime, parseDateTime } from "@/lib/date";
 import { createFolder, removePath, updateFiles } from "@/lib/file";
-import { $Enums, Prisma, User } from "@/lib/generated/prisma";
+import { $Enums, Prisma } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import { getIdFromUrl } from "@/lib/utils";
 import { editAppointmentSchema, EditAppointmentSchemaType } from "@/lib/zod/appointment.schema";
@@ -11,11 +11,17 @@ import { type NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { checkAccessDeletion } from "@/lib/server";
 
-
-
 export async function GET(req: NextRequest) {
     try {
-        await checkAccess(["APPOINTMENT"], "READ");
+        const result = await checkAccess("APPOINTMENT", "READ");
+
+        if (!result.authorized) {
+            return Response.json({
+                status: "error",
+                message: result.message,
+                data: []
+            }, { status: 200 });
+        }
 
         const url = new URL(req.url);
         const id = getIdFromUrl(req.url, "last") as string;
@@ -91,8 +97,17 @@ export async function GET(req: NextRequest) {
 
 
 export async function POST(req: NextRequest) {
+    const result = await checkAccess("APPOINTMENT", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     try {
-        await checkAccess(["APPOINTMENT"], "READ");
         const id = getIdFromUrl(req.url, "last") as string;
         const body = await req.json();
         const data: "upcoming" | "past" = body?.data;
@@ -146,7 +161,27 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-    const session = await checkAccess(["APPOINTMENT"], "MODIFY") as User;
+    const result = await checkAccess("APPOINTMENT", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
+    const { hasSession, userId } = await sessionAccess();
+
+    if (!hasSession || !userId) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
+
+
 
     const id = getIdFromUrl(req.url, "last") as string;
 
@@ -193,7 +228,7 @@ export async function PUT(req: NextRequest) {
     const folder = createFolder([companyExist.companyName, "appointment", `${clientExist.firstname}_${clientExist.lastname}_----${appointmentExist?.path.split("_----")[1]}`]);
     let savedDocuments: string[] = await updateFiles({ folder: folder, outdatedData: { id: appointmentExist.id, path: appointmentExist.path || "", files: appointmentExist.documents }, updatedData: { id: data.id, lastUploadDocuments: data.lastUploadDocuments }, files: data.uploadDocuments ?? [] });
 
-    const user = await prisma.user.findUnique({ where: { id: session.id } });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
         return NextResponse.json({
@@ -254,7 +289,15 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["APPOINTMENT"], "MODIFY");
+    const result = await checkAccess("APPOINTMENT", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
     const id = getIdFromUrl(req.url, "last") as string;
 
     const appointment = await prisma.appointment.findUnique({

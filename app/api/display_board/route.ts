@@ -1,11 +1,19 @@
-import { checkAccess } from "@/lib/access";
+import { sessionAccess } from "@/lib/access";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { baseSchema, BaseSchemaType } from "@/lib/zod/base-type.schema";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["BILLBOARDS"], "CREATE");
+    const { hasSession, userId } = await sessionAccess();
+
+    if (!hasSession || !userId) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
     const formData = await req.json();
 
     const data = parseData<BaseSchemaType>(baseSchema, {

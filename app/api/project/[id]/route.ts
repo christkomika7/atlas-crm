@@ -12,7 +12,16 @@ import { ProjectType } from "@/types/project.types";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "READ");
+    const result = await checkAccess("PROJECTS", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     const projects = await prisma.project.findUnique({
@@ -36,7 +45,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "MODIFY");
+    const result = await checkAccess("PROJECTS", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const id = getIdFromUrl(req.url, "last") as string;
 
@@ -135,7 +152,16 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "MODIFY");
+    const result = await checkAccess("PROJECTS", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     const project = await prisma.project.findUnique({

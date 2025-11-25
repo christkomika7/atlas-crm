@@ -4,7 +4,17 @@ import { getIdFromUrl } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["INVOICES", "PURCHASE_ORDER"], "MODIFY");
+    const result = await checkAccess(["INVOICES", 'PURCHASE_ORDER'], "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     const payment = await prisma.payment.findUnique({

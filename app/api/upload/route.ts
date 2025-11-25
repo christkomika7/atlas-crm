@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
-import { auth, getSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
+import { sessionAccess } from "@/lib/access";
 
 export async function GET(req: NextRequest) {
-    const sessionData = await getSession();
+    const { hasSession, userId } = await sessionAccess();
 
-    if (!sessionData) return NextResponse.json({
-        state: "error",
-        message: "Accès refusé"
-    }, { status: 404 })
+    if (!hasSession || !userId) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
 
 
     const url = new URL(req.url);

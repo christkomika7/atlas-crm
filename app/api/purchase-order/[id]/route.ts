@@ -13,7 +13,16 @@ import Decimal from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
-  await checkAccess(["PURCHASE_ORDER"], "READ");
+  const result = await checkAccess("PURCHASE_ORDER", "READ");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const companyId = getIdFromUrl(req.url, "last") as string;
 
   if (!companyId) {
@@ -36,7 +45,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await checkAccess(["PURCHASE_ORDER"], "READ");
+  const result = await checkAccess("PURCHASE_ORDER", "READ");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
   const { data }: { data: "unpaid" | "paid" } = await req.json();
 
@@ -77,7 +95,15 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  await checkAccess(["PURCHASE_ORDER"], "MODIFY");
+  const result = await checkAccess("PURCHASE_ORDER", "MODIFY");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
   const id = getIdFromUrl(req.url, "last") as string;
 
   if (!id) {
@@ -364,7 +390,16 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  await checkAccess(["PURCHASE_ORDER"], "MODIFY");
+  const result = await checkAccess("PURCHASE_ORDER", "MODIFY");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
 
   const purchaseOrder = await prisma.purchaseOrder.findUnique({

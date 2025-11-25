@@ -4,7 +4,16 @@ import { RecurrenceType } from "@/types/invoice.types";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["INVOICES"], "MODIFY");
+    const result = await checkAccess("INVOICES", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const res = await req.json() as RecurrenceType;
 
     if (!res.companyId && !res.invoiceId && !res.repeat) {

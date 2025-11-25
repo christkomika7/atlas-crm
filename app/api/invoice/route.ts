@@ -13,7 +13,15 @@ import { $Enums } from "@/lib/generated/prisma";
 import { ItemType } from "@/types/item.type";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["INVOICES"], "CREATE");
+    const result = await checkAccess("INVOICES", "CREATE");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const formData = await req.formData();
     const rawData: any = {};
@@ -288,7 +296,16 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["INVOICES"], "MODIFY");
+    const result = await checkAccess("INVOICES", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const data = await req.json();
 
     if (data.ids.length === 0) {

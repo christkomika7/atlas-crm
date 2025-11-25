@@ -7,7 +7,17 @@ import { parseData } from "@/lib/parse";
 import { clientContractSchema, ClientContractSchemaType, lessorContractSchema, LessorContractSchemaType } from "@/lib/zod/contract.schema";
 
 export async function PUT(req: NextRequest) {
-    await checkAccess(["CONTRACT"], "MODIFY");
+    const result = await checkAccess("CONTRACT", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
+
     const id = getIdFromUrl(req.url, 2) as string;
 
     if (!id) {

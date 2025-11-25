@@ -1,11 +1,19 @@
 import { checkAccess } from "@/lib/access";
-import { $Enums } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
 import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["TRANSACTION"], "READ");
+    const result = await checkAccess("TRANSACTION", ["CREATE", "MODIFY", "READ"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
 
@@ -30,7 +38,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["TRANSACTION"], "CREATE");
+    const result = await checkAccess("TRANSACTION", ["CREATE", "MODIFY", "READ"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     if (!id) {

@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { checkAccess } from "@/lib/access";
 import { AttachementProps, sendMail } from "@/lib/email";
 import { parseData } from "@/lib/parse";
@@ -10,7 +9,16 @@ import { formatDateToDashModel } from "@/lib/date";
 import { INVOICE_PREFIX } from "@/config/constant";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["INVOICES"], "MODIFY");
+    const result = await checkAccess("INVOICES", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
 
     const formData = await req.formData();
     const rawData: any = {};

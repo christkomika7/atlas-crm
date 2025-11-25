@@ -14,7 +14,16 @@ import Decimal from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
-  await checkAccess(["QUOTES"], "READ");
+  const result = await checkAccess("QUOTES", "READ");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const companyId = getIdFromUrl(req.url, "last") as string;
 
   if (!companyId) {
@@ -37,7 +46,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await checkAccess(["QUOTES"], "READ");
+  const result = await checkAccess("QUOTES", "READ");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
   const { data }: { data: "progress" | "complete" } = await req.json();
 
@@ -82,7 +100,16 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  await checkAccess(["QUOTES"], "MODIFY");
+  const result = await checkAccess("QUOTES", "MODIFY");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
 
 
@@ -398,7 +425,16 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  await checkAccess(["QUOTES"], "MODIFY");
+  const result = await checkAccess("QUOTES", "MODIFY");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
 
   const quote = await prisma.quote.findUnique({

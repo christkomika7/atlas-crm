@@ -7,7 +7,16 @@ import { NextRequest, NextResponse } from 'next/server';
 
 
 export async function POST(request: NextRequest) {
-    await checkAccess(["BILLBOARDS"], "CREATE");
+    const result = await checkAccess("BILLBOARDS", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     try {
         const body = await request.json();
 

@@ -30,3 +30,9 @@ revoir changepassword
 
 Faire le backup des données
 
+voir l erreur au niveau de la modification des access
+- suppression de l image
+- bloquer la modification pour les non admin
+- revoir les access surtout au niveau de user
+- Dans dashboard gerer les cas ou les données sont vides
+- si un user a deja une entreprise par defaut, ne plus changer cela lors de la creation d un nouveau profil

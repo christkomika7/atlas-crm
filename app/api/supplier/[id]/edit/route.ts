@@ -10,7 +10,16 @@ import { checkData } from "@/lib/database";
 import { SupplierType } from "@/types/supplier.types";
 
 export async function PUT(req: NextRequest) {
-    await checkAccess(["SUPPLIERS"], "MODIFY");
+    const result = await checkAccess("SUPPLIERS", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, 2) as string;
     const supplier = await checkData(prisma.supplier, { where: { id }, include: { company: true } }, "identifiant") as SupplierType;
 

@@ -15,8 +15,15 @@ function formatAmount(dec: Decimal): string {
 
 export async function GET(req: NextRequest) {
     try {
-        await checkAccess(["DASHBOARD"], "READ");
+        const result = await checkAccess("DASHBOARD", ["READ"]);
 
+        if (!result.authorized) {
+            return Response.json({
+                status: "error",
+                message: result.message,
+                data: []
+            }, { status: 200 });
+        }
         const id = getIdFromUrl(req.url, 3) as string;
         if (!id) {
             return NextResponse.json(

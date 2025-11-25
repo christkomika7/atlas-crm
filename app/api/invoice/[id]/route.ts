@@ -14,7 +14,16 @@ import Decimal from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
-  await checkAccess(["INVOICES"], "READ");
+  const result = await checkAccess("INVOICES", "READ");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const companyId = getIdFromUrl(req.url, "last") as string;
 
   if (!companyId) {
@@ -37,7 +46,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  await checkAccess(["INVOICES"], "MODIFY");
+  const result = await checkAccess("INVOICES", "MODIFY");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
 
   if (!id) {
@@ -420,7 +438,16 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  await checkAccess(["INVOICES"], "MODIFY");
+  const result = await checkAccess("INVOICES", "MODIFY");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
 
   const invoice = await prisma.invoice.findUnique({

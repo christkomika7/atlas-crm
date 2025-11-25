@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
-import { checkAccess } from "@/lib/access";
+import { sessionAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
 
 export async function GET() {
-    await checkAccess(["SETTING"], "READ");
+    const { hasSession, userId } = await sessionAccess();
+
+    if (!hasSession || !userId) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
+
     const users = await prisma.user.findMany({
         where: {
             role: "USER"

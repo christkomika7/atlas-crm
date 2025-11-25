@@ -11,7 +11,16 @@ import { TaskType } from "@/types/task.type";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "READ");
+    const result = await checkAccess(["PROJECTS"], ["CREATE", "MODIFY"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     const tasks = await prisma.task.findMany({

@@ -1,13 +1,12 @@
 import { checkAccess } from "@/lib/access";
 import { checkData } from "@/lib/database";
-import { $Enums, Prisma, ProductServiceType, User } from "@/lib/generated/prisma";
+import { $Enums, Prisma, ProductServiceType } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 import { editProductServiceSchema, EditProductServiceSchemaType } from "@/lib/zod/product-service.schema";
-
-import prisma from "@/lib/prisma";
 import { checkAccessDeletion } from "@/lib/server";
+import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
     await checkAccess(["PRODUCT_SERVICES"], "READ");
@@ -99,9 +98,17 @@ export async function GET(req: NextRequest) {
     }
 }
 
-
 export async function PUT(req: NextRequest) {
-    await checkAccess(["PRODUCT_SERVICES"], "MODIFY") as User;
+    const result = await checkAccess("PRODUCT_SERVICES", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     await checkData(prisma.productService, { where: { id }, include: { company: true } }, "identifiant") as ProductServiceType;
@@ -164,7 +171,16 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["PRODUCT_SERVICES"], "MODIFY");
+    const result = await checkAccess("PRODUCT_SERVICES", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     const productService = await prisma.productService.findUnique({

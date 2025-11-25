@@ -1,4 +1,4 @@
-import { checkAccess } from "@/lib/access";
+import { sessionAccess, checkAccess } from "@/lib/access";
 import { formatDateToDashModel, parseDateTime } from "@/lib/date";
 import { sendMail } from "@/lib/email";
 import { createFile, createFolder, removePath } from "@/lib/file";
@@ -8,11 +8,28 @@ import prisma from "@/lib/prisma";
 import { checkAccessDeletion } from "@/lib/server";
 import { generateId, getFirstValidCompanyId } from "@/lib/utils";
 import { appointmentSchema, AppointmentSchemaType } from "@/lib/zod/appointment.schema";
-import { User } from "better-auth";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-    const session = await checkAccess(["APPOINTMENT"], "CREATE") as User;
+    const result = await checkAccess("APPOINTMENT", "CREATE");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
+    const { hasSession, userId } = await sessionAccess();
+
+    if (!hasSession || !userId) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
 
     const formData = await req.formData();
     const rawData: any = {};
@@ -60,7 +77,7 @@ export async function POST(req: NextRequest) {
             savedPaths = [...savedPaths, upload]
         }
 
-        const user = await prisma.user.findUnique({ where: { id: session.id } });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
 
         if (!user) {
             return NextResponse.json({
@@ -146,7 +163,15 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["APPOINTMENT"], "MODIFY");
+    const result = await checkAccess("APPOINTMENT", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
     const data = await req.json();
 
     if (data.ids.length === 0) {

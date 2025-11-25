@@ -7,7 +7,15 @@ import Decimal from "decimal.js";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(req: NextRequest) {
-  checkAccess(["TRANSACTION"], "MODIFY");
+  const result = await checkAccess("TRANSACTION", "MODIFY");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
 
   const companyId = req.nextUrl.searchParams.get("companyId")?.trim() ?? "";
   const { data }: { data: DeletedTransactions[] } = await req.json();

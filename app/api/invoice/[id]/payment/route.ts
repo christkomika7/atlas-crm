@@ -9,7 +9,16 @@ import Decimal from "decimal.js";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["INVOICES"], "MODIFY");
+    const result = await checkAccess("INVOICES", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, 2) as string;
     const res = await req.json();
 

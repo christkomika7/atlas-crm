@@ -4,7 +4,16 @@ import { getIdFromUrl } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["SUPPLIERS"], "MODIFY");
+    const result = await checkAccess("SUPPLIERS", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, 2) as string;
 
     const supplier = await prisma.supplier.findUnique({

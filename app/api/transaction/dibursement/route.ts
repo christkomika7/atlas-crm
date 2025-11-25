@@ -4,13 +4,19 @@ import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { formatNumber } from "@/lib/utils";
 import { dibursementSchema, DibursementSchemaType } from "@/lib/zod/dibursement.schema";
-import { PaymentType } from "@/types/payment.types";
 import Decimal from "decimal.js";
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {
-    checkAccess(["TRANSACTION"], "CREATE");
+    const result = await checkAccess("TRANSACTION", ["CREATE"]);
 
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
     const res = await req.json();
 
     const data = parseData<DibursementSchemaType>(dibursementSchema, {

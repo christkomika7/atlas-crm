@@ -8,9 +8,18 @@ import { getSession } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
+    const result = await checkAccess("SETTING", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
-    await checkAccess(["DASHBOARD"], "READ");
 
     const company = await prisma.company.findUnique({
         where: { id },
@@ -24,8 +33,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+    const result = await checkAccess("SETTING", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
-    await checkAccess(["DASHBOARD"], "MODIFY");
+
 
     try {
         const formData = await req.formData();
@@ -126,7 +145,16 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["DASHBOARD"], "MODIFY");
+    const result = await checkAccess("SETTING", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const session = await getSession();
 
     const id = getIdFromUrl(req.url, "last") as string;

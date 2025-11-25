@@ -11,7 +11,16 @@ import Decimal from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["QUOTES"], "MODIFY");
+    const result = await checkAccess("QUOTES", "CREATE");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, 2) as string;
 
     const updatedItems = await req.json();

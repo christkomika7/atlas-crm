@@ -8,7 +8,15 @@ import Decimal from "decimal.js";
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {
-    checkAccess(["TRANSACTION"], "CREATE");
+    const result = await checkAccess("TRANSACTION", ["CREATE"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const res = await req.json();
 

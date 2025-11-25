@@ -1,71 +1,97 @@
-import { NextResponse } from "next/server";
 import { getSession } from "./auth";
 import { $Enums } from "./generated/prisma";
-import { hasPermission } from "./utils";
+import { authorize } from "./authorize";
 import prisma from "./prisma";
 
 export async function checkAccess(
-    resources: $Enums.Resource[],
-    action: $Enums.Action,
-    onlySession = false
-) {
+    resource: $Enums.Resource | $Enums.Resource[],
+    action: $Enums.Action | $Enums.Action[],
+): Promise<{ authorized: boolean; message: string }> {
+
+
     const sessionData = await getSession();
 
     if (!sessionData) {
-        return NextResponse.json({
-            state: "error",
-            message: "Accès refusé"
-        }, { status: 404 });
+        return {
+            authorized: false,
+            message: "Accès refusé",
+        };
     }
 
-    if (onlySession) {
-        return null;
+    const profileId = sessionData.user.currentProfile;
+    const userId = sessionData.user.id || sessionData.session.userId;
+    const role = sessionData.user.role || $Enums.Role.USER;
+
+    if (!userId) {
+        return {
+            authorized: false,
+            message: "Accès refusé : aucune donnée trouvée",
+        };
     }
 
-    if (sessionData.user.role === "ADMIN") {
-        const profile = await prisma.profile.findFirst({
-            where: {
-                userId: sessionData.user.id
-            },
-            include: {
-                permissions: true
-            }
-        })
+    if (!profileId) {
+        const result = authorize({
+            resource,
+            action,
+            userPermissions: [],
+            role: $Enums.Role.ADMIN,
+        });
 
-        const role = sessionData.user?.role!;
-        const permissions = profile?.permissions!;
-        const hasAccess = hasPermission(role, resources, action, permissions);
+        return {
+            authorized: result.authorized,
+            message: result.message,
+        };
+    }
 
-        if (!hasAccess) {
-            return NextResponse.json({
-                state: "error",
-                message: "Accès refusé"
-            }, { status: 404 });
+    try {
+        const profile = await prisma.profile.findUnique({
+            where: { id: profileId },
+            include: { permissions: true },
+        });
+
+        if (!profile) {
+            return {
+                authorized: false,
+                message: "Profil utilisateur non trouvé",
+            };
         }
 
-        return sessionData.user;
-    }
+        const result = authorize({
+            resource,
+            action,
+            userPermissions: profile.permissions,
+            role,
+        });
 
-    const profile = await prisma.profile.findFirst({
-        where: {
-            companyId: sessionData.user.currentCompany,
-            userId: sessionData.user.id
-        },
-        include: {
-            permissions: true
+        return {
+            authorized: result.authorized,
+            message: result.message,
+        };
+
+    } catch (error) {
+        console.error("Erreur lors de la vérification des accès:", error);
+
+        return {
+            authorized: false,
+            message: "Erreur lors de la vérification des accès",
+        };
+    }
+}
+
+
+export async function sessionAccess() {
+    const data = await getSession();
+
+    if (!data) {
+        return {
+            hasSession: false,
+            userId: null
         }
-    })
 
-    const role = sessionData.user?.role!;
-    const permissions = profile?.permissions!;
-    const hasAccess = hasPermission(role, resources, action, permissions);
-
-    if (!hasAccess) {
-        return NextResponse.json({
-            state: "error",
-            message: "Accès refusé"
-        }, { status: 404 });
     }
 
-    return sessionData.user;
+    return {
+        hasSession: true,
+        userId: data.user.id || data.session.userId
+    }
 }

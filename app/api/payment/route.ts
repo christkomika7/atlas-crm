@@ -1,7 +1,17 @@
+import { checkAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
+    const result = await checkAccess(["INVOICES", 'PURCHASE_ORDER'], "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const recordId = req.nextUrl.searchParams.get("recordId") ?? "";
     const recordName = req.nextUrl.searchParams.get("recordName") ?? "";

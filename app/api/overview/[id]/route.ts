@@ -7,7 +7,15 @@ import Decimal from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["DASHBOARD"], "READ");
+    const result = await checkAccess("DASHBOARD", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
     const companyId = getIdFromUrl(req.url, "last") as string;
 
     if (!companyId) {

@@ -5,7 +5,16 @@ import { allocationSchema, AllocationSchemaType } from "@/lib/zod/transaction.sc
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["TRANSACTION"], "CREATE");
+    const result = await checkAccess("TRANSACTION", ["CREATE", "MODIFY", "READ"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
 
     const formData = await req.json();
 

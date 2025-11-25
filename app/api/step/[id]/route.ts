@@ -6,7 +6,15 @@ import { editTaskStepSchema, EditTaskStepSchemaType } from "@/lib/zod/task-step.
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "READ");
+    const result = await checkAccess("PROJECTS", ["CREATE", "MODIFY"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
     const id = getIdFromUrl(req.url, "last") as string;
 
     const taskSteps = await prisma.taskStep.findMany({
@@ -26,7 +34,16 @@ export async function GET(req: NextRequest) {
 
 
 export async function PUT(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "MODIFY");
+    const result = await checkAccess("PROJECTS", ["CREATE", "MODIFY"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     const data = await req.json();

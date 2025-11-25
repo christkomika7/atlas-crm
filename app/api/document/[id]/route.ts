@@ -1,4 +1,4 @@
-import { checkAccess } from "@/lib/access";
+import { sessionAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
@@ -7,9 +7,19 @@ import { documentSchema, DocumentSchemaType } from "@/lib/zod/document.schema";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
+    const { hasSession, userId } = await sessionAccess();
+
+    if (!hasSession || !userId) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
-    await checkAccess(["DASHBOARD"], "READ");
+
 
     const document = await prisma.documentModel.findUnique({
         where: { companyId: id },
@@ -25,9 +35,17 @@ export async function GET(req: NextRequest) {
 
 
 export async function PUT(req: NextRequest) {
-    const id = getIdFromUrl(req.url, "last") as string;
-    await checkAccess(["DASHBOARD"], "MODIFY");
+    const { hasSession, userId } = await sessionAccess();
 
+    if (!hasSession || !userId) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
+
+    const id = getIdFromUrl(req.url, "last") as string;
     const formData = await req.formData();
 
     const data: DocumentSchemaType = {

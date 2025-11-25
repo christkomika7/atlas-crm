@@ -9,7 +9,16 @@ import { taskSchema, TaskSchemaType } from "@/lib/zod/task.schema";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "CREATE");
+    const result = await checkAccess(["PROJECTS"], ["CREATE", "MODIFY"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const formData = await req.formData();
 
     const files: File[] = [];

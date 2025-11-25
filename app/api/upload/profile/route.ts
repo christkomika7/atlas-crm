@@ -3,29 +3,20 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { existsSync } from 'fs';
 import crypto from 'crypto';
-import { getSession } from '@/lib/auth';
+import { sessionAccess } from '@/lib/access';
 
-/**
- * API Route: POST /api/upload/profile
- *
- * Cette route permet de recevoir un fichier image (profil) depuis un formulaire
- * et de l'enregistrer dans un dossier spécifique sur le serveur.
- *
- * Le client envoie :
- * - `profil` : le fichier (type File)
- * - `path` : le nom du dossier où stocker le fichier
- *
- * Réponse (JSON) :
- * - success: true
- * - path: chemin relatif du fichier uploadé (ex: "user_avatars/abc123.png")
- */
+
 export async function POST(req: NextRequest) {
-    const sessionData = await getSession();
+    const { hasSession, userId } = await sessionAccess();
 
-    if (!sessionData) return NextResponse.json({
-        state: "error",
-        message: "Accès refusé"
-    }, { status: 404 })
+    if (!hasSession || !userId) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
+
     try {
         // Récupération des données du formulaire
         const formData = await req.formData();

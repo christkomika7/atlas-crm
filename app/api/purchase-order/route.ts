@@ -13,7 +13,15 @@ import { ItemPurchaseOrderSchemaType } from "@/lib/zod/item.schema";
 import { $Enums } from "@/lib/generated/prisma";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["PURCHASE_ORDER"], "CREATE");
+    const result = await checkAccess("PURCHASE_ORDER", "CREATE");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const formData = await req.formData();
     const rawData: any = {};
@@ -215,7 +223,16 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["PURCHASE_ORDER"], "MODIFY");
+    const result = await checkAccess("PURCHASE_ORDER", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const data = await req.json();
 
     if (data.ids.length === 0) {

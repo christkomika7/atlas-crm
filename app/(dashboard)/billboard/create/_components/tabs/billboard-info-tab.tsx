@@ -491,7 +491,7 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
                       type="number"
                       design="float"
                       label="Prix de location"
-                      value={field.value?.toString()}
+                      value={field.value?.toString() || ""}
                       handleChange={(e) => field.onChange(new Decimal(String(e)))}
                     />
                   </FormControl>
@@ -509,7 +509,7 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
                       type="number"
                       design="float"
                       label="Le coût d'installation"
-                      value={field.value?.toString()}
+                      value={field.value?.toString() || ""}
                       required={false}
                       handleChange={(e) => field.onChange(new Decimal(e as string))}
                     />
@@ -529,7 +529,7 @@ export default function BillboardInfoTab({ form }: BillboardInfoTabProps) {
                       design="float"
                       required={false}
                       label="Le coût d'entretien"
-                      value={field.value?.toString()}
+                      value={field.value?.toString() || ""}
                       handleChange={(e) => field.onChange(new Decimal(String(e)))}
                     />
                   </FormControl>

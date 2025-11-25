@@ -10,7 +10,15 @@ function ensureArray<T = string>(v?: T | T[] | null): T[] | undefined {
 }
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["BILLBOARDS"], "CREATE");
+    const result = await checkAccess("BILLBOARDS", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const formData = await req.json();
 
@@ -22,14 +30,12 @@ export async function POST(req: NextRequest) {
         },
     }) as ContractSchemaType;
 
-    // Normaliser les valeurs : accepter string ou string[]
     const billboardTypes = ensureArray<string>(data.billboardType as any);
     const cities = ensureArray<string>(data.city as any);
     const areas = ensureArray<string>(data.area as any);
 
-    // Construire le where dynamiquement (les clés undefined sont ignorées par Prisma)
     const where: any = {
-        hasDelete: false, // par exemple
+        hasDelete: false,
     };
 
     if (billboardTypes && billboardTypes.length > 0) {

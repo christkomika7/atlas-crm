@@ -4,7 +4,15 @@ import { getIdFromUrl } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["INVOICES"], "READ");
+    const result = await checkAccess("INVOICES", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
     const companyId = getIdFromUrl(req.url, 2) as string;
 
     const invoices = await prisma.invoice.findMany({

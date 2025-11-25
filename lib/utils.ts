@@ -419,6 +419,40 @@ export function isRestrictedToAdminPath(
   return true; // Accès autorisé car ce chemin n'est pas restreint
 }
 
+
+export function hasAccess(
+  resource: $Enums.Resource,
+  action: $Enums.Action | $Enums.Action[],
+  permissions: Permission[]
+): boolean {
+  if (!resource || !action || !permissions) return false;
+
+  const normalizedResource = resource.toUpperCase();
+
+  const permission = permissions.find(
+    (p) => p.resource.toUpperCase() === normalizedResource
+  );
+
+  if (!permission) return false;
+
+  const actions = permission.actions;
+
+  const actionList = Array.isArray(action) ? action : [action];
+
+  return actionList.some((act) => {
+    if (act === "READ") {
+      return (
+        actions.includes("READ") ||
+        actions.includes("CREATE") ||
+        actions.includes("MODIFY")
+      );
+    }
+
+    return actions.includes(act); // CREATE ou MODIFY
+  });
+}
+
+
 export function hasAccessToDashboard(user: any) {
   if (!user) return false;
   if (user.role === "ADMIN") return true;

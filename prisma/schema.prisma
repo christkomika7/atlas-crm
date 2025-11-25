@@ -55,6 +55,7 @@ enum Resource {
   TRANSACTION
   SETTING
   CONTRACT
+  UNKNOWN_RESOURCE
 }
 
 enum ItemState {

@@ -4,6 +4,16 @@ import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
+    const result = await checkAccess("BILLBOARDS", ["CREATE", "MODIFY"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     if (!id) {
@@ -27,7 +37,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["BILLBOARDS"], "CREATE");
+    const result = await checkAccess("BILLBOARDS", ["CREATE", "MODIFY"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     if (!id) {

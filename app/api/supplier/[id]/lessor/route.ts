@@ -5,7 +5,16 @@ import { checkAccess } from "@/lib/access";
 import Decimal from "decimal.js";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["SUPPLIERS"], "READ");
+    const result = await checkAccess("CONTRACT", ["MODIFY", "CREATE"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, 2) as string;
 
     const companyExist = await prisma.company.findUnique({ where: { id } });

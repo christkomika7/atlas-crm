@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { checkAccess } from "@/lib/access";
 import { AttachementProps, sendMail } from "@/lib/email";
 import { parseData } from "@/lib/parse";
@@ -9,7 +8,15 @@ import { recordEmailSchema, RecordEmailSchemaType } from "@/lib/zod/record-email
 import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["PURCHASE_ORDER"], "MODIFY");
+    const result = await checkAccess("PURCHASE_ORDER", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const formData = await req.formData();
     const rawData: any = {};

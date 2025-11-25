@@ -6,7 +6,16 @@ import Decimal from "decimal.js";
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(req: NextRequest) {
-    checkAccess(["TRANSACTION"], "CREATE");
+    const res = await checkAccess("TRANSACTION", ["READ"]);
+
+    if (!res.authorized) {
+        return Response.json({
+            status: "error",
+            message: res.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const companyId = getIdFromUrl(req.url, 2);
     const type = req.nextUrl.searchParams.get("type")?.trim() ?? "";
 

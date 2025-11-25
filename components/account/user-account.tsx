@@ -55,7 +55,7 @@ export default function UserAccount() {
     return <Skeleton className="rounded-full w-[46px] h-[46px]" />;
   }
   return (
-    <Link href={`/settings/profile/${profile?.id}`}>
+    <Link href={`/overview/profile/${profile?.id}`}>
       <User
         user={{
           image: image,

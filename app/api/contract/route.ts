@@ -6,7 +6,17 @@ import { $Enums } from "@/lib/generated/prisma";
 import { getFirstValidCompanyId } from "@/lib/utils";
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["CONTRACT"], "MODIFY");
+    const result = await checkAccess("CONTRACT", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
+
     const data = await req.json();
 
     if (data.ids.length === 0) {

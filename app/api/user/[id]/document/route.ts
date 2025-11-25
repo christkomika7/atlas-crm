@@ -1,12 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getIdFromUrl } from "@/lib/utils";
-import { checkAccess } from "@/lib/access";
+import { sessionAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import path from "path";
 
 export async function PUT(req: NextRequest) {
-    await checkAccess(["SETTING"], "READ");
+    const { hasSession, userId } = await sessionAccess();
+
+    if (!hasSession || !userId) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
 
     const id = getIdFromUrl(req.url, 2) as string;
 

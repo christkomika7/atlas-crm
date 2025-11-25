@@ -4,7 +4,17 @@ import { getIdFromUrl } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["DELIVERY_NOTES"], "MODIFY");
+    const result = await checkAccess("DELIVERY_NOTES", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
+
     const id = getIdFromUrl(req.url, 2) as string;
 
     const deliveryNote = await prisma.deliveryNote.findUnique({

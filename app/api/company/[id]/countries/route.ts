@@ -1,4 +1,4 @@
-import { checkAccess } from "@/lib/access";
+import { sessionAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
 import { getIdFromUrl } from "@/lib/utils";
 import { NextResponse, NextRequest } from "next/server";
@@ -6,7 +6,15 @@ import { NextResponse, NextRequest } from "next/server";
 export async function POST(req: NextRequest) {
     const userId = getIdFromUrl(req.url, 2) as string;
 
-    await checkAccess(["SETTING"], "MODIFY");
+    const { hasSession } = await sessionAccess();
+
+    if (!hasSession) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
 
     const { currentCompany }: { currentCompany?: string } = await req.json();
 
@@ -26,18 +34,16 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    // --- ADMIN CAN SET ANY COMPANY WITHOUT CHECKING PROFILE ---
     if (currentCompany && user.role === "ADMIN") {
         await prisma.user.update({
             where: { id: user.id },
             data: {
                 currentCompany,
-                currentProfile: null // admin n'utilise pas de profile
+                currentProfile: null
             }
         });
     }
 
-    // --- NORMAL USER : CHECK PROFILE BEFORE UPDATE ---
     if (currentCompany && user.role !== "ADMIN") {
         const profile = await prisma.profile.findFirst({
             where: {
@@ -62,7 +68,6 @@ export async function POST(req: NextRequest) {
         });
     }
 
-    // --- ADMIN : RETURN ALL COMPANIES ---
     if (user.role === "ADMIN") {
         const companies = await prisma.company.findMany({
             select: {
@@ -80,7 +85,6 @@ export async function POST(req: NextRequest) {
         });
     }
 
-    // --- NORMAL USER : RETURN ONLY THEIR COMPANIES ---
     const companies = user.profiles.map((profile) => ({
         id: profile.companyId!,
         companyName: profile.company!.companyName,

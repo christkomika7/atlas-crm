@@ -5,12 +5,19 @@ import prisma from "@/lib/prisma";
 import { checkAccessDeletion } from "@/lib/server";
 import { getFirstValidCompanyId } from "@/lib/utils";
 import { productServiceSchema, ProductServiceSchemaType } from "@/lib/zod/product-service.schema";
-import { User } from "better-auth";
 import { NextResponse, type NextRequest } from "next/server";
 
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["PRODUCT_SERVICES"], "CREATE") as User;
+    const result = await checkAccess("PRODUCT_SERVICES", "CREATE");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const formData = await req.json();
 
@@ -67,7 +74,16 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["PRODUCT_SERVICES"], "MODIFY");
+    const result = await checkAccess("PRODUCT_SERVICES", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const data = await req.json();
 
     if (data.ids.length === 0) {

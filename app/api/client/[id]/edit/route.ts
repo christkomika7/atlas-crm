@@ -10,7 +10,16 @@ import { checkData } from "@/lib/database";
 import { ClientType } from "@/types/client.types";
 
 export async function PUT(req: NextRequest) {
-    await checkAccess(["CLIENTS"], "MODIFY");
+    const result = await checkAccess("CLIENTS", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, 2) as string;
     const client = await checkData(prisma.client, { where: { id }, include: { company: true } }, "identifiant") as ClientType;
 

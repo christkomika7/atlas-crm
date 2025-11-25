@@ -125,5 +125,5 @@ export const website: WebsiteType = {
       resource: "SETTING",
     },
   ],
-  adminOnlyPaths: ["/settings/profile/:id/edit"],
+  adminOnlyPaths: ["/overview/profile/:id/edit"],
 };

@@ -4,7 +4,16 @@ import { getIdFromUrl } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["CLIENTS"], "MODIFY");
+    const result = await checkAccess("CLIENTS", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, 2) as string;
 
     const client = await prisma.client.findUnique({

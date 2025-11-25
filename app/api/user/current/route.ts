@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAccess } from "@/lib/access";
+import { sessionAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["SETTING"], "READ");
+    const { hasSession } = await sessionAccess();
+
+    if (!hasSession) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
 
     const userId = req.nextUrl.searchParams.get("userId");
     const companyId = req.nextUrl.searchParams.get("companyId");

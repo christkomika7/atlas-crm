@@ -1,4 +1,4 @@
-import { addDays, format } from "date-fns";
+import { addDays } from "date-fns";
 import { checkAccess } from "@/lib/access";
 import { AttachementProps, sendMail } from "@/lib/email";
 import { parseData } from "@/lib/parse";
@@ -11,7 +11,15 @@ import { formatDateToDashModel } from "@/lib/date";
 import { QUOTE_PREFIX } from "@/config/constant";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["QUOTES"], "MODIFY");
+    const result = await checkAccess("QUOTES", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const formData = await req.formData();
     const rawData: any = {};

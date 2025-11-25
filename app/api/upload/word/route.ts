@@ -1,10 +1,20 @@
+import { sessionAccess } from "@/lib/access";
 import { generateContractDocument } from "@/lib/word";
 import { ContractType } from "@/types/contract-types";
 import { NextRequest, NextResponse } from "next/server";
 
 
-// Route API pour générer et télécharger le contrat
 export async function POST(req: NextRequest) {
+    const { hasSession, userId } = await sessionAccess();
+
+    if (!hasSession || !userId) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
+
     try {
         const { contract }: { contract: ContractType } = await req.json();
 

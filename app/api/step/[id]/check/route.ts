@@ -1,12 +1,19 @@
 import { checkAccess } from "@/lib/access";
-import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { getIdFromUrl } from "@/lib/utils";
-import { editTaskStepSchema, EditTaskStepSchemaType } from "@/lib/zod/task-step.schema";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function PUT(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "MODIFY");
+    const result = await checkAccess("PROJECTS", ["CREATE", "MODIFY"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, 2) as string;
     const check = await req.json();
 

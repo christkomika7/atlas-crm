@@ -10,7 +10,16 @@ import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 
 export async function GET(req: NextRequest) {
   try {
-    await checkAccess(["CONTRACT"], "READ");
+    const result = await checkAccess("CONTRACT", "READ");
+
+    if (!result.authorized) {
+      return Response.json({
+        status: "error",
+        message: result.message,
+        data: []
+      }, { status: 200 });
+    }
+
 
     const companyId = getIdFromUrl(req.url, "last") as string;
     if (!companyId) {
@@ -90,7 +99,17 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await checkAccess(["CONTRACT"], "CREATE");
+  const result = await checkAccess("CONTRACT", "CREATE");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
+
   const id = getIdFromUrl(req.url, "last") as string;
 
   const companyExist = await prisma.company.findUnique({ where: { id } });
@@ -198,7 +217,17 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  await checkAccess(["CONTRACT"], "MODIFY");
+  const result = await checkAccess("CONTRACT", "MODIFY");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
+
   const id = getIdFromUrl(req.url, "last") as string;
 
   const contract = await prisma.contract.findUnique({

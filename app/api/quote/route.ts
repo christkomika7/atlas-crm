@@ -14,7 +14,15 @@ import { toUtcDateOnly } from "@/lib/date";
 import { ItemType } from "@/types/item.type";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["QUOTES"], "CREATE");
+    const result = await checkAccess("QUOTES", "CREATE");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const formData = await req.formData();
     const rawData: any = {};

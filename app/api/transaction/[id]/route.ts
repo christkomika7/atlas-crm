@@ -5,7 +5,15 @@ import { generateAmaId, getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  await checkAccess(["TRANSACTION"], "READ");
+  const result = await checkAccess("TRANSACTION", ["READ"]);
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
 
   try {
     const companyId = getIdFromUrl(req.url, 2);

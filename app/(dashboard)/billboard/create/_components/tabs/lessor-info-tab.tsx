@@ -143,7 +143,7 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
                       value={currentSpaceType ?? ""}
                       setValue={e => {
                         setCurrentSpaceType(e as "private" | "public");
-                        field.onChange(e);
+                        field.onChange(String(e));
                       }}
                       placeholder="Type d'espace"
                       searchMessage="Rechercher un type d'espce"
@@ -169,7 +169,7 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
                       }))}
                       value={field.value}
                       setValue={(e) => {
-                        field.onChange(e);
+                        field.onChange(String(e));
                       }}
                       placeholder="Type de bailleur"
                       searchMessage="Rechercher un type"
@@ -196,7 +196,7 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
                           value: supplier.id
                         }))}
                         value={field.value as string}
-                        setValue={field.onChange}
+                        setValue={e => field.onChange(String(e))}
                         placeholder="Bailleur"
                         searchMessage="Rechercher un bailleur"
                         noResultsMessage="Aucun bailleur trouvé."

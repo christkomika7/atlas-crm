@@ -9,7 +9,15 @@ import { checkAccessDeletion } from "@/lib/server";
 import { $Enums } from "@/lib/generated/prisma";
 
 export async function GET(req: NextRequest) {
-  await checkAccess(["CLIENTS"], "READ");
+  const result = await checkAccess("CLIENTS", "READ");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
   const id = getIdFromUrl(req.url, "last") as string;
   const filter = req.nextUrl.searchParams.get("filter")?.trim() ?? "";
 
@@ -61,7 +69,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await checkAccess(["CLIENTS"], "CREATE");
+  const result = await checkAccess("CLIENTS", "CREATE");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
 
 
@@ -145,7 +162,16 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  await checkAccess(["CLIENTS"], "MODIFY");
+  const result = await checkAccess("CLIENTS", "MODIFY");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
 
   const client = await prisma.client.findUnique({

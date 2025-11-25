@@ -17,8 +17,10 @@ import { useEffect, useState } from "react";
 import { CompanyCountriesType } from "@/types/company.types";
 import { getCountryFrenchName, getFlagUrl } from "@/lib/helper";
 import { useDataStore } from "@/stores/data.store";
+import { useRouter } from "next/navigation";
 
 export default function CountrySelect() {
+  const router = useRouter();
   const [companyCountries, setCompanyCountries] =
     useState<CompanyCountriesType[]>();
 
@@ -32,7 +34,6 @@ export default function CountrySelect() {
     RequestResponse<CompanyCountriesType[]>
   >(countries, () => { }, "countries");
 
-  // ---------- LOAD USER COMPANIES ----------
   useEffect(() => {
     if (!userId) return;
 
@@ -52,7 +53,6 @@ export default function CountrySelect() {
     );
   }, [userId]);
 
-  // ---------- CHANGE CURRENT COMPANY ----------
   const handleCompany = (companyId: string) => {
     if (!userId) return;
 
@@ -60,18 +60,19 @@ export default function CountrySelect() {
       { id: userId, currentCompany: companyId },
       {
         onSuccess(res) {
-          const companies = res.data ?? []; // 🔥 FIX TYPE
+          const companies = res.data ?? [];
           setCompanyCountries(companies);
           setCurrentCompany(companyId);
 
           const selected = companies.find((c) => c.id === companyId);
           setCurrency(selected?.currency ?? "");
+
+          router.refresh()
         },
       }
     );
   };
 
-  // ---------- LOADING ----------
   if (isPending && !companyCountries)
     return <Skeleton className="rounded-lg w-[200px] h-11" />;
 

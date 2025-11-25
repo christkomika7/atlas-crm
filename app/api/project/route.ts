@@ -11,7 +11,15 @@ import { generateId } from "better-auth";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "CREATE");
+    const result = await checkAccess("PROJECTS", "CREATE");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const formData = await req.formData();
     const rawData: any = {};
@@ -105,7 +113,16 @@ export async function POST(req: NextRequest) {
 
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "MODIFY");
+    const result = await checkAccess("PROJECTS", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const data = await req.json();
 
     if (data.ids.length === 0) {

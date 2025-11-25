@@ -11,8 +11,16 @@ import { NextResponse, type NextRequest } from "next/server";
 
 
 export async function POST(req: NextRequest) {
-    // Vérification d'accès
-    await checkAccess(["BILLBOARDS"], "CREATE");
+    const result = await checkAccess("BILLBOARDS", "CREATE");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
 
     const formData = await req.formData();
 
@@ -289,7 +297,16 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["BILLBOARDS"], "MODIFY");
+    const result = await checkAccess("BILLBOARDS", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const data = await req.json();
 
     if (data.ids.length === 0) {

@@ -4,7 +4,16 @@ import { getIdFromUrl } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["BILLBOARDS"], "READ");
+    const result = await checkAccess("BILLBOARDS", "MODIFY");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, 2) as string;
 
     const billboard = await prisma.billboard.findUnique({

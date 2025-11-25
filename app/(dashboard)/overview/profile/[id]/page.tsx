@@ -12,14 +12,15 @@ import {
 } from "@/action/user.action";
 import { useEffect, useState } from "react";
 
-import EmployeeList from "../../employee/_components/employee-list";
+import EmployeeList from "../../../settings/employee/_components/employee-list";
 import Link from "next/link";
 import Spinner from "@/components/ui/spinner";
 import useQueryAction from "@/hook/useQueryAction";
 import LogoutButton from "@/components/logout-button";
 import { formatNumber, generateAmaId, initialName, resolveImageSrc, urlToFile } from "@/lib/utils";
-import UploadDocument from "../../employee/_components/upload-document";
+import UploadDocument from "../../../settings/employee/_components/upload-document";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getSession } from "@/lib/auth-client";
 
 export default function EmployeeInfo() {
   const param = useParams();
@@ -32,6 +33,11 @@ export default function EmployeeInfo() {
   const [imagePreview, setImagePreview] = useState("");
   const [isLoadingDoc, setIsLoadingDoc] = useState(false);
   const [isLoadingPassport, setIsLoadingPassport] = useState(false);
+
+  const { data } = getSession();
+  const isAdmin = data?.user.role === "ADMIN" ? true : false;
+
+
 
   const { mutate: mutateGetUser, isPending } = useQueryAction<
     { id: string },
@@ -138,12 +144,14 @@ export default function EmployeeInfo() {
           <div className="p-3.5 border border-neutral-100 rounded-xl">
             <div className="flex items-center">
               <div className="flex flex-1 justify-end gap-x-2">
-                <Link href={`/settings/profile/${profile?.id}/edit`}>
-                  <Button variant="primary" className="rounded-lg w-fit !h-10">
-                    <EditIcon className="size-4" />
-                    Modifier
-                  </Button>
-                </Link>
+                {isAdmin &&
+                  <Link href={`/overview/profile/${profile?.id}/edit`}>
+                    <Button variant="primary" className="rounded-lg w-fit !h-10">
+                      <EditIcon className="size-4" />
+                      Modifier
+                    </Button>
+                  </Link>
+                }
                 <LogoutButton />
               </div>
             </div>

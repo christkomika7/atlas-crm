@@ -5,7 +5,16 @@ import { getIdFromUrl } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function PUT(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "MODIFY");
+    const result = await checkAccess(["PROJECTS"], ["CREATE", "MODIFY"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const id = getIdFromUrl(req.url, 2) as string;
     const status: $Enums.ProjectStatus = await req.json();
 

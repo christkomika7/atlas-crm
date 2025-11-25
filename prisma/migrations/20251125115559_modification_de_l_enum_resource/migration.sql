@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "Resource" ADD VALUE 'UNKNOWN_RESOURCE';

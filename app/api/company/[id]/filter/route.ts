@@ -5,7 +5,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { filters } from "@/lib/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["INVOICES"], "READ");
+    const result = await checkAccess("SETTING", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const companyId = getIdFromUrl(req.url, 2) as string;
     const reportType = req.nextUrl.searchParams.get("reportType")?.trim() as ReportType | undefined;

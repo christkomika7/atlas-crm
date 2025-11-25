@@ -5,7 +5,15 @@ import { taskStepSchema, TaskStepSchemaType } from "@/lib/zod/task-step.schema";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "CREATE");
+    const result = await checkAccess("PROJECTS", ["CREATE", "MODIFY"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     const data = await req.json();
     const parsedData = (parseData<TaskStepSchemaType>(taskStepSchema,

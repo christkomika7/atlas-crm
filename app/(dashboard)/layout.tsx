@@ -29,7 +29,7 @@ export default async function DashboardLayout({
   if (!data?.session) {
     return redirect("/");
   }
-  assertUserCanAccessPage(data.user, pathname);
+  // assertUserCanAccessPage(data.user, pathname);
 
   const profile = await prisma.profile.findFirst({
     where: { id: data.user.currentProfile as string },
@@ -39,6 +39,8 @@ export default async function DashboardLayout({
   });
 
   const permissions = profile?.permissions;
+
+  // console.log(JSON.stringify(permissions, null, 2));
 
   return (
     <div className="relative grid grid-cols-[260px_1fr] bg-dark w-screen h-screen">

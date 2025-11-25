@@ -4,7 +4,16 @@ import { getIdFromUrl } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["PROJECTS"], "READ");
+    const result = await checkAccess("PROJECTS", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const companyId = getIdFromUrl(req.url, 2) as string;
 
     const filter = req.nextUrl.searchParams.get("filter")?.trim() ?? "";

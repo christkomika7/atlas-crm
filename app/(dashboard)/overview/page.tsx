@@ -9,11 +9,17 @@ import SourceInfos from "./_components/source-infos";
 import RecentActivitiesBc from "./_components/recent-activities-bc";
 import ActionButton from "./_components/action-button";
 import { getSession } from "@/lib/auth";
-import { hasAccessToDashboard } from "@/lib/utils";
+import { hasAccess } from "@/lib/utils";
 
 export default async function OverviewPage() {
   const data = await getSession();
-  const canViewDashboard = hasAccessToDashboard(data?.user);
+  const permissions = data?.user.profiles?.find(p => p.id === data.user.currentProfile)?.permissions || [];
+  const canViewDashboard = hasAccess("DASHBOARD", ["READ", "CREATE", "MODIFY"], permissions);
+  const quotePermission = hasAccess("QUOTES", ["CREATE"], permissions);
+  const invoicePermission = hasAccess("INVOICES", ["CREATE"], permissions);
+  const deliveryNotePermission = hasAccess("DELIVERY_NOTES", ["CREATE"], permissions);
+  const purchaseOrderPermission = hasAccess("PURCHASE_ORDER", ["CREATE"], permissions);
+
 
   return (
     <ScrollArea className="pr-4 h-full">
@@ -30,7 +36,12 @@ export default async function OverviewPage() {
                 <InvoiceInfos />
               </div>
               <div className="p-2 border h-full border-neutral-200 flex rounded-lg">
-                <ActionButton />
+                <ActionButton
+                  quotePermission={quotePermission}
+                  deliveryNotePermission={deliveryNotePermission}
+                  invoicePermission={invoicePermission}
+                  purchaseOrderPermission={purchaseOrderPermission}
+                />
               </div>
             </div>
             <div className="grid grid-cols-[1.8fr_1fr_1fr] gap-4">

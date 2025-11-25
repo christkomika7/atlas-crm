@@ -4,8 +4,6 @@ import { ZodSchema } from "zod";
 export function parseData<T>(schema: ZodSchema<T>, data: T) {
     const validation = schema.safeParse(data);
 
-    console.log({ validation })
-
     if (!validation.success) {
         return NextResponse.json(
             {

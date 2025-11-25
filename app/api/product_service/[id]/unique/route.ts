@@ -4,7 +4,15 @@ import { generateId, getIdFromUrl } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["PRODUCT_SERVICES"], "CREATE");
+    const result = await checkAccess("PRODUCT_SERVICES", "CREATE");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
     const id = getIdFromUrl(req.url, 2) as string;
 
     const productService = await prisma.productService.findUnique({

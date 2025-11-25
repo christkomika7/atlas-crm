@@ -9,7 +9,15 @@ import { parseData } from "@/lib/parse";
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["DASHBOARD"], "READ");
+    const result = await checkAccess("CLIENTS", "READ");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     try {
         const { searchParams } = new URL(req.url);
@@ -47,7 +55,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["SETTING"], "CREATE");
+    const result = await checkAccess("SETTING", "CREATE");
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
 
     let uploadedPaths: string[] = [];
     let uploadedPassportPaths: string[] = [];

@@ -5,7 +5,16 @@ import { baseSchema, BaseSchemaType } from "@/lib/zod/base-type.schema";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-    await checkAccess(["BILLBOARDS"], "CREATE");
+    const result = await checkAccess("BILLBOARDS", ["CREATE", "MODIFY"]);
+
+    if (!result.authorized) {
+        return Response.json({
+            status: "error",
+            message: result.message,
+            data: []
+        }, { status: 200 });
+    }
+
     const formData = await req.json();
 
     const data = parseData<BaseSchemaType>(baseSchema, {

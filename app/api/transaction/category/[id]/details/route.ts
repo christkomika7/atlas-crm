@@ -5,9 +5,15 @@ import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    // vérification d'accès (garde ou modifie selon tes besoins)
-    await checkAccess(["DASHBOARD"], "READ");
+    const res = await checkAccess("DASHBOARD", ["READ"]);
 
+    if (!res.authorized) {
+        return Response.json({
+            status: "error",
+            message: res.message,
+            data: []
+        }, { status: 200 });
+    }
     const id = getIdFromUrl(req.url, 3) as string;
 
     if (!id) {

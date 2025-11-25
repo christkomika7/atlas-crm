@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createPermissionsData, generateId, getIdFromUrl } from "@/lib/utils";
-import { checkAccess } from "@/lib/access";
+import { checkAccess, sessionAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
 import { userEditSchema, UserEditSchemaType, userSchema, UserSchemaType } from "@/lib/zod/user.schema";
 import { parseData } from "@/lib/parse";
@@ -12,8 +12,15 @@ import { headers } from "next/headers";
 import { User } from "better-auth";
 
 export async function GET(req: NextRequest) {
-    await checkAccess(["SETTING"], "READ");
+    const { hasSession, userId } = await sessionAccess();
 
+    if (!hasSession || !userId) {
+        return Response.json({
+            status: "error",
+            message: "Aucune session trouvée",
+            data: []
+        }, { status: 200 });
+    }
     const companyId = getIdFromUrl(req.url, "last") as string;
 
     const profiles = await prisma.profile.findMany({

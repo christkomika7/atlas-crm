@@ -9,7 +9,16 @@ import { $Enums } from "@/lib/generated/prisma";
 import { checkAccessDeletion } from "@/lib/server";
 
 export async function GET(req: NextRequest) {
-  await checkAccess(["SUPPLIERS"], "READ");
+  const result = await checkAccess("SUPPLIERS", "READ");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
 
   const companyExist = await prisma.company.findUnique({ where: { id } });
@@ -36,7 +45,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await checkAccess(["SUPPLIERS"], "CREATE");
+  const result = await checkAccess("SUPPLIERS", "CREATE");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
 
   const companyExist = await prisma.company.findUnique({ where: { id } });
@@ -119,7 +137,16 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  await checkAccess(["SUPPLIERS"], "MODIFY");
+  const result = await checkAccess("SUPPLIERS", "MODIFY");
+
+  if (!result.authorized) {
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
+  }
+
   const id = getIdFromUrl(req.url, "last") as string;
 
   const supplier = await prisma.supplier.findUnique({
