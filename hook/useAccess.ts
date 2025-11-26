@@ -8,8 +8,6 @@ export function useAccess(resource: Resource, action: $Enums.Action | $Enums.Act
     const role = session.data?.user.role || "USER";
     const [access, setAccess] = useState(false);
 
-
-
     useEffect(() => {
         if (session) {
             const profile = session.data?.user.currentProfile as string;

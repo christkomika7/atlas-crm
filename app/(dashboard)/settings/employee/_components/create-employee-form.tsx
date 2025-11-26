@@ -30,9 +30,7 @@ export default function CreateEmployeeForm() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [user, setUser] = useState<UserType>();
 
-
   const param = useParams();
-
 
   const form = useForm<UserSchemaType>({
     resolver: zodResolver(userSchema),

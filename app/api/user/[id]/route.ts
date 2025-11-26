@@ -4,12 +4,9 @@ import { checkAccess, sessionAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
 import { userEditSchema, UserEditSchemaType, userSchema, UserSchemaType } from "@/lib/zod/user.schema";
 import { parseData } from "@/lib/parse";
-import { createUser } from "@/lib/database";
-import { Role } from "@/lib/generated/prisma";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { User } from "better-auth";
 
 export async function GET(req: NextRequest) {
     const { hasSession, userId } = await sessionAccess();
@@ -76,136 +73,18 @@ export async function POST(req: NextRequest) {
         transaction: JSON.parse(rawData.transaction),
 
     }) as UserSchemaType;
-    try {
-        if (data.userId) {
-            const emailExist = await prisma.profile.findFirst({
-                where: {
-                    companyId,
-                    userId: data.userId
-                }
-            });
 
-            if (emailExist) {
-                return NextResponse.json({
-                    state: "error",
-                    message: "Cet adresse mail est déjà pris",
-                }, {
-                    status: 400
-                })
-            }
+    const createUserFolder = () =>
+        createFolder([`${generateId()}_${data.firstname}_${data.lastname}`]);
 
-            const exist = await prisma.user.findUnique({
-                where: { id: data.userId },
-                include: {
-                    profiles: true
-                }
-            });
+    const saveImageIfAny = async (folder: string) => {
+        return image ? await createFile(image, folder) : "";
+    };
 
-            if (!exist) {
-                return NextResponse.json({
-                    state: "error",
-                    message: "Aucun utilisateur trouvé.",
-                }, {
-                    status: 400
-                })
-            }
-
-            const folder = createFolder([`${generateId()}_${data.firstname}_${data.lastname}`]);
-            let savedImage = "";
-
-            if (image) {
-                savedImage = await createFile(image, folder);
-            }
-
-            const profile = await prisma.profile.create({
-                data: {
-                    role: 'USER',
-                    firstname: data.firstname,
-                    lastname: data.lastname,
-                    path: folder,
-                    image: savedImage,
-                    phone: data.phone,
-                    job: data.job,
-                    salary: data.salary,
-                    user: {
-                        connect: {
-                            id: exist.id
-                        }
-                    },
-                    permissions: {
-                        createMany: {
-                            data: createPermissionsData(data)
-                        }
-                    },
-                    company: {
-                        connect: {
-                            id: companyId
-                        }
-                    }
-                }
-            })
-
-            const collaborator = await prisma.user.update({
-                where: { id: exist.id },
-                data: {
-                    currentCompany: companyId,
-                    currentProfile: profile.id
-                }
-            });
-
-            return NextResponse.json({
-                message: "Collaborateur ajouté avec succès.",
-                data: collaborator,
-                state: "success",
-
-            }, { status: 200 })
-        }
-    }
-    catch (e) {
-        return NextResponse.json({
-            message: "Une erreur est survenue lors de la création du collaborateur.",
-            state: "error",
-        }, {
-            status: 500
-        })
-    }
-
-    const folder = createFolder([`${generateId()}_${data.firstname}_${data.lastname}`]);
-    let savedImage = "";
-    let userId = "";
-
-    try {
-        const userExist = await prisma.user.findUnique({
-            where: {
-                email: data.email
-            }
-        });
-
-        if (userExist) {
-            return NextResponse.json({
-                state: "error",
-                message: "Cet adresse mail est déjà pris",
-            }, {
-                status: 400
-            })
-        }
-
-        if (image) {
-            savedImage = await createFile(image, folder);
-        }
-
-        const user = await createUser({
-            name: `${data.firstname} ${data.lastname}`,
-            role: Role.USER,
-            email: data.email,
-            password: data.password,
-        }) as unknown as User;
-
-        userId = user.id;
-
-        const profile = await prisma.profile.create({
+    const createProfileWithPermissions = async (userId: string, folder: string, savedImage: string) => {
+        return prisma.profile.create({
             data: {
-                role: 'USER',
+                role: "USER",
                 firstname: data.firstname,
                 lastname: data.lastname,
                 path: folder,
@@ -215,55 +94,86 @@ export async function POST(req: NextRequest) {
                 salary: data.salary,
                 permissions: {
                     createMany: {
-                        data: createPermissionsData(data)
-                    }
+                        data: createPermissionsData(data),
+                    },
                 },
-                user: {
-                    connect: {
-                        id: user.id
-                    }
-                },
-                company: {
-                    connect: {
-                        id: companyId
-                    }
-                }
-            }
-        })
-
-
-        const collaborator = await prisma.user.update({
-            where: { id: user.id },
-            data: {
-                currentCompany: companyId,
-                currentProfile: profile.id
-            }
+                user: { connect: { id: userId } },
+                company: { connect: { id: companyId } },
+            },
         });
-        return NextResponse.json({
-            message: "Collaborateur ajouté avec succès.",
-            data: collaborator,
-            state: "success",
+    };
 
-        }, { status: 200 })
-    } catch (error) {
-        if (savedImage) {
-            await removePath(savedImage);
-        }
-
-        if (userId) {
-            await prisma.user.delete({
-                where: { id: userId }
+    if (data.userId) {
+        try {
+            const alreadyLinked = await prisma.profile.findFirst({
+                where: {
+                    companyId,
+                    userId: data.userId,
+                },
             });
+
+            if (alreadyLinked) {
+                return NextResponse.json(
+                    {
+                        state: "error",
+                        message: "Cet adresse mail est déjà pris",
+                    },
+                    { status: 400 }
+                );
+            }
+
+            const user = await prisma.user.findUnique({
+                where: { id: data.userId },
+                include: { profiles: true },
+            });
+
+            if (!user) {
+                return NextResponse.json(
+                    {
+                        state: "error",
+                        message: "Aucun utilisateur trouvé.",
+                    },
+                    { status: 400 }
+                );
+            }
+
+            const folder = createUserFolder();
+            const savedImage = await saveImageIfAny(folder);
+
+            const profile = await createProfileWithPermissions(user.id, folder, savedImage);
+
+            if (!user.currentCompany || !user.currentProfile) {
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: {
+                        currentCompany: user.currentCompany ?? companyId,
+                        currentProfile: user.currentProfile ?? profile.id,
+                    },
+                });
+            }
+
+            const collaborator = await prisma.user.findUnique({
+                where: { id: user.id },
+            });
+
+            return NextResponse.json(
+                {
+                    message: "Collaborateur ajouté avec succès.",
+                    data: collaborator,
+                    state: "success",
+                },
+                { status: 200 }
+            );
+        } catch (e) {
+            return NextResponse.json(
+                {
+                    message: "Une erreur est survenue lors de la création du collaborateur.",
+                    state: "error",
+                },
+                { status: 500 }
+            );
         }
-
-        return NextResponse.json({
-            message: "Une erreur est survenue lors de la création du collaborateur.",
-            state: "error",
-        }, {
-            status: 500
-        });
     }
-
 }
 
 export async function PUT(req: NextRequest) {
@@ -303,7 +213,6 @@ export async function PUT(req: NextRequest) {
         image: null,
     }) as UserEditSchemaType;
 
-    console.log({ image })
 
     const profileExist = await prisma.profile.findUnique({
         where: { id: profileId }
@@ -338,13 +247,20 @@ export async function PUT(req: NextRequest) {
     try {
         if (data.password && data.newPassword) {
             try {
+                const rawHeaders = await headers();
+                const headerObject: Record<string, string> = {};
+
+                rawHeaders.forEach((value, key) => {
+                    headerObject[key] = value;
+                });
+
                 await auth.api.changePassword({
                     body: {
                         newPassword: data.newPassword,
                         currentPassword: data.password,
                         revokeOtherSessions: false,
                     },
-                    headers: await headers(),
+                    headers: headerObject,
                 });
 
             } catch (error: any) {

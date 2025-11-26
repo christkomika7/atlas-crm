@@ -17,7 +17,7 @@ export default function ClientPage() {
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
   const modifyClientAccess = useAccess("CLIENTS", "MODIFY");
   const createClientAccess = useAccess("CLIENTS", "CREATE");
-  const createAppointmentAccess = useAccess("CLIENTS", "CREATE");
+  const createAppointmentAccess = useAccess("APPOINTMENT", "CREATE");
 
   const clientsTableRef = useRef<ClientsTableRef>(null);
 
