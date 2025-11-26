@@ -30,15 +30,11 @@ export default async function DashboardLayout({
     return redirect("/");
   }
   // assertUserCanAccessPage(data.user, pathname);
+  const profileId = data.user.currentProfile;
+  const profiles = data.user?.profiles;
+  const profile = profiles?.find(p => p.id === profileId);
 
-  const profile = await prisma.profile.findFirst({
-    where: { id: data.user.currentProfile as string },
-    include: {
-      permissions: true
-    }
-  });
-
-  const permissions = profile?.permissions;
+  const permissions = profile?.permissions || [];
 
   return (
     <div className="relative grid grid-cols-[260px_1fr] bg-dark w-screen h-screen">
