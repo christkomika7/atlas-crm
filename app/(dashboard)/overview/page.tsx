@@ -14,12 +14,14 @@ import { hasAccess } from "@/lib/utils";
 export default async function OverviewPage() {
   const data = await getSession();
   const permissions = data?.user.profiles?.find(p => p.id === data.user.currentProfile)?.permissions || [];
+
   const canViewDashboard = hasAccess("DASHBOARD", ["READ", "CREATE", "MODIFY"], permissions);
   const quotePermission = hasAccess("QUOTES", ["CREATE"], permissions);
   const invoicePermission = hasAccess("INVOICES", ["CREATE"], permissions);
   const deliveryNotePermission = hasAccess("DELIVERY_NOTES", ["CREATE"], permissions);
   const purchaseOrderPermission = hasAccess("PURCHASE_ORDER", ["CREATE"], permissions);
   console.log({ canViewDashboard })
+  console.log(JSON.stringify(data?.user, null, 2));
 
   return (
     <ScrollArea className="pr-4 h-full">
