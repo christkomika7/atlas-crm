@@ -36,3 +36,5 @@ voir l erreur au niveau de la modification des access
 - revoir les access surtout au niveau de user
 - Dans dashboard gerer les cas ou les données sont vides
 - si un user a deja une entreprise par defaut, ne plus changer cela lors de la creation d un nouveau profil
+- Mettre au loader au niveau de l'affichage des images
+- Corriger le bug lors de la creation de l'entreprise

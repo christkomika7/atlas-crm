@@ -34,11 +34,11 @@ export default function ClientDetails() {
 
   if (isPending) return <Spinner />;
   return (
-    <div className="flex flex-col space-y-4 h-full">
-      <h2 className="flex-shrink-0 pl-14 font-semibold text-xl">
+    <div className="flex flex-col h-full w-full">
+      <h2 className="flex-shrink-0 pl-14 font-semibold text-xl py-4">
         {data?.data?.companyName}
       </h2>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 w-full">
         <Tabs tabs={tabs} tabId="client-tab" />
       </div>
     </div>

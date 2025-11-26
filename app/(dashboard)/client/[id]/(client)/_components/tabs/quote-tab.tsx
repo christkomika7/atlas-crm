@@ -15,6 +15,8 @@ import { useParams } from "next/navigation";
 import { QuoteType } from "@/types/quote.types";
 import TableActionButton from "@/app/(dashboard)/quote/_component/table-action-button";
 import { dropdownMenu } from "@/app/(dashboard)/quote/_component/table";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 
 export default function QuoteTab() {
@@ -28,18 +30,24 @@ export default function QuoteTab() {
   const addId = useDataStore.use.addId();
   const removeId = useDataStore.use.addId();
 
+  const readAccess = useAccess("QUOTES", "READ");
+
   const { mutate: mutateGetQuote, isPending: isGettingQuote } = useQueryAction<
     { id: string },
     RequestResponse<QuoteType[]>
   >(getQuote, () => { }, "quotes");
 
   useEffect(() => {
-    refreshQuotes();
-  }, [reset])
+    if (readAccess) {
+      refreshQuotes();
+    }
+  }, [reset, readAccess])
 
   useEffect(() => {
-    refreshQuotes()
-  }, [client.id])
+    if (readAccess) {
+      refreshQuotes()
+    }
+  }, [client.id, readAccess])
 
   function refreshQuotes() {
     if (client.id) {
@@ -64,94 +72,97 @@ export default function QuoteTab() {
   const isSelected = (id: string) => ids.includes(id);
 
   return (
-    <div className="border border-neutral-200 rounded-xl">
-      <Table>
-        <TableHeader>
-          <TableRow className="h-14">
-            <TableHead className="min-w-[50px] font-medium text-center">
-              Sélection
-            </TableHead>
-            <TableHead className="font-medium text-center">
-              Numéro du document
-            </TableHead>
-            <TableHead className="font-medium text-center">
-              Date du document
-            </TableHead>
-            <TableHead className="font-medium text-center">
-              Montant du document
-            </TableHead>
-            <TableHead className="font-medium text-center">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isGettingQuote ? (
-            <TableRow>
-              <TableCell colSpan={6}>
-                <div className="flex justify-center items-center py-6 w-full">
-                  <Spinner />
-                </div>
-              </TableCell>
+    <AccessContainer hasAccess={readAccess} resource="QUOTES">
+      <div className="border border-neutral-200 rounded-xl">
+        <Table>
+          <TableHeader>
+            <TableRow className="h-14">
+              <TableHead className="min-w-[50px] font-medium text-center">
+                Sélection
+              </TableHead>
+              <TableHead className="font-medium text-center">
+                Numéro du document
+              </TableHead>
+              <TableHead className="font-medium text-center">
+                Date du document
+              </TableHead>
+              <TableHead className="font-medium text-center">
+                Montant du document
+              </TableHead>
+              <TableHead className="font-medium text-center">Action</TableHead>
             </TableRow>
-          ) : quotes.length > 0 ? (
-            quotes.map((quote) => (
-              <TableRow
-                key={quote.id}
-                className={`h-16 transition-colors ${isSelected(quote.id) ? "bg-neutral-100" : ""
-                  }`}
-              >
-                <TableCell className="text-neutral-600">
-                  <div className="flex justify-center items-center">
-                    <Checkbox
-                      checked={isSelected(quote.id)}
-                      onCheckedChange={() => toggleSelection(quote.id)}
-                    />
+          </TableHeader>
+          <TableBody>
+            {isGettingQuote ? (
+              <TableRow>
+                <TableCell colSpan={6}>
+                  <div className="flex justify-center items-center py-6 w-full">
+                    <Spinner />
                   </div>
                 </TableCell>
-                <TableCell className="text-neutral-600 text-center">
-                  {quote.company.documentModel.quotesPrefix || QUOTE_PREFIX}-{generateAmaId(quote.quoteNumber, false)}
-                </TableCell>
-                <TableCell className="text-neutral-600 text-center">
-                  {formatDateToDashModel(quote.createdAt)}
-                </TableCell>
-                <TableCell className="text-neutral-600 text-center">
-                  {quote.amountType === "TTC" ? formatNumber(quote.totalTTC) : formatNumber(quote.totalHT)} {currency}
-                </TableCell>
-                <TableCell className="text-center">
-                  <TableActionButton
-                    menus={dropdownMenu}
-                    data={quote}
-                    refreshQuotes={refreshQuotes}
-                    deleteTitle="Confirmer la suppression du devis"
-                    deleteMessage={
-                      <p>
-                        En supprimant ce devis, toutes les informations liées
-                        seront également supprimées.
-                        <br />
-                        <span className="font-semibold text-red-600">
-                          Cette action est irréversible.
-                        </span>
-                        <br />
-                        <br />
-                        Confirmez-vous cette suppression ?
-                      </p>
-                    }
-                  />
+              </TableRow>
+            ) : quotes.length > 0 ? (
+              quotes.map((quote) => (
+                <TableRow
+                  key={quote.id}
+                  className={`h-16 transition-colors ${isSelected(quote.id) ? "bg-neutral-100" : ""
+                    }`}
+                >
+                  <TableCell className="text-neutral-600">
+                    <div className="flex justify-center items-center">
+                      <Checkbox
+                        checked={isSelected(quote.id)}
+                        onCheckedChange={() => toggleSelection(quote.id)}
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-neutral-600 text-center">
+                    {quote.company.documentModel.quotesPrefix || QUOTE_PREFIX}-{generateAmaId(quote.quoteNumber, false)}
+                  </TableCell>
+                  <TableCell className="text-neutral-600 text-center">
+                    {formatDateToDashModel(quote.createdAt)}
+                  </TableCell>
+                  <TableCell className="text-neutral-600 text-center">
+                    {quote.amountType === "TTC" ? formatNumber(quote.totalTTC) : formatNumber(quote.totalHT)} {currency}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <TableActionButton
+                      menus={dropdownMenu}
+                      data={quote}
+                      refreshQuotes={refreshQuotes}
+                      deleteTitle="Confirmer la suppression du devis"
+                      deleteMessage={
+                        <p>
+                          En supprimant ce devis, toutes les informations liées
+                          seront également supprimées.
+                          <br />
+                          <span className="font-semibold text-red-600">
+                            Cette action est irréversible.
+                          </span>
+                          <br />
+                          <br />
+                          Confirmez-vous cette suppression ?
+                        </p>
+                      }
+                    />
 
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="py-6 text-gray-500 text-sm text-center"
+                >
+                  Aucun devis trouvé.
                 </TableCell>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell
-                colSpan={6}
-                className="py-6 text-gray-500 text-sm text-center"
-              >
-                Aucun devis trouvé.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </AccessContainer>
+
   );
 }

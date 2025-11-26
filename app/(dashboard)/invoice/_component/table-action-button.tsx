@@ -21,6 +21,7 @@ import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
 import Decimal from "decimal.js";
 import { useDataStore } from "@/stores/data.store";
 import Spinner from "@/components/ui/spinner";
+import { useAccess } from "@/hook/useAccess";
 
 type TableActionButtonProps = {
   data: InvoiceType;
@@ -35,17 +36,24 @@ export default function TableActionButton({
   deleteTitle,
   deleteMessage,
   refreshInvoices,
-  data
+  data,
 }: TableActionButtonProps) {
   const router = useRouter();
+
   const [open, setOpen] = useState(false);
-  const [openDuplicate, setOpenDuplicate] = useState(false)
+  const [openDuplicate, setOpenDuplicate] = useState(false);
+
   const setTab = useTabStore.use.setTab();
   const setItems = useItemStore.use.setItems();
+  const clear = useItemStore.use.clearItem();
+  const setLocationBillboard = useItemStore.use.setLocationBillboard();
+
   const currency = useDataStore.use.currency();
   const companyId = useDataStore.use.currentCompany();
-  const setLocationBillboard = useItemStore.use.setLocationBillboard();
-  const clear = useItemStore.use.clearItem();
+
+  const createAccess = useAccess("INVOICES", "CREATE");
+  const modifyAccess = useAccess("INVOICES", "MODIFY");
+  const readAccess = useAccess("INVOICES", "READ");
 
   const { mutate, isPending } = useQueryAction<
     { id: string },
@@ -54,13 +62,12 @@ export default function TableActionButton({
 
   const {
     mutate: mutateGetItemLocations,
-    isPending: isGettingItemLocations
+    isPending: isGettingItemLocations,
   } = useQueryAction<{ companyId: string }, RequestResponse<LocationBillboardDateType[]>>(
     getBillboardItemLocations,
     () => { },
     "item-locations"
   );
-
 
   useEffect(() => {
     if (companyId) {
@@ -72,8 +79,7 @@ export default function TableActionButton({
         },
       });
     }
-
-  }, [companyId])
+  }, [companyId]);
 
   function goTo(invoiceId: string, action: "update" | "preview" | "send") {
     switch (action) {
@@ -96,126 +102,160 @@ export default function TableActionButton({
     if (data.id) {
       mutate(
         { id: data.id },
-        {
-          onSuccess() {
-            refreshInvoices();
-          },
-        }
+        { onSuccess: refreshInvoices }
       );
     }
   }
 
   function handleSetItems() {
     clear();
-    setItems(data.items.filter((item) => item.itemType === "billboard").map(item => ({
-      id: item.id,
-      name: item.name,
-      reference: item.reference,
-      hasTax: item.hasTax,
-      description: item.description,
-      price: new Decimal(item.price),
-      billboardReference: item.billboardId,
-      updatedPrice: new Decimal(item.updatedPrice),
-      discountType: item.discountType as "purcent" | "money",
-      discount: item.discount,
-      quantity: item.quantity,
-      locationStart: item.locationStart,
-      locationEnd: item.locationEnd,
-      currency: currency,
-      itemType: "billboard",
-      billboardId: item.billboardId
-    })));
+    setItems(
+      data.items
+        .filter((item) => item.itemType === "billboard")
+        .map((item) => ({
+          id: item.id,
+          name: item.name,
+          reference: item.reference,
+          hasTax: item.hasTax,
+          description: item.description,
+          price: new Decimal(item.price),
+          billboardReference: item.billboardId,
+          updatedPrice: new Decimal(item.updatedPrice),
+          discountType: item.discountType as "purcent" | "money",
+          discount: item.discount,
+          quantity: item.quantity,
+          locationStart: item.locationStart,
+          locationEnd: item.locationEnd,
+          currency,
+          itemType: "billboard",
+          billboardId: item.billboardId,
+        }))
+    );
   }
+
+  const isFullyRestricted =
+    !createAccess &&
+    !modifyAccess &&
+    !readAccess;
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="primary" className="p-0 rounded-lg !w-9 !h-9">
+        <Button
+          variant="primary"
+          className="p-0 rounded-lg !w-9 !h-9"
+          disabled={isFullyRestricted}
+        >
           <ChevronDownIcon className="text-white" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0 w-[180px]">
-        <ul>
-          {isGettingItemLocations ? <Spinner /> :
-            <>
-              {menus.map((menu, index) => {
-                switch (menu.id) {
-                  case "add":
-                    return (
-                      <li key={index}>
-                        <ModalContainer
-                          action={
-                            <button className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer">
-                              <menu.icon className="w-4 h-4" />
-                              {menu.title}
-                            </button>
-                          }
-                          title="Enregistrer un paiement"
-                          open={open}
-                          setOpen={setOpen}
-                          onClose={() => setOpen(false)}
-                        >
-                          <PaymentForm closeModal={() => setOpen(false)} invoiceId={data.id} refresh={refreshInvoices} />
-                        </ModalContainer>
-                      </li>
-                    );
-                  case "delete":
-                    return (
-                      <ConfirmDialog
-                        key={index}
-                        type="delete"
-                        title={deleteTitle}
-                        message={deleteMessage}
-                        action={handleDelete}
-                        loading={isPending}
-                      />
-                    );
-                  case "duplicate":
-                    return (
-                      <li key={index}>
-                        <ModalContainer
-                          size="sm"
-                          action={
-                            <button
-                              className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
-                              onClick={handleSetItems}
-                            >
-                              <menu.icon className="w-4 h-4" />
-                              {menu.title}
-                            </button>
-                          }
-                          title="Dupliquer la facture"
-                          open={openDuplicate}
-                          setOpen={(value) =>
-                            setOpenDuplicate(true)
-                          }
-                          onClose={() => setOpenDuplicate(false)}
-                        >
-                          <DuplicateForm closeModal={() => setOpenDuplicate(false)} data={data} refreshInvoices={refreshInvoices} />
-                        </ModalContainer>
-                      </li>
-                    );
-                  default:
-                    return (
-                      <li key={index}>
-                        <button
-                          className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
-                          onClick={() =>
-                            goTo(data.id, menu.id as "update" | "preview" | "send")
-                          }
-                        >
-                          <menu.icon className="w-4 h-4" />
-                          {menu.title}
-                        </button>
-                      </li>
 
-                    );
-                }
-              })}
-            </>
-          }
-        </ul>
-      </PopoverContent>
+      {!isFullyRestricted && (
+        <PopoverContent align="end" className="p-0 w-[180px]">
+          <ul>
+            {isGettingItemLocations ? (
+              <Spinner />
+            ) : (
+              <>
+                {menus.map((menu, index) => {
+                  if (
+                    (["send", "update", "add", "delete"].includes(menu.id as string) &&
+                      !modifyAccess)
+                  )
+                    return null;
+
+                  if (menu.id === "duplicate" && !createAccess)
+                    return null;
+
+                  if (menu.id === "preview" && !readAccess)
+                    return null;
+
+                  switch (menu.id) {
+                    case "add":
+                      return (
+                        <li key={index}>
+                          <ModalContainer
+                            action={
+                              <button className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer">
+                                <menu.icon className="w-4 h-4" />
+                                {menu.title}
+                              </button>
+                            }
+                            title="Enregistrer un paiement"
+                            open={open}
+                            setOpen={setOpen}
+                            onClose={() => setOpen(false)}
+                          >
+                            <PaymentForm
+                              closeModal={() => setOpen(false)}
+                              invoiceId={data.id}
+                              refresh={refreshInvoices}
+                            />
+                          </ModalContainer>
+                        </li>
+                      );
+
+                    case "delete":
+                      return (
+                        <ConfirmDialog
+                          key={index}
+                          type="delete"
+                          title={deleteTitle}
+                          message={deleteMessage}
+                          action={handleDelete}
+                          loading={isPending}
+                        />
+                      );
+
+                    case "duplicate":
+                      return (
+                        <li key={index}>
+                          <ModalContainer
+                            size="sm"
+                            action={
+                              <button
+                                className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                                onClick={handleSetItems}
+                              >
+                                <menu.icon className="w-4 h-4" />
+                                {menu.title}
+                              </button>
+                            }
+                            title="Dupliquer la facture"
+                            open={openDuplicate}
+                            setOpen={() => setOpenDuplicate(true)}
+                            onClose={() => setOpenDuplicate(false)}
+                          >
+                            <DuplicateForm
+                              closeModal={() => setOpenDuplicate(false)}
+                              data={data}
+                              refreshInvoices={refreshInvoices}
+                            />
+                          </ModalContainer>
+                        </li>
+                      );
+
+                    default:
+                      return (
+                        <li key={index}>
+                          <button
+                            className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                            onClick={() =>
+                              goTo(data.id, menu.id as "update" | "preview" | "send")
+                            }
+                          >
+                            <menu.icon className="w-4 h-4" />
+                            {menu.title}
+                          </button>
+                        </li>
+                      );
+                  }
+                })}
+              </>
+            )}
+          </ul>
+        </PopoverContent>
+      )}
     </Popover>
   );
 }

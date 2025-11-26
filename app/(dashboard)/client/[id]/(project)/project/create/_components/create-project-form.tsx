@@ -24,11 +24,16 @@ import { useParams, useRouter } from "next/navigation";
 import { ProfileType } from "@/types/user.types";
 import { getCollaborators } from "@/action/user.action";
 import { MultipleSelect } from "@/components/ui/multi-select";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 export default function ProjectForm() {
   const id = useDataStore.use.currentCompany();
   const router = useRouter();
   const param = useParams();
+
+
+  const createAccess = useAccess("PROJECTS", "CREATE");
 
   const form = useForm<ProjectSchemaType>({
     resolver: zodResolver(projectSchema),
@@ -57,13 +62,13 @@ export default function ProjectForm() {
   >(create, () => { }, "projects");
 
   useEffect(() => {
-    if (id) {
+    if (id && createAccess) {
       mutateCollaborators({ id });
     }
-  }, [id]);
+  }, [id, createAccess]);
 
   useEffect(() => {
-    if (id && param.id) {
+    if (id && param.id && createAccess) {
       const initForm = {
         company: id,
         client: param.id as string,
@@ -71,7 +76,7 @@ export default function ProjectForm() {
 
       form.reset(initForm);
     }
-  }, [form, id]);
+  }, [form, id, createAccess]);
 
   async function submit(projectData: ProjectSchemaType) {
     const { success, data } = projectSchema.safeParse(projectData);
@@ -90,127 +95,129 @@ export default function ProjectForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(submit)} className="space-y-4.5 m-2">
-        <div className="space-y-4.5 max-w-full">
-          <FormField
-            control={form.control}
-            name="projectName"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <TextInput
-                    type="text"
-                    design="float"
-                    label="Nom du projet"
-                    value={field.value}
-                    handleChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <AccessContainer hasAccess={createAccess} resource="PROJECTS">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(submit)} className="space-y-4.5 m-2">
+          <div className="space-y-4.5 max-w-full">
+            <FormField
+              control={form.control}
+              name="projectName"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      type="text"
+                      design="float"
+                      label="Nom du projet"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="deadline"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <DatePicker
-                    label="Date limite"
-                    mode="single"
-                    onChange={(e) => field.onChange(e as Date)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="projectInfo"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <TextInput
-                    design="float"
-                    required={false}
-                    label="Informations du projet"
-                    value={field.value}
-                    handleChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="deadline"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <DatePicker
+                      label="Date limite"
+                      mode="single"
+                      onChange={(e) => field.onChange(e as Date)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="projectInfo"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      design="float"
+                      required={false}
+                      label="Informations du projet"
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="uploadDocuments"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <TextInput
-                    type="file"
-                    multiple={true}
-                    design="float"
-                    label="Documents"
-                    required={false}
-                    value={field.value}
-                    handleChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="collaborators"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <MultipleSelect
-                    label={
-                      <span>
-                        Collaborateurs<span className="text-red-500">*</span>
-                      </span>
-                    }
-                    isLoading={isLoadingCollaborators}
-                    options={
-                      data?.data?.map((user) => ({
-                        label: `${user.firstname} ${user.lastname}`,
-                        value: user.id,
-                      })) ?? []
-                    }
-                    placeholder="Ajouter des collaborateurs"
-                    onChange={(options) =>
-                      field.onChange(
-                        options.map((opt: { value: string }) => opt.value)
-                      )
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+            <FormField
+              control={form.control}
+              name="uploadDocuments"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      type="file"
+                      multiple={true}
+                      design="float"
+                      label="Documents"
+                      required={false}
+                      value={field.value}
+                      handleChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="collaborators"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <MultipleSelect
+                      label={
+                        <span>
+                          Collaborateurs<span className="text-red-500">*</span>
+                        </span>
+                      }
+                      isLoading={isLoadingCollaborators}
+                      options={
+                        data?.data?.map((user) => ({
+                          label: `${user.firstname} ${user.lastname}`,
+                          value: user.id,
+                        })) ?? []
+                      }
+                      placeholder="Ajouter des collaborateurs"
+                      onChange={(options) =>
+                        field.onChange(
+                          options.map((opt: { value: string }) => opt.value)
+                        )
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-        <div className="flex justify-center pt-2">
-          <Button
-            type="submit"
-            variant="primary"
-            className="justify-center max-w-xs"
-            disabled={isPending}
-          >
-            {isPending ? <Spinner /> : "Enregistrer"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+          <div className="flex justify-center pt-2">
+            <Button
+              type="submit"
+              variant="primary"
+              className="justify-center max-w-xs"
+              disabled={isPending}
+            >
+              {isPending ? <Spinner /> : "Enregistrer"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </AccessContainer>
   );
 }

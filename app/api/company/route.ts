@@ -136,7 +136,8 @@ export async function POST(req: NextRequest) {
                 where: {
                     role: "ADMIN",
                     email: process.env.USER_EMAIL!
-                }
+                },
+                include: { profiles: true }
             })
         ]);
 
@@ -192,7 +193,8 @@ export async function POST(req: NextRequest) {
             await prisma.user.update({
                 where: { id: admin.id },
                 data: {
-                    currentCompany: company.id
+                    currentCompany: company.id,
+                    currentProfile: admin.profiles[0].id
                 }
             })
         }

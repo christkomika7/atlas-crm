@@ -31,6 +31,8 @@ type TableActionButtonProps = {
   refreshQuotes: () => void;
 };
 
+import { useAccess } from "@/hook/useAccess";
+
 export default function TableActionButton({
   menus,
   data,
@@ -50,7 +52,10 @@ export default function TableActionButton({
   const companyId = useDataStore.use.currentCompany();
   const currency = useDataStore.use.currency();
 
-
+  const modifyAccess = useAccess("QUOTES", "MODIFY");
+  const createAccess = useAccess("QUOTES", "CREATE");
+  const readAccess = useAccess("QUOTES", "READ");
+  const hasAnyAccess = modifyAccess || createAccess || readAccess;
 
   const { mutate: mutateDeleteQuote, isPending: isDelettingQuote } = useQueryAction<
     { id: string },
@@ -81,7 +86,6 @@ export default function TableActionButton({
         },
       });
     }
-
   }, [companyId])
 
   function goTo(id: string, action: "update" | "preview" | "send" | "convert") {
@@ -96,7 +100,6 @@ export default function TableActionButton({
         if (hasBillboard) {
           handleSetItems()
           return setOpen({ ...open, convert: true })
-
         }
         mutateConvertedQuote({ id }, {
           onSuccess(data) {
@@ -153,7 +156,6 @@ export default function TableActionButton({
     })));
   }
 
-
   function converToInvoice(items?: ItemType[]) {
     mutateConvertedQuote({ id: data.id, items }, {
       onSuccess(data) {
@@ -165,97 +167,101 @@ export default function TableActionButton({
     })
   }
 
-
-
   return (
     <Popover>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild disabled={!hasAnyAccess}>
         <Button variant="primary" className="p-0 rounded-lg !w-9 !h-9">
           <ChevronDownIcon className="text-white" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0 w-[180px]">
+      {hasAnyAccess && (
+        <PopoverContent align="end" className="p-0 w-[180px]">
+          <ul>
+            {isGettingItemLocations ? <Spinner /> :
+              <>
+                {menus.map((menu) => {
+                  if (
+                    (["send", "update", "delete"].includes(menu.id as string) && !modifyAccess) ||
+                    (["duplicate", "convert"].includes(menu.id as string) && !createAccess) ||
+                    (menu.id === "preview" && !readAccess)
+                  ) return null;
+                  switch (menu.id) {
+                    case "delete":
+                      return (
+                        <ConfirmDialog
+                          key={menu.id}
+                          type="delete"
+                          title={deleteTitle}
+                          message={deleteMessage}
+                          action={handleDelete}
+                          loading={isDelettingQuote}
+                        />
+                      );
+                    case "duplicate":
+                      return (
+                        <ModalContainer
+                          size="sm"
+                          action={
+                            <li key={menu.id}>
+                              <button
+                                className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
 
-        <ul>
-          {isGettingItemLocations ? <Spinner /> :
-            <>
-              {menus.map((menu) => {
-                switch (menu.id) {
-                  case "delete":
-                    return (
-                      <ConfirmDialog
-                        key={menu.id}
-                        type="delete"
-                        title={deleteTitle}
-                        message={deleteMessage}
-                        action={handleDelete}
-                        loading={isDelettingQuote}
-                      />
-                    );
-                  case "duplicate":
-                    return (
-                      <ModalContainer
-                        size="sm"
-                        action={
-                          <li key={menu.id}>
-                            <button
-                              className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                              >
+                                <menu.icon className="w-4 h-4" />
+                                {menu.title}
 
-                            >
-                              <menu.icon className="w-4 h-4" />
+                              </button>
+                            </li>
+                          }
+                          title="Dupliquer le devis"
+                          open={open.duplicate}
+                          setOpen={(value) =>
+                            setOpen({ ...open, duplicate: true })
+                          }
+                          onClose={() => setOpen({ ...open, duplicate: false })}
+                        >
+                          <DuplicateForm closeModal={() => setOpen({ ...open, duplicate: false })} id={data.id} refreshQuotes={refreshQuotes} />
+                        </ModalContainer>
+                      )
+                    default:
+                      return (
+                        <li key={menu.id}>
+                          <button
+                            className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                            onClick={() =>
+                              goTo(data.id, menu.id as "update" | "preview" | "send" | "convert")
+                            }
+                          >
+                            <menu.icon className="w-4 h-4" />
+                            <span className=" flex gap-x-2 items-center">
                               {menu.title}
 
-                            </button>
-                          </li>
-                        }
-                        title="Dupliquer le devis"
-                        open={open.duplicate}
-                        setOpen={(value) =>
-                          setOpen({ ...open, duplicate: true })
-                        }
-                        onClose={() => setOpen({ ...open, duplicate: false })}
-                      >
-                        <DuplicateForm closeModal={() => setOpen({ ...open, duplicate: false })} id={data.id} refreshQuotes={refreshQuotes} />
-                      </ModalContainer>
-                    )
-                  default:
-                    return (
-                      <li key={menu.id}>
-                        <button
-                          className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
-                          onClick={() =>
-                            goTo(data.id, menu.id as "update" | "preview" | "send" | "convert")
-                          }
-                        >
-                          <menu.icon className="w-4 h-4" />
-                          <span className=" flex gap-x-2 items-center">
-                            {menu.title}
+                              <span>
+                                {menu.id === "convert" && isConvertingQuote && <Spinner size={15} />}
+                              </span>
 
-                            <span>
-                              {menu.id === "convert" && isConvertingQuote && <Spinner size={15} />}
                             </span>
-
-                          </span>
-                        </button>
-                      </li>
-                    );
-                }
-              })}
-            </>
-          }
-        </ul>
-        <ModalContainer
-          size="md"
-          title="Correction conflit panneau"
-          open={open.convert}
-          setOpen={() =>
-            setOpen({ ...open, convert: true })
-          }
-          onClose={() => setOpen({ ...open, convert: false })}
-        >
-          <DuplicateBillboard data={data} closeModal={() => setOpen({ ...open, convert: false })} duplicateTo={converToInvoice} isDuplicating={isConvertingQuote} />
-        </ModalContainer>
-      </PopoverContent>
+                          </button>
+                        </li>
+                      );
+                  }
+                })}
+              </>
+            }
+          </ul>
+          <ModalContainer
+            size="md"
+            title="Correction conflit panneau"
+            open={open.convert}
+            setOpen={() =>
+              setOpen({ ...open, convert: true })
+            }
+            onClose={() => setOpen({ ...open, convert: false })}
+          >
+            <DuplicateBillboard data={data} closeModal={() => setOpen({ ...open, convert: false })} duplicateTo={converToInvoice} isDuplicating={isConvertingQuote} />
+          </ModalContainer>
+        </PopoverContent>
+      )}
     </Popover>
   );
 }

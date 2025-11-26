@@ -1,4 +1,5 @@
 "use client";
+
 import useTabStore from "@/stores/tab.store";
 import { Button } from "@/components/ui/button";
 import ActionsButton from "./actions/actions-button";
@@ -14,67 +15,78 @@ import { InvoiceType } from "@/types/invoice.types";
 import { QuoteType } from "@/types/quote.types";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 import Spinner from "@/components/ui/spinner";
+import { useAccess } from "@/hook/useAccess";
 
 export default function HeaderActionButton() {
   const currentClientTab = useTabStore.use.tabs()["client-tab"];
   const currentActivityTab = useTabStore.use.tabs()["activity-tab"];
+
   const reset = useDataStore.use.reset();
-  const ids = useDataStore.use.ids()
+  const ids = useDataStore.use.ids();
   const clearIds = useDataStore.use.clearIds();
 
+  const modifyInvoiceAccess = useAccess("INVOICES", "MODIFY");
+  const modifyQuoteAccess = useAccess("QUOTES", "MODIFY");
+  const modifyDeliveryNoteAccess = useAccess("DELIVERY_NOTES", "MODIFY");
+  const createProjectAccess = useAccess("PROJECTS", "CREATE");
 
-  const { mutate: mutateDeleteInvoice, isPending: isDelettingInvoice } = useQueryAction<
+  const { mutate: mutateDeleteInvoice, isPending: isDeletingInvoice } = useQueryAction<
     { ids: string[] },
     RequestResponse<InvoiceType[]>
   >(removeManyInvoice, () => { }, "invoices");
 
-  const { mutate: mutateDeleteQuote, isPending: isDelettingQuote } = useQueryAction<
+  const { mutate: mutateDeleteQuote, isPending: isDeletingQuote } = useQueryAction<
     { ids: string[] },
     RequestResponse<QuoteType[]>
   >(removeManyQuotes, () => { }, "quotes");
 
-  const { mutate: mutateDeleteDeliveryNote, isPending: isDelettingDeliveryNote } = useQueryAction<
+  const { mutate: mutateDeleteDeliveryNote, isPending: isDeletingDeliveryNote } = useQueryAction<
     { ids: string[] },
     RequestResponse<DeliveryNoteType[]>
   >(removeManyDeliveryNotes, () => { }, "delivery-note");
 
   useEffect(() => {
-    clearIds()
-  }, [currentActivityTab])
+    clearIds();
+  }, [currentActivityTab]);
 
   function removeRecord() {
-    if (ids.length === 0) return
-    switch (currentActivityTab) {
-      case 0:
-        mutateDeleteInvoice({ ids }, {
-          onSuccess() {
-            clearIds()
-            reset()
+    if (ids.length === 0) return;
 
-          },
-        })
-        break;
-      case 1:
-        mutateDeleteQuote({ ids }, {
-          onSuccess() {
-            clearIds()
-            reset()
-          },
-        })
-        break;
-      case 2:
-        mutateDeleteDeliveryNote({ ids }, {
-          onSuccess() {
-            clearIds()
-            reset()
-          },
-        })
-        break;
-      case 3:
-        alert("Avoir");
-        break;
+    const actions: Record<number, () => void> = {
+      0: () =>
+        mutateDeleteInvoice(
+          { ids },
+          {
+            onSuccess() {
+              clearIds();
+              reset();
+            },
+          }
+        ),
+      1: () =>
+        mutateDeleteQuote(
+          { ids },
+          {
+            onSuccess() {
+              clearIds();
+              reset();
+            },
+          }
+        ),
+      2: () =>
+        mutateDeleteDeliveryNote(
+          { ids },
+          {
+            onSuccess() {
+              clearIds();
+              reset();
+            },
+          }
+        ),
+      3: () => alert("Avoir"),
+    };
 
-    }
+    actions[currentActivityTab]?.();
   }
 
   const renderContent = () => {
@@ -82,9 +94,20 @@ export default function HeaderActionButton() {
       case 0:
         return (
           <div className="flex gap-x-2">
-            <Button onClick={removeRecord} variant="delete" className="w-fit font-medium">
-              Suppression {ids.length > 0 && `(${ids.length})`} {isDelettingDeliveryNote || isDelettingInvoice || isDelettingQuote && <Spinner size={15} />}
-            </Button>
+            {((currentActivityTab === 0 && modifyInvoiceAccess) ||
+              (currentActivityTab === 1 && modifyQuoteAccess) ||
+              (currentActivityTab === 2 && modifyDeliveryNoteAccess)) && (
+                <Button
+                  onClick={removeRecord}
+                  variant="delete"
+                  className="w-fit font-medium"
+                >
+                  Suppression {ids.length > 0 && `(${ids.length})`}{" "}
+                  {(isDeletingDeliveryNote || isDeletingInvoice || isDeletingQuote) && (
+                    <Spinner size={15} />
+                  )}
+                </Button>
+              )}
             <ActionsButton />
           </div>
         );
@@ -93,7 +116,7 @@ export default function HeaderActionButton() {
       case 2:
         return (
           <div className="flex gap-x-2">
-            <ProjectModalCreate />
+            {createProjectAccess && <ProjectModalCreate />}
           </div>
         );
       default:
