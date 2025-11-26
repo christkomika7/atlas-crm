@@ -43,10 +43,12 @@ export async function main() {
         emailVerified: true,
       },
     });
-    if (response.user) {
+    const id = response.user.id;
+
+    if (id) {
       const profile = await prisma.profile.create({
         data: {
-          user: { connect: { id: response.user.id } },
+          user: { connect: { id } },
           firstname: process.env.USER_FIRSTNAME!,
           lastname: process.env.USER_LASTNAME!,
           path,
@@ -181,12 +183,14 @@ export async function main() {
           }
         }
       })
-      await prisma.user.update({
-        where: { id: response.user.id },
-        data: {
-          currentProfile: profile.id
-        }
-      })
+      if (profile.id) {
+        await prisma.user.update({
+          where: { id },
+          data: {
+            currentProfile: profile.id
+          }
+        })
+      }
       return console.log("Le seed à été réalisé avec succès.");
     }
     console.log("Erreur lors de la réalisation du seed.");

@@ -23,8 +23,6 @@ export default async function OverviewPage() {
   const invoicePermission = hasAccess("INVOICES", ["CREATE"], permissions, role);
   const deliveryNotePermission = hasAccess("DELIVERY_NOTES", ["CREATE"], permissions, role);
   const purchaseOrderPermission = hasAccess("PURCHASE_ORDER", ["CREATE"], permissions, role);
-  console.log({ canViewDashboard, role, profileId, permissions })
-  console.log(JSON.stringify(data?.user, null, 2));
 
   return (
     <ScrollArea className="pr-4 h-full">
