@@ -1,7 +1,7 @@
 import { checkAccess } from "@/lib/access";
-import prisma from "@/lib/prisma";
-import { getIdFromUrl } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
+
+import prisma from "@/lib/prisma";
 import Decimal from "decimal.js";
 
 export async function GET(req: NextRequest) {
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
         }, { status: 200 });
     }
 
-    const companyId = getIdFromUrl(req.url, 2) as string;
+    const companyId = req.nextUrl.searchParams.get("companyId") as string;
 
     if (!companyId) {
         return NextResponse.json({
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
         }, { status: 404 });
     }
 
-    const purchaseOrders = await prisma.purchaseOrder.findMany({
+    const invoices = await prisma.invoice.findMany({
         where: {
             companyId,
         },
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     let sumTotal = new Decimal(0);
     let unpaidCount = 0;
 
-    purchaseOrders.map(inv => {
+    invoices.map(inv => {
         const total = new Decimal(
             (inv.amountType === "TTC" ? inv.totalTTC.toString() : inv.totalHT.toString()) ?? 0
         );
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
         return {
             ...inv,
             unpaid: remainder.toString(),
-            purchaseOrderTotal: total.toString(),
+            invoiceTotal: total.toString(),
             paid: paid.toString(),
         };
     });

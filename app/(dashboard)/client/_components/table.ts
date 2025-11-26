@@ -6,6 +6,7 @@ export const dropdownMenu: TableActionButtonType[] = [
         id: 1,
         icon: InfoIcon,
         title: "Infos",
+        action: "infos"
     },
     {
         id: 2,

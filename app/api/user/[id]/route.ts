@@ -275,7 +275,7 @@ export async function PUT(req: NextRequest) {
     let image: File | string = "";
 
     formData.forEach((value, key) => {
-        if (key === "image" && value instanceof File) {
+        if (key === "image") {
             image = value;
         } else {
             rawData[key] = value as string;
@@ -303,10 +303,11 @@ export async function PUT(req: NextRequest) {
         image: null,
     }) as UserEditSchemaType;
 
+    console.log({ image })
+
     const profileExist = await prisma.profile.findUnique({
         where: { id: profileId }
     });
-
 
     if (!profileExist) {
         return NextResponse.json({
@@ -359,16 +360,17 @@ export async function PUT(req: NextRequest) {
             }
         }
 
-        if (image === "null") {
+        if (typeof image === "string" && image === "null") {
             await removePath(profileExist.image);
             savedImage = null
         }
 
-        if (image === "undefined") {
+        if (typeof image === "string" && image === "undefined") {
+            console.log({ img: profileExist.image })
             savedImage = profileExist.image;
         }
 
-        if (image as unknown as File) {
+        if (typeof image !== "string" && image as unknown as File instanceof File) {
             await removePath(profileExist.image);
             savedImage = await createFile(image as unknown as File, profileExist.path);
         }
@@ -419,7 +421,7 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    await checkAccess(["DASHBOARD"], "MODIFY");
+    await checkAccess(["SETTING"], "MODIFY");
     const id = getIdFromUrl(req.url, "last") as string;
 
     const profile = await prisma.profile.findUnique({

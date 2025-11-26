@@ -412,11 +412,11 @@ export function isRestrictedToAdminPath(
 
     const regex = new RegExp(`^${regexPath}$`);
     if (regex.test(currentPath)) {
-      return false; // Accès refusé car ce chemin est réservé aux admins
+      return false;
     }
   }
 
-  return true; // Accès autorisé car ce chemin n'est pas restreint
+  return true;
 }
 
 
@@ -448,7 +448,7 @@ export function hasAccess(
       );
     }
 
-    return actions.includes(act); // CREATE ou MODIFY
+    return actions.includes(act);
   });
 }
 

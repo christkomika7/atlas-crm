@@ -17,9 +17,13 @@ import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { RecordType } from "@/types/overview.type";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function InvoiceTable() {
+type InvoiceTableProps = {
+  canViewDashboard: boolean
+}
+
+export default function InvoiceTable({ canViewDashboard }: InvoiceTableProps) {
   const router = useRouter();
   const [records, setRecords] = useState<RecordType[]>([])
   const currency = useDataStore.use.currency();
@@ -31,7 +35,7 @@ export default function InvoiceTable() {
   >(getRecords, () => { }, "records");
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && canViewDashboard) {
       mutate({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -40,7 +44,7 @@ export default function InvoiceTable() {
         },
       })
     }
-  }, [companyId])
+  }, [companyId, canViewDashboard])
 
   function goto(id: string, type: string) {
     router.push(`/${type}/${id}`);
@@ -48,7 +52,7 @@ export default function InvoiceTable() {
 
   return (
     <div className="p-4 border border-neutral-200 gap-x-8 rounded-lg space-y-2">
-      <h2 className="font-semibold">Invoices in progress</h2>
+      <h2 className="font-semibold">État des factures</h2>
       <Table>
         <TableHeader>
           <TableRow className="h-14">
@@ -112,7 +116,7 @@ export default function InvoiceTable() {
                 colSpan={6}
                 className="py-6 text-gray-500 text-sm text-center"
               >
-                Aucun element trouvé.
+                Aucune facture trouvée.
               </TableCell>
             </TableRow>
           )}

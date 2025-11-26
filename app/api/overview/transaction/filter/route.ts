@@ -24,8 +24,10 @@ export async function GET(req: NextRequest) {
                 data: []
             }, { status: 200 });
         }
-        const id = getIdFromUrl(req.url, 3) as string;
-        if (!id) {
+
+        const companyId = req.nextUrl.searchParams.get("companyId") as string;
+
+        if (!companyId) {
             return NextResponse.json(
                 { status: "error", message: "identifiant invalide." },
                 { status: 404 }
@@ -52,7 +54,7 @@ export async function GET(req: NextRequest) {
         }
 
         // base where for dibursement queries
-        const baseWhere: any = { companyId: id, type: $Enums.TransactionType.DISBURSEMENT };
+        const baseWhere: any = { companyId, type: $Enums.TransactionType.DISBURSEMENT };
         if (start || end) baseWhere.createdAt = whereCreatedAt;
         if (category) baseWhere.categoryId = category;
 
@@ -66,13 +68,13 @@ export async function GET(req: NextRequest) {
         // --- 2) somme par catégorie (groupBy) ---
         const sumsByCategory = await prisma.dibursement.groupBy({
             by: ["categoryId"],
-            where: { companyId: id, type: $Enums.TransactionType.DISBURSEMENT, ...(start || end ? { createdAt: whereCreatedAt } : {}) },
+            where: { companyId, type: $Enums.TransactionType.DISBURSEMENT, ...(start || end ? { createdAt: whereCreatedAt } : {}) },
             _sum: { amount: true },
         });
 
         // récupérer toutes les catégories de type DISBURSEMENT pour la company
         const allCategories = await prisma.transactionCategory.findMany({
-            where: { companyId: id, type: $Enums.TransactionType.DISBURSEMENT },
+            where: { companyId, type: $Enums.TransactionType.DISBURSEMENT },
             select: { id: true, name: true },
         });
         const catNameMap: Record<string, string> = {};
@@ -112,7 +114,7 @@ export async function GET(req: NextRequest) {
         if (category) {
             // somme totale pour cette catégorie (respecte filtres date)
             const totalForCategoryAgg = await prisma.dibursement.aggregate({
-                where: { companyId: id, type: $Enums.TransactionType.DISBURSEMENT, categoryId: category, ...(start || end ? { createdAt: whereCreatedAt } : {}) },
+                where: { companyId, type: $Enums.TransactionType.DISBURSEMENT, categoryId: category, ...(start || end ? { createdAt: whereCreatedAt } : {}) },
                 _sum: { amount: true },
             });
             const totalForCategory = new Decimal(totalForCategoryAgg._sum?.amount?.toString() ?? "0");
@@ -120,14 +122,14 @@ export async function GET(req: NextRequest) {
             // groupBy natureId
             const sumsByNature = await prisma.dibursement.groupBy({
                 by: ["natureId"],
-                where: { companyId: id, type: $Enums.TransactionType.DISBURSEMENT, categoryId: category, ...(start || end ? { createdAt: whereCreatedAt } : {}) },
+                where: { companyId, type: $Enums.TransactionType.DISBURSEMENT, categoryId: category, ...(start || end ? { createdAt: whereCreatedAt } : {}) },
                 _sum: { amount: true },
             });
 
             const natureIds = sumsByNature.map((r) => r.natureId).filter(Boolean) as string[];
             const natures = natureIds.length
                 ? await prisma.transactionNature.findMany({
-                    where: { companyId: id, id: { in: natureIds } },
+                    where: { companyId, id: { in: natureIds } },
                     select: { id: true, name: true },
                 })
                 : [];

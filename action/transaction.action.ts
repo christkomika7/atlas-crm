@@ -1,4 +1,3 @@
-import { toDateOnlyString } from "@/lib/date";
 import { DibursementSchemaType } from "@/lib/zod/dibursement.schema";
 import { ReceiptSchemaType } from "@/lib/zod/receipt.schema";
 import {
@@ -11,21 +10,15 @@ import {
 import { RequestResponse } from "@/types/api.types";
 import {
   AllocationType,
-  CategoryDetailType,
-  CategoryFilterType,
   DeletedTransactions,
-  DividendType,
   FiscalObjectType,
   GetTransactionsParams,
-  SourceTransaction,
   SourceType,
   TransactionCategoryType,
   TransactionDocument,
   TransactionNatureType,
-  TransactionTotal,
   TransactionType,
 } from "@/types/transaction.type";
-import Decimal from "decimal.js";
 
 export async function getTransactions(params: GetTransactionsParams) {
   try {
@@ -131,127 +124,6 @@ export async function getFisclaObjects({ companyId }: { companyId: string }) {
   }
 }
 
-export async function getVAT({ companyId }: { companyId: string }) {
-
-  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${companyId}/vat`;
-
-  try {
-    const response = await fetch(
-      url,
-      {
-        method: "GET",
-      },
-    );
-
-    const res: RequestResponse<Decimal> =
-      await response.json();
-    if (!response.ok) {
-      throw new Error(res.message);
-    }
-    return res;
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function getDividends({ companyId }: { companyId: string }) {
-
-  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${companyId}/dividend`;
-
-  try {
-    const response = await fetch(
-      url,
-      {
-        method: "GET",
-      },
-    );
-
-    const res: RequestResponse<DividendType[]> =
-      await response.json();
-    if (!response.ok) {
-      throw new Error(res.message);
-    }
-    return res;
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function getTransactionTotals({ companyId }: { companyId: string }) {
-
-  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${companyId}/total`;
-
-  try {
-    const response = await fetch(
-      url,
-      {
-        method: "GET",
-      },
-    );
-
-    const res: RequestResponse<TransactionTotal> =
-      await response.json();
-    if (!response.ok) {
-      throw new Error(res.message);
-    }
-    return res;
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function getCategoryDetails({ companyId }: { companyId: string }) {
-  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/category/${companyId}/details`;
-  try {
-    const response = await fetch(
-      url,
-      {
-        method: "GET",
-        cache: "no-store"
-      },
-    );
-
-    const res: RequestResponse<CategoryDetailType[]> =
-      await response.json();
-    if (!response.ok) {
-      throw new Error(res.message);
-    }
-    return res;
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function getCategoryByFilters({ companyId, range, category }: { companyId: string, range?: { from?: Date, to?: Date }, category?: string }) {
-  const params = new URLSearchParams();
-
-  if (category) params.append("category", category);
-  if (range && range.from) params.append("start", toDateOnlyString(range.from));
-  if (range && range.to) params.append("end", toDateOnlyString(range.to));
-
-  const queryString = params.toString();
-
-  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/category/${companyId}/filter${queryString ? `?${queryString}` : ""}`;
-  try {
-    const response = await fetch(
-      url,
-      {
-        method: "GET",
-        cache: "no-store"
-      },
-    );
-
-    const res: RequestResponse<CategoryFilterType> =
-      await response.json();
-    if (!response.ok) {
-      throw new Error(res.message);
-    }
-    return res;
-  } catch (error) {
-    throw error;
-  }
-}
-
 
 export async function getSources({ companyId, type }: { companyId: string, type?: "cash" | "check" | "bank-transfer" }) {
   const params = new URLSearchParams();
@@ -270,29 +142,6 @@ export async function getSources({ companyId, type }: { companyId: string, type?
     );
 
     const res: RequestResponse<SourceType[]> = await response.json();
-    if (!response.ok) {
-      throw new Error(res.message);
-    }
-    return res;
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function getBySource({ companyId }: { companyId: string }) {
-  const params = new URLSearchParams();
-
-  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/source/${companyId}/by`;
-
-  try {
-    const response = await fetch(
-      url,
-      {
-        method: "GET",
-      },
-    );
-
-    const res: RequestResponse<SourceTransaction[]> = await response.json();
     if (!response.ok) {
       throw new Error(res.message);
     }

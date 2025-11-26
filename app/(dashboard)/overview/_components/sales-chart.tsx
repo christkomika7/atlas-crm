@@ -6,7 +6,7 @@ import { CategoryDetailType, CategoryFilterType, CategoryItemType, NatureItemTyp
 import { useDataStore } from "@/stores/data.store";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
-import { getCategoryByFilters, getCategoryDetails } from "@/action/transaction.action";
+import { getCategoryByFilters, getCategoryDetails } from "@/action/overview.action";
 import { colors } from "@/lib/data";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Combobox } from "@/components/ui/combobox";
@@ -14,7 +14,11 @@ import Spinner from "@/components/ui/spinner";
 import { formatNumber } from "@/lib/utils";
 import Decimal from "decimal.js";
 
-export default function SalesChart() {
+type SalesChartProps = {
+  canViewDashboard: boolean
+}
+
+export default function SalesChart({ canViewDashboard }: SalesChartProps) {
   const [categoryDetails, setCategoryDetails] = useState<CategoryDetailType[]>([])
   const [categoryFilters, setCategoryFilters] = useState<CategoryItemType[]>([]);
   const [natureDetails, setNatureDetails] = useState<NatureItemType[]>([]);
@@ -37,7 +41,7 @@ export default function SalesChart() {
   >(getCategoryByFilters, () => { }, "filters");
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && canViewDashboard) {
       mutateGetCategoryDetails({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -46,11 +50,11 @@ export default function SalesChart() {
         },
       })
     }
-  }, [companyId])
+  }, [companyId, canViewDashboard])
 
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && canViewDashboard) {
       mutateGetCategoryFilters({ companyId, range: { from: range?.from, to: range?.to }, category }, {
         onSuccess(data) {
           if (data.data) {
@@ -61,13 +65,13 @@ export default function SalesChart() {
         },
       })
     }
-  }, [companyId, range, category])
+  }, [companyId, canViewDashboard, range, category])
 
   return (
     <div className="p-4 border border-neutral-200 rounded-lg">
       <div className="flex justify-between items-center ">
         <h2 className="flex flex-col space-y-0.5 text-sm">
-          <span className="font-semibold">Déboursement par période</span> {isGettingCategoryFilters ? <Spinner /> : <span className="font-semibold">{formatNumber(total)} {currency}</span>}
+          <span className="font-semibold">Déboursement par période</span> {isGettingCategoryFilters ? <Spinner /> : <span className="font-semibold">{formatNumber(total || new Decimal(0))} {currency}</span>}
         </h2>
         <div className="gap-x-2 grid grid-cols-[1.5fr_1fr]  w-full max-w-sm ">
           <DatePicker
@@ -136,7 +140,7 @@ export default function SalesChart() {
         </ul>
 
         <div>
-          <SaleBarChart items={[...(category ? natureDetails.map(n => ({ id: n.natureId, name: n.name, total: n.total })) : categoryFilters.map(c => ({ id: c.categoryId, name: c.categoryName, total: c.total })))]} currency={currency} isLoading={isGettingCategoryFilters} />
+          <SaleBarChart items={[...(category ? natureDetails?.map(n => ({ id: n.natureId, name: n.name, total: n.total })) || [] : categoryFilters?.map(c => ({ id: c.categoryId, name: c.categoryName, total: c.total })) || [])]} currency={currency || ""} isLoading={isGettingCategoryFilters} />
         </div>
 
       </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { getLatestInvoice } from "@/action/invoice.action";
+import { getLatestInvoice } from "@/action/overview.action";
 import Spinner from "@/components/ui/spinner";
 import useQueryAction from "@/hook/useQueryAction";
 import { formatNumber, generateAmaId } from "@/lib/utils";
@@ -10,7 +10,11 @@ import { InvoiceType } from "@/types/invoice.types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export default function RecentActivities() {
+type RecentActivitiesProps = {
+  canViewDashboard: boolean
+}
+
+export default function RecentActivities({ canViewDashboard }: RecentActivitiesProps) {
   const [invoices, setInvoices] = useState<InvoiceType[]>([])
 
   const companyId = useDataStore.use.currentCompany();
@@ -20,7 +24,7 @@ export default function RecentActivities() {
   >(getLatestInvoice, () => { }, "invoices");
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && canViewDashboard) {
       mutate({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -29,7 +33,7 @@ export default function RecentActivities() {
         },
       })
     }
-  }, [companyId])
+  }, [companyId, canViewDashboard])
 
   return (
     <div className="p-4 border border-neutral-200 rounded-lg space-y-4">

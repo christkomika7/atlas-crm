@@ -1,8 +1,8 @@
-import Decimal from "decimal.js";
-import { checkAccess } from "@/lib/access";
-import prisma from "@/lib/prisma";
-import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
+import { checkAccess } from "@/lib/access";
+
+import Decimal from "decimal.js";
+import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
     const res = await checkAccess("DASHBOARD", ["READ"]);
@@ -14,9 +14,10 @@ export async function GET(req: NextRequest) {
             data: []
         }, { status: 200 });
     }
-    const id = getIdFromUrl(req.url, 3) as string;
 
-    if (!id) {
+    const companyId = req.nextUrl.searchParams.get("companyId") as string;
+
+    if (!companyId) {
         return NextResponse.json(
             { status: "error", message: "identifiant invalide." },
             { status: 404 }
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
     // 1) total général des dibursements (Decimal from Prisma)
     const totalAgg = await prisma.dibursement.aggregate({
         where: {
-            companyId: id, category: {
+            companyId, category: {
                 type: "DISBURSEMENT"
             }
         },
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
     // 2) somme par catégorie (groupBy)
     const sumsByCategory = await prisma.dibursement.groupBy({
         by: ["categoryId"],
-        where: { companyId: id, category: { type: "DISBURSEMENT" } },
+        where: { companyId, category: { type: "DISBURSEMENT" } },
         _sum: { amount: true },
     });
 
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
 
     // 3) récupérer toutes les catégories de la société
     const categories = await prisma.transactionCategory.findMany({
-        where: { companyId: id, type: "DISBURSEMENT" },
+        where: { companyId, type: "DISBURSEMENT" },
         select: { id: true, name: true },
         orderBy: { name: "asc" },
     });

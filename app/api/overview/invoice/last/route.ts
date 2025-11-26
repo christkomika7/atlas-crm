@@ -1,10 +1,10 @@
 import { checkAccess } from "@/lib/access";
-import prisma from "@/lib/prisma";
-import { getIdFromUrl } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 
+import prisma from "@/lib/prisma";
+
 export async function GET(req: NextRequest) {
-    const result = await checkAccess("PURCHASE_ORDER", "READ");
+    const result = await checkAccess("DASHBOARD", "READ");
 
     if (!result.authorized) {
         return Response.json({
@@ -13,10 +13,9 @@ export async function GET(req: NextRequest) {
             data: []
         }, { status: 200 });
     }
+    const companyId = req.nextUrl.searchParams.get("companyId") as string;
 
-    const companyId = getIdFromUrl(req.url, 2) as string;
-
-    const invoices = await prisma.purchaseOrder.findMany({
+    const invoices = await prisma.invoice.findMany({
         where: { companyId },
         include: {
             company: true

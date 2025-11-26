@@ -1,8 +1,8 @@
 import { checkAccess } from "@/lib/access";
-import prisma from "@/lib/prisma";
-import { getIdFromUrl } from "@/lib/utils";
-import Decimal from "decimal.js";
 import { type NextRequest, NextResponse } from "next/server";
+
+import prisma from "@/lib/prisma";
+import Decimal from "decimal.js";
 
 export async function GET(req: NextRequest) {
     const result = await checkAccess("DASHBOARD", "CREATE");
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
         }, { status: 200 });
     }
 
-    const companyId = getIdFromUrl(req.url, 3) as string;
+    const companyId = req.nextUrl.searchParams.get("companyId") as string;
 
     const [receipts, dibursements] = await prisma.$transaction([
         prisma.receipt.findMany({

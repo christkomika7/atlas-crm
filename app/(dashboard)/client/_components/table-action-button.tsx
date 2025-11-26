@@ -12,6 +12,7 @@ import { ChevronDownIcon } from "lucide-react";
 import { ClientType } from "@/types/client.types";
 import { remove } from "@/action/client.action";
 import { useRouter } from "next/navigation";
+import { useAccess } from "@/hook/useAccess";
 
 type TableActionButtonProps = {
   id: string;
@@ -29,10 +30,12 @@ export default function TableActionButton({
   refreshClients,
 }: TableActionButtonProps) {
   const router = useRouter();
+  const modifyClientAccess = useAccess("CLIENTS", "MODIFY");
+
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<ClientType[]>
-  >(remove, () => {}, "clients");
+  >(remove, () => { }, "clients");
 
   function goTo(id: string) {
     router.push(`/client/${id}`);
@@ -61,7 +64,7 @@ export default function TableActionButton({
       <PopoverContent align="end" className="p-0 w-[180px]">
         <ul>
           {menus.map((menu) => {
-            if (menu.action === "delete")
+            if (menu.action === "delete" && modifyClientAccess) {
               return (
                 <ConfirmDialog
                   key={menu.id}
@@ -72,17 +75,20 @@ export default function TableActionButton({
                   loading={isPending}
                 />
               );
-            return (
-              <li key={menu.id}>
-                <button
-                  className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
-                  onClick={() => goTo(id)}
-                >
-                  <menu.icon className="w-4 h-4" />
-                  {menu.title}
-                </button>
-              </li>
-            );
+            }
+            if (menu.action === "infos") {
+              return (
+                <li key={menu.id}>
+                  <button
+                    className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                    onClick={() => goTo(id)}
+                  >
+                    <menu.icon className="w-4 h-4" />
+                    {menu.title}
+                  </button>
+                </li>
+              );
+            }
           })}
         </ul>
       </PopoverContent>

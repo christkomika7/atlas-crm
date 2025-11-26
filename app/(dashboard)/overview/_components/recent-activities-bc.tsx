@@ -1,6 +1,6 @@
 'use client'
 
-import { getLatestPurchaseOrder } from "@/action/purchase-order.action";
+import { getLatestPurchaseOrder } from "@/action/overview.action";
 import Spinner from "@/components/ui/spinner";
 import useQueryAction from "@/hook/useQueryAction";
 import { formatNumber, generateAmaId } from "@/lib/utils";
@@ -10,7 +10,11 @@ import { PurchaseOrderType } from "@/types/purchase-order.types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export default function RecentActivitiesBc() {
+type RecentActivitiesBcProps = {
+  canViewDashboard: boolean
+}
+
+export default function RecentActivitiesBc({ canViewDashboard }: RecentActivitiesBcProps) {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrderType[]>([])
 
   const companyId = useDataStore.use.currentCompany();
@@ -20,7 +24,7 @@ export default function RecentActivitiesBc() {
   >(getLatestPurchaseOrder, () => { }, "purchase-orders");
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && canViewDashboard) {
       mutate({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -29,7 +33,7 @@ export default function RecentActivitiesBc() {
         },
       })
     }
-  }, [companyId])
+  }, [companyId, canViewDashboard])
 
   return (
     <div className="p-4 border border-neutral-200 rounded-lg space-y-4">

@@ -1,19 +1,17 @@
 import { useState } from "react";
 
 type UploadProfileParams = {
-    folder: string;         // dossier cible sur le serveur (ex: "user_avatars")
-    image?: File | null;    // fichier à uploader
+    folder: string;
+    image?: File | null;
 };
 
 type UploadResult = {
     success: boolean;
-    path?: string;          // chemin du fichier sur serveur
+    path?: string;
     error?: string;
 };
 
-/**
- * Hook pour uploader un fichier dans un dossier donné côté serveur
- */
+
 export function useUploadProfile() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);

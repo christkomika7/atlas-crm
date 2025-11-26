@@ -1,16 +1,20 @@
 'use client';
 
-import { expireInvoices, noExpireInvoices } from "@/action/invoice.action";
-import { noExpirePurchaseOrders } from "@/action/purchase-order.action";
-import Spinner from "@/components/ui/spinner";
-import useQueryAction from "@/hook/useQueryAction";
+import { expireInvoices, noExpireInvoices, noExpirePurchaseOrders } from "@/action/overview.action";
 import { formatNumber } from "@/lib/utils";
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
-import { InvoiceType, PaidInfosInvoiceType } from "@/types/invoice.types";
+import { PaidInfosInvoiceType } from "@/types/invoice.types";
 import { useEffect, useState } from "react";
 
-export default function InvoiceInfos() {
+import Spinner from "@/components/ui/spinner";
+import useQueryAction from "@/hook/useQueryAction";
+
+type InvoiceInfosProps = {
+  canViewDashboard: boolean
+}
+
+export default function InvoiceInfos({ canViewDashboard }: InvoiceInfosProps) {
   const companyId = useDataStore.use.currentCompany();
   const currency = useDataStore.use.currency();
 
@@ -36,7 +40,7 @@ export default function InvoiceInfos() {
 
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && canViewDashboard) {
       mutateGetExpireInvoices({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -62,7 +66,7 @@ export default function InvoiceInfos() {
       });
 
     }
-  }, [companyId])
+  }, [companyId, canViewDashboard])
   return (
     <>
       {isGettingNoExpireInvoice || isGettingExpireInvoice || isGettingNoExpirePurchaseOrder ? <Spinner /> :

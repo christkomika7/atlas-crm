@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { RequestResponse } from "@/types/api.types";
 import { DividendType, TransactionTotal } from "@/types/transaction.type";
-import { getDividends, getTransactionTotals, getVAT } from "@/action/transaction.action";
+import { getDividends, getTransactionTotals, getVAT } from "@/action/overview.action";
 import { useDataStore } from "@/stores/data.store";
 import ProgressIndicator from "./progress-indicator";
 import useQueryAction from "@/hook/useQueryAction";
@@ -11,7 +11,11 @@ import { Progress } from "@/components/ui/progress";
 import { formatNumber } from "@/lib/utils";
 import Decimal from "decimal.js";
 
-export default function SalesIndicator() {
+type SalesIndicatorProps = {
+  canViewDashboard: boolean
+}
+
+export default function SalesIndicator({ canViewDashboard }: SalesIndicatorProps) {
   const companyId = useDataStore.use.currentCompany();
   const currency = useDataStore.use.currency();
 
@@ -37,7 +41,7 @@ export default function SalesIndicator() {
   >(getTransactionTotals, () => { }, "totals");
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && canViewDashboard) {
       mutateGetDividens({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -64,9 +68,7 @@ export default function SalesIndicator() {
       });
 
     }
-  }, [companyId])
-
-
+  }, [companyId, canViewDashboard])
 
   return (
     <div className="p-4 border border-neutral-200  items-center gap-x-8 rounded-lg grid grid-cols-4">

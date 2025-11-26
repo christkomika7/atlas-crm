@@ -20,7 +20,6 @@ export default async function OverviewPage() {
   const deliveryNotePermission = hasAccess("DELIVERY_NOTES", ["CREATE"], permissions);
   const purchaseOrderPermission = hasAccess("PURCHASE_ORDER", ["CREATE"], permissions);
 
-
   return (
     <ScrollArea className="pr-4 h-full">
       <div className="space-y-4">
@@ -30,10 +29,10 @@ export default async function OverviewPage() {
 
         {canViewDashboard ? (
           <>
-            <SourceInfos />
+            <SourceInfos canViewDashboard={canViewDashboard} />
             <div className="grid grid-cols-[3fr_1fr] min-h-[94px] gap-4">
               <div className="space-y-2">
-                <InvoiceInfos />
+                <InvoiceInfos canViewDashboard={canViewDashboard} />
               </div>
               <div className="p-2 border h-full border-neutral-200 flex rounded-lg">
                 <ActionButton
@@ -45,12 +44,12 @@ export default async function OverviewPage() {
               </div>
             </div>
             <div className="grid grid-cols-[1.8fr_1fr_1fr] gap-4">
-              <SalesChart />
-              <RecentActivitiesBc />
-              <RecentActivities />
+              <SalesChart canViewDashboard={canViewDashboard} />
+              <RecentActivitiesBc canViewDashboard={canViewDashboard} />
+              <RecentActivities canViewDashboard={canViewDashboard} />
             </div>
-            <SalesIndicator />
-            <InvoiceTable />
+            <SalesIndicator canViewDashboard={canViewDashboard} />
+            <InvoiceTable canViewDashboard={canViewDashboard} />
           </>
         ) : (
           <p className="text-center text-gray-500 mt-10">

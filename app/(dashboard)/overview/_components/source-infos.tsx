@@ -1,22 +1,22 @@
 'use client';
 
-import { getBySource } from "@/action/transaction.action";
+import { getBySource } from "@/action/overview.action";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import Spinner from "@/components/ui/spinner";
-import useQueryAction from "@/hook/useQueryAction";
 import { cn, formatNumber, isNegative } from "@/lib/utils";
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { SourceTransaction } from "@/types/transaction.type";
-import { Minus, MoveUpRightIcon, TrendingDownIcon, TrendingUpIcon } from "lucide-react";
+import { Minus, TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BanknoteArrowUp } from 'lucide-react';
-import { HandCoins } from 'lucide-react';
-import { Decimal } from "@prisma/client/runtime/library";
 
+import Spinner from "@/components/ui/spinner";
+import useQueryAction from "@/hook/useQueryAction";
 
+type SourceInfosProps = {
+    canViewDashboard: boolean
+}
 
-export default function SourceInfos() {
+export default function SourceInfos({ canViewDashboard }: SourceInfosProps) {
     const [transactions, setTransactions] = useState<SourceTransaction[]>([])
     const currency = useDataStore.use.currency();
     const companyId = useDataStore.use.currentCompany();
@@ -26,7 +26,7 @@ export default function SourceInfos() {
     >(getBySource, () => { }, "transaction-sources");
 
     useEffect(() => {
-        if (companyId) {
+        if (companyId && canViewDashboard) {
             mutate({ companyId }, {
                 onSuccess(data) {
                     if (data.data) {
@@ -35,7 +35,7 @@ export default function SourceInfos() {
                 },
             })
         }
-    }, [companyId])
+    }, [companyId, canViewDashboard])
 
     return (
         <ScrollArea className="w-(--left-sidebar-width) overflow-x-hidden pb-2">

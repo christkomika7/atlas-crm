@@ -1,10 +1,10 @@
 import { checkAccess } from "@/lib/access";
-import prisma from "@/lib/prisma";
-import { getIdFromUrl } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
-import Decimal from "decimal.js";
 import { addDays, differenceInDays, isBefore, isAfter } from "date-fns";
 import { paymentTerms } from "@/lib/data";
+
+import prisma from "@/lib/prisma";
+import Decimal from "decimal.js";
 
 
 function checkDeadline(range: [Date, Date]) {
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
         }, { status: 200 });
     }
 
-    const companyId = getIdFromUrl(req.url, 2) as string;
+    const companyId = req.nextUrl.searchParams.get("companyId") as string;
 
     if (!companyId) {
         return NextResponse.json(

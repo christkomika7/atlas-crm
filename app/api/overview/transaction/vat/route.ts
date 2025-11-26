@@ -1,7 +1,6 @@
 import { ADMINISTRATION_CATEGORY, FISCAL_NATURE, FISCAL_OBJECT } from "@/config/constant";
 import { checkAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
-import { getIdFromUrl } from "@/lib/utils";
 import { TaxInput } from "@/types/tax.type";
 import Decimal from "decimal.js";
 import { type NextRequest, NextResponse } from "next/server";
@@ -18,16 +17,16 @@ export async function GET(req: NextRequest) {
     }
 
 
-    const id = getIdFromUrl(req.url, 2) as string;
+    const companyId = req.nextUrl.searchParams.get("companyId") as string;
 
-    if (!id) {
+    if (!companyId) {
         return NextResponse.json(
             { status: "error", message: "Identifiant invalide." },
             { status: 404 }
         );
     }
 
-    const company = await prisma.company.findUnique({ where: { id } });
+    const company = await prisma.company.findUnique({ where: { id: companyId } });
     if (!company) {
         return NextResponse.json(
             { status: "error", message: "Entreprise introuvable." },
@@ -35,7 +34,6 @@ export async function GET(req: NextRequest) {
         );
     }
 
-    // -------- TVA --------
     const vats: TaxInput[] = Array.isArray(company.vatRates)
         ? (company.vatRates as any[])
         : typeof company.vatRates === "string"
@@ -46,7 +44,6 @@ export async function GET(req: NextRequest) {
         (v) => typeof v.taxName === "string" && v.taxName.toLowerCase() === "tva"
     );
 
-    // Aucune TVA enregistrée
     if (!tvaEntry) {
         return NextResponse.json(
             {
@@ -72,7 +69,6 @@ export async function GET(req: NextRequest) {
 
     const tvaRate = parsePercent(tvaEntry.taxValue);
 
-    // TVA = 0%
     if (tvaRate.equals(0)) {
         return NextResponse.json(
             {
@@ -84,11 +80,10 @@ export async function GET(req: NextRequest) {
         );
     }
 
-    // -------- SUMS --------
     const receiptsSum = await prisma.receipt.aggregate({
         _sum: { amount: true },
         where: {
-            companyId: id,
+            companyId,
             amountType: "TTC",
         },
     });
@@ -96,7 +91,7 @@ export async function GET(req: NextRequest) {
     const dibursementsSum = await prisma.dibursement.aggregate({
         _sum: { amount: true },
         where: {
-            companyId: id,
+            companyId,
             amountType: "TTC",
         },
     });
@@ -104,7 +99,7 @@ export async function GET(req: NextRequest) {
     const fiscalDibursementsSum = await prisma.dibursement.aggregate({
         _sum: { amount: true },
         where: {
-            companyId: id,
+            companyId,
             amountType: "HT",
             category: { name: { equals: ADMINISTRATION_CATEGORY, mode: "insensitive" } },
             nature: { name: { equals: FISCAL_NATURE, mode: "insensitive" } },
@@ -116,7 +111,6 @@ export async function GET(req: NextRequest) {
     const totalDibursements = new Decimal(dibursementsSum._sum.amount?.toString() ?? 0);
     const totalFiscal = new Decimal(fiscalDibursementsSum._sum.amount?.toString() ?? 0);
 
-    // Aucun mouvement enregistré
     if (totalReceipts.equals(0) && totalDibursements.equals(0) && totalFiscal.equals(0)) {
         return NextResponse.json(
             {
@@ -128,7 +122,6 @@ export async function GET(req: NextRequest) {
         );
     }
 
-    // -------- TVA CALCULATION --------
     const tvaOnReceipts = totalReceipts.mul(tvaRate);
     const tvaOnDibursements = totalDibursements.mul(tvaRate);
 

@@ -1,7 +1,7 @@
-import { checkAccess } from "@/lib/access";
-import prisma from "@/lib/prisma";
-import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
+import { checkAccess } from "@/lib/access";
+
+import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
     const res = await checkAccess("DASHBOARD", ["READ"]);
@@ -14,10 +14,9 @@ export async function GET(req: NextRequest) {
         }, { status: 200 });
     }
 
-    const id = getIdFromUrl(req.url, 2) as string;
+    const companyId = req.nextUrl.searchParams.get("companyId") as string;
 
-
-    if (!id) {
+    if (!companyId) {
         return NextResponse.json(
             { status: "error", message: "identifiant invalide." },
             { status: 404 }
@@ -33,7 +32,7 @@ export async function GET(req: NextRequest) {
         prisma.receipt.aggregate({
             _sum: { amount: true },
             where: {
-                companyId: id,
+                companyId,
                 date: {
                     gte: startOfYear,
                     lt: startOfNextYear,
@@ -43,7 +42,7 @@ export async function GET(req: NextRequest) {
         prisma.dibursement.aggregate({
             _sum: { amount: true },
             where: {
-                companyId: id,
+                companyId,
                 date: {
                     gte: startOfYear,
                     lt: startOfNextYear,

@@ -2,7 +2,7 @@ import Logo from "@/components/logo";
 import SidebarMenu from "@/components/menu/sidebar-menu";
 import { website } from "@/config/website";
 import { getSession } from "@/lib/auth";
-import { assertUserCanAccessPage, isRestrictedToAdminPath } from "@/lib/utils";
+import { isRestrictedToAdminPath } from "@/lib/utils";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -39,8 +39,6 @@ export default async function DashboardLayout({
   });
 
   const permissions = profile?.permissions;
-
-  // console.log(JSON.stringify(permissions, null, 2));
 
   return (
     <div className="relative grid grid-cols-[260px_1fr] bg-dark w-screen h-screen">

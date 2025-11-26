@@ -1,7 +1,8 @@
 import { checkAccess } from "@/lib/access";
-import prisma from "@/lib/prisma";
 import { getIdFromUrl } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
+
+import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
     const result = await checkAccess("INVOICES", "READ");
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
     }
 
     // read params from query string
-    const dataParam = req.nextUrl.searchParams.get("type") ?? undefined; // "unpaid" | "paid" | "contract"
+    const dataParam = req.nextUrl.searchParams.get("type") ?? undefined;
     const clientParam = req.nextUrl.searchParams.get("client") ?? undefined;
 
     // pagination

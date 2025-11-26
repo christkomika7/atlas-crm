@@ -2,7 +2,7 @@ import { RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
 import { PurchaseOrderPaymentSchemaType } from "@/lib/zod/payment.schema";
 import { PurchaseOrderSchemaType, PurchaseOrderUpdateSchemaType } from "@/lib/zod/purchase-order.schema";
 import { RequestResponse } from "@/types/api.types";
-import { PaidInfosInvoiceType, RecurrenceType } from "@/types/invoice.types";
+import { RecurrenceType } from "@/types/invoice.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { toDateOnlyString } from "@/lib/date";
 
@@ -23,24 +23,6 @@ export async function purchaseOrderNumber({ companyId }: { companyId: string }) 
     }
 }
 
-export async function noExpirePurchaseOrders({ companyId }: { companyId: string }) {
-
-    try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/purchase-order/${companyId}/no-expire`, {
-            method: 'GET',
-        });
-
-        const res: RequestResponse<PaidInfosInvoiceType> = await response.json()
-        if (!response.ok) {
-            throw new Error(res.message);
-        }
-        return res;
-
-    } catch (error) {
-        throw error;
-    }
-}
-
 export async function all({ companyId, filter }: { companyId: string, filter: "unpaid" | "paid" }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/purchase-order/${companyId}`, {
@@ -49,23 +31,6 @@ export async function all({ companyId, filter }: { companyId: string, filter: "u
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ data: filter }),
-        });
-
-        const res: RequestResponse<PurchaseOrderType[]> = await response.json()
-        if (!response.ok) {
-            throw new Error(res.message);
-        }
-        return res;
-
-    } catch (error) {
-        throw error;
-    }
-}
-
-export async function getLatestPurchaseOrder({ companyId }: { companyId: string }) {
-    try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/purchase-order/${companyId}/last`, {
-            method: 'GET',
         });
 
         const res: RequestResponse<PurchaseOrderType[]> = await response.json()
@@ -158,7 +123,6 @@ export async function createdPayment(data: PurchaseOrderPaymentSchemaType) {
         throw error;
     }
 }
-
 
 export async function createRecurrence(data: RecurrenceType) {
     try {
