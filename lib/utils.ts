@@ -423,8 +423,11 @@ export function isRestrictedToAdminPath(
 export function hasAccess(
   resource: $Enums.Resource,
   action: $Enums.Action | $Enums.Action[],
-  permissions: Permission[]
+  permissions: Permission[],
+  role: "USER" | "ADMIN" = "USER"
 ): boolean {
+  if (role === "ADMIN") return true;
+
   if (!resource || !action || !permissions) return false;
 
   const normalizedResource = resource.toUpperCase();
@@ -451,6 +454,7 @@ export function hasAccess(
     return actions.includes(act);
   });
 }
+
 
 
 export function hasAccessToDashboard(user: any) {

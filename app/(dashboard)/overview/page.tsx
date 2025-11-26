@@ -13,14 +13,17 @@ import { hasAccess } from "@/lib/utils";
 
 export default async function OverviewPage() {
   const data = await getSession();
-  const permissions = data?.user.profiles?.find(p => p.id === data.user.currentProfile)?.permissions || [];
+  const role = data?.user.role || "USER";
+  const profileId = data?.user.currentProfile;
+  const profiles = data?.user.profiles
+  const permissions = profiles?.find(p => p.id === profileId)?.permissions || [];
 
-  const canViewDashboard = hasAccess("DASHBOARD", ["READ", "CREATE", "MODIFY"], permissions);
-  const quotePermission = hasAccess("QUOTES", ["CREATE"], permissions);
-  const invoicePermission = hasAccess("INVOICES", ["CREATE"], permissions);
-  const deliveryNotePermission = hasAccess("DELIVERY_NOTES", ["CREATE"], permissions);
-  const purchaseOrderPermission = hasAccess("PURCHASE_ORDER", ["CREATE"], permissions);
-  console.log({ canViewDashboard })
+  const canViewDashboard = hasAccess("DASHBOARD", ["READ", "CREATE", "MODIFY"], permissions, role);
+  const quotePermission = hasAccess("QUOTES", ["CREATE"], permissions, role);
+  const invoicePermission = hasAccess("INVOICES", ["CREATE"], permissions, role);
+  const deliveryNotePermission = hasAccess("DELIVERY_NOTES", ["CREATE"], permissions, role);
+  const purchaseOrderPermission = hasAccess("PURCHASE_ORDER", ["CREATE"], permissions, role);
+  console.log({ canViewDashboard, role, profileId, permissions })
   console.log(JSON.stringify(data?.user, null, 2));
 
   return (
