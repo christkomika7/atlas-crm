@@ -19,6 +19,7 @@ export default async function OverviewPage() {
   const invoicePermission = hasAccess("INVOICES", ["CREATE"], permissions);
   const deliveryNotePermission = hasAccess("DELIVERY_NOTES", ["CREATE"], permissions);
   const purchaseOrderPermission = hasAccess("PURCHASE_ORDER", ["CREATE"], permissions);
+  console.log({ canViewDashboard })
 
   return (
     <ScrollArea className="pr-4 h-full">

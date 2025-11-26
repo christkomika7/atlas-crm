@@ -6,7 +6,6 @@ import { isRestrictedToAdminPath } from "@/lib/utils";
 import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import prisma from "@/lib/prisma";
 
 export default async function DashboardLayout({
   children,
