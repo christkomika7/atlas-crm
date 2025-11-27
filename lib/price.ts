@@ -37,6 +37,8 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
       totalWithTaxes: new Decimal(0),
       totalWithoutTaxes: new Decimal(0),
       currentPrice: new Decimal(0),
+      SubTotal: new Decimal(0),
+      subTotal: new Decimal(0),
       subtotal: new Decimal(0),
       discountAmount: new Decimal(0),
     };
@@ -47,7 +49,6 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
   let totalHTWithTax = new Decimal(0);
   let globalDiscountAmount = new Decimal(0);
 
-  // Initialisation des taxes
   for (const tax of taxes) {
     taxResults.set(tax.taxName, {
       taxName: tax.taxName,
@@ -57,7 +58,6 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     });
   }
 
-  // Étape 1 : Calcul du total HT
   for (const item of items) {
     const basePrice = new Decimal(item.price);
     const quantity = new Decimal(Math.max(0.5, item.quantity));
@@ -77,7 +77,8 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     }
   }
 
-  // Étape 2 : Application de la remise globale
+  const SubTotal = roundToOneDecimal(totalHT);
+
   if (discount) {
     const [discountValue, discountType] = discount;
     const decDiscountValue = new Decimal(discountValue);
@@ -104,10 +105,10 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
   totalHTWithTax = roundToOneDecimal(totalHTWithTax);
   globalDiscountAmount = roundToOneDecimal(globalDiscountAmount);
 
-  // Montant taxable : après remise
+  const subTotal = roundToOneDecimal(totalHT);
+
   const taxableAmount = totalHTWithTax.greaterThan(0) ? totalHTWithTax : totalHT;
 
-  // Étape 3 : Calcul des taxes sur la base après remise
   for (const tax of taxes) {
     const taxResult = taxResults.get(tax.taxName)!;
     const rate = parseTaxValue(tax.taxValue);
@@ -127,7 +128,6 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     }
   }
 
-  // Étape 4 : Calcul des taxes cumulées
   for (const tax of taxes) {
     if (!tax.cumul || tax.cumul.length === 0) continue;
 
@@ -150,7 +150,6 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     taxResults.set(tax.taxName, currentTaxResult);
   }
 
-  // Étape 5 : Totaux finaux
   let totalTaxAmount = new Decimal(0);
   for (const taxResult of taxResults.values()) {
     totalTaxAmount = totalTaxAmount.plus(new Decimal(taxResult.totalTax));
@@ -160,14 +159,16 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
   const totalWithTaxes = roundToOneDecimal(totalHT.plus(totalTaxAmount));
 
   const currentPrice = amountType === "TTC" ? totalWithTaxes : totalHT;
-  const subtotal = totalHT; // Total HT après remise, avant taxes
+  const subtotal = totalHT;
 
   return {
     taxes: Array.from(taxResults.values()),
     totalTax: totalTaxAmount,
     totalWithTaxes,
-    totalWithoutTaxes: totalHT, // HT après remise
+    totalWithoutTaxes: totalHT,
     currentPrice,
+    SubTotal, // Total de tous les articles AVANT remise, sans taxe
+    subTotal, // Total APRÈS remise, AVANT taxes
     subtotal,
     discountAmount: globalDiscountAmount,
   };

@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
         {
             status: "success",
             message: "",
-            data: tvaDue.toNumber(),
+            data: tvaDue.toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber(),
         },
         { status: 200 }
     );

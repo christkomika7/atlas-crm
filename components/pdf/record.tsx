@@ -75,7 +75,6 @@ export default function RecordDocument({
         getProfil()
     }, [logo])
 
-    // Fonction pour récupérer les infos du destinataire
     const getRecipientInfo = () => {
         if (supplier) {
             return {
@@ -300,7 +299,7 @@ export default function RecordDocument({
                         <tr className="h-6"></tr>
                         <tr className="text-sm">
                             <td colSpan={3} className="text-right">
-                                Sous-total
+                                Sous-Total
                             </td>
                             <td className="pr-3 text-right">
                                 {formatNumber(calculate({
@@ -308,7 +307,7 @@ export default function RecordDocument({
                                     taxes: record?.company?.vatRates ?? [],
                                     amountType: record?.amountType || "TTC",
                                     discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
-                                }).subtotal)}
+                                }).SubTotal)}
                                 {record?.company.currency}
                             </td>
                         </tr>
@@ -317,12 +316,26 @@ export default function RecordDocument({
                                 Remise ({record?.discountType === "money" ? `${formatNumber(record!.discount)} ${record?.company?.currency}` : `${record!.discount}%`})
                             </td>
                             <td className="pr-3 text-right">
-                                {calculate({
+                                {formatNumber(calculate({
                                     items: (record ? (parseItems(record.items)) : []),
                                     taxes: record?.company?.vatRates ?? [],
                                     amountType: record?.amountType || "TTC",
                                     discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
-                                }).discountAmount.toString()} {" "}{record?.company.currency}
+                                }).discountAmount.toString())} {" "}{record?.company.currency}
+                            </td>
+                        </tr>
+                        <tr className="text-sm">
+                            <td colSpan={3} className="text-right">
+                                Sous-total
+                            </td>
+                            <td className="pr-3 text-right">
+                                {formatNumber(calculate({
+                                    items: (record ? (parseItems(record.items)) : []),
+                                    taxes: record?.company?.vatRates ?? [],
+                                    amountType: record?.amountType || "TTC",
+                                    discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
+                                }).subTotal)}
+                                {record?.company.currency}
                             </td>
                         </tr>
                         {record?.amountType === "TTC" &&

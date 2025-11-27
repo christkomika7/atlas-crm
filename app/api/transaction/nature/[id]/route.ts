@@ -57,6 +57,20 @@ export async function DELETE(req: NextRequest) {
         }, { status: 404 });
     }
 
+    const nature = await prisma.transactionNature.findUnique({
+        where: { id },
+        include: {
+            allocations: true
+        }
+    });
+
+    if (nature && nature.allocations.length > 0) {
+        return NextResponse.json({
+            state: "error",
+            message: "Supprimez d'abord les allocations associées à nature de transaction.",
+        }, { status: 409 });
+    }
+
     const deletedNature = await prisma.transactionNature.delete({ where: { id } });
     return NextResponse.json({
         state: "success",

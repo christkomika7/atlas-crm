@@ -1,4 +1,4 @@
-import { checkAccess, sessionAccess } from "@/lib/access";
+import { sessionAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
 import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
@@ -57,6 +57,20 @@ export async function DELETE(req: NextRequest) {
             message: "Aucune identifiant trouvé .",
 
         }, { status: 404 });
+    }
+
+    const city = await prisma.city.findUnique({
+        where: { id },
+        include: {
+            areas: true
+        }
+    });
+
+    if (city && city.areas.length > 0) {
+        return NextResponse.json({
+            state: "error",
+            message: "Supprimez d'abord tous les quartiers reliés à cette ville.",
+        }, { status: 409 });
     }
 
     const deletedCity = await prisma.city.delete({ where: { id } });

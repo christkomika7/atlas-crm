@@ -251,7 +251,6 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
     await checkAccess(["QUOTES"], "MODIFY");
 
-
     const data = await req.json();
 
     if (data.ids.length === 0) {
