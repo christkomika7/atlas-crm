@@ -56,29 +56,33 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
 
     const readAccess = useAccess("BILLBOARDS", "READ");
 
-    const { mutate: mutateGetBillboards, isPending: isGettingBillboards } = useQueryAction<
-      { companyId: string, skip?: number; take?: number },
-      RequestResponse<BillboardType[]>
-    >(all, () => { }, "billboards");
+    const { mutate: mutateGetBillboards, isPending: isGettingBillboards } =
+      useQueryAction<
+        { companyId: string; skip?: number; take?: number },
+        RequestResponse<BillboardType[]>
+      >(all, () => {}, "billboards");
 
     const toggleSelection = (billboardId: string, checked: boolean) => {
       setSelectedBillboardIds((prev) =>
         checked
           ? [...prev, billboardId]
-          : prev.filter((id) => id !== billboardId)
+          : prev.filter((id) => id !== billboardId),
       );
     };
 
     const refreshBillboard = () => {
-      if (companyId && billboards) {
-        mutateGetBillboards({ companyId, take: pageSize, skip }, {
-          async onSuccess(data) {
-            if (data.data) {
-              setBillboards(data.data);
-              setTotalItems(data.total ?? 0);
-            }
+      if (companyId && readAccess) {
+        mutateGetBillboards(
+          { companyId, take: pageSize, skip },
+          {
+            async onSuccess(data) {
+              if (data.data) {
+                setBillboards(data.data);
+                setTotalItems(data.total ?? 0);
+              }
+            },
           },
-        });
+        );
       }
     };
 
@@ -88,17 +92,20 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
 
     useEffect(() => {
       refreshBillboard();
-    }, [companyId, currentPage, billboards]);
+    }, [companyId, currentPage, readAccess]);
 
     const isSelected = (id: string) => selectedBillboardIds.includes(id);
 
     function getGenerateRevenue(items: ItemType[]) {
-      const revenue = items.reduce((p, c) => p + (c.quantity * Number(c.price)), 0);
+      const revenue = items.reduce(
+        (p, c) => p + c.quantity * Number(c.price),
+        0,
+      );
       return revenue.toString();
     }
 
     return (
-      <AccessContainer hasAccess={readAccess} resource="BILLBOARDS" >
+      <AccessContainer hasAccess={readAccess} resource="BILLBOARDS">
         <div className="border border-neutral-200 rounded-xl">
           <Table>
             <TableHeader>
@@ -113,8 +120,12 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
                 <TableHead className="font-medium text-center">
                   Revenus générés
                 </TableHead>
-                <TableHead className="font-medium text-center">Status</TableHead>
-                <TableHead className="font-medium text-center">Action</TableHead>
+                <TableHead className="font-medium text-center">
+                  Status
+                </TableHead>
+                <TableHead className="font-medium text-center">
+                  Action
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -130,8 +141,9 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
                 billboards.map((billboard) => (
                   <TableRow
                     key={billboard.id}
-                    className={`h-16 transition-colors ${isSelected(billboard.id) ? "bg-neutral-100" : ""
-                      }`}
+                    className={`h-16 transition-colors ${
+                      isSelected(billboard.id) ? "bg-neutral-100" : ""
+                    }`}
                   >
                     <TableCell className="text-neutral-600">
                       <div className="flex justify-center items-center">
@@ -144,7 +156,14 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
                       </div>
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
-                      <BillboardPhoto path={billboard.photos.length > 0 ? billboard.photos[0] : undefined} name={billboard.name.toUpperCase()} />
+                      <BillboardPhoto
+                        path={
+                          billboard.photos.length > 0
+                            ? billboard.photos[0]
+                            : undefined
+                        }
+                        name={billboard.name.toUpperCase()}
+                      />
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
                       {billboard.reference.toUpperCase()}
@@ -160,7 +179,12 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
                       {billboard.company.currency}
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
-                      <BillboardStatus items={billboard.items.map(item => [item.locationStart, item.locationEnd])} />
+                      <BillboardStatus
+                        items={billboard.items.map((item) => [
+                          item.locationStart,
+                          item.locationEnd,
+                        ])}
+                      />
                     </TableCell>
                     <TableCell className="text-center">
                       <TableActionButton
@@ -210,7 +234,7 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
         </div>
       </AccessContainer>
     );
-  }
+  },
 );
 
 BillboardTable.displayName = "BillboardTable";
