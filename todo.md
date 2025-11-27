@@ -38,3 +38,6 @@ voir l erreur au niveau de la modification des access
 - si un user a deja une entreprise par defaut, ne plus changer cela lors de la creation d un nouveau profil
 - Mettre au loader au niveau de l'affichage des images
 - Corriger le bug lors de la creation de l'entreprise
+- Donnée la possibilité de tout cocher ou l inverse
+- ne pas delete avant d'avoir tout supprimer
+- supplier et client infos pas de  scrollbar

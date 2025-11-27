@@ -13,6 +13,7 @@ import { duplicateBillboard, remove } from "@/action/billboard.action";
 import { useRouter } from "next/navigation";
 import { BillboardType } from "@/types/billboard.types";
 import BillboardCreateContractModal from "./billboard-create-brochure-modal";
+import { useAccess } from "@/hook/useAccess";
 
 type TableActionButtonProps = {
   id: string;
@@ -35,8 +36,14 @@ export default function TableActionButton({
     RequestResponse<BillboardType>
   >(remove, () => { }, "billboards");
 
+  const readAccess = useAccess("BILLBOARDS", "READ");
+  const createAccess = useAccess("BILLBOARDS", "CREATE");
+  const modifyAccess = useAccess("PRODUCT_SERVICES", "MODIFY");
 
-  const { mutate: mutateDuplicateBillboard, isPending: isDuplicatingBillboard } = useQueryAction<
+  const hasAnyAccess = readAccess || modifyAccess || createAccess;
+
+
+  const { mutate: mutateDuplicateBillboard } = useQueryAction<
     { id: string },
     RequestResponse<null>
   >(duplicateBillboard, () => { }, "billboard");
@@ -74,43 +81,58 @@ export default function TableActionButton({
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild disabled={!hasAnyAccess}>
         <Button variant="primary" className="p-0 rounded-lg !w-9 !h-9">
           <ChevronDownIcon className="text-white" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0 w-[200px]">
-        <ul>
-          {menus.map((menu) => {
-            if (menu.action === "delete")
-              return (
-                <ConfirmDialog
-                  key={menu.id}
-                  type="delete"
-                  title={deleteTitle}
-                  message={deleteMessage}
-                  action={handleDelete}
-                  loading={isPending}
-                />
-              );
-            return (
-              <li key={menu.id}>
-                <button
-                  className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    goTo(id, menu.action as "update" | "infos" | "duplicate")
-                  }}
-                >
-                  <menu.icon className="w-4 h-4" />
-                  {menu.title}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </PopoverContent>
+      {hasAnyAccess &&
+        <PopoverContent align="end" className="p-0 w-[200px]">
+          <ul>
+            {menus.map((menu) => {
+
+              if (
+                (["update", "delete"].includes(menu.action as string) && !modifyAccess) ||
+                (menu.action === "duplicate" && !createAccess) ||
+                (menu.action === "infos" && !readAccess)
+              ) return null;
+
+              switch (menu.action) {
+                case "delete":
+                  return (
+                    <ConfirmDialog
+                      key={menu.id}
+                      type="delete"
+                      title={deleteTitle}
+                      message={deleteMessage}
+                      action={handleDelete}
+                      loading={isPending}
+                    />
+                  );
+                default:
+                  return (
+                    <li key={menu.id}>
+                      <button
+                        className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          goTo(id, menu.action as "update" | "infos" | "duplicate")
+                        }}
+                      >
+                        <menu.icon className="w-4 h-4" />
+                        {menu.title}
+                      </button>
+                    </li>
+                  );
+
+              }
+
+
+            })}
+          </ul>
+        </PopoverContent>
+      }
     </Popover>
   );
 }

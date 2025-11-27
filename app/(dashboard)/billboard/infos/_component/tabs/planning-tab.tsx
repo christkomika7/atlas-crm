@@ -8,17 +8,22 @@ import { ItemPlanning, ItemType } from "@/types/item.type";
 import { allBillboardItem } from "@/action/item.action";
 import { useEffect, useState } from "react";
 import Spinner from "@/components/ui/spinner";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 export default function PlanningTab() {
   const param = useParams();
   const [items, setItems] = useState<ItemPlanning[]>([]);
+
+  const readAccess = useAccess("BILLBOARDS", "READ");
+
   const { mutate, isPending } = useQueryAction<
     { billboardId: string },
     RequestResponse<ItemType[]>
   >(allBillboardItem, () => { }, "items");
 
   useEffect(() => {
-    if (param.id) {
+    if (param.id && readAccess) {
       mutate(
         { billboardId: param.id as string },
         {
@@ -41,14 +46,16 @@ export default function PlanningTab() {
         }
       );
     }
-  }, [param]);
+  }, [param, readAccess]);
 
   if (isPending) return <Spinner />;
   return (
-    <ScrollArea className="h-[calc(100vh-176px)]">
-      <div className="pt-2 pr-4 pb-4">
-        <Calendar params={items} />
-      </div>
-    </ScrollArea>
+    <AccessContainer hasAccess={readAccess} resource="BILLBOARDS">
+      <ScrollArea className="h-[calc(100vh-176px)]">
+        <div className="pt-2 pr-4 pb-4">
+          <Calendar params={items} />
+        </div>
+      </ScrollArea>
+    </AccessContainer>
   );
 }

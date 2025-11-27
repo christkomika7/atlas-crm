@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import TaskModal from "./task-modal";
 import { PlusIcon } from "lucide-react";
 import { $Enums } from "@/lib/generated/prisma";
+import { useAccess } from "@/hook/useAccess";
 
 const columns = [
   { id: "todo", name: "A faire", color: "#6B7280" },
@@ -35,19 +36,22 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
   const tasks = useTaskStore.use.tasks();
   const setTask = useTaskStore.use.setTask();
 
-  const { mutate, isPending, data } = useQueryAction<
+  const modifyAccess = useAccess("PROJECTS", "MODIFY");
+  const readAccess = useAccess("PROJECTS", "READ");
+
+  const { mutate, isPending } = useQueryAction<
     { projectId: string },
     RequestResponse<TaskType[]>
-  >(allTasks, () => {}, "tasks");
+  >(allTasks, () => { }, "tasks");
 
   const { mutate: mutateEditStatusTask, isPending: isUpdatingStatus } =
     useQueryAction<
       { id: string; status: $Enums.ProjectStatus },
       RequestResponse<TaskType>
-    >(updateStatus, () => {}, "task");
+    >(updateStatus, () => { }, "task");
 
   useEffect(() => {
-    if (projectId) {
+    if (projectId && readAccess) {
       mutate(
         { projectId },
         {
@@ -61,8 +65,8 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
                   task.status === "TODO"
                     ? "todo"
                     : task.status === "IN_PROGRESS"
-                    ? "inProgress"
-                    : "done",
+                      ? "inProgress"
+                      : "done",
                 owner: [],
                 description: task.desc,
                 status: task.status,
@@ -78,7 +82,7 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
         }
       );
     }
-  }, [projectId]);
+  }, [projectId, readAccess]);
 
   function mapColumnToStatus(column: string): $Enums.ProjectStatus {
     switch (column) {
@@ -95,20 +99,23 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
 
   return (
     <div className="h-full px-6">
-      <div className="mb-2">
-        <TaskModal title="Nouvelle tâche" type="create">
-          <Button variant="primary" className="!h-9 w-fit">
-            <PlusIcon />
-            Ajouter une nouvelle tâche
-          </Button>
-        </TaskModal>
-      </div>
+      {modifyAccess &&
+        <div className="mb-2">
+          <TaskModal title="Nouvelle tâche" type="create">
+            <Button variant="primary" className="!h-9 w-fit">
+              <PlusIcon />
+              Ajouter une nouvelle tâche
+            </Button>
+          </TaskModal>
+        </div>
+      }
       <ScrollArea className="h-full pr-4">
         <div className="pb-4">
           <KanbanProvider<KanbanTask>
             columns={columns}
             data={tasks}
             onDragEnd={(event) => {
+              if (!readAccess) return null;
               const { active, over } = event;
 
               if (!over) return;
@@ -145,7 +152,9 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
                     </div>
                   </KanbanHeader>
                   {isPending ? (
-                    <Spinner />
+                    <span className="p-2 w-full h-full flex justify-center items-center">
+                      <Spinner />
+                    </span>
                   ) : (
                     <KanbanCards id={column.id}>
                       {(task: KanbanTask) => (
@@ -155,7 +164,11 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
                           key={task.id}
                           name={task.name}
                         >
-                          <TaskCard task={task} />
+                          <TaskCard
+                            task={task}
+                            readAccess={readAccess}
+                            modifyAccess={modifyAccess}
+                          />
                         </KanbanCard>
                       )}
                     </KanbanCards>

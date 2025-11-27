@@ -29,6 +29,8 @@ import { addDays } from "date-fns";
 import { checkDeadline, formatDateToDashModel } from "@/lib/date";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 type PurchaseOrderTableProps = {
   filter: "unpaid" | "paid";
@@ -45,6 +47,8 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
     const id = useDataStore.use.currentCompany();
     const currency = useDataStore.use.currency();
 
+    const readAccess = useAccess("PURCHASE_ORDER", "READ");
+
     const { mutate, isPending, data } = useQueryAction<
       { companyId: string; filter: "unpaid" | "paid" },
       RequestResponse<PurchaseOrderType[]>
@@ -57,7 +61,7 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
     };
 
     const refreshPurchaseOrder = () => {
-      if (id) {
+      if (id && readAccess) {
         mutate({ companyId: id, filter });
       }
     };
@@ -68,7 +72,7 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
 
     useEffect(() => {
       refreshPurchaseOrder();
-    }, [id]);
+    }, [id, readAccess]);
 
     const isSelected = (id: string) => selectedPurchaseOrderIds.includes(id);
 
@@ -89,107 +93,109 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
 
 
     return (
-      <div className="border border-neutral-200 rounded-xl">
-        <Table>
-          <TableHeader>
-            <TableRow className="h-14">
-              <TableHead className="min-w-[50px] font-medium" />
-              <TableHead className="font-medium text-center">N°</TableHead>
-              <TableHead className="font-medium text-center">Fournisseur</TableHead>
-              <TableHead className="font-medium text-center">Date</TableHead>
-              <TableHead className="font-medium text-center">Montant</TableHead>
-              <TableHead className="font-medium text-center">Échu</TableHead>
-              <TableHead className="font-medium text-center">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isPending ? (
-              <TableRow>
-                <TableCell colSpan={9}>
-                  <div className="flex justify-center items-center py-6 w-full">
-                    <Spinner />
-                  </div>
-                </TableCell>
+      <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER">
+        <div className="border border-neutral-200 rounded-xl">
+          <Table>
+            <TableHeader>
+              <TableRow className="h-14">
+                <TableHead className="min-w-[50px] font-medium" />
+                <TableHead className="font-medium text-center">N°</TableHead>
+                <TableHead className="font-medium text-center">Fournisseur</TableHead>
+                <TableHead className="font-medium text-center">Date</TableHead>
+                <TableHead className="font-medium text-center">Montant</TableHead>
+                <TableHead className="font-medium text-center">Échu</TableHead>
+                <TableHead className="font-medium text-center">Action</TableHead>
               </TableRow>
-            ) : data?.data && data.data.length > 0 ? (
-              data.data.map((purchaseOrder) => (
-                <TableRow
-                  key={purchaseOrder.id}
-                  className={`h-16 transition-colors ${isSelected(purchaseOrder.id) ? "bg-neutral-100" : ""
-                    }`}
-                >
-                  <TableCell className="text-neutral-600">
-                    <div className="flex justify-center items-center">
-                      <Checkbox
-                        checked={isSelected(purchaseOrder.id)}
-                        onCheckedChange={(checked) =>
-                          toggleSelection(purchaseOrder.id, !!checked)
-                        }
-                      />
+            </TableHeader>
+            <TableBody>
+              {isPending ? (
+                <TableRow>
+                  <TableCell colSpan={9}>
+                    <div className="flex justify-center items-center py-6 w-full">
+                      <Spinner />
                     </div>
                   </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {purchaseOrder.company?.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-
-                    {generateAmaId(purchaseOrder.purchaseOrderNumber, false)}
+                </TableRow>
+              ) : data?.data && data.data.length > 0 ? (
+                data.data.map((purchaseOrder) => (
+                  <TableRow
+                    key={purchaseOrder.id}
+                    className={`h-16 transition-colors ${isSelected(purchaseOrder.id) ? "bg-neutral-100" : ""
+                      }`}
+                  >
+                    <TableCell className="text-neutral-600">
+                      <div className="flex justify-center items-center">
+                        <Checkbox
+                          checked={isSelected(purchaseOrder.id)}
+                          onCheckedChange={(checked) =>
+                            toggleSelection(purchaseOrder.id, !!checked)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {purchaseOrder.company?.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-
+                      {generateAmaId(purchaseOrder.purchaseOrderNumber, false)}
 
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {cutText(
-                      `${purchaseOrder.supplier.companyName}`,
-                      20
-                    )}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {formatDateToDashModel(purchaseOrder.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(purchaseOrder.amountType === "TTC" ? purchaseOrder.totalTTC : purchaseOrder.totalHT)} {currency}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    <span
-                      className={
-                        dueDate(purchaseOrder.createdAt, purchaseOrder.paymentLimit).color
-                      }
-                    >
-                      {dueDate(purchaseOrder.createdAt, purchaseOrder.paymentLimit).text}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <TableActionButton
-                      menus={dropdownMenu}
-                      id={purchaseOrder.id}
-                      refreshPurchaseOrder={refreshPurchaseOrder}
-                      deleteTitle="Confirmer la suppression du bon de commande"
-                      deleteMessage={
-                        <p>
-                          En supprimant le bon de commande, toutes les informations
-                          liées seront également supprimées.
-                          <br />
-                          <span className="font-semibold text-red-600">
-                            Cette action est irréversible.
-                          </span>
-                          <br />
-                          <br />
-                          Confirmez-vous cette suppression ?
-                        </p>
-                      }
-                    />
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {cutText(
+                        `${purchaseOrder.supplier.companyName}`,
+                        20
+                      )}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {formatDateToDashModel(purchaseOrder.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {formatNumber(purchaseOrder.amountType === "TTC" ? purchaseOrder.totalTTC : purchaseOrder.totalHT)} {currency}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      <span
+                        className={
+                          dueDate(purchaseOrder.createdAt, purchaseOrder.paymentLimit).color
+                        }
+                      >
+                        {dueDate(purchaseOrder.createdAt, purchaseOrder.paymentLimit).text}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TableActionButton
+                        menus={dropdownMenu}
+                        id={purchaseOrder.id}
+                        refreshPurchaseOrder={refreshPurchaseOrder}
+                        deleteTitle="Confirmer la suppression du bon de commande"
+                        deleteMessage={
+                          <p>
+                            En supprimant le bon de commande, toutes les informations
+                            liées seront également supprimées.
+                            <br />
+                            <span className="font-semibold text-red-600">
+                              Cette action est irréversible.
+                            </span>
+                            <br />
+                            <br />
+                            Confirmez-vous cette suppression ?
+                          </p>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={9}
+                    className="py-6 text-gray-500 text-sm text-center"
+                  >
+                    Aucun bon de commande trouvé.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={9}
-                  className="py-6 text-gray-500 text-sm text-center"
-                >
-                  Aucun bon de commande trouvé.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </AccessContainer>
     );
   }
 );

@@ -9,13 +9,13 @@ type AccessContainerProps = {
 
 export default function AccessContainer({ children, hasAccess, resource }: AccessContainerProps) {
     return (
-        <>
+        <div className="w-full">
             {hasAccess ?
                 <>
                     {children}
                 </>
                 : <NoAccess type={resource} />
             }
-        </>
+        </div>
     )
 }

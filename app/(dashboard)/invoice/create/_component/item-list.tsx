@@ -25,8 +25,9 @@ export type ItemListProps = {
     }): CalculateTaxesResult;
     amountPaid?: Decimal;
     amountType: "TTC" | "HT";
+    disabled?: boolean;
 }
-export default function ItemList({ item, locationBillboardDate, taxes, calculate, amountPaid, amountType }: ItemListProps) {
+export default function ItemList({ item, locationBillboardDate, taxes, calculate, amountPaid, amountType, disabled }: ItemListProps) {
 
     const invoiceId = useRecordIdStore.use.recordId();
 
@@ -61,7 +62,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
         <div
             className="group relative flex flex-col hover:bg-blue/5 p-1.5 border-blue border-l-4 w-full"
         >
-            {amountPaid?.eq(0) &&
+            {amountPaid?.eq(0) && !disabled &&
                 <span
                     className="top-0 right-1 absolute opacity-0 group-hover:opacity-100 font-bold text-red-500 text-sm transition-opacity cursor-pointer"
                     onClick={() => removeItem(item.itemType === "billboard" ? item.billboardId as string : item.productServiceId as string)}
@@ -82,7 +83,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                             <TextInput
                                 type="number"
                                 min={0}
-                                disabled={amountPaid?.gt(0)}
+                                disabled={amountPaid?.gt(0) || disabled}
                                 max={getMaxQuantity()}
                                 value={item.quantity}
                                 handleChange={(e) => {
@@ -111,7 +112,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                         <TextInput
                             type="number"
                             min={0}
-                            disabled={amountPaid?.gt(0)}
+                            disabled={amountPaid?.gt(0) || disabled}
                             value={item.price.toString()}
                             handleChange={(e) => {
                                 editItemField(item.id, "price", new Decimal(String(e)));
@@ -126,7 +127,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                     <TextInput
                         type="number"
                         min={0}
-                        disabled={amountPaid?.gt(0)}
+                        disabled={amountPaid?.gt(0) || disabled}
                         value={discount}
                         className="!rounded-lg h-8"
                         handleChange={(e) =>
@@ -135,7 +136,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                     />
                     <ToggleGroup
                         type="single"
-                        disabled={amountPaid?.gt(0)}
+                        disabled={amountPaid?.gt(0) || disabled}
                         value={item.discountType}
                         onValueChange={(e) => {
                             updateItem({
@@ -154,7 +155,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                     <div className="flex mt-3 flex-col">
                         <label htmlFor="" className="text-xs font-medium">Durée de la location<span className="text-red-500">*</span></label>
                         <DatePicker
-                            disabled={amountPaid?.gt(0)}
+                            disabled={amountPaid?.gt(0) || disabled}
                             className="flex w-[300px]"
                             label=""
                             mode="range"

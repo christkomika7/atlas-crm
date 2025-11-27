@@ -6,7 +6,7 @@ import { editTaskStepSchema, EditTaskStepSchemaType } from "@/lib/zod/task-step.
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    const result = await checkAccess("PROJECTS", ["CREATE", "MODIFY"]);
+    const result = await checkAccess("PROJECTS", ["READ"]);
 
     if (!result.authorized) {
         return Response.json({
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
 
 export async function PUT(req: NextRequest) {
-    const result = await checkAccess("PROJECTS", ["CREATE", "MODIFY"]);
+    const result = await checkAccess("PROJECTS", ["MODIFY"]);
 
     if (!result.authorized) {
         return Response.json({

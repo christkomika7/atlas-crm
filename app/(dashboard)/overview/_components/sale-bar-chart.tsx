@@ -12,8 +12,6 @@ import { colors } from "@/lib/data";
 import { toShortNum } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
 
-export const description = "A donut chart with text (dépenses)";
-
 const chartConfig = {
   depenses: {
     label: "Dépenses",

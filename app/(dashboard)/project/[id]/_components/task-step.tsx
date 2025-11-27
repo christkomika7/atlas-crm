@@ -15,9 +15,11 @@ import ModalContainer from "@/components/modal/modal-container";
 
 type TaskStepProps = {
   id: string;
+  readAccess: boolean;
+  modifyAccess: boolean;
 };
 
-export default function TaskStep({ id }: TaskStepProps) {
+export default function TaskStep({ id, readAccess, modifyAccess }: TaskStepProps) {
   const steps = useTaskStore.use.step();
   const removeStep = useTaskStore.use.removeStep();
   const updateStep = useTaskStore.use.updateStep();
@@ -38,10 +40,10 @@ export default function TaskStep({ id }: TaskStepProps) {
   >(check, () => { }, "task-steps");
 
   useEffect(() => {
-    if (id) {
+    if (id && readAccess) {
       setStepData(steps.filter((s) => s.taskId === id));
     }
-  }, [steps, id]);
+  }, [steps, id, readAccess]);
 
   const handleButtonClick = (e: React.SyntheticEvent) => {
     e.stopPropagation();
@@ -80,30 +82,32 @@ export default function TaskStep({ id }: TaskStepProps) {
           <span>Étape(s)</span>{" "}
           {(isPendingCheck || isPendingRemove) && <Spinner size={10} />}
         </div>
-        <ModalContainer
-          size="sm"
-          action={
-            <Button
-              onClick={handleButtonClick}
-              onMouseDown={handleButtonClick}
-              variant="outline"
-              className="shadow-none w-fit size-6 cursor-pointer"
-            >
-              <PlusIcon className="w-4 h-4" />
-            </Button>
+        {modifyAccess &&
+          <ModalContainer
+            size="sm"
+            action={
+              <Button
+                onClick={handleButtonClick}
+                onMouseDown={handleButtonClick}
+                variant="outline"
+                className="shadow-none w-fit size-6 cursor-pointer"
+              >
+                <PlusIcon className="w-4 h-4" />
+              </Button>
 
-          }
-          title="Nouvelle étape"
-          open={open.add}
-          setOpen={function (value: SetStateAction<boolean>): void {
-            setOpen({ ...open, add: value as boolean });
-          }}
-        >
+            }
+            title="Nouvelle étape"
+            open={open.add}
+            setOpen={function (value: SetStateAction<boolean>): void {
+              setOpen({ ...open, add: value as boolean });
+            }}
+          >
 
-          <AddTaskState id={id} closeModal={() =>
-            setOpen({ ...open, add: false })
-          } />
-        </ModalContainer>
+            <AddTaskState id={id} closeModal={() =>
+              setOpen({ ...open, add: false })
+            } />
+          </ModalContainer>
+        }
       </div>
 
       <div className="space-y-1">
@@ -117,58 +121,62 @@ export default function TaskStep({ id }: TaskStepProps) {
                 htmlFor={sanitize(step.stepName)}
                 className="flex items-center gap-x-2 font-medium text-sm"
               >
-                <Checkbox
-                  onClick={handleButtonClick}
-                  onMouseDown={handleButtonClick}
-                  defaultChecked={step.check}
-                  id={sanitize(step.stepName)}
-                  className="size-4"
-                  onCheckedChange={(e) => {
-                    updateCheck(step.id, Boolean(e));
-                  }}
-                />
+                {modifyAccess &&
+                  <Checkbox
+                    onClick={handleButtonClick}
+                    onMouseDown={handleButtonClick}
+                    defaultChecked={step.check}
+                    id={sanitize(step.stepName)}
+                    className="size-4"
+                    onCheckedChange={(e) => {
+                      updateCheck(step.id, Boolean(e));
+                    }}
+                  />
+                }
                 <span
                   className={cn(step.check && "line-through text-gray-500")}
                 >
                   {step.stepName}
                 </span>
               </label>
-              <div className="flex items-center gap-x-2">
-                <ModalContainer
-                  size="sm"
-                  action={
-                    <span
-                      onClick={handleButtonClick}
-                      onMouseDown={handleButtonClick}
-                      className="cursor-pointer"
-                    >
-                      <EditIcon className="w-3.5 h-3.5 text-blue" />
-                    </span>
+              {modifyAccess &&
+                <div className="flex items-center gap-x-2">
+                  <ModalContainer
+                    size="sm"
+                    action={
+                      <span
+                        onClick={handleButtonClick}
+                        onMouseDown={handleButtonClick}
+                        className="cursor-pointer"
+                      >
+                        <EditIcon className="w-3.5 h-3.5 text-blue" />
+                      </span>
 
-                  }
-                  title="Modifier l'étape"
-                  open={open.edit}
-                  setOpen={function (value: SetStateAction<boolean>): void {
-                    setOpen({ ...open, edit: value as boolean });
-                  }}
-                >
-                  <EditTaskState id={step.id} closeModal={() =>
-                    setOpen({ ...open, edit: false })
-                  } />
-                </ModalContainer>
+                    }
+                    title="Modifier l'étape"
+                    open={open.edit}
+                    setOpen={function (value: SetStateAction<boolean>): void {
+                      setOpen({ ...open, edit: value as boolean });
+                    }}
+                  >
+                    <EditTaskState id={step.id} closeModal={() =>
+                      setOpen({ ...open, edit: false })
+                    } />
+                  </ModalContainer>
 
 
-                <span
-                  onMouseDown={handleButtonClick}
-                  onClick={(e) => {
-                    handleButtonClick(e);
-                    removeTaskStep(step.id);
-                  }}
-                  className="cursor-pointer"
-                >
-                  <XIcon className="w-3.5 h-3.5 text-red" />
-                </span>
-              </div>
+                  <span
+                    onMouseDown={handleButtonClick}
+                    onClick={(e) => {
+                      handleButtonClick(e);
+                      removeTaskStep(step.id);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <XIcon className="w-3.5 h-3.5 text-red" />
+                  </span>
+                </div>
+              }
             </div>
           ))
         ) : (

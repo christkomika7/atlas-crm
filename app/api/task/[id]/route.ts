@@ -11,7 +11,7 @@ import { TaskType } from "@/types/task.type";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    const result = await checkAccess(["PROJECTS"], ["CREATE", "MODIFY"]);
+    const result = await checkAccess(["PROJECTS"], ["READ"]);
 
     if (!result.authorized) {
         return Response.json({

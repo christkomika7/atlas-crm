@@ -13,7 +13,7 @@ export default function EditSupplierLayout({
       </div>
       <div className="flex-1 min-h-0">
         <ScrollArea className="w-full h-full">
-          <div className="pr-2 max-w-5xl">{children}</div>
+          <div className="pr-2">{children}</div>
         </ScrollArea>
       </div>
     </div>

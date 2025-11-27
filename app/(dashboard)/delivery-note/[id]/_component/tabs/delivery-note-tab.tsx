@@ -52,6 +52,8 @@ import { DELIVERY_NOTE_PREFIX } from "@/config/constant";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { getBillboardItemLocations } from "@/action/delivery-note.action";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 
 export default function DeliveryNoteTab() {
@@ -69,7 +71,7 @@ export default function DeliveryNoteTab() {
   const setClientId = useClientIdStore.use.setClientId();
 
   const items = useItemStore.use.items();
-  const updateDiscount = useItemStore.use.updateDiscount();
+  // const updateDiscount = useItemStore.use.updateDiscount();
   const clearItem = useItemStore.use.clearItem();
   const setItems = useItemStore.use.setItems();
   const setItemQuantities = useItemStore.use.setItemQuantity();
@@ -91,6 +93,9 @@ export default function DeliveryNoteTab() {
   const [deliveryNoteNumber, setDeliverNoteNumber] = useState(0);
   const [lastUploadFiles, setLastUploadFiles] = useState<string[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
+
+  const readAccess = useAccess("DELIVERY_NOTES", "READ");
+  const modifyAccess = useAccess("DELIVERY_NOTES", "MODIFY");
 
   const form = useForm<DeliveryNoteUpdateSchemaType>({
     resolver: zodResolver(deliveryNoteUpdateSchema),
@@ -166,7 +171,7 @@ export default function DeliveryNoteTab() {
 
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && readAccess) {
       mutateGetProductService({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -187,11 +192,11 @@ export default function DeliveryNoteTab() {
         },
       });
     }
-  }, [companyId])
+  }, [companyId, readAccess])
 
 
   useEffect(() => {
-    if (param.id) {
+    if (param.id && readAccess) {
       mutateGetDeliveryNote({ id: param.id as string }, {
         onSuccess(data) {
           if (data.data) {
@@ -304,7 +309,7 @@ export default function DeliveryNoteTab() {
         },
       })
     }
-  }, [param])
+  }, [param, readAccess])
 
 
   useEffect(() => {
@@ -459,118 +464,39 @@ export default function DeliveryNoteTab() {
   );
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(submit)}
-        className="gap-x-4 space-y-4.5 grid grid-cols-[1.5fr_1fr] m-2"
-      >
-        <div className="space-y-4.5 max-w-lg">
-          <div className="space-y-2">
-            <h2 className="font-semibold">Client</h2>
-            <FormField
-              control={form.control}
-              name="clientId"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      disabled={isCompleted}
-                      isLoading={isGettingClients}
-                      datas={
-                        clientDatas?.data?.map((client) => ({
-                          id: client.id,
-                          label: `${client.companyName} - ${client.firstname} ${client.lastname}`,
-                          value: client.id,
-                        })) ?? []
-                      }
-                      value={field.value}
-                      setValue={(e) => {
-                        setClientId(e as string);
-                        field.onChange(e);
-                      }}
-                      placeholder="Sélectionner un client"
-                      searchMessage="Rechercher un client"
-                      noResultsMessage="Aucun client trouvé."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <FormField
-            control={form.control}
-            name="amountType"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <div className="flex flex-col space-y-1">
-                    <div>
-                      <Label className="text-sm">Mode paiement</Label>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className={cn("text-sm font-medium", field.value === "HT" ? "text-foreground" : "text-muted-foreground")}>
-                        HT
-                      </div>
-                      <Switch checked={field.value === "TTC"} onCheckedChange={e => {
-                        const updatedAmountType = e ? "TTC" : "HT";
-                        setAmountType(updatedAmountType);
-                        field.onChange(updatedAmountType);
-                      }} />
-                      <div className={cn("text-sm font-medium", field.value === "TTC" ? "text-foreground" : "text-muted-foreground")}>
-                        TTC
-                      </div>
-                    </div>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="space-y-2">
-            <h2 className="font-semibold">
-              Article{items.length > 1 && "s"} ({items.length})
-            </h2>
+    <AccessContainer hasAccess={readAccess} resource="DELIVERY_NOTES">
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(submit)}
+          className="gap-x-4 space-y-4.5 grid grid-cols-[1.5fr_1fr] m-2"
+        >
+          <div className="space-y-4.5 max-w-lg">
             <div className="space-y-2">
-              {items.map((item) => (
-                <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} isCompleted={isCompleted} locationBillboardDate={locationBillboardDate} amountType={amountType} />
-              ))}
-            </div>
-            {!isCompleted &&
+              <h2 className="font-semibold">Client</h2>
               <FormField
                 control={form.control}
-                name="item"
-                render={() => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <ItemModal />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            }
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">Pièce jointe</h2>
-            <div className="gap-x-2">
-              <FormField
-                control={form.control}
-                name="files"
+                name="clientId"
                 render={({ field }) => (
                   <FormItem className="-space-y-2">
                     <FormControl>
-                      <TextInput
-                        disabled={isCompleted}
-                        type="file"
-                        multiple={true}
-                        design="float"
-                        label="Photo(s)"
-                        required={false}
+                      <Combobox
+                        disabled={isCompleted || !modifyAccess}
+                        isLoading={isGettingClients}
+                        datas={
+                          clientDatas?.data?.map((client) => ({
+                            id: client.id,
+                            label: `${client.companyName} - ${client.firstname} ${client.lastname}`,
+                            value: client.id,
+                          })) ?? []
+                        }
                         value={field.value}
-                        handleChange={(e) => {
+                        setValue={(e) => {
+                          setClientId(e as string);
                           field.onChange(e);
                         }}
+                        placeholder="Sélectionner un client"
+                        searchMessage="Rechercher un client"
+                        noResultsMessage="Aucun client trouvé."
                       />
                     </FormControl>
                     <FormMessage />
@@ -578,51 +504,194 @@ export default function DeliveryNoteTab() {
                 )}
               />
             </div>
-            <div className="gap-x-2">
+            <FormField
+              control={form.control}
+              name="amountType"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <div className="flex flex-col space-y-1">
+                      <div>
+                        <Label className="text-sm">Mode paiement</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className={cn("text-sm font-medium", field.value === "HT" ? "text-foreground" : "text-muted-foreground")}>
+                          HT
+                        </div>
+                        <Switch disabled={isCompleted || !modifyAccess} checked={field.value === "TTC"} onCheckedChange={e => {
+                          const updatedAmountType = e ? "TTC" : "HT";
+                          setAmountType(updatedAmountType);
+                          field.onChange(updatedAmountType);
+                        }} />
+                        <div className={cn("text-sm font-medium", field.value === "TTC" ? "text-foreground" : "text-muted-foreground")}>
+                          TTC
+                        </div>
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="space-y-2">
+              <h2 className="font-semibold">
+                Article{items.length > 1 && "s"} ({items.length})
+              </h2>
+              <div className="space-y-2">
+                {items.map((item) => (
+                  <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} isCompleted={isCompleted} locationBillboardDate={locationBillboardDate} amountType={amountType} disabled={!modifyAccess} />
+                ))}
+              </div>
+              {!isCompleted || modifyAccess &&
+                <FormField
+                  control={form.control}
+                  name="item"
+                  render={() => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <ItemModal />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              }
+            </div>
+            <div className="space-y-2">
+              <h2 className="font-semibold">Pièce jointe</h2>
+              <div className="gap-x-2">
+                <FormField
+                  control={form.control}
+                  name="files"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <TextInput
+                          disabled={isCompleted || !modifyAccess}
+                          type="file"
+                          multiple={true}
+                          design="float"
+                          label="Photo(s)"
+                          required={false}
+                          value={field.value}
+                          handleChange={(e) => {
+                            field.onChange(e);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="gap-x-2">
+                <FormField
+                  control={form.control}
+                  name="lastUploadFiles"
+                  render={() => (
+                    <FormItem className="-space-y-0.5">
+                      <FormLabel>Liste des fichiers enregistrés</FormLabel>
+                      <FormControl>
+                        <ScrollArea className="bg-gray p-4 border rounded-md h-[100px]">
+                          <ul className="w-full text-sm">
+                            {lastUploadFiles.length > 0 ? (
+                              lastUploadFiles.map((file, index) => {
+                                return (
+                                  <li
+                                    key={index}
+                                    className="flex justify-between items-center hover:bg-white/50 p-2 rounded"
+                                  >
+                                    {index + 1}. fichier.{file.split(".").pop()}{" "}
+                                    <span className="flex items-center gap-x-2">
+                                      <span
+                                        onClick={() => downloadFile(file)}
+                                        className="text-blue cursor-pointer"
+                                      >
+                                        <DownloadIcon className="w-4 h-4" />
+                                      </span>{" "}
+                                      {!isCompleted && modifyAccess &&
+
+                                        <span
+                                          onClick={() =>
+                                            removeLastUpload(file)
+                                          }
+                                          className="text-red cursor-pointer"
+                                        >
+                                          <XIcon className="w-4 h-4" />
+                                        </span>
+                                      }
+                                    </span>
+                                  </li>
+                                );
+                              })
+                            ) : (
+                              <li className="text-sm">Aucun document trouvé.</li>
+                            )}
+                          </ul>
+                        </ScrollArea>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="font-semibold">Projet</h2>
               <FormField
                 control={form.control}
-                name="lastUploadFiles"
-                render={() => (
-                  <FormItem className="-space-y-0.5">
-                    <FormLabel>Liste des fichiers enregistrés</FormLabel>
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
                     <FormControl>
-                      <ScrollArea className="bg-gray p-4 border rounded-md h-[100px]">
-                        <ul className="w-full text-sm">
-                          {lastUploadFiles.length > 0 ? (
-                            lastUploadFiles.map((file, index) => {
-                              return (
-                                <li
-                                  key={index}
-                                  className="flex justify-between items-center hover:bg-white/50 p-2 rounded"
-                                >
-                                  {index + 1}. fichier.{file.split(".").pop()}{" "}
-                                  <span className="flex items-center gap-x-2">
-                                    <span
-                                      onClick={() => downloadFile(file)}
-                                      className="text-blue cursor-pointer"
-                                    >
-                                      <DownloadIcon className="w-4 h-4" />
-                                    </span>{" "}
-                                    {!isCompleted &&
+                      <Combobox
+                        disabled={isCompleted || !modifyAccess}
+                        isLoading={isGettingProject}
+                        datas={projects.map(({ id, name, status }) => ({
+                          id: id,
+                          label: name,
+                          value: id,
+                          color:
+                            status === "BLOCKED"
+                              ? "bg-red"
+                              : status === "TODO"
+                                ? "bg-neutral-200"
+                                : status === "IN_PROGRESS"
+                                  ? "bg-blue"
+                                  : "bg-emerald-500",
+                        }))}
+                        value={field.value ?? ""}
+                        setValue={(e) => {
+                          field.onChange(e);
+                        }}
+                        placeholder="Sélectionner un projet"
+                        searchMessage="Rechercher un projet"
+                        noResultsMessage="Aucun projet trouvé."
+                        addElement={<ProjectModal clientId={clientId} />}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <h2 className="font-semibold">Détails des paiements</h2>
+              <FormField
+                control={form.control}
+                name="note"
 
-                                      <span
-                                        onClick={() =>
-                                          removeLastUpload(file)
-                                        }
-                                        className="text-red cursor-pointer"
-                                      >
-                                        <XIcon className="w-4 h-4" />
-                                      </span>
-                                    }
-                                  </span>
-                                </li>
-                              );
-                            })
-                          ) : (
-                            <li className="text-sm">Aucun document trouvé.</li>
-                          )}
-                        </ul>
-                      </ScrollArea>
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <TextInput
+                        disabled={isCompleted || !modifyAccess}
+                        design="text-area"
+                        required={false}
+                        label="Note"
+                        value={field.value}
+                        handleChange={field.onChange}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -630,93 +699,33 @@ export default function DeliveryNoteTab() {
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">Projet</h2>
-            <FormField
-              control={form.control}
-              name="projectId"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      disabled={isCompleted}
-                      isLoading={isGettingProject}
-                      datas={projects.map(({ id, name, status }) => ({
-                        id: id,
-                        label: name,
-                        value: id,
-                        color:
-                          status === "BLOCKED"
-                            ? "bg-red"
-                            : status === "TODO"
-                              ? "bg-neutral-200"
-                              : status === "IN_PROGRESS"
-                                ? "bg-blue"
-                                : "bg-emerald-500",
-                      }))}
-                      value={field.value ?? ""}
-                      setValue={(e) => {
-                        field.onChange(e);
-                      }}
-                      placeholder="Sélectionner un projet"
-                      searchMessage="Rechercher un projet"
-                      noResultsMessage="Aucun projet trouvé."
-                      addElement={<ProjectModal clientId={clientId} />}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div className="space-y-4.5 max-w-full">
+            <DeliveryNoteInfo isGettingDocument={isGettingDocument} isGettingDeliveryNoteNumber={isGettingDeliveryNote}
+              reference={`${documentData?.data?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(deliveryNoteNumber, false)}`}
+              discount={clientDiscount}
+              setDiscount={setClientDiscount}
+              currency={currency}
+              calculate={calculate}
+              taxes={company?.vatRates ?? []}
+              items={items}
+              paymentLimit={paymentLimit}
+              setPaymentLimit={setPaymentLimit}
+              TTCPrice={totals.TTCPrice}
+              isCompleted={isCompleted}
+              HTPrice={totals.HTPrice}
+              amountType={amountType}
+              disabled={!modifyAccess}
             />
+            {modifyAccess &&
+              <div className="flex justify-center pt-2">
+                <Button disabled={isCompleted || isUpdatinDelivertNote} type="submit" variant="primary" className="justify-center">
+                  {isUpdatinDelivertNote ? <Spinner /> : "Valider"}
+                </Button>
+              </div>
+            }
           </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">Détails des paiements</h2>
-            <FormField
-              control={form.control}
-              name="note"
-
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      disabled={isCompleted}
-                      design="text-area"
-                      required={false}
-                      label="Note"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-        <div className="space-y-4.5 max-w-full">
-          <DeliveryNoteInfo isGettingDocument={isGettingDocument} isGettingDeliveryNoteNumber={isGettingDeliveryNote}
-            reference={`${documentData?.data?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(deliveryNoteNumber, false)}`}
-            discount={clientDiscount}
-            setDiscount={setClientDiscount}
-            currency={currency}
-            calculate={calculate}
-            taxes={company?.vatRates ?? []}
-            items={items}
-            paymentLimit={paymentLimit}
-            setPaymentLimit={setPaymentLimit}
-            TTCPrice={totals.TTCPrice}
-            isCompleted={isCompleted}
-            HTPrice={totals.HTPrice}
-            amountType={amountType}
-          />
-
-          <div className="flex justify-center pt-2">
-            <Button disabled={isCompleted || isUpdatinDelivertNote} type="submit" variant="primary" className="justify-center">
-              {isUpdatinDelivertNote ? <Spinner /> : "Valider"}
-            </Button>
-          </div>
-        </div>
-      </form>
-    </Form>
+        </form>
+      </Form>
+    </AccessContainer>
   );
 }

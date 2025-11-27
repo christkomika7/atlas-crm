@@ -39,9 +39,10 @@ type PurchaseOrderInfoProps = {
     amountType: "HT" | "TTC";
     payee?: Decimal;
     amountDue?: Decimal;
+    disabled?: boolean
 }
 
-export default function PurchaseOrderInfo({ isGettingDocument, isGettingPurchaseOrderNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit, isPaid, amountPaid, HTPrice, amountType, payee, amountDue }: PurchaseOrderInfoProps) {
+export default function PurchaseOrderInfo({ isGettingDocument, disabled, isGettingPurchaseOrderNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit, isPaid, amountPaid, HTPrice, amountType, payee, amountDue }: PurchaseOrderInfoProps) {
     return (
         <>
             <div className="space-y-2">
@@ -75,7 +76,7 @@ export default function PurchaseOrderInfo({ isGettingDocument, isGettingPurchase
                     <h2>Condition</h2>
                     <p>
                         <Combobox
-                            disabled={isPaid}
+                            disabled={isPaid || disabled}
                             datas={paymentTerms}
                             value={paymentLimit}
                             setValue={setPaymentLimit}
@@ -141,7 +142,7 @@ export default function PurchaseOrderInfo({ isGettingDocument, isGettingPurchase
                     <div className="flex items-center gap-x-2 max-w-[150px]">
                         <TextInput
                             type="number"
-                            disabled={amountPaid?.gt(0)}
+                            disabled={amountPaid?.gt(0) || disabled}
                             value={
                                 discount?.discount != null
                                     ? Number(String(discount.discount).replace("%", ""))
@@ -158,7 +159,7 @@ export default function PurchaseOrderInfo({ isGettingDocument, isGettingPurchase
                         />
                         <ToggleGroup
                             type="single"
-                            disabled={amountPaid?.gt(0)}
+                            disabled={amountPaid?.gt(0) || disabled}
                             value={discount.discountType}
                             onValueChange={(e) =>
                                 setDiscount({

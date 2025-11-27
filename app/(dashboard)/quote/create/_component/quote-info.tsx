@@ -34,10 +34,11 @@ type QuoteInfoProps = {
     HTPrice: Decimal;
     TTCPrice: Decimal;
     isCompleted?: boolean;
-    amountType: "HT" | "TTC"
+    amountType: "HT" | "TTC";
+    disabled?: boolean
 }
 
-export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit, isCompleted, HTPrice, amountType }: QuoteInfoProps) {
+export default function QuoteInfo({ isGettingDocument, disabled, isGettingQuoteNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit, isCompleted, HTPrice, amountType }: QuoteInfoProps) {
     return (
         <>
             <div className="space-y-2">
@@ -62,7 +63,7 @@ export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, ref
                     <h2>Condition</h2>
                     <p>
                         <Combobox
-                            disabled={isCompleted}
+                            disabled={isCompleted || disabled}
                             datas={paymentTerms}
                             value={paymentLimit}
                             setValue={setPaymentLimit}
@@ -127,7 +128,7 @@ export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, ref
                     <h2>Réduction</h2>
                     <div className="flex items-center gap-x-2 max-w-[150px]">
                         <TextInput
-                            disabled={isCompleted}
+                            disabled={isCompleted || disabled}
                             type="number"
                             value={
                                 discount?.discount != null
@@ -144,7 +145,7 @@ export default function QuoteInfo({ isGettingDocument, isGettingQuoteNumber, ref
                             }}
                         />
                         <ToggleGroup
-                            disabled={isCompleted}
+                            disabled={isCompleted || disabled}
                             type="single"
                             value={discount.discountType}
                             onValueChange={(e) =>

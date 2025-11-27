@@ -1,10 +1,8 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { cn, getFilePath } from "@/lib/utils";
 import { TaskType } from "@/types/task.type";
 import {
-  CalendarIcon,
   CheckIcon,
   EditIcon,
   InfoIcon,
@@ -12,8 +10,7 @@ import {
 } from "lucide-react";
 import { AvatarCircles } from "@/components/magicui/avatar-circles";
 import { RequestResponse } from "@/types/api.types";
-import { remove, updateStatus } from "@/action/task.action";
-import { $Enums } from "@/lib/generated/prisma";
+import { remove } from "@/action/task.action";
 
 import AlertDialogMessage from "@/components/alert-dialog/alert-dialog-message";
 import useQueryAction from "@/hook/useQueryAction";
@@ -22,20 +19,21 @@ import TaskModal from "./task-modal";
 import TaskStep from "./task-step";
 import { KanbanTask } from "@/components/ui/shadcn-io/kanban";
 import { useEffect } from "react";
-import { ta } from "zod/v4/locales";
 
 export type TaskCardProps = {
   task: KanbanTask;
+  readAccess: boolean;
+  modifyAccess: boolean;
 };
 
-export default function TaskCard({ task }: TaskCardProps) {
+export default function TaskCard({ task, readAccess, modifyAccess }: TaskCardProps) {
   const retrieveTask = useTaskStore.use.removeTask();
   const setStep = useTaskStore.use.setStep();
 
   const { mutate: mutateRemoveTask, isPending: isPendingRemoveTask } =
     useQueryAction<{ id: string }, RequestResponse<TaskType>>(
       remove,
-      () => {},
+      () => { },
       "tasks"
     );
 
@@ -65,48 +63,54 @@ export default function TaskCard({ task }: TaskCardProps) {
   return (
     <div className="">
       <div className="flex justify-end items-center gap-x-1">
-        <TaskModal title="Information" type="info" id={task.id}>
-          <span
-            onClick={handleButtonClick}
-            onMouseDown={handleButtonClick}
-            className="flex justify-center items-center bg-amber-400/10 rounded-full w-5.5 h-5.5 text-amber-400 cursor-pointer"
-          >
-            <InfoIcon className="w-3.5 h-3.5" />
-          </span>
-        </TaskModal>
-
-        <TaskModal title="Modifier la tâche" type="update" id={task.id}>
-          <span
-            onClick={handleButtonClick}
-            onMouseDown={handleButtonClick}
-            className="flex justify-center items-center bg-blue/10 rounded-full w-5.5 h-5.5 text-blue cursor-pointer"
-          >
-            <EditIcon className="w-3.5 h-3.5" />
-          </span>
-        </TaskModal>
-        <AlertDialogMessage
-          type="delete"
-          isLoading={isPendingRemoveTask}
-          actionButton={
+        {readAccess &&
+          <TaskModal title="Information" type="info" id={task.id}>
             <span
               onClick={handleButtonClick}
               onMouseDown={handleButtonClick}
-              className="flex justify-center items-center bg-red/10 rounded-full w-5.5 h-5.5 text-red"
+              className="flex justify-center items-center bg-amber-400/10 rounded-full w-5.5 h-5.5 text-amber-400 cursor-pointer"
             >
-              <XIcon className="w-3.5 h-3.5" />
+              <InfoIcon className="w-3.5 h-3.5" />
             </span>
-          }
-          title="Confirmer la suppression"
-          message={
-            <>
-              Êtes-vous sûr de vouloir supprimer cette tâche ? <br />
-              <span className="text-muted-foreground text-sm">
-                Cette action est définitive et ne peut pas être annulée.
+          </TaskModal>
+        }
+
+        {modifyAccess &&
+          <>
+            <TaskModal title="Modifier la tâche" type="update" id={task.id}>
+              <span
+                onClick={handleButtonClick}
+                onMouseDown={handleButtonClick}
+                className="flex justify-center items-center bg-blue/10 rounded-full w-5.5 h-5.5 text-blue cursor-pointer"
+              >
+                <EditIcon className="w-3.5 h-3.5" />
               </span>
-            </>
-          }
-          confirmAction={() => removeTask(task.id)}
-        />
+            </TaskModal>
+            <AlertDialogMessage
+              type="delete"
+              isLoading={isPendingRemoveTask}
+              actionButton={
+                <span
+                  onClick={handleButtonClick}
+                  onMouseDown={handleButtonClick}
+                  className="flex justify-center items-center bg-red/10 rounded-full w-5.5 h-5.5 text-red"
+                >
+                  <XIcon className="w-3.5 h-3.5" />
+                </span>
+              }
+              title="Confirmer la suppression"
+              message={
+                <>
+                  Êtes-vous sûr de vouloir supprimer cette tâche ? <br />
+                  <span className="text-muted-foreground text-sm">
+                    Cette action est définitive et ne peut pas être annulée.
+                  </span>
+                </>
+              }
+              confirmAction={() => removeTask(task.id)}
+            />
+          </>
+        }
       </div>
       <div className="space-y-2 mb-3 ">
         <div className="flex gap-x-1 justify-between items-end">
@@ -115,7 +119,10 @@ export default function TaskCard({ task }: TaskCardProps) {
             {new Date(task.time).toLocaleDateString()}
           </small>
         </div>
-        <TaskStep id={task.id} />
+        <TaskStep id={task.id}
+          readAccess={readAccess}
+          modifyAccess={modifyAccess}
+        />
       </div>
       <div className="flex justify-end items-center gap-x-1">
         {task.status === "DONE" && <CheckIcon className="w-4 h-4 text-blue" />}

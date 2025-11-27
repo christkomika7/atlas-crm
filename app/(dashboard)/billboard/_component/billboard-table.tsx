@@ -31,6 +31,8 @@ import BillboardStatus from "./billboard-status";
 import { ItemType } from "@/types/item.type";
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import Paginations from "@/components/paginations";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 type BillboardTableProps = {
   selectedBillboardIds: string[];
@@ -52,6 +54,8 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
 
     const skip = (currentPage - 1) * pageSize;
 
+    const readAccess = useAccess("BILLBOARDS", "READ");
+
     const { mutate: mutateGetBillboards, isPending: isGettingBillboards } = useQueryAction<
       { companyId: string, skip?: number; take?: number },
       RequestResponse<BillboardType[]>
@@ -66,7 +70,7 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
     };
 
     const refreshBillboard = () => {
-      if (companyId) {
+      if (companyId && billboards) {
         mutateGetBillboards({ companyId, take: pageSize, skip }, {
           async onSuccess(data) {
             if (data.data) {
@@ -84,7 +88,7 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
 
     useEffect(() => {
       refreshBillboard();
-    }, [companyId, currentPage]);
+    }, [companyId, currentPage, billboards]);
 
     const isSelected = (id: string) => selectedBillboardIds.includes(id);
 
@@ -94,115 +98,117 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
     }
 
     return (
-      <div className="border border-neutral-200 rounded-xl">
-        <Table>
-          <TableHeader>
-            <TableRow className="h-14">
-              <TableHead className="min-w-[50px] font-medium" />
-              <TableHead className="font-medium text-center">Photo</TableHead>
-              <TableHead className="font-medium text-center">
-                Référence
-              </TableHead>
-              <TableHead className="font-medium text-center">Type</TableHead>
-              <TableHead className="font-medium text-center">Nom</TableHead>
-              <TableHead className="font-medium text-center">
-                Revenus générés
-              </TableHead>
-              <TableHead className="font-medium text-center">Status</TableHead>
-              <TableHead className="font-medium text-center">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isGettingBillboards ? (
-              <TableRow>
-                <TableCell colSpan={9}>
-                  <div className="flex justify-center items-center py-6 w-full">
-                    <Spinner />
-                  </div>
-                </TableCell>
+      <AccessContainer hasAccess={readAccess} resource="BILLBOARDS" >
+        <div className="border border-neutral-200 rounded-xl">
+          <Table>
+            <TableHeader>
+              <TableRow className="h-14">
+                <TableHead className="min-w-[50px] font-medium" />
+                <TableHead className="font-medium text-center">Photo</TableHead>
+                <TableHead className="font-medium text-center">
+                  Référence
+                </TableHead>
+                <TableHead className="font-medium text-center">Type</TableHead>
+                <TableHead className="font-medium text-center">Nom</TableHead>
+                <TableHead className="font-medium text-center">
+                  Revenus générés
+                </TableHead>
+                <TableHead className="font-medium text-center">Status</TableHead>
+                <TableHead className="font-medium text-center">Action</TableHead>
               </TableRow>
-            ) : billboards && billboards.length > 0 ? (
-              billboards.map((billboard) => (
-                <TableRow
-                  key={billboard.id}
-                  className={`h-16 transition-colors ${isSelected(billboard.id) ? "bg-neutral-100" : ""
-                    }`}
-                >
-                  <TableCell className="text-neutral-600">
-                    <div className="flex justify-center items-center">
-                      <Checkbox
-                        checked={isSelected(billboard.id)}
-                        onCheckedChange={(checked) =>
-                          toggleSelection(billboard.id, !!checked)
-                        }
-                      />
+            </TableHeader>
+            <TableBody>
+              {isGettingBillboards ? (
+                <TableRow>
+                  <TableCell colSpan={9}>
+                    <div className="flex justify-center items-center py-6 w-full">
+                      <Spinner />
                     </div>
                   </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    <BillboardPhoto path={billboard.photos.length > 0 ? billboard.photos[0] : undefined} name={billboard.name.toUpperCase()} />
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {billboard.reference.toUpperCase()}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {billboard.type.name}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {billboard.name}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(getGenerateRevenue(billboard.items))}{" "}
-                    {billboard.company.currency}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    <BillboardStatus items={billboard.items.map(item => [item.locationStart, item.locationEnd])} />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <TableActionButton
-                      menus={dropdownMenu}
-                      id={billboard.id}
-                      refreshBillboard={refreshBillboard}
-                      deleteTitle="Confirmer la suppression du panneau"
-                      deleteMessage={
-                        <p>
-                          En supprimant un panneau, toutes les informations
-                          liées seront également supprimées.
-                          <br />
-                          <span className="font-semibold text-red-600">
-                            Cette action est irréversible.
-                          </span>
-                          <br />
-                          <br />
-                          Confirmez-vous cette suppression ?
-                        </p>
-                      }
-                    />
+                </TableRow>
+              ) : billboards && billboards.length > 0 ? (
+                billboards.map((billboard) => (
+                  <TableRow
+                    key={billboard.id}
+                    className={`h-16 transition-colors ${isSelected(billboard.id) ? "bg-neutral-100" : ""
+                      }`}
+                  >
+                    <TableCell className="text-neutral-600">
+                      <div className="flex justify-center items-center">
+                        <Checkbox
+                          checked={isSelected(billboard.id)}
+                          onCheckedChange={(checked) =>
+                            toggleSelection(billboard.id, !!checked)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      <BillboardPhoto path={billboard.photos.length > 0 ? billboard.photos[0] : undefined} name={billboard.name.toUpperCase()} />
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {billboard.reference.toUpperCase()}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {billboard.type.name}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {billboard.name}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {formatNumber(getGenerateRevenue(billboard.items))}{" "}
+                      {billboard.company.currency}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      <BillboardStatus items={billboard.items.map(item => [item.locationStart, item.locationEnd])} />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TableActionButton
+                        menus={dropdownMenu}
+                        id={billboard.id}
+                        refreshBillboard={refreshBillboard}
+                        deleteTitle="Confirmer la suppression du panneau"
+                        deleteMessage={
+                          <p>
+                            En supprimant un panneau, toutes les informations
+                            liées seront également supprimées.
+                            <br />
+                            <span className="font-semibold text-red-600">
+                              Cette action est irréversible.
+                            </span>
+                            <br />
+                            <br />
+                            Confirmez-vous cette suppression ?
+                          </p>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={9}
+                    className="py-6 text-gray-500 text-sm text-center"
+                  >
+                    Aucun panneau publicitaire trouvé.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={9}
-                  className="py-6 text-gray-500 text-sm text-center"
-                >
-                  Aucun panneau publicitaire trouvé.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
 
-        <div className="flex justify-end p-4">
-          <Paginations
-            totalItems={totalItems}
-            pageSize={pageSize}
-            controlledPage={currentPage}
-            onPageChange={(page) => setCurrentPage(page)}
-            maxVisiblePages={DEFAULT_PAGE_SIZE}
-          />
+          <div className="flex justify-end p-4">
+            <Paginations
+              totalItems={totalItems}
+              pageSize={pageSize}
+              controlledPage={currentPage}
+              onPageChange={(page) => setCurrentPage(page)}
+              maxVisiblePages={DEFAULT_PAGE_SIZE}
+            />
+          </div>
         </div>
-      </div>
+      </AccessContainer>
     );
   }
 );

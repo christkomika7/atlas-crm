@@ -88,7 +88,7 @@ export default function TableActionButton({
     }
   }, [companyId])
 
-  function goTo(id: string, action: "update" | "preview" | "send" | "convert") {
+  function goTo(id: string, action: "update" | "infos" | "send" | "convert") {
     switch (action) {
       case "update":
         setTab("action-quote-tab", 0);
@@ -110,7 +110,7 @@ export default function TableActionButton({
         });
 
         break;
-      case "preview":
+      case "infos":
         setTab("action-quote-tab", 1);
         router.push(`/quote/${id}`);
         break;
@@ -181,11 +181,11 @@ export default function TableActionButton({
               <>
                 {menus.map((menu) => {
                   if (
-                    (["send", "update", "delete"].includes(menu.id as string) && !modifyAccess) ||
-                    (["duplicate", "convert"].includes(menu.id as string) && !createAccess) ||
-                    (menu.id === "preview" && !readAccess)
+                    (["send", "update", "delete"].includes(menu.action as string) && !modifyAccess) ||
+                    (["duplicate", "convert"].includes(menu.action as string) && !createAccess) ||
+                    (menu.action === "infos" && !readAccess)
                   ) return null;
-                  switch (menu.id) {
+                  switch (menu.action) {
                     case "delete":
                       return (
                         <ConfirmDialog
@@ -229,7 +229,7 @@ export default function TableActionButton({
                           <button
                             className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
                             onClick={() =>
-                              goTo(data.id, menu.id as "update" | "preview" | "send" | "convert")
+                              goTo(data.id, menu.id as "update" | "infos" | "send" | "convert")
                             }
                           >
                             <menu.icon className="w-4 h-4" />
@@ -249,17 +249,19 @@ export default function TableActionButton({
               </>
             }
           </ul>
-          <ModalContainer
-            size="md"
-            title="Correction conflit panneau"
-            open={open.convert}
-            setOpen={() =>
-              setOpen({ ...open, convert: true })
-            }
-            onClose={() => setOpen({ ...open, convert: false })}
-          >
-            <DuplicateBillboard data={data} closeModal={() => setOpen({ ...open, convert: false })} duplicateTo={converToInvoice} isDuplicating={isConvertingQuote} />
-          </ModalContainer>
+          {createAccess &&
+            <ModalContainer
+              size="md"
+              title="Correction conflit panneau"
+              open={open.convert}
+              setOpen={() =>
+                setOpen({ ...open, convert: true })
+              }
+              onClose={() => setOpen({ ...open, convert: false })}
+            >
+              <DuplicateBillboard data={data} closeModal={() => setOpen({ ...open, convert: false })} duplicateTo={converToInvoice} isDuplicating={isConvertingQuote} />
+            </ModalContainer>
+          }
         </PopoverContent>
       )}
     </Popover>

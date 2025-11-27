@@ -10,6 +10,7 @@ import Spinner from "@/components/ui/spinner";
 import BillboardTable, { BillboardTableRef } from "./_component/billboard-table";
 import HeaderMenu from "./_component/header-menu";
 import { BillboardType } from "@/types/billboard.types";
+import { useAccess } from "@/hook/useAccess";
 
 export default function BillboardPage() {
   const [selectedBillboardIds, setSelectedBillboardIds] = useState<string[]>(
@@ -17,6 +18,9 @@ export default function BillboardPage() {
   );
 
   const billboardTableRef = useRef<BillboardTableRef>(null);
+
+  const createAccess = useAccess("BILLBOARDS", "CREATE");
+  const modifyAccess = useAccess("BILLBOARDS", "MODIFY");
 
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },
@@ -46,22 +50,26 @@ export default function BillboardPage() {
     <div className="space-y-9">
       <Header title="Panneau publicitaire">
         <div className="gap-x-2 grid grid-cols-[120px_100px]">
-          <Button
-            variant="primary"
-            className="bg-red font-medium"
-            onClick={removeClients}
-          >
-            {isPending ? (
-              <Spinner />
-            ) : (
-              <>
-                {selectedBillboardIds.length > 0 &&
-                  `(${selectedBillboardIds.length})`}{" "}
-                Suppression
-              </>
-            )}
-          </Button>
-          <HeaderMenu />
+          {modifyAccess &&
+            <Button
+              variant="primary"
+              className="bg-red font-medium"
+              onClick={removeClients}
+            >
+              {isPending ? (
+                <Spinner />
+              ) : (
+                <>
+                  {selectedBillboardIds.length > 0 &&
+                    `(${selectedBillboardIds.length})`}{" "}
+                  Suppression
+                </>
+              )}
+            </Button>
+          }
+          {createAccess &&
+            <HeaderMenu />
+          }
         </div>
       </Header>
       <BillboardTable

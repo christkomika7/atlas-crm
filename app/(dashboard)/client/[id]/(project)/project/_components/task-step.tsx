@@ -15,9 +15,11 @@ import EditTaskState from "./edit-task-state";
 
 type TaskStepProps = {
   id: string;
+  readAccess: boolean;
+  modifyAccess: boolean;
 };
 
-export default function TaskStep({ id }: TaskStepProps) {
+export default function TaskStep({ id, readAccess, modifyAccess }: TaskStepProps) {
   const steps = useTaskStore.use.step();
   const removeStep = useTaskStore.use.removeStep();
   const updateStep = useTaskStore.use.updateStep();
@@ -26,18 +28,18 @@ export default function TaskStep({ id }: TaskStepProps) {
   const { mutate: mutateRemove, isPending: isPendingRemove } = useQueryAction<
     { id: string },
     RequestResponse<TaskStepType>
-  >(remove, () => {}, "task-steps");
+  >(remove, () => { }, "task-steps");
 
   const { mutate: mutateCheck, isPending: isPendingCheck } = useQueryAction<
     { id: string; check: boolean },
     RequestResponse<TaskStepType>
-  >(check, () => {}, "task-steps");
+  >(check, () => { }, "task-steps");
 
   useEffect(() => {
-    if (id) {
+    if (id && readAccess) {
       setStepData(steps.filter((s) => s.taskId === id));
     }
-  }, [steps, id]);
+  }, [steps, id, readAccess]);
 
   const handleButtonClick = (e: React.SyntheticEvent) => {
     e.stopPropagation();
@@ -76,20 +78,22 @@ export default function TaskStep({ id }: TaskStepProps) {
           <span>Étape(s)</span>{" "}
           {(isPendingCheck || isPendingRemove) && <Spinner size={10} />}
         </div>
-        <PopoverContainer
-          actionButton={
-            <Button
-              onClick={handleButtonClick}
-              onMouseDown={handleButtonClick}
-              variant="outline"
-              className="shadow-none w-fit size-6 cursor-pointer"
-            >
-              <PlusIcon className="w-4 h-4" />
-            </Button>
-          }
-        >
-          <AddTaskState id={id} />
-        </PopoverContainer>
+        {modifyAccess &&
+          <PopoverContainer
+            actionButton={
+              <Button
+                onClick={handleButtonClick}
+                onMouseDown={handleButtonClick}
+                variant="outline"
+                className="shadow-none w-fit size-6 cursor-pointer"
+              >
+                <PlusIcon className="w-4 h-4" />
+              </Button>
+            }
+          >
+            <AddTaskState id={id} />
+          </PopoverContainer>
+        }
       </div>
 
       <div className="space-y-1">
@@ -103,48 +107,52 @@ export default function TaskStep({ id }: TaskStepProps) {
                 htmlFor={sanitize(step.stepName)}
                 className="flex items-center gap-x-2 font-medium text-sm"
               >
-                <Checkbox
-                  onClick={handleButtonClick}
-                  onMouseDown={handleButtonClick}
-                  defaultChecked={step.check}
-                  id={sanitize(step.stepName)}
-                  className="size-4"
-                  onCheckedChange={(e) => {
-                    updateCheck(step.id, Boolean(e));
-                  }}
-                />
+                {modifyAccess &&
+                  <Checkbox
+                    onClick={handleButtonClick}
+                    onMouseDown={handleButtonClick}
+                    defaultChecked={step.check}
+                    id={sanitize(step.stepName)}
+                    className="size-4"
+                    onCheckedChange={(e) => {
+                      updateCheck(step.id, Boolean(e));
+                    }}
+                  />
+                }
                 <span
                   className={cn(step.check && "line-through text-gray-500")}
                 >
                   {step.stepName}
                 </span>
               </label>
-              <div className="flex items-center gap-x-2">
-                <PopoverContainer
-                  actionButton={
-                    <span
-                      onClick={handleButtonClick}
-                      onMouseDown={handleButtonClick}
-                      className="cursor-pointer"
-                    >
-                      <EditIcon className="w-3.5 h-3.5 text-blue" />
-                    </span>
-                  }
-                >
-                  <EditTaskState id={step.id} />
-                </PopoverContainer>
+              {modifyAccess &&
+                <div className="flex items-center gap-x-2">
+                  <PopoverContainer
+                    actionButton={
+                      <span
+                        onClick={handleButtonClick}
+                        onMouseDown={handleButtonClick}
+                        className="cursor-pointer"
+                      >
+                        <EditIcon className="w-3.5 h-3.5 text-blue" />
+                      </span>
+                    }
+                  >
+                    <EditTaskState id={step.id} />
+                  </PopoverContainer>
 
-                <span
-                  onMouseDown={handleButtonClick}
-                  onClick={(e) => {
-                    handleButtonClick(e);
-                    removeTaskStep(step.id);
-                  }}
-                  className="cursor-pointer"
-                >
-                  <XIcon className="w-3.5 h-3.5 text-red" />
-                </span>
-              </div>
+                  <span
+                    onMouseDown={handleButtonClick}
+                    onClick={(e) => {
+                      handleButtonClick(e);
+                      removeTaskStep(step.id);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <XIcon className="w-3.5 h-3.5 text-red" />
+                  </span>
+                </div>
+              }
             </div>
           ))
         ) : (

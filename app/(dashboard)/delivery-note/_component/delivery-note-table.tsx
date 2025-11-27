@@ -27,6 +27,8 @@ import { DELIVERY_NOTE_PREFIX } from "@/config/constant";
 import { getAllDeliveryNote } from "@/action/delivery-note.action";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 import { formatDateToDashModel } from "@/lib/date";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 type DeliveryNoteTableProps = {
   filter: "progress" | "complete";
@@ -43,6 +45,8 @@ const DeliveryNoteTable = forwardRef<DeliveryNoteTableRef, DeliveryNoteTableProp
     const id = useDataStore.use.currentCompany();
     const currency = useDataStore.use.currency();
 
+    const readAccess = useAccess("DELIVERY_NOTES", "READ");
+
     const { mutate, isPending, data } = useQueryAction<
       { companyId: string; filter: "progress" | "complete" },
       RequestResponse<DeliveryNoteType[]>
@@ -55,7 +59,7 @@ const DeliveryNoteTable = forwardRef<DeliveryNoteTableRef, DeliveryNoteTableProp
     };
 
     const refreshDeliveryNote = () => {
-      if (id) {
+      if (id && readAccess) {
         mutate({ companyId: id, filter });
       }
     };
@@ -66,106 +70,108 @@ const DeliveryNoteTable = forwardRef<DeliveryNoteTableRef, DeliveryNoteTableProp
 
     useEffect(() => {
       refreshDeliveryNote();
-    }, [id]);
+    }, [id, readAccess]);
 
     const isSelected = (id: string) => selectedDeleveryNoteIds.includes(id);
 
     return (
-      <div className="border border-neutral-200 rounded-xl">
-        <Table>
-          <TableHeader>
-            <TableRow className="h-14">
-              <TableHead className="min-w-[50px] font-medium" />
-              <TableHead className="font-medium text-center">N°</TableHead>
-              <TableHead className="font-medium text-center">Client</TableHead>
-              <TableHead className="font-medium text-center">Date</TableHead>
-              <TableHead className="font-medium text-center">Montant</TableHead>
-              <TableHead className="font-medium text-center">Mises à jour</TableHead>
-              <TableHead className="font-medium text-center">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isPending ? (
-              <TableRow>
-                <TableCell colSpan={9}>
-                  <div className="flex justify-center items-center py-6 w-full">
-                    <Spinner />
-                  </div>
-                </TableCell>
+      <AccessContainer hasAccess={readAccess} resource="DELIVERY_NOTES" >
+        <div className="border border-neutral-200 rounded-xl">
+          <Table>
+            <TableHeader>
+              <TableRow className="h-14">
+                <TableHead className="min-w-[50px] font-medium" />
+                <TableHead className="font-medium text-center">N°</TableHead>
+                <TableHead className="font-medium text-center">Client</TableHead>
+                <TableHead className="font-medium text-center">Date</TableHead>
+                <TableHead className="font-medium text-center">Montant</TableHead>
+                <TableHead className="font-medium text-center">Mises à jour</TableHead>
+                <TableHead className="font-medium text-center">Action</TableHead>
               </TableRow>
-            ) : data?.data && data.data.length > 0 ? (
-              data.data.map((deliveryNote) => (
-                <TableRow
-                  key={deliveryNote.id}
-                  className={`h-16 transition-colors ${isSelected(deliveryNote.id) ? "bg-neutral-100" : ""
-                    }`}
-                >
-                  <TableCell className="text-neutral-600">
-                    <div className="flex justify-center items-center">
-                      <Checkbox
-                        checked={isSelected(deliveryNote.id)}
-                        onCheckedChange={(checked) =>
-                          toggleSelection(deliveryNote.id, !!checked)
-                        }
-                      />
+            </TableHeader>
+            <TableBody>
+              {isPending ? (
+                <TableRow>
+                  <TableCell colSpan={9}>
+                    <div className="flex justify-center items-center py-6 w-full">
+                      <Spinner />
                     </div>
                   </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {deliveryNote.company?.documentModel?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-
-                    {generateAmaId(deliveryNote.deliveryNoteNumber, false)}
+                </TableRow>
+              ) : data?.data && data.data.length > 0 ? (
+                data.data.map((deliveryNote) => (
+                  <TableRow
+                    key={deliveryNote.id}
+                    className={`h-16 transition-colors ${isSelected(deliveryNote.id) ? "bg-neutral-100" : ""
+                      }`}
+                  >
+                    <TableCell className="text-neutral-600">
+                      <div className="flex justify-center items-center">
+                        <Checkbox
+                          checked={isSelected(deliveryNote.id)}
+                          onCheckedChange={(checked) =>
+                            toggleSelection(deliveryNote.id, !!checked)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {deliveryNote.company?.documentModel?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-
+                      {generateAmaId(deliveryNote.deliveryNoteNumber, false)}
 
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {cutText(
-                      `${deliveryNote.client.companyName}`,
-                      20
-                    )}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {formatDateToDashModel(deliveryNote.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(deliveryNote.amountType === "TTC" ? deliveryNote.totalTTC : deliveryNote.totalHT)} {currency}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    <span>-</span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <TableActionButton
-                      menus={dropdownMenu}
-                      data={deliveryNote}
-                      refreshDeliveryNote={refreshDeliveryNote}
-                      deleteTitle="Confirmer la suppression du bon de livraison"
-                      deleteMessage={
-                        <p>
-                          En supprimant le bon de livraison, toutes les informations
-                          liées seront également supprimées.
-                          <br />
-                          <span className="font-semibold text-red-600">
-                            Cette action est irréversible.
-                          </span>
-                          <br />
-                          <br />
-                          Confirmez-vous cette suppression ?
-                        </p>
-                      }
-                    />
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {cutText(
+                        `${deliveryNote.client.companyName}`,
+                        20
+                      )}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {formatDateToDashModel(deliveryNote.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {formatNumber(deliveryNote.amountType === "TTC" ? deliveryNote.totalTTC : deliveryNote.totalHT)} {currency}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      <span>-</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TableActionButton
+                        menus={dropdownMenu}
+                        data={deliveryNote}
+                        refreshDeliveryNote={refreshDeliveryNote}
+                        deleteTitle="Confirmer la suppression du bon de livraison"
+                        deleteMessage={
+                          <p>
+                            En supprimant le bon de livraison, toutes les informations
+                            liées seront également supprimées.
+                            <br />
+                            <span className="font-semibold text-red-600">
+                              Cette action est irréversible.
+                            </span>
+                            <br />
+                            <br />
+                            Confirmez-vous cette suppression ?
+                          </p>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={9}
+                    className="py-6 text-gray-500 text-sm text-center"
+                  >
+                    Aucun bon de livraison trouvé.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={9}
-                  className="py-6 text-gray-500 text-sm text-center"
-                >
-                  Aucun bon de livraison trouvé.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </AccessContainer>
     );
   }
 );

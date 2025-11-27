@@ -1,7 +1,7 @@
 "use client";
 import Header from "@/components/header/header";
 import { Button } from "@/components/ui/button";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
 import { removeMany } from "@/action/invoice.action";
@@ -12,16 +12,27 @@ import UnpaidTab from "./_component/tabs/unpaid-tab";
 import PaidTab from "./_component/tabs/paid-tab";
 import { InvoiceType } from "@/types/invoice.types";
 import Link from "next/link";
+import { useAccess } from "@/hook/useAccess";
+import useTabStore from "@/stores/tab.store";
 
 export default function InvoicePage() {
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
+  const tab = useTabStore.use.tabs()["invoice-tab"];
+
 
   const invoiceTableRef = useRef<InvoiceTableRef>(null);
+
+  const createAccess = useAccess("INVOICES", "CREATE");
+  const modifyAccess = useAccess("INVOICES", "MODIFY");
 
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },
     RequestResponse<InvoiceType[]>
   >(removeMany, () => { }, "invoices");
+
+  useEffect(() => {
+    setSelectedInvoiceIds([]);
+  }, [tab])
 
   const handleInvoiceAdded = () => {
     invoiceTableRef.current?.refreshInvoice();
@@ -45,26 +56,31 @@ export default function InvoicePage() {
     <div className="space-y-9">
       <Header title="Factures">
         <div className="flex gap-x-2">
-          <Button
-            variant="primary"
-            className="bg-red w-fit font-medium"
-            onClick={removeInvoices}
-          >
-            {isPending ? (
-              <Spinner />
-            ) : (
-              <>
-                {selectedInvoiceIds.length > 0 &&
-                  `(${selectedInvoiceIds.length})`}{" "}
-                Suppression
-              </>
-            )}
-          </Button>
-          <Link href="/invoice/create">
-            <Button variant="primary" className="font-medium">
-              Nouvelle facture
+          {modifyAccess &&
+            <Button
+              variant="primary"
+              className="bg-red w-fit font-medium"
+              onClick={removeInvoices}
+            >
+              {isPending ? (
+                <Spinner />
+              ) : (
+                <>
+                  {selectedInvoiceIds.length > 0 &&
+                    `(${selectedInvoiceIds.length})`}{" "}
+                  Suppression
+                </>
+              )}
             </Button>
-          </Link>
+
+          }
+          {createAccess &&
+            <Link href="/invoice/create">
+              <Button variant="primary" className="font-medium">
+                Nouvelle facture
+              </Button>
+            </Link>
+          }
         </div>
       </Header>
       <Tabs

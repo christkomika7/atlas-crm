@@ -81,13 +81,13 @@ export default function TableActionButton({
     }
   }, [companyId]);
 
-  function goTo(invoiceId: string, action: "update" | "preview" | "send") {
+  function goTo(invoiceId: string, action: "update" | "infos" | "send") {
     switch (action) {
       case "update":
         setTab("action-invoice-tab", 0);
         router.push(`/invoice/${invoiceId}`);
         break;
-      case "preview":
+      case "infos":
         setTab("action-invoice-tab", 1);
         router.push(`/invoice/${invoiceId}`);
         break;
@@ -159,18 +159,18 @@ export default function TableActionButton({
               <>
                 {menus.map((menu, index) => {
                   if (
-                    (["send", "update", "add", "delete"].includes(menu.id as string) &&
+                    (["send", "update", "add", "delete"].includes(menu.action as string) &&
                       !modifyAccess)
                   )
                     return null;
 
-                  if (menu.id === "duplicate" && !createAccess)
+                  if (menu.action === "duplicate" && !createAccess)
                     return null;
 
-                  if (menu.id === "preview" && !readAccess)
+                  if (menu.action === "infos" && !readAccess)
                     return null;
 
-                  switch (menu.id) {
+                  switch (menu.action) {
                     case "add":
                       return (
                         <li key={index}>
@@ -241,7 +241,7 @@ export default function TableActionButton({
                           <button
                             className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
                             onClick={() =>
-                              goTo(data.id, menu.id as "update" | "preview" | "send")
+                              goTo(data.id, menu.action as "update" | "infos" | "send")
                             }
                           >
                             <menu.icon className="w-4 h-4" />

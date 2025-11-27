@@ -50,6 +50,8 @@ import { unique, update } from "@/action/purchase-order.action";
 import { SupplierType } from "@/types/supplier.types";
 import PurchaseOrderInfo from "../../../create/_component/purchase-order-info";
 import usePurchaseItemStore, { PurchaseItemType } from "@/stores/purchase-item.store";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 
 export default function PurchaseOrderTab() {
@@ -67,7 +69,7 @@ export default function PurchaseOrderTab() {
   const setSupplierId = useSupplierIdStore.use.setSupplierId();
 
   const items = usePurchaseItemStore.use.items();
-  const updateDiscount = usePurchaseItemStore.use.updateDiscount();
+  // const updateDiscount = usePurchaseItemStore.use.updateDiscount();
   const clearItem = usePurchaseItemStore.use.clearItem();
   const setItems = usePurchaseItemStore.use.setItems();
   const setItemQuantities = usePurchaseItemStore.use.setItemQuantity();
@@ -88,6 +90,9 @@ export default function PurchaseOrderTab() {
   const [supplier, setSupplier] = useState<SupplierType>();
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState(0);
   const [lastUploadFiles, setLastUploadFiles] = useState<string[]>([]);
+
+  const readAccess = useAccess("PURCHASE_ORDER", "READ");
+  const modifyAccess = useAccess("PURCHASE_ORDER", "MODIFY");
 
   const form = useForm<PurchaseOrderUpdateSchemaType>({
     resolver: zodResolver(purchaseOrderUpdateSchema),
@@ -153,7 +158,7 @@ export default function PurchaseOrderTab() {
 
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && readAccess) {
       mutateGetProductService({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -175,14 +180,14 @@ export default function PurchaseOrderTab() {
         },
       });
     }
-  }, [companyId])
+  }, [companyId, readAccess])
 
 
   useEffect(() => {
-    if (param.id) {
+    if (param.id && readAccess) {
       initPurchaseOrder()
     }
-  }, [param])
+  }, [param, readAccess])
 
 
   useEffect(() => {
@@ -413,118 +418,216 @@ export default function PurchaseOrderTab() {
 
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(submit)}
-        className="gap-x-4 space-y-4.5 grid grid-cols-[1.5fr_1fr] m-2"
-      >
-        <div className="space-y-4.5 max-w-lg">
-          <div className="space-y-2">
-            <h2 className="font-semibold">Fournisseur</h2>
-            <FormField
-              control={form.control}
-              name="supplierId"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      disabled={amountPaid.gt(0) && isPaid}
-                      isLoading={isGettingSuppliers}
-                      datas={
-                        supplierDatas?.data?.map((supplier) => ({
-                          id: supplier.id,
-                          label: `${supplier.companyName} - ${supplier.firstname} ${supplier.lastname}`,
-                          value: supplier.id,
-                        })) ?? []
-                      }
-                      value={field.value}
-                      setValue={(e) => {
-                        setSupplierId(e as string);
-                        field.onChange(e);
-                      }}
-                      placeholder="Sélectionner un fournisseur"
-                      searchMessage="Rechercher un fournisseur"
-                      noResultsMessage="Aucun fournisseur trouvé."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="amountType"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <div className="flex flex-col space-y-1">
-                      <div>
-                        <Label className="text-sm">Mode paiement</Label>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className={cn("text-sm font-medium", field.value === "HT" ? "text-foreground" : "text-muted-foreground")}>
-                          HT
-                        </div>
-                        <Switch disabled={amountPaid.gt(0)} checked={field.value === "TTC"} onCheckedChange={e => {
-                          const updatedAmountType = e ? "TTC" : "HT";
-                          setAmountType(updatedAmountType);
-                          field.onChange(updatedAmountType);
-                        }} />
-                        <div className={cn("text-sm font-medium", field.value === "TTC" ? "text-foreground" : "text-muted-foreground")}>
-                          TTC
-                        </div>
-                      </div>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">
-              Article{items.length > 1 && "s"} ({items.length})
-            </h2>
+    <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER">
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(submit)}
+          className="gap-x-4 space-y-4.5 grid grid-cols-[1.5fr_1fr] m-2"
+        >
+          <div className="space-y-4.5 max-w-lg">
             <div className="space-y-2">
-              {items.map((item) => (
-                <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} amountPaid={amountPaid} amountType={amountType} />
-              ))}
-            </div>
-            {amountPaid.eq(0) &&
+              <h2 className="font-semibold">Fournisseur</h2>
               <FormField
                 control={form.control}
-                name="item"
-                render={() => (
+                name="supplierId"
+                render={({ field }) => (
                   <FormItem className="-space-y-2">
                     <FormControl>
-                      <ItemModal />
+                      <Combobox
+                        disabled={(amountPaid.gt(0) && isPaid) || !modifyAccess}
+                        isLoading={isGettingSuppliers}
+                        datas={
+                          supplierDatas?.data?.map((supplier) => ({
+                            id: supplier.id,
+                            label: `${supplier.companyName} - ${supplier.firstname} ${supplier.lastname}`,
+                            value: supplier.id,
+                          })) ?? []
+                        }
+                        value={field.value}
+                        setValue={(e) => {
+                          setSupplierId(e as string);
+                          field.onChange(e);
+                        }}
+                        placeholder="Sélectionner un fournisseur"
+                        searchMessage="Rechercher un fournisseur"
+                        noResultsMessage="Aucun fournisseur trouvé."
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            }
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">Pièce jointe</h2>
-            <div className="gap-x-2">
               <FormField
                 control={form.control}
-                name="files"
+                name="amountType"
                 render={({ field }) => (
                   <FormItem className="-space-y-2">
                     <FormControl>
-                      <TextInput
-                        disabled={amountPaid.gt(0) && isPaid}
-                        type="file"
-                        multiple={true}
-                        design="float"
-                        label="Photo(s)"
-                        required={false}
-                        value={field.value}
-                        handleChange={(e) => {
+                      <div className="flex flex-col space-y-1">
+                        <div>
+                          <Label className="text-sm">Mode paiement</Label>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className={cn("text-sm font-medium", field.value === "HT" ? "text-foreground" : "text-muted-foreground")}>
+                            HT
+                          </div>
+                          <Switch disabled={amountPaid.gt(0) || !modifyAccess} checked={field.value === "TTC"} onCheckedChange={e => {
+                            const updatedAmountType = e ? "TTC" : "HT";
+                            setAmountType(updatedAmountType);
+                            field.onChange(updatedAmountType);
+                          }} />
+                          <div className={cn("text-sm font-medium", field.value === "TTC" ? "text-foreground" : "text-muted-foreground")}>
+                            TTC
+                          </div>
+                        </div>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <h2 className="font-semibold">
+                Article{items.length > 1 && "s"} ({items.length})
+              </h2>
+              <div className="space-y-2">
+                {items.map((item) => (
+                  <ItemList
+                    key={item.id}
+                    item={item}
+                    calculate={calculate}
+                    taxes={company?.vatRates ?? []}
+                    amountPaid={amountPaid}
+                    amountType={amountType}
+                    disabled={!modifyAccess}
+                  />
+                ))}
+              </div>
+              {amountPaid.eq(0) || modifyAccess &&
+                <FormField
+                  control={form.control}
+                  name="item"
+                  render={() => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <ItemModal />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              }
+            </div>
+            <div className="space-y-2">
+              <h2 className="font-semibold">Pièce jointe</h2>
+              <div className="gap-x-2">
+                <FormField
+                  control={form.control}
+                  name="files"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <TextInput
+                          disabled={(amountPaid.gt(0) && isPaid) || !modifyAccess}
+                          type="file"
+                          multiple={true}
+                          design="float"
+                          label="Photo(s)"
+                          required={false}
+                          value={field.value}
+                          handleChange={(e) => {
+                            field.onChange(e);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="gap-x-2">
+                <FormField
+                  control={form.control}
+                  name="lastUploadFiles"
+                  render={() => (
+                    <FormItem className="-space-y-0.5">
+                      <FormLabel>Liste des fichiers enregistrés</FormLabel>
+                      <FormControl>
+                        <ScrollArea className="bg-gray p-4 border rounded-md h-[100px]">
+                          <ul className="w-full text-sm">
+                            {lastUploadFiles.length > 0 ? (
+                              lastUploadFiles.map((file, index) => {
+                                return (
+                                  <li
+                                    key={index}
+                                    className="flex justify-between items-center hover:bg-white/50 p-2 rounded"
+                                  >
+                                    {index + 1}. fichier.{file.split(".").pop()}{" "}
+                                    <span className="flex items-center gap-x-2">
+                                      <span
+                                        onClick={() => downloadFile(file)}
+                                        className="text-blue cursor-pointer"
+                                      >
+                                        <DownloadIcon className="w-4 h-4" />
+                                      </span>{" "}
+                                      {!isPaid && modifyAccess &&
+                                        <span
+                                          onClick={() =>
+                                            removeLastUpload(file)
+                                          }
+                                          className="text-red cursor-pointer"
+                                        >
+                                          <XIcon className="w-4 h-4" />
+                                        </span>
+                                      }
+                                    </span>
+                                  </li>
+                                );
+                              })
+                            ) : (
+                              <li className="text-sm">Aucun document trouvé.</li>
+                            )}
+                          </ul>
+                        </ScrollArea>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="font-semibold">Projet</h2>
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <Combobox
+                        isLoading={isGettingProject}
+                        disabled={(amountPaid.gt(0) && isPaid) || modifyAccess}
+                        datas={projects.map(({ id, name, status }) => ({
+                          id: id,
+                          label: name,
+                          value: id,
+                          color:
+                            status === "BLOCKED"
+                              ? "bg-red"
+                              : status === "TODO"
+                                ? "bg-neutral-200"
+                                : status === "IN_PROGRESS"
+                                  ? "bg-blue"
+                                  : "bg-emerald-500",
+                        }))}
+                        value={field.value ?? ""}
+                        setValue={(e) => {
                           field.onChange(e);
                         }}
+                        placeholder="Sélectionner un projet"
+                        searchMessage="Rechercher un projet"
+                        noResultsMessage="Aucun projet trouvé."
                       />
                     </FormControl>
                     <FormMessage />
@@ -532,50 +635,22 @@ export default function PurchaseOrderTab() {
                 )}
               />
             </div>
-            <div className="gap-x-2">
+            <div className="space-y-2">
+              <h2 className="font-semibold">Détails des paiements</h2>
               <FormField
                 control={form.control}
-                name="lastUploadFiles"
-                render={() => (
-                  <FormItem className="-space-y-0.5">
-                    <FormLabel>Liste des fichiers enregistrés</FormLabel>
+                name="note"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
                     <FormControl>
-                      <ScrollArea className="bg-gray p-4 border rounded-md h-[100px]">
-                        <ul className="w-full text-sm">
-                          {lastUploadFiles.length > 0 ? (
-                            lastUploadFiles.map((file, index) => {
-                              return (
-                                <li
-                                  key={index}
-                                  className="flex justify-between items-center hover:bg-white/50 p-2 rounded"
-                                >
-                                  {index + 1}. fichier.{file.split(".").pop()}{" "}
-                                  <span className="flex items-center gap-x-2">
-                                    <span
-                                      onClick={() => downloadFile(file)}
-                                      className="text-blue cursor-pointer"
-                                    >
-                                      <DownloadIcon className="w-4 h-4" />
-                                    </span>{" "}
-                                    {!isPaid &&
-                                      <span
-                                        onClick={() =>
-                                          removeLastUpload(file)
-                                        }
-                                        className="text-red cursor-pointer"
-                                      >
-                                        <XIcon className="w-4 h-4" />
-                                      </span>
-                                    }
-                                  </span>
-                                </li>
-                              );
-                            })
-                          ) : (
-                            <li className="text-sm">Aucun document trouvé.</li>
-                          )}
-                        </ul>
-                      </ScrollArea>
+                      <TextInput
+                        disabled={(amountPaid.gt(0) && isPaid) || modifyAccess}
+                        design="text-area"
+                        required={false}
+                        label="Note"
+                        value={field.value}
+                        handleChange={field.onChange}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -583,94 +658,38 @@ export default function PurchaseOrderTab() {
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">Projet</h2>
-            <FormField
-              control={form.control}
-              name="projectId"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isGettingProject}
-                      disabled={amountPaid.gt(0) && isPaid}
-                      datas={projects.map(({ id, name, status }) => ({
-                        id: id,
-                        label: name,
-                        value: id,
-                        color:
-                          status === "BLOCKED"
-                            ? "bg-red"
-                            : status === "TODO"
-                              ? "bg-neutral-200"
-                              : status === "IN_PROGRESS"
-                                ? "bg-blue"
-                                : "bg-emerald-500",
-                      }))}
-                      value={field.value ?? ""}
-                      setValue={(e) => {
-                        field.onChange(e);
-                      }}
-                      placeholder="Sélectionner un projet"
-                      searchMessage="Rechercher un projet"
-                      noResultsMessage="Aucun projet trouvé."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">Détails des paiements</h2>
-            <FormField
-              control={form.control}
-              name="note"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      disabled={amountPaid.gt(0) && isPaid}
-                      design="text-area"
-                      required={false}
-                      label="Note"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-        <div className="space-y-4.5 max-w-full">
-          <PurchaseOrderInfo isGettingDocument={isGettingDocument} isGettingPurchaseOrderNumber={isGettingPurchaseOrder}
-            reference={`${documentData?.data?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrderNumber, false)}`}
-            discount={supplierDiscount}
-            setDiscount={setSupplierDiscount}
-            currency={currency}
-            calculate={calculate}
-            taxes={company?.vatRates ?? []}
-            items={items}
-            paymentLimit={paymentLimit}
-            setPaymentLimit={setPaymentLimit}
-            TTCPrice={totals.TTCPrice}
-            HTPrice={totals.HTPrice}
-            isPaid={isPaid}
-            amountPaid={amountPaid}
-            amountType={amountType}
-            payee={payee}
-            amountDue={amountDue}
-          />
+          <div className="space-y-4.5 max-w-full">
+            <PurchaseOrderInfo isGettingDocument={isGettingDocument} isGettingPurchaseOrderNumber={isGettingPurchaseOrder}
+              reference={`${documentData?.data?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrderNumber, false)}`}
+              discount={supplierDiscount}
+              setDiscount={setSupplierDiscount}
+              currency={currency}
+              calculate={calculate}
+              taxes={company?.vatRates ?? []}
+              items={items}
+              paymentLimit={paymentLimit}
+              setPaymentLimit={setPaymentLimit}
+              TTCPrice={totals.TTCPrice}
+              HTPrice={totals.HTPrice}
+              isPaid={isPaid}
+              amountPaid={amountPaid}
+              amountType={amountType}
+              payee={payee}
+              amountDue={amountDue}
+              disabled={!modifyAccess}
 
-          <div className="flex justify-center pt-2">
-            <Button type="submit" disabled={isPaid} variant="primary" className="justify-center">
-              {isUpdatingPurchaseOrder ? <Spinner /> : "Valider"}
-            </Button>
+            />
+
+            {modifyAccess &&
+              <div className="flex justify-center pt-2">
+                <Button type="submit" disabled={isPaid} variant="primary" className="justify-center">
+                  {isUpdatingPurchaseOrder ? <Spinner /> : "Valider"}
+                </Button>
+              </div>
+            }
           </div>
-        </div>
-      </form>
-    </Form>
+        </form>
+      </Form>
+    </AccessContainer>
   );
 }

@@ -25,6 +25,8 @@ import { formatNumber, generateAmaId, getPrefix } from "@/lib/utils";
 import { unique as getUniqueBillboard } from "@/action/billboard.action";
 import { BillboardType } from "@/types/billboard.types";
 import { Decimal } from "decimal.js";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 export default function InfoTab() {
   const param = useParams();
@@ -44,6 +46,10 @@ export default function InfoTab() {
     deliveryNotes: "",
     creditNotes: "",
   });
+
+  const readAccess = useAccess("BILLBOARDS", "READ");
+
+
   const { mutate, isPending } = useQueryAction<
     { billboardId: string },
     RequestResponse<ItemType[]>
@@ -64,7 +70,7 @@ export default function InfoTab() {
     );
 
   useEffect(() => {
-    if (param.id) {
+    if (param.id && readAccess) {
       mutate(
         { billboardId: param.id as string },
         {
@@ -109,10 +115,10 @@ export default function InfoTab() {
         }
       );
     }
-  }, [param]);
+  }, [param && readAccess]);
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && readAccess) {
       getDocumentModel(
         { id: companyId },
         {
@@ -133,82 +139,84 @@ export default function InfoTab() {
         }
       );
     }
-  }, [companyId]);
+  }, [companyId, readAccess]);
 
   if (isPending || isLoadingDocumentModel || isLoadingBillboard)
     return <Spinner />;
   return (
-    <ScrollArea className="h-[calc(100vh-176px)]">
-      <div className="space-y-4 pt-2 pr-4 pb-4">
-        <div className="gap-x-3 grid grid-cols-[1fr_2.7fr]">
-          <BillboardDetails detail={billboard} />
-          <BillboardRevenue
-            sales={items.map((item) => ({
-              id: item.id,
-              startDate: item.startDate,
-              endDate: item.endDate,
-              amount: item.amount,
-            }))}
-          />
-        </div>
+    <AccessContainer hasAccess={readAccess} resource="BILLBOARDS" >
+      <ScrollArea className="h-[calc(100vh-176px)]">
+        <div className="space-y-4 pt-2 pr-4 pb-4">
+          <div className="gap-x-3 grid grid-cols-[1fr_2.7fr]">
+            <BillboardDetails detail={billboard} />
+            <BillboardRevenue
+              sales={items.map((item) => ({
+                id: item.id,
+                startDate: item.startDate,
+                endDate: item.endDate,
+                amount: item.amount,
+              }))}
+            />
+          </div>
 
-        <div className="border border-neutral-200 rounded-xl">
-          <Table>
-            <TableHeader>
-              <TableRow className="h-14">
-                <TableHead className="font-medium text-center">Date</TableHead>
-                <TableHead className="font-medium text-center">
-                  Mois de location
-                </TableHead>
-                <TableHead className="font-medium text-center">
-                  N° facture
-                </TableHead>
-                <TableHead className="font-medium text-center">
-                  Client
-                </TableHead>
-                <TableHead className="font-medium text-center">
-                  Sommes
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.length > 0 ? (
-                items.map((item) => (
-                  <TableRow key={item.id} className={`h-16 transition-colors`}>
-                    <TableCell className="text-neutral-600 text-center">
-                      {new Date(item.createdAt)
-                        .toLocaleDateString()
-                        .replaceAll("/", "-")}
-                    </TableCell>
-                    <TableCell className="text-neutral-600 text-center">
-                      {getMonthsAndDaysDifference(item.startDate, item.endDate)}
-                    </TableCell>
-                    <TableCell className="text-neutral-600 text-center">
-                      {getPrefix(item.itemInvoiceType, prefixs)}-
-                      {generateAmaId(item.invoideNumber, false)}
-                    </TableCell>
-                    <TableCell className="text-neutral-600 text-center">
-                      {item.client}
-                    </TableCell>
-                    <TableCell className="text-neutral-600 text-center">
-                      {formatNumber(item.amount)} {item.currency}
+          <div className="border border-neutral-200 rounded-xl">
+            <Table>
+              <TableHeader>
+                <TableRow className="h-14">
+                  <TableHead className="font-medium text-center">Date</TableHead>
+                  <TableHead className="font-medium text-center">
+                    Mois de location
+                  </TableHead>
+                  <TableHead className="font-medium text-center">
+                    N° facture
+                  </TableHead>
+                  <TableHead className="font-medium text-center">
+                    Client
+                  </TableHead>
+                  <TableHead className="font-medium text-center">
+                    Sommes
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.length > 0 ? (
+                  items.map((item) => (
+                    <TableRow key={item.id} className={`h-16 transition-colors`}>
+                      <TableCell className="text-neutral-600 text-center">
+                        {new Date(item.createdAt)
+                          .toLocaleDateString()
+                          .replaceAll("/", "-")}
+                      </TableCell>
+                      <TableCell className="text-neutral-600 text-center">
+                        {getMonthsAndDaysDifference(item.startDate, item.endDate)}
+                      </TableCell>
+                      <TableCell className="text-neutral-600 text-center">
+                        {getPrefix(item.itemInvoiceType, prefixs)}-
+                        {generateAmaId(item.invoideNumber, false)}
+                      </TableCell>
+                      <TableCell className="text-neutral-600 text-center">
+                        {item.client}
+                      </TableCell>
+                      <TableCell className="text-neutral-600 text-center">
+                        {formatNumber(item.amount)} {item.currency}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="py-6 text-gray-500 text-sm text-center"
+                    >
+                      Aucune facture trouvée.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="py-6 text-gray-500 text-sm text-center"
-                  >
-                    Aucune facture trouvée.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-      </div>
-    </ScrollArea>
+      </ScrollArea>
+    </AccessContainer>
   );
 }

@@ -17,6 +17,7 @@ import { $Enums } from "@/lib/generated/prisma";
 import ProductServiceEditModal from "./product-service-edit-modal";
 import Spinner from "@/components/ui/spinner";
 import { useState } from "react";
+import { useAccess } from "@/hook/useAccess";
 
 type TableActionButtonProps = {
   id: string;
@@ -37,6 +38,13 @@ export default function TableActionButton({
 }: TableActionButtonProps) {
 
   const [currentId, setCurrentId] = useState("");
+
+  const createAccess = useAccess("PRODUCT_SERVICES", "CREATE");
+  const modifyAccess = useAccess("PRODUCT_SERVICES", "MODIFY");
+
+  const hasAnyAccess = modifyAccess || createAccess;
+
+
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<ProductServiceType[]>
@@ -80,48 +88,59 @@ export default function TableActionButton({
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild disabled={!hasAnyAccess}>
         <Button variant="primary" className="p-0 rounded-lg !w-9 !h-9">
           <ChevronDownIcon className="text-white" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0 w-[180px]">
-        <ul>
-          {menus.map((menu) => {
-            if (menu.action === "delete")
-              return (
-                <ConfirmDialog
-                  key={menu.id}
-                  type="delete"
-                  title={deleteTitle}
-                  message={deleteMessage}
-                  action={handleDelete}
-                  loading={isPending}
-                />
-              );
-            if (menu.action === "duplicate")
-              return (
-                <li key={menu.id}>
-                  <button onClick={() => duplicate(String(menu.id))} className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer">
-                    {<menu.icon className="w-4 h-4" />}
-                    {menu.title}
-                    {currentId === menu.id && isDuplicating && <Spinner />}
-                  </button>
-                </li>
-              );
-            return (
-              <li key={menu.id}>
-                <ProductServiceEditModal
-                  id={id}
-                  title={menu.title}
-                  filter={filter}
-                  onProductServiceUpdated={refreshProductServices}
-                />
-              </li>
-            );
-          })}
-        </ul>
-      </PopoverContent>
+      {hasAnyAccess &&
+        <PopoverContent align="end" className="p-0 w-[180px]">
+          <ul>
+            {menus.map((menu) => {
+              if (
+                (["update", "delete"].includes(menu.action as string) && !modifyAccess) ||
+                (menu.action === "duplicate" && !createAccess)
+              ) return null;
+
+              switch (menu.action) {
+                case "delete":
+                  return (
+                    <ConfirmDialog
+                      key={menu.id}
+                      type="delete"
+                      title={deleteTitle}
+                      message={deleteMessage}
+                      action={handleDelete}
+                      loading={isPending}
+                    />
+                  );
+                case "duplicate":
+                  return (
+                    <li key={menu.id}>
+                      <button onClick={() => duplicate(String(menu.id))} className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer">
+                        {<menu.icon className="w-4 h-4" />}
+                        {menu.title}
+                        {currentId === menu.id && isDuplicating && <Spinner />}
+                      </button>
+                    </li>
+                  );
+                default:
+                  return (
+                    <li key={menu.id}>
+                      <ProductServiceEditModal
+                        id={id}
+                        title={menu.title}
+                        filter={filter}
+                        onProductServiceUpdated={refreshProductServices}
+                      />
+                    </li>
+                  );
+
+              }
+            })}
+          </ul>
+        </PopoverContent>
+      }
     </Popover>
   );
 }

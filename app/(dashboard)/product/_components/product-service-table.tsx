@@ -29,6 +29,8 @@ import { cn, formatNumber } from "@/lib/utils";
 import { $Enums } from "@/lib/generated/prisma";
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import Paginations from "@/components/paginations";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 type ProductServiceTableProps = {
   filter: $Enums.ProductServiceType;
@@ -58,7 +60,9 @@ const ProductServiceTable = forwardRef<
 
     const skip = (currentPage - 1) * pageSize;
 
-    const { mutate, isPending, data } = useQueryAction<
+    const readAccess = useAccess("PRODUCT_SERVICES", "READ");
+
+    const { mutate, isPending } = useQueryAction<
       { companyId: string; filter: $Enums.ProductServiceType, skip?: number; take?: number },
       RequestResponse<ProductServiceType[]>
     >(all, () => { }, "product-services");
@@ -72,7 +76,7 @@ const ProductServiceTable = forwardRef<
     };
 
     const refreshProductService = () => {
-      if (id) {
+      if (id && readAccess) {
         mutate({ companyId: id, filter, take: pageSize, skip }, {
           onSuccess(data) {
             if (data.data) {
@@ -91,126 +95,128 @@ const ProductServiceTable = forwardRef<
 
     useEffect(() => {
       refreshProductService();
-    }, [id, currentPage]);
+    }, [id, currentPage, readAccess]);
 
     const isSelected = (id: string) => selectedProductSerciceIds.includes(id);
 
     return (
-      <div className="border border-neutral-200 rounded-xl">
-        <Table>
-          <TableHeader>
-            <TableRow className="h-14">
-              <TableHead className="min-w-[50px] font-medium" />
-              <TableHead className="font-medium text-center">
-                Référence
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                Catégorie
-              </TableHead>
-              <TableHead className="font-medium text-center">
-                Désignation
-              </TableHead>
-              <TableHead className="font-medium text-center">Somme</TableHead>
-              <TableHead className="font-medium text-center">
-                En stock
-              </TableHead>
-              <TableHead className="font-medium text-center">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isPending ? (
-              <TableRow>
-                <TableCell colSpan={9}>
-                  <div className="flex justify-center items-center py-6 w-full">
-                    <Spinner />
-                  </div>
-                </TableCell>
+      <AccessContainer hasAccess={readAccess} resource="PRODUCT_SERVICES" >
+        <div className="border border-neutral-200 rounded-xl">
+          <Table>
+            <TableHeader>
+              <TableRow className="h-14">
+                <TableHead className="min-w-[50px] font-medium" />
+                <TableHead className="font-medium text-center">
+                  Référence
+                </TableHead>
+                <TableHead className="font-medium text-center">
+                  Catégorie
+                </TableHead>
+                <TableHead className="font-medium text-center">
+                  Désignation
+                </TableHead>
+                <TableHead className="font-medium text-center">Somme</TableHead>
+                <TableHead className="font-medium text-center">
+                  En stock
+                </TableHead>
+                <TableHead className="font-medium text-center">Action</TableHead>
               </TableRow>
-            ) : items.length > 0 ? (
-              items.map((item) => (
-                <TableRow
-                  key={item.id}
-                  className={`h-16 transition-colors ${isSelected(item.id) ? "bg-neutral-100" : ""
-                    }`}
-                >
-                  <TableCell className="text-neutral-600">
-                    <div className="flex justify-center items-center">
-                      <Checkbox
-                        checked={isSelected(item.id)}
-                        onCheckedChange={(checked) =>
-                          toggleSelection(item.id, !!checked)
-                        }
-                      />
+            </TableHeader>
+            <TableBody>
+              {isPending ? (
+                <TableRow>
+                  <TableCell colSpan={9}>
+                    <div className="flex justify-center items-center py-6 w-full">
+                      <Spinner />
                     </div>
                   </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {item.reference}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {item.category}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {item.designation}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(item.unitPrice)}{" "}
-                    {item.company.currency}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {item.quantity}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <TableActionButton
-                      filter="SERVICE"
-                      menus={dropdownMenu}
-                      id={item.id}
-                      refreshProductServices={refreshProductService}
-                      deleteTitle={cn(
-                        "Confirmer la suppression du",
-                        item.type === "PRODUCT"
-                          ? "produit"
-                          : "service"
-                      )}
-                      deleteMessage={
-                        <p>
-                          En supprimant le{" "}
-                          {filter === "PRODUCT" ? "produit" : "service"}, toutes
-                          les informations liées seront également supprimées.
-                          <br />
-                          <span className="font-semibold text-red-600">
-                            Cette action est irréversible.
-                          </span>
-                          <br />
-                          <br />
-                          Confirmez-vous cette suppression ?
-                        </p>
-                      }
-                    />
+                </TableRow>
+              ) : items.length > 0 ? (
+                items.map((item) => (
+                  <TableRow
+                    key={item.id}
+                    className={`h-16 transition-colors ${isSelected(item.id) ? "bg-neutral-100" : ""
+                      }`}
+                  >
+                    <TableCell className="text-neutral-600">
+                      <div className="flex justify-center items-center">
+                        <Checkbox
+                          checked={isSelected(item.id)}
+                          onCheckedChange={(checked) =>
+                            toggleSelection(item.id, !!checked)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {item.reference}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {item.category}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {item.designation}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {formatNumber(item.unitPrice)}{" "}
+                      {item.company.currency}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {item.quantity}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TableActionButton
+                        filter="SERVICE"
+                        menus={dropdownMenu}
+                        id={item.id}
+                        refreshProductServices={refreshProductService}
+                        deleteTitle={cn(
+                          "Confirmer la suppression du",
+                          item.type === "PRODUCT"
+                            ? "produit"
+                            : "service"
+                        )}
+                        deleteMessage={
+                          <p>
+                            En supprimant le{" "}
+                            {filter === "PRODUCT" ? "produit" : "service"}, toutes
+                            les informations liées seront également supprimées.
+                            <br />
+                            <span className="font-semibold text-red-600">
+                              Cette action est irréversible.
+                            </span>
+                            <br />
+                            <br />
+                            Confirmez-vous cette suppression ?
+                          </p>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={9}
+                    className="py-6 text-gray-500 text-sm text-center"
+                  >
+                    Aucun {filter === "PRODUCT" ? "produit" : "service"} trouvé.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={9}
-                  className="py-6 text-gray-500 text-sm text-center"
-                >
-                  Aucun {filter === "PRODUCT" ? "produit" : "service"} trouvé.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-        <div className="flex justify-end p-4">
-          <Paginations
-            totalItems={totalItems}
-            pageSize={pageSize}
-            controlledPage={currentPage}
-            onPageChange={(page) => setCurrentPage(page)}
-            maxVisiblePages={DEFAULT_PAGE_SIZE}
-          />
+              )}
+            </TableBody>
+          </Table>
+          <div className="flex justify-end p-4">
+            <Paginations
+              totalItems={totalItems}
+              pageSize={pageSize}
+              controlledPage={currentPage}
+              onPageChange={(page) => setCurrentPage(page)}
+              maxVisiblePages={DEFAULT_PAGE_SIZE}
+            />
+          </div>
         </div>
-      </div>
+      </AccessContainer>
     );
   }
 );

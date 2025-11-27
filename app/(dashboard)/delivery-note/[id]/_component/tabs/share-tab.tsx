@@ -28,6 +28,8 @@ import { recordEmailSchema, RecordEmailSchemaType } from "@/lib/zod/record-email
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 import { getUniqueDeliveryNote, shareDeliveryNote } from "@/action/delivery-note.action";
 import { DELIVERY_NOTE_PREFIX } from "@/config/constant";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 export default function ShareTab() {
   const companyId = useDataStore.use.currentCompany();
@@ -35,6 +37,9 @@ export default function ShareTab() {
   const [deliveryNote, setDeliverNote] = useState<DeliveryNoteType>();
 
   const param = useParams();
+
+  const readAccess = useAccess("DELIVERY_NOTES", "READ");
+  const modifyAccess = useAccess("DELIVERY_NOTES", "MODIFY");
 
   const form = useForm<RecordEmailSchemaType>({
     resolver: zodResolver(recordEmailSchema),
@@ -68,7 +73,7 @@ export default function ShareTab() {
     );
 
   useEffect(() => {
-    if (companyId) {
+    if (companyId && readAccess) {
       form.setValue("companyId", companyId);
       mutateGetDocument(
         { id: companyId },
@@ -81,10 +86,10 @@ export default function ShareTab() {
         },
       );
     }
-  }, [companyId]);
+  }, [companyId, readAccess]);
 
   useEffect(() => {
-    if (param.id) {
+    if (param.id && readAccess) {
       mutateGetDeliveryNote(
         { id: param.id as string },
         {
@@ -102,7 +107,7 @@ export default function ShareTab() {
       );
       form.setValue("recordId", param.id as string)
     }
-  }, [param.id]);
+  }, [param.id, readAccess]);
 
   useEffect(() => {
     if (document && deliveryNote) {
@@ -148,127 +153,134 @@ export default function ShareTab() {
   }
 
   return (
-    <ScrollArea className="pr-4 h-full">
-      {isGettingDeliveryNote || !deliveryNote ? <Spinner /> :
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(submit)}
+    <AccessContainer hasAccess={readAccess} resource="DELIVERY_NOTES">
+      <ScrollArea className="pr-4 h-full">
+        {isGettingDeliveryNote || !deliveryNote ? <Spinner /> :
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(submit)}
+            >
+              <div className="gap-8 grid grid-cols-[1.5fr_1fr] pt-4 h-full">
+                <div className="space-y-4">
 
-          >
-            <div className="gap-8 grid grid-cols-[1.5fr_1fr] pt-4 h-full">
-              <div className="space-y-4">
+                  <div className="space-y-4.5 m-2 max-w-xl">
+                    <FormField
+                      control={form.control}
+                      name="emails"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <MultipleSelector
+                              value={
+                                field?.value?.map((v) => ({ label: v, value: v })) ??
+                                []
+                              }
+                              disabled={!modifyAccess}
+                              placeholder="Destinataires"
+                              onChange={(options) =>
+                                field.onChange(options.map((opt) => opt.value))
+                              }
+                              creatable
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="subject"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <TextInput
+                              disabled={!modifyAccess}
+                              required={false}
+                              design="float"
+                              label="Objet"
+                              value={field.value}
+                              handleChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="message"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <TextInput
+                              disabled={!modifyAccess}
+                              required={false}
+                              design="text-area"
+                              label="Message (optionnel)"
+                              value={field.value}
+                              handleChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="file"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <TextInput
+                              type="file"
+                              design="float"
+                              required={false}
+                              disabled={!modifyAccess}
+                              label="Pièces jointes supplémentaires"
+                              value={field.value}
+                              multiple={true}
+                              handleChange={field.onChange}
+                              showFileData={true}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <div className="space-y-4.5 m-2 max-w-xl">
-                  <FormField
-                    control={form.control}
-                    name="emails"
-                    render={({ field }) => (
-                      <FormItem className="-space-y-2">
-                        <FormControl>
-                          <MultipleSelector
-                            value={
-                              field?.value?.map((v) => ({ label: v, value: v })) ??
-                              []
-                            }
-                            placeholder="Destinataires"
-                            onChange={(options) =>
-                              field.onChange(options.map((opt) => opt.value))
-                            }
-                            creatable
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                      <FormItem className="-space-y-2">
-                        <FormControl>
-                          <TextInput
-                            required={false}
-                            design="float"
-                            label="Objet"
-                            value={field.value}
-                            handleChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="message"
-                    render={({ field }) => (
-                      <FormItem className="-space-y-2">
-                        <FormControl>
-                          <TextInput
-                            required={false}
-                            design="text-area"
-                            label="Message (optionnel)"
-                            value={field.value}
-                            handleChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="file"
-                    render={({ field }) => (
-                      <FormItem className="-space-y-2">
-                        <FormControl>
-                          <TextInput
-                            type="file"
-                            design="float"
-                            required={false}
-                            label="Pièces jointes supplémentaires"
-                            value={field.value}
-                            multiple={true}
-                            handleChange={field.onChange}
-                            showFileData={true}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
-
+                <div className="space-y-2">
+                  <div className="space-y-2 py-4 border-neutral-200 border-b">
+                    <h2 className="font-semibold">Facture</h2>
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span>Date</span>
+                      <span>{formatDateToDashModel(deliveryNote.createdAt)}</span>
+                    </p>
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span>Client</span>
+                      <span>{deliveryNote.client.firstname} {deliveryNote.client.lastname}</span>
+                    </p>
+                  </div>
+                  <div className="space-y-2 py-4 border-neutral-200 border-b">
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span className="font-semibold">Total TTC</span>
+                      <span>{formatNumber(deliveryNote.totalTTC)} {currency}</span>
+                    </p>
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span>Montant facturé</span>
+                      <span>{formatNumber(deliveryNote.totalTTC)} {currency}</span>
+                    </p>
+                  </div>
+                  {modifyAccess &&
+                    <Button variant="primary">{isSharingDeliveryNote ? <Spinner /> : "Partger"}</Button>
+                  }
+                </div>
               </div>
-              <div className="space-y-2">
-                <div className="space-y-2 py-4 border-neutral-200 border-b">
-                  <h2 className="font-semibold">Facture</h2>
-                  <p className="flex justify-between items-center gap-x-2 text-sm">
-                    <span>Date</span>
-                    <span>{formatDateToDashModel(deliveryNote.createdAt)}</span>
-                  </p>
-                  <p className="flex justify-between items-center gap-x-2 text-sm">
-                    <span>Client</span>
-                    <span>{deliveryNote.client.firstname} {deliveryNote.client.lastname}</span>
-                  </p>
-                </div>
-                <div className="space-y-2 py-4 border-neutral-200 border-b">
-                  <p className="flex justify-between items-center gap-x-2 text-sm">
-                    <span className="font-semibold">Total TTC</span>
-                    <span>{formatNumber(deliveryNote.totalTTC)} {currency}</span>
-                  </p>
-                  <p className="flex justify-between items-center gap-x-2 text-sm">
-                    <span>Montant facturé</span>
-                    <span>{formatNumber(deliveryNote.totalTTC)} {currency}</span>
-                  </p>
-                </div>
-                <Button variant="primary">{isSharingDeliveryNote ? <Spinner /> : "Partger"}</Button>
-              </div>
-            </div>
-          </form>
-        </Form>
-      }
-    </ScrollArea>
+            </form>
+          </Form>
+        }
+      </ScrollArea>
+    </AccessContainer>
   );
 }

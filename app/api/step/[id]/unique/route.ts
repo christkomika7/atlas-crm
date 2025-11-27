@@ -4,7 +4,7 @@ import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    const result = await checkAccess("PROJECTS", ["CREATE", "MODIFY"]);
+    const result = await checkAccess("PROJECTS", ["MODIFY"]);
 
     if (!result.authorized) {
         return Response.json({

@@ -1,6 +1,5 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Combobox } from '@/components/ui/combobox';
 import Spinner from '@/components/ui/spinner'
 import TextInput from '@/components/ui/text-input';
@@ -34,10 +33,11 @@ type DeliveryNoteInfoProps = {
     HTPrice: Decimal;
     TTCPrice: Decimal;
     isCompleted?: boolean;
-    amountType: "HT" | "TTC"
+    amountType: "HT" | "TTC";
+    disabled?: boolean
 }
 
-export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryNoteNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit, isCompleted, amountType, HTPrice }: DeliveryNoteInfoProps) {
+export default function DeliveryNoteInfo({ isGettingDocument, disabled, isGettingDeliveryNoteNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit, isCompleted, amountType, HTPrice }: DeliveryNoteInfoProps) {
     return (
         <>
             <div className="space-y-2">
@@ -62,7 +62,7 @@ export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryN
                     <h2>Condition</h2>
                     <p>
                         <Combobox
-                            disabled={isCompleted}
+                            disabled={isCompleted || disabled}
                             datas={paymentTerms}
                             value={paymentLimit}
                             setValue={setPaymentLimit}
@@ -127,7 +127,7 @@ export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryN
                     <h2>Réduction</h2>
                     <div className="flex items-center gap-x-2 max-w-[150px]">
                         <TextInput
-                            disabled={isCompleted}
+                            disabled={isCompleted || disabled}
                             type="number"
                             value={
                                 discount?.discount != null
@@ -144,7 +144,7 @@ export default function DeliveryNoteInfo({ isGettingDocument, isGettingDeliveryN
                             }}
                         />
                         <ToggleGroup
-                            disabled={isCompleted}
+                            disabled={isCompleted || disabled}
                             type="single"
                             value={discount.discountType}
                             onValueChange={(e) =>

@@ -8,7 +8,7 @@ import {
 } from "@/lib/zod/client.schema";
 import { RequestResponse } from "@/types/api.types";
 import { ClientType } from "@/types/client.types";
-import { notFound, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";

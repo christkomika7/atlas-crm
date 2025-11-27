@@ -9,7 +9,7 @@ import { taskSchema, TaskSchemaType } from "@/lib/zod/task.schema";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-    const result = await checkAccess(["PROJECTS"], ["CREATE", "MODIFY"]);
+    const result = await checkAccess(["PROJECTS"], ["MODIFY"]);
 
     if (!result.authorized) {
         return Response.json({

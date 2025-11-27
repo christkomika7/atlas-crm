@@ -3,38 +3,45 @@ import { CheckCheckIcon, CopyIcon, EditIcon, FilesIcon, PlusIcon, ScanEyeIcon, S
 
 export const dropdownMenu: TableActionButtonType[] = [
     {
-        id: "send",
+        id: 1,
         icon: SendHorizonalIcon,
         title: "Envoyer",
+        action: "send"
     },
     {
-        id: "update",
+        id: 2,
         icon: EditIcon,
         title: "Modifier",
+        action: "update"
     },
     {
-        id: "complete",
+        id: 3,
         icon: CheckCheckIcon,
         title: "Compléter",
+        action: "complete"
     },
     {
-        id: "preview",
+        id: 4,
         icon: ScanEyeIcon,
         title: "Aperçu",
+        action: 'infos'
     },
     {
-        id: "duplicate",
+        id: 5,
         icon: CopyIcon,
         title: "Dupliquer",
+        action: "duplicate"
     },
     {
-        id: "convert",
+        id: 6,
         icon: FilesIcon,
         title: "Convertir",
+        action: "convert"
     },
     {
-        id: "delete",
+        id: 7,
         icon: Trash2Icon,
         title: "Supprimer",
+        action: "delete"
     },
 ]

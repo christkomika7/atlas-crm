@@ -1,3 +1,4 @@
+'use client';
 import { getSession } from "@/lib/auth-client";
 import { $Enums, Resource } from "@/lib/generated/prisma";
 import { hasAccess } from "@/lib/utils";

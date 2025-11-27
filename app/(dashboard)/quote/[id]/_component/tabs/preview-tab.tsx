@@ -18,6 +18,8 @@ import { getUniqueQuote } from "@/action/quote.action";
 import RecordDocument from "@/components/pdf/record";
 import { record } from "zod";
 import Decimal from "decimal.js";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 export default function PreviewTab() {
   const param = useParams();
@@ -30,6 +32,8 @@ export default function PreviewTab() {
   );
 
   const idCompany = useDataStore.use.currentCompany();
+
+  const readAccess = useAccess("QUOTES", "READ");
 
   const { mutate: mutateGetQuote, isPending: isGettingQuote } =
     useQueryAction<{ id: string }, RequestResponse<QuoteType>>(
@@ -45,7 +49,7 @@ export default function PreviewTab() {
     >(uniqueDocument, () => { }, ["model-document"]);
 
   useEffect(() => {
-    if (idCompany) {
+    if (idCompany && readAccess) {
       mutateGetDocument(
         { id: idCompany },
         {
@@ -57,26 +61,10 @@ export default function PreviewTab() {
         },
       );
     }
-  }, [idCompany]);
+  }, [idCompany, readAccess]);
 
   useEffect(() => {
-    if (param.id) {
-      mutateGetQuote(
-        { id: param.id as string },
-        {
-          onSuccess(data) {
-            if (data.data) {
-              setQuote(data.data);
-            }
-          },
-        },
-      );
-    }
-  }, [param.id]);
-
-
-  function refresh() {
-    if (param.id) {
+    if (param.id && readAccess) {
       mutateGetQuote(
         { id: param.id as string },
         {
@@ -84,13 +72,13 @@ export default function PreviewTab() {
             if (data.data) {
               setQuote(data.data);
               setFilename(`Devis ${data.data.company.documentModel?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(data.data.quoteNumber, false)}.pdf`)
-
             }
           },
         },
       );
     }
-  }
+  }, [param.id, readAccess]);
+
 
   function close() {
     router.push("/quote");
@@ -99,78 +87,80 @@ export default function PreviewTab() {
   if (isGettingDocument && isGettingQuote) return <Spinner />;
 
   return (
-    <ScrollArea className="pr-4 h-full">
-      <div className="gap-8 grid grid-cols-[1.5fr_1fr] pt-4 h-full">
-        <div className="space-y-4">
-          {!document && !quote ? (
-            <Spinner />
-          ) : (
-            <>
-              <div className="flex justify-end">
-                <Button variant="primary" className="max-w-xs"
-                  onClick={() => downloadComponentAsPDF("quote-bc", filename, {
-                    padding: 0,
-                    margin: 0,
-                    quality: 0.98,
-                    scale: 4
-                  })}
+    <AccessContainer hasAccess={readAccess} resource="QUOTES" >
+      <ScrollArea className="pr-4 h-full">
+        <div className="gap-8 grid grid-cols-[1.5fr_1fr] pt-4 h-full">
+          <div className="space-y-4">
+            {!document && !quote ? (
+              <Spinner />
+            ) : (
+              <>
+                <div className="flex justify-end">
+                  <Button variant="primary" className="max-w-xs"
+                    onClick={() => downloadComponentAsPDF("quote-bc", filename, {
+                      padding: 0,
+                      margin: 0,
+                      quality: 0.98,
+                      scale: 4
+                    })}
+                  >
+                    Télécharger
+                  </Button>
+                </div>
+                <div className="border rounded-xl border-neutral-100">
+                  <RecordDocument
+                    title="Devis"
+                    type="Devis"
+                    id="quote-bc"
+                    firstColor={document?.primaryColor || "#fbbf24"}
+                    secondColor={document?.secondaryColor || "#fef3c7"}
+                    logo={document?.logo}
+                    logoSize={document?.size || "Medium"}
+                    logoPosition={document?.position || "Center"}
+                    orderValue={document?.quotesPrefix || QUOTE_PREFIX}
+                    orderNote={document?.quotesInfo || ""}
+                    record={quote}
+                    recordNumber={`${generateAmaId(quote?.quoteNumber ?? 1, false)}`}
+                    isLoading={isGettingQuote}
+                    payee={new Decimal(0)}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          <div className="space-y-1">
+            {!document || !record ? (
+              <Spinner />
+            ) : (
+              <>
+                <div className="flex justify-between items-center mt-2">
+                  <h2 className="font-semibold">Devis</h2>
+                  <p className="text-sm">
+                    N° {document?.quotesPrefix || QUOTE_PREFIX}-{(generateAmaId(quote?.quoteNumber ?? 1, false))}
+                  </p>
+                </div>
+                <div className="space-y-2 py-4">
+                </div>
+                {quote?.fromRecordId && quote.fromRecordName && quote.fromRecordReference &&
+                  <p className="flex justify-between items-center gap-x-2 pb-4 text-sm">
+                    <span className="font-semibold">Convertir depuis le {quote.fromRecordName.toLocaleLowerCase()}</span>
+                    <span className="font-medium text-blue underline">
+                      {quote.fromRecordReference}
+                    </span>
+                  </p>
+                }
+                <Button
+                  onClick={close}
+                  variant="primary"
+                  className="bg-gray text-black"
                 >
-                  Télécharger
+                  Fermer
                 </Button>
-              </div>
-              <div className="border rounded-xl border-neutral-100">
-                <RecordDocument
-                  title="Devis"
-                  type="Devis"
-                  id="quote-bc"
-                  firstColor={document?.primaryColor || "#fbbf24"}
-                  secondColor={document?.secondaryColor || "#fef3c7"}
-                  logo={document?.logo}
-                  logoSize={document?.size || "Medium"}
-                  logoPosition={document?.position || "Center"}
-                  orderValue={document?.quotesPrefix || QUOTE_PREFIX}
-                  orderNote={document?.quotesInfo || ""}
-                  record={quote}
-                  recordNumber={`${generateAmaId(quote?.quoteNumber ?? 1, false)}`}
-                  isLoading={isGettingQuote}
-                  payee={new Decimal(0)}
-                />
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
-        <div className="space-y-1">
-          {!document || !record ? (
-            <Spinner />
-          ) : (
-            <>
-              <div className="flex justify-between items-center mt-2">
-                <h2 className="font-semibold">Devis</h2>
-                <p className="text-sm">
-                  N° {document?.quotesPrefix || QUOTE_PREFIX}-{(generateAmaId(quote?.quoteNumber ?? 1, false))}
-                </p>
-              </div>
-              <div className="space-y-2 py-4">
-              </div>
-              {quote?.fromRecordId && quote.fromRecordName && quote.fromRecordReference &&
-                <p className="flex justify-between items-center gap-x-2 pb-4 text-sm">
-                  <span className="font-semibold">Convertir depuis le {quote.fromRecordName.toLocaleLowerCase()}</span>
-                  <span className="font-medium text-blue underline">
-                    {quote.fromRecordReference}
-                  </span>
-                </p>
-              }
-              <Button
-                onClick={close}
-                variant="primary"
-                className="bg-gray text-black"
-              >
-                Fermer
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-    </ScrollArea>
+      </ScrollArea>
+    </AccessContainer>
   );
 }

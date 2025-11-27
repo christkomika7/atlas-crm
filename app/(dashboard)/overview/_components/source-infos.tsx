@@ -20,7 +20,7 @@ export default function SourceInfos({ canViewDashboard }: SourceInfosProps) {
     const [transactions, setTransactions] = useState<SourceTransaction[]>([])
     const currency = useDataStore.use.currency();
     const companyId = useDataStore.use.currentCompany();
-    const { mutate, isPending, data } = useQueryAction<
+    const { mutate, isPending } = useQueryAction<
         { companyId: string },
         RequestResponse<SourceTransaction[]>
     >(getBySource, () => { }, "transaction-sources");

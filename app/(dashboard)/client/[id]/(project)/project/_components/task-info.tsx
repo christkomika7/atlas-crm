@@ -6,12 +6,13 @@ import Spinner from "@/components/ui/spinner";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
 import { TaskType } from "@/types/task.type";
-import { Dispatch, SetStateAction, useEffect } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import ShowValue from "./show-value";
 import { priority, status } from "@/lib/data";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { downloadFile } from "@/lib/utils";
 import { DownloadIcon } from "lucide-react";
+import { useAccess } from "@/hook/useAccess";
 
 type TaskInfoProps = {
   id: string;
@@ -19,16 +20,25 @@ type TaskInfoProps = {
 };
 
 export default function TaskInfo({ id, closeModal }: TaskInfoProps) {
-  const { mutate, isPending, data } = useQueryAction<
+  const [data, setData] = useState<TaskType>()
+  const readAccess = useAccess("PROJECTS", "READ");
+
+  const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<TaskType>
   >(unique, () => { }, "task");
 
   useEffect(() => {
-    if (id) {
-      mutate({ id });
+    if (id && readAccess) {
+      mutate({ id }, {
+        onSuccess(data) {
+          if (data.data) {
+            setData(data.data)
+          }
+        },
+      });
     }
-  }, [id]);
+  }, [id, readAccess]);
 
   return (
     <>
@@ -41,20 +51,20 @@ export default function TaskInfo({ id, closeModal }: TaskInfoProps) {
         <div className="space-y-2">
           <ShowValue
             title="Nom de la tâche"
-            value={data?.data?.taskName as string}
+            value={data?.taskName || "-"}
           />
 
           <div className="gap-x-2 grid grid-cols-3">
-            {data?.data && (
+            {data && (
               <ShowValue
                 title="Délai"
-                value={new Date(data!.data!.time).toLocaleDateString() || "-"}
+                value={new Date(data.time || Date.now()).toLocaleDateString() || "-"}
               />
             )}
             <ShowValue
               title="Priorité"
               value={
-                priority.find((s) => s.value === data?.data?.priority)?.label ||
+                priority.find((s) => s.value === data?.priority)?.label ||
                 "Aucune"
               }
             />
@@ -62,7 +72,7 @@ export default function TaskInfo({ id, closeModal }: TaskInfoProps) {
             <ShowValue
               title="Statut"
               value={
-                status.find((s) => s.value === data?.data?.status)?.label ||
+                status.find((s) => s.value === data?.status)?.label ||
                 "Aucun"
               }
             />
@@ -74,8 +84,8 @@ export default function TaskInfo({ id, closeModal }: TaskInfoProps) {
             </h2>
             <ScrollArea className="bg-gray p-2 border rounded-md h-[150px]">
               <ul className="w-full text-sm">
-                {data?.data && data.data.file.length > 0 ? (
-                  data.data.file.map((document, index) => {
+                {data && data.file.length > 0 ? (
+                  data.file.map((document, index) => {
                     return (
                       <li
                         key={index}
@@ -101,10 +111,10 @@ export default function TaskInfo({ id, closeModal }: TaskInfoProps) {
           </div>
         </div>
         <div className="space-y-2">
-          <ShowValue title="Description" value={data?.data?.desc || "Aucune"} />
+          <ShowValue title="Description" value={data?.desc || "Aucune"} />
           <ShowValue
             title="Commentaire"
-            value={data?.data?.comment || "Aucune"}
+            value={data?.comment || "Aucune"}
           />
           <div className="space-y-0.5">
             <h2 className="font-semibold text-sm">
@@ -112,8 +122,8 @@ export default function TaskInfo({ id, closeModal }: TaskInfoProps) {
             </h2>
             <ScrollArea className="bg-gray p-2 border rounded-md h-[150px]">
               <ul className="w-full text-sm">
-                {data?.data && data.data.users.length > 0 ? (
-                  data.data.users.map((user, index) => {
+                {data && data.users.length > 0 ? (
+                  data.users.map((user, index) => {
                     return (
                       <li
                         key={index}
@@ -124,7 +134,7 @@ export default function TaskInfo({ id, closeModal }: TaskInfoProps) {
                     );
                   })
                 ) : (
-                  <li className="text-sm">Aucune personne trouvée.</li>
+                  <li className="text-sm">Aucun collaborateur trouvé.</li>
                 )}
               </ul>
             </ScrollArea>

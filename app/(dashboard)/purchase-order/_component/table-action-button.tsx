@@ -16,6 +16,7 @@ import ModalContainer from "@/components/modal/modal-container";
 import { useState } from "react";
 import PaymentForm from "./payment-form";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
+import { useAccess } from "@/hook/useAccess";
 
 type TableActionButtonProps = {
   id: string;
@@ -35,18 +36,25 @@ export default function TableActionButton({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const setTab = useTabStore.use.setTab();
+
+  const readAccess = useAccess("PURCHASE_ORDER", "READ");
+  const createAccess = useAccess("PURCHASE_ORDER", "CREATE");
+  const modifyAccess = useAccess("PURCHASE_ORDER", "MODIFY");
+
+  const hasAnyAccess = modifyAccess || createAccess || readAccess;
+
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<PurchaseOrderType[]>
   >(remove, () => { }, "purchase-order");
 
-  function goTo(id: string, action: "update" | "preview" | "send") {
+  function goTo(id: string, action: "update" | "infos" | "send") {
     switch (action) {
       case "update":
         setTab("action-purchase-order-tab", 0);
         router.push(`/purchase-order/${id}`);
         break;
-      case "preview":
+      case "infos":
         setTab("action-purchase-order-tab", 1);
         router.push(`/purchase-order/${id}`);
         break;
@@ -72,63 +80,71 @@ export default function TableActionButton({
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild disabled={!hasAnyAccess}>
         <Button variant="primary" className="p-0 rounded-lg !w-9 !h-9">
           <ChevronDownIcon className="text-white" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0 w-[180px]">
-        <ul>
-          {menus.map((menu) => {
-            switch (menu.id) {
-              case "add":
-                return (
-                  <li key={menu.id}>
-                    <ModalContainer
-                      action={
-                        <button className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer">
-                          <menu.icon className="w-4 h-4" />
-                          {menu.title}
-                        </button>
-                      }
-                      title="Enregistrer un paiement"
-                      open={open}
-                      setOpen={setOpen}
-                      onClose={() => setOpen(false)}
-                    >
-                      <PaymentForm refresh={refreshPurchaseOrder} closeModal={() => setOpen(false)} purchaseOrderId={id} />
-                    </ModalContainer>
-                  </li>
-                );
-              case "delete":
-                return (
-                  <ConfirmDialog
-                    key={menu.id}
-                    type="delete"
-                    title={deleteTitle}
-                    message={deleteMessage}
-                    action={handleDelete}
-                    loading={isPending}
-                  />
-                );
-              default:
-                return (
-                  <li key={menu.id}>
-                    <button
-                      className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
-                      onClick={() =>
-                        goTo(id, menu.id as "update" | "preview" | "send")
-                      }
-                    >
-                      <menu.icon className="w-4 h-4" />
-                      {menu.title}
-                    </button>
-                  </li>
-                );
-            }
-          })}
-        </ul>
-      </PopoverContent>
+      {hasAnyAccess &&
+        <PopoverContent align="end" className="p-0 w-[180px]">
+          <ul>
+            {menus.map((menu) => {
+              if (
+                (["send", "update", "delete", "add"].includes(menu.action as string) && !modifyAccess) ||
+                (["convert"].includes(menu.action as string) && !createAccess) ||
+                (menu.action === "infos" && !readAccess)
+              ) return null;
+
+              switch (menu.action) {
+                case "add":
+                  return (
+                    <li key={menu.id}>
+                      <ModalContainer
+                        action={
+                          <button className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer">
+                            <menu.icon className="w-4 h-4" />
+                            {menu.title}
+                          </button>
+                        }
+                        title="Enregistrer un paiement"
+                        open={open}
+                        setOpen={setOpen}
+                        onClose={() => setOpen(false)}
+                      >
+                        <PaymentForm refresh={refreshPurchaseOrder} closeModal={() => setOpen(false)} purchaseOrderId={id} />
+                      </ModalContainer>
+                    </li>
+                  );
+                case "delete":
+                  return (
+                    <ConfirmDialog
+                      key={menu.id}
+                      type="delete"
+                      title={deleteTitle}
+                      message={deleteMessage}
+                      action={handleDelete}
+                      loading={isPending}
+                    />
+                  );
+                default:
+                  return (
+                    <li key={menu.id}>
+                      <button
+                        className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                        onClick={() =>
+                          goTo(id, menu.action as "update" | "infos" | "send")
+                        }
+                      >
+                        <menu.icon className="w-4 h-4" />
+                        {menu.title}
+                      </button>
+                    </li>
+                  );
+              }
+            })}
+          </ul>
+        </PopoverContent>
+      }
     </Popover>
   );
 }

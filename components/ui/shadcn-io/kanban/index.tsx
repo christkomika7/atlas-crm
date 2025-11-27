@@ -111,6 +111,7 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
   name,
   children,
   className,
+
 }: KanbanCardProps<T>) => {
   const {
     attributes,

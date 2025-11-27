@@ -24,9 +24,10 @@ export type ItemListProps = {
     isCompleted?: boolean;
     locationBillboardDate: LocationBillboardDateType[];
     amountType: "TTC" | "HT";
+    disabled?: boolean;
 
 }
-export default function ItemList({ item, taxes, calculate, isCompleted, locationBillboardDate, amountType }: ItemListProps) {
+export default function ItemList({ item, taxes, calculate, disabled, isCompleted, locationBillboardDate, amountType }: ItemListProps) {
     const updateItem = useItemStore.use.updateItem();
     const removeItem = useItemStore.use.removeItem();
     const editItemField = useItemStore.use.editItemField();
@@ -56,12 +57,14 @@ export default function ItemList({ item, taxes, calculate, isCompleted, location
         <div
             className="group relative flex flex-col hover:bg-blue/5 p-1.5 border-blue border-l-4 w-full"
         >
-            <span
-                className="top-0 right-1 absolute opacity-0 group-hover:opacity-100 font-bold text-red-500 text-sm transition-opacity cursor-pointer"
-                onClick={() => removeItem(item.itemType === "billboard" ? item.billboardId as string : item.productServiceId as string)}
-            >
-                ×
-            </span>
+            {!isCompleted && !disabled &&
+                <span
+                    className="top-0 right-1 absolute opacity-0 group-hover:opacity-100 font-bold text-red-500 text-sm transition-opacity cursor-pointer"
+                    onClick={() => removeItem(item.itemType === "billboard" ? item.billboardId as string : item.productServiceId as string)}
+                >
+                    ×
+                </span>
+            }
             <small className="font-semibold">• {item.reference}</small>
             <h2 className="font-semibold text-sm">{item.name}</h2>
             {item.description && (
@@ -72,7 +75,7 @@ export default function ItemList({ item, taxes, calculate, isCompleted, location
                     {item.itemType === "billboard" ? item.quantity :
                         <span>
                             <TextInput
-                                disabled={isCompleted}
+                                disabled={isCompleted || disabled}
                                 type="number"
                                 min={0}
                                 max={getMaxQuantity()}
@@ -101,7 +104,7 @@ export default function ItemList({ item, taxes, calculate, isCompleted, location
                     {" x "}
                     <span className="flex items-center gap-x-1">
                         <TextInput
-                            disabled={isCompleted}
+                            disabled={isCompleted || disabled}
                             type="number"
                             min={0}
                             value={item.price.toString()}
@@ -116,7 +119,7 @@ export default function ItemList({ item, taxes, calculate, isCompleted, location
 
                 <div className="flex items-center gap-x-2 max-w-[150px]">
                     <TextInput
-                        disabled={isCompleted}
+                        disabled={isCompleted || disabled}
                         type="number"
                         min={0}
                         value={discount}
@@ -126,7 +129,7 @@ export default function ItemList({ item, taxes, calculate, isCompleted, location
                         }
                     />
                     <ToggleGroup
-                        disabled={isCompleted}
+                        disabled={isCompleted || disabled}
                         type="single"
                         value={item.discountType}
                         onValueChange={(e) => {
@@ -146,7 +149,7 @@ export default function ItemList({ item, taxes, calculate, isCompleted, location
                     <div className="flex mt-3 flex-col">
                         <label htmlFor="" className="text-xs font-medium">Durée de la location<span className="text-red-500">*</span></label>
                         <DatePicker
-                            disabled={isCompleted}
+                            disabled={isCompleted || disabled}
                             className="flex w-[300px]"
                             disabledRanges={getDisabledRanges()}
                             label=""

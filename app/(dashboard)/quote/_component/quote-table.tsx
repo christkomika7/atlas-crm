@@ -27,6 +27,8 @@ import { QuoteType } from "@/types/quote.types";
 import { getAllQuotes } from "@/action/quote.action";
 import { QUOTE_PREFIX } from "@/config/constant";
 import { formatDateToDashModel } from "@/lib/date";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 type QuoteTableProps = {
   filter: "progress" | "complete";
@@ -42,6 +44,9 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
   ({ selectedQuoteIds, setSelectedQuoteIds, filter }, ref) => {
     const id = useDataStore.use.currentCompany();
     const currency = useDataStore.use.currency();
+
+    const readAccess = useAccess("QUOTES", "READ");
+
     const { mutate, isPending, data } = useQueryAction<
       { companyId: string; filter: "progress" | "complete" },
       RequestResponse<QuoteType[]>
@@ -54,7 +59,7 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
     };
 
     const refreshQuote = () => {
-      if (id) {
+      if (id && readAccess) {
         mutate({ companyId: id, filter });
       }
     };
@@ -65,106 +70,108 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
 
     useEffect(() => {
       refreshQuote();
-    }, [id]);
+    }, [id, readAccess]);
 
     const isSelected = (id: string) => selectedQuoteIds.includes(id);
 
     return (
-      <div className="border border-neutral-200 rounded-xl">
-        <Table>
-          <TableHeader>
-            <TableRow className="h-14">
-              <TableHead className="min-w-[50px] font-medium" />
-              <TableHead className="font-medium text-center">N°</TableHead>
-              <TableHead className="font-medium text-center">Client</TableHead>
-              <TableHead className="font-medium text-center">Date</TableHead>
-              <TableHead className="font-medium text-center">Montant</TableHead>
-              <TableHead className="font-medium text-center">Mises à jour</TableHead>
-              <TableHead className="font-medium text-center">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isPending ? (
-              <TableRow>
-                <TableCell colSpan={9}>
-                  <div className="flex justify-center items-center py-6 w-full">
-                    <Spinner />
-                  </div>
-                </TableCell>
+      <AccessContainer hasAccess={readAccess} resource="QUOTES">
+        <div className="border border-neutral-200 rounded-xl">
+          <Table>
+            <TableHeader>
+              <TableRow className="h-14">
+                <TableHead className="min-w-[50px] font-medium" />
+                <TableHead className="font-medium text-center">N°</TableHead>
+                <TableHead className="font-medium text-center">Client</TableHead>
+                <TableHead className="font-medium text-center">Date</TableHead>
+                <TableHead className="font-medium text-center">Montant</TableHead>
+                <TableHead className="font-medium text-center">Mises à jour</TableHead>
+                <TableHead className="font-medium text-center">Action</TableHead>
               </TableRow>
-            ) : data?.data && data.data.length > 0 ? (
-              data.data.map((quote) => (
-                <TableRow
-                  key={quote.id}
-                  className={`h-16 transition-colors ${isSelected(quote.id) ? "bg-neutral-100" : ""
-                    }`}
-                >
-                  <TableCell className="text-neutral-600">
-                    <div className="flex justify-center items-center">
-                      <Checkbox
-                        checked={isSelected(quote.id)}
-                        onCheckedChange={(checked) =>
-                          toggleSelection(quote.id, !!checked)
-                        }
-                      />
+            </TableHeader>
+            <TableBody>
+              {isPending ? (
+                <TableRow>
+                  <TableCell colSpan={9}>
+                    <div className="flex justify-center items-center py-6 w-full">
+                      <Spinner />
                     </div>
                   </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {quote.company?.documentModel?.quotesPrefix || QUOTE_PREFIX}-
-                    {generateAmaId(quote.quoteNumber, false)}
+                </TableRow>
+              ) : data?.data && data.data.length > 0 ? (
+                data.data.map((quote) => (
+                  <TableRow
+                    key={quote.id}
+                    className={`h-16 transition-colors ${isSelected(quote.id) ? "bg-neutral-100" : ""
+                      }`}
+                  >
+                    <TableCell className="text-neutral-600">
+                      <div className="flex justify-center items-center">
+                        <Checkbox
+                          checked={isSelected(quote.id)}
+                          onCheckedChange={(checked) =>
+                            toggleSelection(quote.id, !!checked)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {quote.company?.documentModel?.quotesPrefix || QUOTE_PREFIX}-
+                      {generateAmaId(quote.quoteNumber, false)}
 
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {cutText(
-                      `${quote.client.companyName}`,
-                      20
-                    )}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {formatDateToDashModel(quote.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(quote.amountType === "TTC" ? quote.totalTTC : quote.totalHT)} {currency}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    <span>-</span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <TableActionButton
-                      menus={dropdownMenu}
-                      data={quote}
-                      refreshQuotes={refreshQuote}
-                      deleteTitle="Confirmer la suppression du rendez-vous"
-                      deleteMessage={
-                        <p>
-                          En supprimant un devis, toutes les informations
-                          liées seront également supprimées.
-                          <br />
-                          <span className="font-semibold text-red-600">
-                            Cette action est irréversible.
-                          </span>
-                          <br />
-                          <br />
-                          Confirmez-vous cette suppression ?
-                        </p>
-                      }
-                    />
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {cutText(
+                        `${quote.client.companyName}`,
+                        20
+                      )}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {formatDateToDashModel(quote.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {formatNumber(quote.amountType === "TTC" ? quote.totalTTC : quote.totalHT)} {currency}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      <span>-</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TableActionButton
+                        menus={dropdownMenu}
+                        data={quote}
+                        refreshQuotes={refreshQuote}
+                        deleteTitle="Confirmer la suppression du rendez-vous"
+                        deleteMessage={
+                          <p>
+                            En supprimant un devis, toutes les informations
+                            liées seront également supprimées.
+                            <br />
+                            <span className="font-semibold text-red-600">
+                              Cette action est irréversible.
+                            </span>
+                            <br />
+                            <br />
+                            Confirmez-vous cette suppression ?
+                          </p>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={9}
+                    className="py-6 text-gray-500 text-sm text-center"
+                  >
+                    Aucun devis trouvé.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={9}
-                  className="py-6 text-gray-500 text-sm text-center"
-                >
-                  Aucun devis trouvé.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </AccessContainer>
     );
   }
 );

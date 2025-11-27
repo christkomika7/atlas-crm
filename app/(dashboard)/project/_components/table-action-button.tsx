@@ -15,6 +15,7 @@ import ModalContainer from "@/components/modal/modal-container";
 import { useState } from "react";
 import { ProjectType } from "@/types/project.types";
 import ProjectEditForm from "./project-edit-form";
+import { useAccess } from "@/hook/useAccess";
 
 type TableActionButtonProps = {
   id: string;
@@ -33,6 +34,12 @@ export default function TableActionButton({
 }: TableActionButtonProps) {
   const [open, setOpen] = useState(false)
   const router = useRouter();
+
+  const readAccess = useAccess("PROJECTS", "READ");
+  const modifyAccess = useAccess("PROJECTS", "MODIFY");
+
+  const hasAnyAccess = modifyAccess || readAccess;
+
 
   const { mutate, isPending } = useQueryAction<
     { id: string },
@@ -59,61 +66,75 @@ export default function TableActionButton({
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild disabled={!hasAnyAccess}>
         <Button variant="primary" className="p-0 rounded-lg !w-9 !h-9">
           <ChevronDownIcon className="text-white" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0 w-[180px]">
-        <ul>
-          {menus.map((menu) => {
-            if (menu.action === "delete")
-              return (
-                <ConfirmDialog
-                  key={menu.id}
-                  type="delete"
-                  title={deleteTitle}
-                  message={deleteMessage}
-                  action={handleDelete}
-                  loading={isPending}
-                />
-              );
+      {hasAnyAccess &&
+        <PopoverContent align="end" className="p-0 w-[180px]">
+          <ul>
+            {menus.map((menu) => {
+              if (
+                (["update", "delete"].includes(menu.action as string) && !modifyAccess) ||
+                (menu.action === "infos" && !readAccess)
+              ) return null;
 
-            if (menu.action === "infos") return <li key={menu.id}>
-              <button
-                className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
-                onClick={() => goTo(id)}
-              >
-                <menu.icon className="w-4 h-4" />
-                {menu.title}
-              </button>
-            </li>
-            return (
-              <li key={menu.id}>
-                <ModalContainer
-                  size="sm"
-                  action={
-                    <button
-                      className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
-                    >
-                      <menu.icon className="w-4 h-4" />
-                      {menu.title}
-                    </button>
-                  }
-                  title="Mise à jour du projet"
-                  open={open}
-                  setOpen={(value) =>
-                    setOpen(value as boolean)
-                  }
-                  onClose={() => setOpen(false)}
-                >
-                  <ProjectEditForm closeModal={() => setOpen(false)} id={id} refreshData={refreshData} />
-                </ModalContainer>
-              </li>
-            );
-          })}
-        </ul>
-      </PopoverContent>
+              switch (menu.action) {
+                case "delete":
+                  return (
+                    <ConfirmDialog
+                      key={menu.id}
+                      type="delete"
+                      title={deleteTitle}
+                      message={deleteMessage}
+                      action={handleDelete}
+                      loading={isPending}
+                    />
+                  );
+                case "infos":
+                  return (
+                    <li key={menu.id}>
+                      <button
+                        className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                        onClick={() => goTo(id)}
+                      >
+                        <menu.icon className="w-4 h-4" />
+                        {menu.title}
+                      </button>
+                    </li>
+                  )
+
+                default:
+                  return (
+                    <li key={menu.id}>
+                      <ModalContainer
+                        size="sm"
+                        action={
+                          <button
+                            className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                          >
+                            <menu.icon className="w-4 h-4" />
+                            {menu.title}
+                          </button>
+                        }
+                        title="Mise à jour du projet"
+                        open={open}
+                        setOpen={(value) =>
+                          setOpen(value as boolean)
+                        }
+                        onClose={() => setOpen(false)}
+                      >
+                        <ProjectEditForm closeModal={() => setOpen(false)} id={id} refreshData={refreshData} />
+                      </ModalContainer>
+                    </li>
+                  );
+
+              }
+            })}
+          </ul>
+        </PopoverContent>
+      }
     </Popover>
   );
 }
