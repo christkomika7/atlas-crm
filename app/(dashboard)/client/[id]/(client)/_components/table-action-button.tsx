@@ -32,10 +32,8 @@ export default function TableActionButton({
   const router = useRouter();
   const param = useParams();
 
-  const readAccess = useAccess("PROJECTS", "READ");
-  const modifyAccess = useAccess("PROJECTS", "MODIFY");
-
-  console.log({ readAccess, modifyAccess })
+  const { access: readAccess } = useAccess("PROJECTS", "READ");
+  const { access: modifyAccess } = useAccess("PROJECTS", "MODIFY");
 
   const { mutate, isPending } = useQueryAction<
     { id: string },

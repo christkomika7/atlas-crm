@@ -1,4 +1,4 @@
-import { sessionAccess } from "@/lib/access";
+import { checkAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
@@ -6,12 +6,13 @@ import { documentSchema, DocumentSchemaType } from "@/lib/zod/document.schema";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-    const { hasSession, userId } = await sessionAccess();
 
-    if (!hasSession || !userId) {
+    const result = await checkAccess("SETTING", "MODIFY");
+
+    if (!result.authorized) {
         return Response.json({
             status: "error",
-            message: "Aucune session trouvée",
+            message: result.message,
             data: []
         }, { status: 200 });
     }

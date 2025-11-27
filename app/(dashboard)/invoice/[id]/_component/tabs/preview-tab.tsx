@@ -42,8 +42,8 @@ export default function PreviewTab() {
 
   const idCompany = useDataStore.use.currentCompany();
 
-  const readAccess = useAccess("INVOICES", "READ");
-  const modifyAccess = useAccess("INVOICES", "MODIFY");
+  const { access: readAccess, loading } = useAccess("INVOICES", "READ");
+  const { access: modifyAccess } = useAccess("INVOICES", "MODIFY");
 
   const { mutate: mutateGetInvoice, isPending: isGettingInvoice } =
     useQueryAction<{ id: string }, RequestResponse<InvoiceType>>(
@@ -109,7 +109,7 @@ export default function PreviewTab() {
     router.push("/invoice");
   }
 
-  if (isGettingDocument && isGettingInvoice) return <Spinner />;
+  if ((isGettingDocument && isGettingInvoice) || loading) return <Spinner />;
 
   return (
     <AccessContainer hasAccess={readAccess} resource="INVOICES">

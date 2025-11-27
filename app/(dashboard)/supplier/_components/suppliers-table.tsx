@@ -42,7 +42,7 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(
   ({ selectedSupplierIds, setSelectedSupplierIds }, ref) => {
     const id = useDataStore.use.currentCompany();
 
-    const readAccess = useAccess("SUPPLIERS", "READ");
+    const { access: readAccess, loading } = useAccess("SUPPLIERS", "READ");
 
     const { mutate, isPending, data } = useQueryAction<
       { id: string },
@@ -70,6 +70,8 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(
     }, [id]);
 
     const isSelected = (id: string) => selectedSupplierIds.includes(id);
+
+    if (loading) return <Spinner />
 
     return (
       <AccessContainer hasAccess={readAccess} resource="SUPPLIERS">

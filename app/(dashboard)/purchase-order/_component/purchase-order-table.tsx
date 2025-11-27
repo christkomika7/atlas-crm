@@ -47,7 +47,7 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
     const id = useDataStore.use.currentCompany();
     const currency = useDataStore.use.currency();
 
-    const readAccess = useAccess("PURCHASE_ORDER", "READ");
+    const { access: readAccess, loading } = useAccess("PURCHASE_ORDER", "READ");
 
     const { mutate, isPending, data } = useQueryAction<
       { companyId: string; filter: "unpaid" | "paid" },
@@ -91,6 +91,7 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
       }
     }
 
+    if (loading) return <Spinner />
 
     return (
       <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER">

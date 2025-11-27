@@ -33,6 +33,8 @@ import {
   ChevronDownIcon,
 } from "lucide-react";
 import { isToday } from "date-fns";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 type AppointmentTableProps = {
   filter: "upcoming" | "past";
@@ -55,6 +57,8 @@ const AppointmentTable = forwardRef<AppointmentTableRef, AppointmentTableProps>(
 
     const [sortField, setSortField] = useState<SortField>("byDate");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+    const { access: readAccess, loading } = useAccess("APPOINTMENT", "READ");
 
     const { mutate: mutateGetAppointments, isPending } = useQueryAction<
       GetAppointmentsParams,
@@ -100,7 +104,7 @@ const AppointmentTable = forwardRef<AppointmentTableRef, AppointmentTableProps>(
           },
         });
       },
-      [companyId, pageSize, filter, sortField, sortOrder, mutateGetAppointments]
+      [companyId, pageSize, filter, sortField, sortOrder, mutateGetAppointments, readAccess]
     );
 
     const handleSort = useCallback(
@@ -124,8 +128,10 @@ const AppointmentTable = forwardRef<AppointmentTableRef, AppointmentTableProps>(
     }));
 
     useEffect(() => {
-      loadAppointments(currentPage);
-    }, [companyId, currentPage, pageSize, sortField, sortOrder, filter, loadAppointments]);
+      if (companyId && readAccess) {
+        loadAppointments(currentPage);
+      }
+    }, [companyId, currentPage, pageSize, sortField, sortOrder, filter, loadAppointments, readAccess]);
 
     const refreshAppointment = () => {
       loadAppointments(currentPage);
@@ -139,153 +145,157 @@ const AppointmentTable = forwardRef<AppointmentTableRef, AppointmentTableProps>(
       }
     };
 
+    if (loading) return <Spinner />
+
     return (
-      <div className="border border-neutral-200 rounded-xl flex flex-col">
-        <Table>
-          <TableHeader>
-            <TableRow className="h-14">
-              <TableHead className="min-w-[50px] font-medium" />
-              {[
-                { label: "Client", field: "byClient" as SortField },
-                { label: "Email", field: "byEmail" as SortField },
-                { label: "Date", field: "byDate" as SortField },
-                { label: "Heure", field: "byTime" as SortField },
-                { label: "Adresse", field: "byAddress" as SortField },
-                { label: "Objet de la réunion", field: "bySubject" as SortField },
-                { label: "Membre de l'équipe", field: "byTeamMember" as SortField },
-                { label: "Action", field: null },
-              ].map((col, idx) => (
-                <TableHead key={idx} className="font-medium text-center">
-                  {col.field ? (
-                    <span
-                      className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
-                      onClick={() => handleSort(col.field!)}
-                    >
-                      {col.label}
-                      <span className="text-neutral-400">{renderSortIcon(col.field!)}</span>
-                    </span>
-                  ) : (
-                    col.label
-                  )}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {isPending ? (
-              <TableRow>
-                <TableCell colSpan={9}>
-                  <div className="flex justify-center items-center py-6 w-full">
-                    <Spinner />
-                  </div>
-                </TableCell>
+      <AccessContainer hasAccess={readAccess} resource="APPOINTMENT" >
+        <div className="border border-neutral-200 rounded-xl flex flex-col">
+          <Table>
+            <TableHeader>
+              <TableRow className="h-14">
+                <TableHead className="min-w-[50px] font-medium" />
+                {[
+                  { label: "Client", field: "byClient" as SortField },
+                  { label: "Email", field: "byEmail" as SortField },
+                  { label: "Date", field: "byDate" as SortField },
+                  { label: "Heure", field: "byTime" as SortField },
+                  { label: "Adresse", field: "byAddress" as SortField },
+                  { label: "Objet de la réunion", field: "bySubject" as SortField },
+                  { label: "Membre de l'équipe", field: "byTeamMember" as SortField },
+                  { label: "Action", field: null },
+                ].map((col, idx) => (
+                  <TableHead key={idx} className="font-medium text-center">
+                    {col.field ? (
+                      <span
+                        className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
+                        onClick={() => handleSort(col.field!)}
+                      >
+                        {col.label}
+                        <span className="text-neutral-400">{renderSortIcon(col.field!)}</span>
+                      </span>
+                    ) : (
+                      col.label
+                    )}
+                  </TableHead>
+                ))}
               </TableRow>
-            ) : appointments && appointments.length > 0 ? (
-              appointments.map((appointment) => {
-                const highlightToday = isAppointmentToday(appointment.date);
-                const rowClass = `h-16 transition-colors ${isSelected(appointment.id)
-                  ? "bg-neutral-100"
-                  : highlightToday
-                    ? "bg-emerald-50 ring-1 ring-emerald-200"
-                    : ""
-                  }`;
+            </TableHeader>
 
-                return (
-                  <TableRow key={appointment.id} className={rowClass}>
-                    <TableCell className="text-neutral-600">
-                      <div className="flex justify-center items-center">
-                        <Checkbox
-                          checked={isSelected(appointment.id)}
-                          onCheckedChange={(checked) =>
-                            toggleSelection(appointment.id, !!checked)
+            <TableBody>
+              {isPending ? (
+                <TableRow>
+                  <TableCell colSpan={9}>
+                    <div className="flex justify-center items-center py-6 w-full">
+                      <Spinner />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : appointments && appointments.length > 0 ? (
+                appointments.map((appointment) => {
+                  const highlightToday = isAppointmentToday(appointment.date);
+                  const rowClass = `h-16 transition-colors ${isSelected(appointment.id)
+                    ? "bg-neutral-100"
+                    : highlightToday
+                      ? "bg-emerald-50 ring-1 ring-emerald-200"
+                      : ""
+                    }`;
+
+                  return (
+                    <TableRow key={appointment.id} className={rowClass}>
+                      <TableCell className="text-neutral-600">
+                        <div className="flex justify-center items-center">
+                          <Checkbox
+                            checked={isSelected(appointment.id)}
+                            onCheckedChange={(checked) =>
+                              toggleSelection(appointment.id, !!checked)
+                            }
+                          />
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-neutral-600 text-center">
+                        {appointment.client.firstname} {appointment.client.lastname}
+                      </TableCell>
+
+                      <TableCell className="text-neutral-600 text-center">
+                        {appointment.email}
+                      </TableCell>
+
+                      <TableCell className="text-neutral-600 text-center">
+                        {new Date(appointment.date).toLocaleDateString("fr-FR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })}
+                      </TableCell>
+
+                      <TableCell className="text-neutral-600 text-center">
+                        {appointment.time}
+                      </TableCell>
+
+                      <TableCell className="text-neutral-600 text-center">
+                        {appointment.address}
+                      </TableCell>
+
+                      <TableCell className="text-neutral-600 text-center">
+                        {cutText(appointment.subject, 20)}
+                      </TableCell>
+
+                      <TableCell className="text-neutral-600 text-center">
+                        {appointment.teamMemberName}
+                      </TableCell>
+
+                      <TableCell className="text-center">
+                        <TableActionButton
+                          menus={dropdownMenu}
+                          id={appointment.id}
+                          refreshAppointment={refreshAppointment}
+                          deleteTitle="Confirmer la suppression du rendez-vous"
+                          deleteMessage={
+                            <p>
+                              En supprimant un rendez-vous client, toutes les informations
+                              liées seront également supprimées.
+                              <br />
+                              <span className="font-semibold text-red-600">
+                                Cette action est irréversible.
+                              </span>
+                              <br />
+                              <br />
+                              Confirmez-vous cette suppression ?
+                            </p>
                           }
                         />
-                      </div>
-                    </TableCell>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={9}
+                    className="py-6 text-gray-500 text-sm text-center"
+                  >
+                    Aucun rendez-vous trouvé.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
 
-                    <TableCell className="text-neutral-600 text-center">
-                      {appointment.client.firstname} {appointment.client.lastname}
-                    </TableCell>
-
-                    <TableCell className="text-neutral-600 text-center">
-                      {appointment.email}
-                    </TableCell>
-
-                    <TableCell className="text-neutral-600 text-center">
-                      {new Date(appointment.date).toLocaleDateString("fr-FR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
-                    </TableCell>
-
-                    <TableCell className="text-neutral-600 text-center">
-                      {appointment.time}
-                    </TableCell>
-
-                    <TableCell className="text-neutral-600 text-center">
-                      {appointment.address}
-                    </TableCell>
-
-                    <TableCell className="text-neutral-600 text-center">
-                      {cutText(appointment.subject, 20)}
-                    </TableCell>
-
-                    <TableCell className="text-neutral-600 text-center">
-                      {appointment.teamMemberName}
-                    </TableCell>
-
-                    <TableCell className="text-center">
-                      <TableActionButton
-                        menus={dropdownMenu}
-                        id={appointment.id}
-                        refreshAppointment={refreshAppointment}
-                        deleteTitle="Confirmer la suppression du rendez-vous"
-                        deleteMessage={
-                          <p>
-                            En supprimant un rendez-vous client, toutes les informations
-                            liées seront également supprimées.
-                            <br />
-                            <span className="font-semibold text-red-600">
-                              Cette action est irréversible.
-                            </span>
-                            <br />
-                            <br />
-                            Confirmez-vous cette suppression ?
-                          </p>
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={9}
-                  className="py-6 text-gray-500 text-sm text-center"
-                >
-                  Aucun rendez-vous trouvé.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-
-        <div className="flex items-center justify-between p-4">
-          <div />
-          <div className="flex items-center gap-3">
-            <Paginations
-              totalItems={totalItems}
-              pageSize={pageSize}
-              controlledPage={currentPage}
-              onPageChange={(page) => setCurrentPage(page)}
-              maxVisiblePages={DEFAULT_PAGE_SIZE}
-            />
+          <div className="flex items-center justify-between p-4">
+            <div />
+            <div className="flex items-center gap-3">
+              <Paginations
+                totalItems={totalItems}
+                pageSize={pageSize}
+                controlledPage={currentPage}
+                onPageChange={(page) => setCurrentPage(page)}
+                maxVisiblePages={DEFAULT_PAGE_SIZE}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </AccessContainer>
     );
   }
 );

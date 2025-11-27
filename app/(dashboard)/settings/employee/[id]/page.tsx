@@ -16,6 +16,8 @@ import { editProfileDocument, getUser } from "@/action/user.action";
 import { formatNumber, generateAmaId, initialName, resolveImageSrc, urlToFile } from "@/lib/utils";
 import UploadDocument from "../_components/upload-document";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 export default function NewEmployeeInfo() {
   const param = useParams();
@@ -28,6 +30,9 @@ export default function NewEmployeeInfo() {
   const [imagePreview, setImagePreview] = useState("");
   const [isLoadingDoc, setIsLoadingDoc] = useState(false);
   const [isLoadingPassport, setIsLoadingPassport] = useState(false);
+
+  const { access: readAccess } = useAccess("SETTING", "READ");
+  const { access: modifyAccess } = useAccess("SETTING", "MODIFY");
 
   const { mutate: mutateGetUser, isPending } = useQueryAction<
     { id: string },
@@ -43,7 +48,7 @@ export default function NewEmployeeInfo() {
 
 
   useEffect(() => {
-    if (param.id) {
+    if (param.id && readAccess) {
       mutateGetUser({ id: param.id as string }, {
         onSuccess(data) {
           if (data.data) {
@@ -57,7 +62,7 @@ export default function NewEmployeeInfo() {
       })
     }
 
-  }, [param])
+  }, [param, readAccess])
 
   useEffect(() => {
     getDocument();
@@ -133,67 +138,75 @@ export default function NewEmployeeInfo() {
           <div className="p-3.5 border border-neutral-100 rounded-xl">
             <div className="flex items-center">
               <div className="flex flex-1 justify-end gap-x-2">
-                <Link href={`/settings/employee/${param.id}/edit`}>
-                  <Button variant="primary" className="rounded-lg w-fit !h-10">
-                    <EditIcon className="size-4" />
-                    Modifier
-                  </Button>
-                </Link>
+                {modifyAccess &&
+                  <Link href={`/settings/employee/${param.id}/edit`}>
+                    <Button variant="primary" className="rounded-lg w-fit !h-10">
+                      <EditIcon className="size-4" />
+                      Modifier
+                    </Button>
+                  </Link>
+                }
                 <LogoutButton />
               </div>
             </div>
-            {!isPending && !profile ? <p className="p-4 bg-neutral-50 mx-6 rounded-sm text-sm text-neutral-600">Aucune donnée trouvée</p>
-              :
-              <div className="max-w-xl">
+            <AccessContainer hasAccess={readAccess} resource="SETTING">
+              <>
+                {!isPending && !profile ? <p className="p-4 bg-neutral-50 mx-6 rounded-sm text-sm text-neutral-600">Aucune donnée trouvée</p>
+                  :
+                  <div className="max-w-xl">
+                    <EmployeeList value="Commission : 200$">
+                      <Avatar className="size-28">
+                        <AvatarImage className="bg-gray object-cover" src={imagePreview} />
+                        <AvatarFallback>{initialName(`${profile?.firstname} ${profile?.lastname}`)}</AvatarFallback>
+                      </Avatar>
+                    </EmployeeList>
+                    <EmployeeList value={profile?.firstname || "-"}>Prénom</EmployeeList>
+                    <EmployeeList value={profile?.lastname || "-"}>Nom</EmployeeList>
+                    <EmployeeList value={generateAmaId(profile?.key || 0)}>Identifiant</EmployeeList>
+                    <EmployeeList value={profile?.user.email || "-"}>Adresse mail</EmployeeList>
+                    <EmployeeList value={profile?.job || "-"}>Emploi</EmployeeList>
+                    <EmployeeList value={`${profile?.salary ? formatNumber(profile.salary) : "-"} ${profile?.company?.currency || ""}`}>Salaire</EmployeeList>
+                    {modifyAccess &&
+                      <>
+                        <EmployeeList
+                          value={
+                            <UploadDocument
+                              id="document"
+                              defaultDoc={document.split("/")[2] || undefined}
+                              previewUrl={documentPreview}
+                              handleDelete={() => editDocument('doc', 'delete')}
+                              handleDownload={(url) => window.open(url, "_blank")}
+                              handleUpload={(file) => editDocument("doc", "update", file)}
+                              isLoading={isLoadingDoc}
+                            />
+                          }
+                        >
+                          Règlement intérieur
+                        </EmployeeList>
+                        <EmployeeList
+                          value={
+                            <UploadDocument
+                              id="passport"
+                              defaultDoc={passport.split("/")[2] || undefined}
+                              previewUrl={passportPreview}
+                              handleDelete={() => editDocument('passport', 'delete')}
+                              handleDownload={(url) => window.open(url, "_blank")}
+                              handleUpload={(file) => editDocument("passport", "update", file)}
+                              isLoading={isLoadingPassport}
 
-                <EmployeeList value="Commission : 200$">
-                  <Avatar className="size-28">
-                    <AvatarImage className="bg-gray object-cover" src={imagePreview} />
-                    <AvatarFallback>{initialName(`${profile?.firstname} ${profile?.lastname}`)}</AvatarFallback>
-                  </Avatar>
-                </EmployeeList>
-                <EmployeeList value={profile?.firstname || "-"}>Prénom</EmployeeList>
-                <EmployeeList value={profile?.lastname || "-"}>Nom</EmployeeList>
-                <EmployeeList value={generateAmaId(profile?.key || 0)}>Identifiant</EmployeeList>
-                <EmployeeList value={profile?.user.email || "-"}>Adresse mail</EmployeeList>
-                <EmployeeList value={profile?.job || "-"}>Emploi</EmployeeList>
-                <EmployeeList value={`${profile?.salary ? formatNumber(profile.salary) : "-"} ${profile?.company?.currency || ""}`}>Salaire</EmployeeList>
+                            />
+                          }
+                          className="border-none"
+                        >
+                          Passport
+                        </EmployeeList>
+                      </>
+                    }
+                  </div>
 
-                <EmployeeList
-                  value={
-                    <UploadDocument
-                      id="document"
-                      defaultDoc={document.split("/")[2] || undefined}
-                      previewUrl={documentPreview}
-                      handleDelete={() => editDocument('doc', 'delete')}
-                      handleDownload={(url) => window.open(url, "_blank")}
-                      handleUpload={(file) => editDocument("doc", "update", file)}
-                      isLoading={isLoadingDoc}
-                    />
-                  }
-                >
-                  Règlement intérieur
-                </EmployeeList>
-                <EmployeeList
-                  value={
-                    <UploadDocument
-                      id="passport"
-                      defaultDoc={passport.split("/")[2] || undefined}
-                      previewUrl={passportPreview}
-                      handleDelete={() => editDocument('passport', 'delete')}
-                      handleDownload={(url) => window.open(url, "_blank")}
-                      handleUpload={(file) => editDocument("passport", "update", file)}
-                      isLoading={isLoadingPassport}
-
-                    />
-                  }
-                  className="border-none"
-                >
-                  Passport
-                </EmployeeList>
-              </div>
-
-            }
+                }
+              </>
+            </AccessContainer>
           </div>
         </ScrollArea >
       </div >

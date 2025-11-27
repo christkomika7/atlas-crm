@@ -52,9 +52,9 @@ export default function TableActionButton({
   const companyId = useDataStore.use.currentCompany();
   const currency = useDataStore.use.currency();
 
-  const modifyAccess = useAccess("QUOTES", "MODIFY");
-  const createAccess = useAccess("QUOTES", "CREATE");
-  const readAccess = useAccess("QUOTES", "READ");
+  const { access: modifyAccess } = useAccess("QUOTES", "MODIFY");
+  const { access: createAccess } = useAccess("QUOTES", "CREATE");
+  const { access: readAccess } = useAccess("QUOTES", "READ");
   const hasAnyAccess = modifyAccess || createAccess || readAccess;
 
   const { mutate: mutateDeleteQuote, isPending: isDelettingQuote } = useQueryAction<

@@ -33,7 +33,7 @@ export default function PreviewTab() {
 
   const idCompany = useDataStore.use.currentCompany();
 
-  const readAccess = useAccess("QUOTES", "READ");
+  const { access: readAccess, loading } = useAccess("QUOTES", "READ");
 
   const { mutate: mutateGetQuote, isPending: isGettingQuote } =
     useQueryAction<{ id: string }, RequestResponse<QuoteType>>(
@@ -84,7 +84,7 @@ export default function PreviewTab() {
     router.push("/quote");
   }
 
-  if (isGettingDocument && isGettingQuote) return <Spinner />;
+  if ((isGettingDocument && isGettingQuote) || loading) return <Spinner />;
 
   return (
     <AccessContainer hasAccess={readAccess} resource="QUOTES" >

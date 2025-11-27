@@ -17,8 +17,8 @@ export default function SupplierPage() {
 
   const suppliersTableRef = useRef<SuppliersTableRef>(null);
 
-  const modifyAccess = useAccess("SUPPLIERS", "MODIFY");
-  const createAccess = useAccess("SUPPLIERS", "CREATE");
+  const { access: modifyAccess } = useAccess("SUPPLIERS", "MODIFY");
+  const { access: createAccess } = useAccess("SUPPLIERS", "CREATE");
 
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },

@@ -36,9 +36,9 @@ export default function TableActionButton({
     RequestResponse<BillboardType>
   >(remove, () => { }, "billboards");
 
-  const readAccess = useAccess("BILLBOARDS", "READ");
-  const createAccess = useAccess("BILLBOARDS", "CREATE");
-  const modifyAccess = useAccess("PRODUCT_SERVICES", "MODIFY");
+  const { access: readAccess } = useAccess("BILLBOARDS", "READ");
+  const { access: createAccess } = useAccess("BILLBOARDS", "CREATE");
+  const { access: modifyAccess } = useAccess("PRODUCT_SERVICES", "MODIFY");
 
   const hasAnyAccess = readAccess || modifyAccess || createAccess;
 

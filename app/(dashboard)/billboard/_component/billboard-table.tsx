@@ -54,13 +54,13 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
 
     const skip = (currentPage - 1) * pageSize;
 
-    const readAccess = useAccess("BILLBOARDS", "READ");
+    const { access: readAccess, loading } = useAccess("BILLBOARDS", "READ");
 
     const { mutate: mutateGetBillboards, isPending: isGettingBillboards } =
       useQueryAction<
         { companyId: string; skip?: number; take?: number },
         RequestResponse<BillboardType[]>
-      >(all, () => {}, "billboards");
+      >(all, () => { }, "billboards");
 
     const toggleSelection = (billboardId: string, checked: boolean) => {
       setSelectedBillboardIds((prev) =>
@@ -104,6 +104,8 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
       return revenue.toString();
     }
 
+    if (loading) return <Spinner />
+
     return (
       <AccessContainer hasAccess={readAccess} resource="BILLBOARDS">
         <div className="border border-neutral-200 rounded-xl">
@@ -141,9 +143,8 @@ const BillboardTable = forwardRef<BillboardTableRef, BillboardTableProps>(
                 billboards.map((billboard) => (
                   <TableRow
                     key={billboard.id}
-                    className={`h-16 transition-colors ${
-                      isSelected(billboard.id) ? "bg-neutral-100" : ""
-                    }`}
+                    className={`h-16 transition-colors ${isSelected(billboard.id) ? "bg-neutral-100" : ""
+                      }`}
                   >
                     <TableCell className="text-neutral-600">
                       <div className="flex justify-center items-center">

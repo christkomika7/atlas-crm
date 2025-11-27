@@ -31,7 +31,7 @@ export default function InvoiceTab() {
   const addId = useDataStore.use.addId();
   const removeId = useDataStore.use.removeId();
 
-  const readAccess = useAccess("INVOICES", "READ");
+  const { access: readAccess, loading } = useAccess("INVOICES", "READ");
 
   const { mutate: mutateGetInvoice, isPending: isGettingInvoice } = useQueryAction<
     { id: string },
@@ -71,6 +71,8 @@ export default function InvoiceTab() {
   };
 
   const isSelected = (id: string) => ids.includes(id);
+
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="INVOICES">

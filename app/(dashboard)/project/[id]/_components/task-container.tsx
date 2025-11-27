@@ -36,8 +36,8 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
   const tasks = useTaskStore.use.tasks();
   const setTask = useTaskStore.use.setTask();
 
-  const modifyAccess = useAccess("PROJECTS", "MODIFY");
-  const readAccess = useAccess("PROJECTS", "READ");
+  const { access: modifyAccess } = useAccess("PROJECTS", "MODIFY");
+  const { access: readAccess } = useAccess("PROJECTS", "READ");
 
   const { mutate, isPending, data } = useQueryAction<
     { projectId: string },

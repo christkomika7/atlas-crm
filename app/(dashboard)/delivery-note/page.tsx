@@ -20,8 +20,8 @@ export default function DeliveryNotePage() {
   const deliveryNoteTableRef = useRef<DeliveryNoteTableRef>(null);
   const tab = useTabStore.use.tabs()["delivery-note-tab"];
 
-  const createAccess = useAccess("DELIVERY_NOTES", "CREATE");
-  const modifyAccess = useAccess("DELIVERY_NOTES", "MODIFY");
+  const { access: createAccess } = useAccess("DELIVERY_NOTES", "CREATE");
+  const { access: modifyAccess } = useAccess("DELIVERY_NOTES", "MODIFY");
 
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },

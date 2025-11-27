@@ -24,8 +24,8 @@ export default function ProductServicePage() {
   const productServiceTableRef = useRef<ProductServiceTableRef>(null);
 
 
-  const createAccess = useAccess("PRODUCT_SERVICES", "CREATE");
-  const modifyAccess = useAccess("PRODUCT_SERVICES", "MODIFY");
+  const { access: createAccess } = useAccess("PRODUCT_SERVICES", "CREATE");
+  const { access: modifyAccess } = useAccess("PRODUCT_SERVICES", "MODIFY");
 
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },

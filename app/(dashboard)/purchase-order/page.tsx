@@ -21,8 +21,8 @@ export default function PurchaseOrderPage() {
 
   const purchaseOrderTableRef = useRef<PurchaseOrderTableRef>(null);
 
-  const createAccess = useAccess("PURCHASE_ORDER", "CREATE");
-  const modifyAccess = useAccess("PURCHASE_ORDER", "MODIFY");
+  const { access: createAccess } = useAccess("PURCHASE_ORDER", "CREATE");
+  const { access: modifyAccess } = useAccess("PURCHASE_ORDER", "MODIFY");
 
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },

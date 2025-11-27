@@ -34,7 +34,7 @@ export default function EditSupplierPage() {
   const [lastUploadDocuments, setLastUploadDocuments] = useState<string[]>([]);
   const param = useParams();
 
-  const modifyAccess = useAccess("SUPPLIERS", "MODIFY");
+  const { access: modifyAccess, loading } = useAccess("SUPPLIERS", "MODIFY");
 
   const form = useForm<EditSupplierSchemaType>({
     resolver: zodResolver(editSupplierSchema),
@@ -130,7 +130,7 @@ export default function EditSupplierPage() {
     }
   }
 
-  if (isLoadingData) return <Spinner />;
+  if (isLoadingData || loading) return <Spinner />;
 
   return (
     <AccessContainer hasAccess={modifyAccess} resource="SUPPLIERS" >

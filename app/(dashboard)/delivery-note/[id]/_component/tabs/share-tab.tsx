@@ -38,8 +38,8 @@ export default function ShareTab() {
 
   const param = useParams();
 
-  const readAccess = useAccess("DELIVERY_NOTES", "READ");
-  const modifyAccess = useAccess("DELIVERY_NOTES", "MODIFY");
+  const { access: readAccess, loading } = useAccess("DELIVERY_NOTES", "READ");
+  const { access: modifyAccess } = useAccess("DELIVERY_NOTES", "MODIFY");
 
   const form = useForm<RecordEmailSchemaType>({
     resolver: zodResolver(recordEmailSchema),
@@ -151,6 +151,8 @@ export default function ShareTab() {
       mutateShareDeliveryNote(data);
     }
   }
+
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="DELIVERY_NOTES">

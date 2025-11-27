@@ -34,7 +34,7 @@ export default function EditClientPage() {
   const [lastUploadDocuments, setLastUploadDocuments] = useState<string[]>([]);
   const param = useParams();
 
-  const modifyAccess = useAccess("CLIENTS", "MODIFY");
+  const { access: modifyAccess, loading } = useAccess("CLIENTS", "MODIFY");
 
   const form = useForm<EditClientSchemaType>({
     resolver: zodResolver(editClientSchema)
@@ -111,7 +111,7 @@ export default function EditClientPage() {
     }
   }
 
-  if (isLoadingData) return <Spinner />;
+  if (isLoadingData || loading) return <Spinner />;
 
   return (
     <AccessContainer hasAccess={modifyAccess} resource="CLIENTS" >

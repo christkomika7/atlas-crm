@@ -53,9 +53,9 @@ export default function TableActionButton({
     convert: false
   });
 
-  const modifyAccess = useAccess("DELIVERY_NOTES", "MODIFY");
-  const createAccess = useAccess("DELIVERY_NOTES", "CREATE");
-  const readAccess = useAccess("DELIVERY_NOTES", "READ");
+  const { access: modifyAccess } = useAccess("DELIVERY_NOTES", "MODIFY");
+  const { access: createAccess } = useAccess("DELIVERY_NOTES", "CREATE");
+  const { access: readAccess } = useAccess("DELIVERY_NOTES", "READ");
   const hasAnyAccess = modifyAccess || createAccess || readAccess;
 
   const { mutate, isPending } = useQueryAction<

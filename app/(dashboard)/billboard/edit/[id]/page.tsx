@@ -6,7 +6,7 @@ import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
 
 export default function EditBillboard() {
-  const modifyAccess = useAccess("BILLBOARDS", "MODIFY");
+  const { access: modifyAccess } = useAccess("BILLBOARDS", "MODIFY");
   return (
     <div className="max-h-[calc(100vh-32px)] overflow-hidden">
       <Header back={1} title="Panneaux publicitaires" />

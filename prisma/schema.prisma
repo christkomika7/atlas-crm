@@ -342,10 +342,10 @@ model Appointment {
 }
 
 model Contract {
-  id   String       @id @default(uuid())
-  type ContractType
-
-  hasDelete Boolean @default(false)
+  id             String       @id @default(uuid())
+  contractNumber Int          @default(autoincrement())
+  type           ContractType
+  hasDelete      Boolean      @default(false)
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)

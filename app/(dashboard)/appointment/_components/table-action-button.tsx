@@ -12,6 +12,7 @@ import { ChevronDownIcon } from "lucide-react";
 import { remove } from "@/action/appointment.action";
 import { AppointmentType } from "@/types/appointment.type";
 import AppointmentsEditModal from "./appointment-edit-modal";
+import { useAccess } from "@/hook/useAccess";
 
 type TableActionButtonProps = {
   id: string;
@@ -28,10 +29,14 @@ export default function TableActionButton({
   deleteMessage,
   refreshAppointment,
 }: TableActionButtonProps) {
+
+  const { access: modifyAccess } = useAccess("APPOINTMENT", "MODIFY");
+
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<AppointmentType[]>
   >(remove, () => { }, "appointments");
+
 
   function handleDelete() {
     if (id) {
@@ -48,33 +53,43 @@ export default function TableActionButton({
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild disabled={!modifyAccess}>
         <Button variant="primary" className="p-0 rounded-lg !w-9 !h-9">
           <ChevronDownIcon className="text-white" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0 w-[180px]">
-        <ul>
-          {menus.map((menu) => {
-            if (menu.action === "delete")
-              return (
-                <ConfirmDialog
-                  key={menu.id}
-                  type="delete"
-                  title={deleteTitle}
-                  message={deleteMessage}
-                  action={handleDelete}
-                  loading={isPending}
-                />
-              );
-            return (
-              <li key={menu.id}>
-                <AppointmentsEditModal id={id} title={menu.title} refreshAppointment={refreshAppointment} />
-              </li>
-            );
-          })}
-        </ul>
-      </PopoverContent>
+      {modifyAccess &&
+        <PopoverContent align="end" className="p-0 w-[180px]">
+          <ul>
+            {menus.map((menu) => {
+              if (
+                (["update", "delete"].includes(menu.action as string) &&
+                  !modifyAccess)
+              )
+                return null;
+              switch (menu.action) {
+                case "delete":
+                  return (
+                    <ConfirmDialog
+                      key={menu.id}
+                      type="delete"
+                      title={deleteTitle}
+                      message={deleteMessage}
+                      action={handleDelete}
+                      loading={isPending}
+                    />
+                  );
+                default:
+                  return (
+                    <li key={menu.id}>
+                      <AppointmentsEditModal id={id} title={menu.title} refreshAppointment={refreshAppointment} />
+                    </li>
+                  );
+              }
+            })}
+          </ul>
+        </PopoverContent>
+      }
     </Popover>
   );
 }

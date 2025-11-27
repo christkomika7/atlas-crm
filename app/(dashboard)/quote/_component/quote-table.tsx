@@ -45,7 +45,7 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
     const id = useDataStore.use.currentCompany();
     const currency = useDataStore.use.currency();
 
-    const readAccess = useAccess("QUOTES", "READ");
+    const { access: readAccess, loading } = useAccess("QUOTES", "READ");
 
     const { mutate, isPending, data } = useQueryAction<
       { companyId: string; filter: "progress" | "complete" },
@@ -73,6 +73,9 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
     }, [id, readAccess]);
 
     const isSelected = (id: string) => selectedQuoteIds.includes(id);
+
+
+    if (loading) return <Spinner />
 
     return (
       <AccessContainer hasAccess={readAccess} resource="QUOTES">

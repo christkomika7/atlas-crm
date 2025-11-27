@@ -33,7 +33,7 @@ export default function ProjectForm() {
   const param = useParams();
 
 
-  const createAccess = useAccess("PROJECTS", "CREATE");
+  const { access: createAccess, loading } = useAccess("PROJECTS", "CREATE");
 
   const form = useForm<ProjectSchemaType>({
     resolver: zodResolver(projectSchema),
@@ -93,7 +93,7 @@ export default function ProjectForm() {
       );
     }
   }
-
+  if (loading) return <Spinner />
   return (
     <AccessContainer hasAccess={createAccess} resource="PROJECTS">
       <Form {...form}>

@@ -31,7 +31,7 @@ export default function PreviewTab() {
   );
   const idCompany = useDataStore.use.currentCompany();
 
-  const readAccess = useAccess("DELIVERY_NOTES", "READ");
+  const { access: readAccess, loading } = useAccess("DELIVERY_NOTES", "READ");
 
   const { mutate: mutateGetDeliveryNote, isPending: isGettingDeliveryNote } =
     useQueryAction<{ id: string }, RequestResponse<DeliveryNoteType>>(
@@ -83,7 +83,7 @@ export default function PreviewTab() {
     router.push("/delivery-note");
   }
 
-  if (isGettingDocument && isGettingDeliveryNote) return <Spinner />;
+  if ((isGettingDocument && isGettingDeliveryNote) || loading) return <Spinner />;
 
   return (
     <AccessContainer hasAccess={readAccess} resource="DELIVERY_NOTES">

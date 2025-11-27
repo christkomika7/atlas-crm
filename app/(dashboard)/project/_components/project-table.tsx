@@ -45,7 +45,7 @@ const ProjectTable = forwardRef<ProjectTableRef, ProjectTableProps>(
     const id = useDataStore.use.currentCompany();
     const [projects, setProjects] = useState<ProjectType[]>([]);
 
-    const readAccess = useAccess("PROJECTS", "READ");
+    const { access: readAccess, loading } = useAccess("PROJECTS", "READ");
 
     const { mutate: mutateGetProjects, isPending: isGettingProjects } = useQueryAction<
       { companyId: string, projectStatus: "stop" | "loading" },
@@ -82,6 +82,8 @@ const ProjectTable = forwardRef<ProjectTableRef, ProjectTableProps>(
     }, [id, readAccess]);
 
     const isSelected = (id: string) => selectedProjectIds.includes(id);
+
+    if (loading) return <Spinner />
 
     return (
       <AccessContainer hasAccess={readAccess} resource="PROJECTS">

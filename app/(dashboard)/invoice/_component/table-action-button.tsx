@@ -51,9 +51,9 @@ export default function TableActionButton({
   const currency = useDataStore.use.currency();
   const companyId = useDataStore.use.currentCompany();
 
-  const createAccess = useAccess("INVOICES", "CREATE");
-  const modifyAccess = useAccess("INVOICES", "MODIFY");
-  const readAccess = useAccess("INVOICES", "READ");
+  const { access: createAccess } = useAccess("INVOICES", "CREATE");
+  const { access: modifyAccess } = useAccess("INVOICES", "MODIFY");
+  const { access: readAccess } = useAccess("INVOICES", "READ");
 
   const { mutate, isPending } = useQueryAction<
     { id: string },

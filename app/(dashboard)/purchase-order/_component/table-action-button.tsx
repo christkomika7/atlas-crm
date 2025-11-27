@@ -37,9 +37,9 @@ export default function TableActionButton({
   const [open, setOpen] = useState(false);
   const setTab = useTabStore.use.setTab();
 
-  const readAccess = useAccess("PURCHASE_ORDER", "READ");
-  const createAccess = useAccess("PURCHASE_ORDER", "CREATE");
-  const modifyAccess = useAccess("PURCHASE_ORDER", "MODIFY");
+  const { access: readAccess } = useAccess("PURCHASE_ORDER", "READ");
+  const { access: createAccess } = useAccess("PURCHASE_ORDER", "CREATE");
+  const { access: modifyAccess } = useAccess("PURCHASE_ORDER", "MODIFY");
 
   const hasAnyAccess = modifyAccess || createAccess || readAccess;
 

@@ -23,8 +23,8 @@ export default function ProjectPage() {
 
   const projectTableRef = useRef<ProjectTableRef>(null);
 
-  const createAccess = useAccess("PROJECTS", "CREATE");
-  const modifyAccess = useAccess("PROJECTS", "MODIFY");
+  const { access: createAccess } = useAccess("PROJECTS", "CREATE");
+  const { access: modifyAccess } = useAccess("PROJECTS", "MODIFY");
 
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },

@@ -60,7 +60,7 @@ const ProductServiceTable = forwardRef<
 
     const skip = (currentPage - 1) * pageSize;
 
-    const readAccess = useAccess("PRODUCT_SERVICES", "READ");
+    const { access: readAccess, loading } = useAccess("PRODUCT_SERVICES", "READ");
 
     const { mutate, isPending } = useQueryAction<
       { companyId: string; filter: $Enums.ProductServiceType, skip?: number; take?: number },
@@ -98,6 +98,8 @@ const ProductServiceTable = forwardRef<
     }, [id, currentPage, readAccess]);
 
     const isSelected = (id: string) => selectedProductSerciceIds.includes(id);
+
+    if (loading) return <Spinner />
 
     return (
       <AccessContainer hasAccess={readAccess} resource="PRODUCT_SERVICES" >

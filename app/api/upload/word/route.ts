@@ -1,5 +1,5 @@
 import { sessionAccess } from "@/lib/access";
-import { generateContractDocument } from "@/lib/word";
+import { generateClientContractDocument } from "@/lib/word";
 import { ContractType } from "@/types/contract-types";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Générer le document
-        const buffer = await generateContractDocument(contract);
+        const buffer = await generateClientContractDocument(contract);
 
         // Retourner le fichier
         return new NextResponse(buffer, {

@@ -30,7 +30,8 @@ export default function TableActionButton({
   refreshClients,
 }: TableActionButtonProps) {
   const router = useRouter();
-  const modifyClientAccess = useAccess("CLIENTS", "MODIFY");
+
+  const { access: modifyClientAccess } = useAccess("CLIENTS", "MODIFY");
 
   const { mutate, isPending } = useQueryAction<
     { id: string },

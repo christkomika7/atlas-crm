@@ -30,7 +30,7 @@ export default function QuoteTab() {
   const addId = useDataStore.use.addId();
   const removeId = useDataStore.use.addId();
 
-  const readAccess = useAccess("QUOTES", "READ");
+  const { access: readAccess, loading } = useAccess("QUOTES", "READ");
 
   const { mutate: mutateGetQuote, isPending: isGettingQuote } = useQueryAction<
     { id: string },
@@ -70,6 +70,8 @@ export default function QuoteTab() {
   };
 
   const isSelected = (id: string) => ids.includes(id);
+
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="QUOTES">

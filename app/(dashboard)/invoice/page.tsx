@@ -22,8 +22,8 @@ export default function InvoicePage() {
 
   const invoiceTableRef = useRef<InvoiceTableRef>(null);
 
-  const createAccess = useAccess("INVOICES", "CREATE");
-  const modifyAccess = useAccess("INVOICES", "MODIFY");
+  const { access: createAccess } = useAccess("INVOICES", "CREATE");
+  const { access: modifyAccess } = useAccess("INVOICES", "MODIFY");
 
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },

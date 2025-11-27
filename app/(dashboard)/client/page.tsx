@@ -15,9 +15,9 @@ import AppointmentsCreateModal from "./_components/appointment-create-modal";
 
 export default function ClientPage() {
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
-  const modifyClientAccess = useAccess("CLIENTS", "MODIFY");
-  const createClientAccess = useAccess("CLIENTS", "CREATE");
-  const createAppointmentAccess = useAccess("APPOINTMENT", "CREATE");
+  const { access: modifyClientAccess } = useAccess("CLIENTS", "MODIFY");
+  const { access: createClientAccess } = useAccess("CLIENTS", "CREATE");
+  const { access: createAppointmentAccess } = useAccess("APPOINTMENT", "CREATE");
 
   const clientsTableRef = useRef<ClientsTableRef>(null);
 

@@ -25,10 +25,10 @@ export default function HeaderActionButton() {
   const ids = useDataStore.use.ids();
   const clearIds = useDataStore.use.clearIds();
 
-  const modifyInvoiceAccess = useAccess("INVOICES", "MODIFY");
-  const modifyQuoteAccess = useAccess("QUOTES", "MODIFY");
-  const modifyDeliveryNoteAccess = useAccess("DELIVERY_NOTES", "MODIFY");
-  const createProjectAccess = useAccess("PROJECTS", "CREATE");
+  const { access: modifyInvoiceAccess } = useAccess("INVOICES", "MODIFY");
+  const { access: modifyQuoteAccess } = useAccess("QUOTES", "MODIFY");
+  const { access: modifyDeliveryNoteAccess } = useAccess("DELIVERY_NOTES", "MODIFY");
+  const { access: createProjectAccess } = useAccess("PROJECTS", "CREATE");
 
   const { mutate: mutateDeleteInvoice, isPending: isDeletingInvoice } = useQueryAction<
     { ids: string[] },

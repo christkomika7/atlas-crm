@@ -92,8 +92,8 @@ export default function QuoteTab() {
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
 
 
-  const readAccess = useAccess("QUOTES", "READ");
-  const modifyAccess = useAccess("QUOTES", "MODIFY");
+  const { access: readAccess, loading } = useAccess("QUOTES", "READ");
+  const { access: modifyAccess } = useAccess("QUOTES", "MODIFY");
 
   const form = useForm<QuoteUpdateSchemaType>({
     resolver: zodResolver(quoteUpdateSchema),
@@ -461,6 +461,8 @@ export default function QuoteTab() {
     },
     [mutateUpdateQuote, form, lastUploadFiles]
   );
+
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="QUOTES">

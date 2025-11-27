@@ -39,8 +39,8 @@ export default function TableActionButton({
 
   const [currentId, setCurrentId] = useState("");
 
-  const createAccess = useAccess("PRODUCT_SERVICES", "CREATE");
-  const modifyAccess = useAccess("PRODUCT_SERVICES", "MODIFY");
+  const { access: createAccess } = useAccess("PRODUCT_SERVICES", "CREATE");
+  const { access: modifyAccess } = useAccess("PRODUCT_SERVICES", "MODIFY");
 
   const hasAnyAccess = modifyAccess || createAccess;
 

@@ -99,8 +99,8 @@ export default function InvoiceTab() {
   const setRecordId = useRecordIdStore.use.setRecordId();
 
 
-  const readAccess = useAccess("INVOICES", "READ");
-  const modifyAccess = useAccess("INVOICES", "MODIFY");
+  const { access: readAccess, loading } = useAccess("INVOICES", "READ");
+  const { access: modifyAccess } = useAccess("INVOICES", "MODIFY");
 
 
   const form = useForm<InvoiceUpdateSchemaType>({
@@ -491,6 +491,7 @@ export default function InvoiceTab() {
     [mutateUpdateInvoice, form, lastUploadFiles]
   );
 
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="INVOICES">

@@ -41,8 +41,8 @@ export default function ShareTab() {
 
   const param = useParams();
 
-  const readAccess = useAccess("PURCHASE_ORDER", "READ");
-  const modifyAccess = useAccess("PURCHASE_ORDER", "MODIFY");
+  const { access: readAccess, loading } = useAccess("PURCHASE_ORDER", "READ");
+  const { access: modifyAccess } = useAccess("PURCHASE_ORDER", "MODIFY");
 
   const form = useForm<RecordEmailSchemaType>({
     resolver: zodResolver(recordEmailSchema),
@@ -153,6 +153,9 @@ export default function ShareTab() {
       mutateSharePurchaseOrder(data);
     }
   }
+
+
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER">

@@ -21,6 +21,7 @@ import { formatNumber, generateAmaId, initialName, resolveImageSrc, urlToFile } 
 import UploadDocument from "../../../settings/employee/_components/upload-document";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getSession } from "@/lib/auth-client";
+import { useAccess } from "@/hook/useAccess";
 
 export default function EmployeeInfo() {
   const param = useParams();
@@ -37,7 +38,7 @@ export default function EmployeeInfo() {
   const { data } = getSession();
   const isAdmin = data?.user.role === "ADMIN" ? true : false;
 
-
+  const { access: modifyAccess } = useAccess("SETTING", "MODIFY");
 
   const { mutate: mutateGetUser, isPending } = useQueryAction<
     { id: string },
@@ -171,39 +172,41 @@ export default function EmployeeInfo() {
                 <EmployeeList value={profile?.user.email || "-"}>Adresse mail</EmployeeList>
                 <EmployeeList value={profile?.job || "-"}>Emploi</EmployeeList>
                 <EmployeeList value={`${profile?.salary ? formatNumber(profile.salary) : "-"} ${profile?.company?.currency || ""}`}>Salaire</EmployeeList>
+                {modifyAccess && <>
+                  <EmployeeList
+                    value={
+                      <UploadDocument
+                        id="document"
+                        defaultDoc={document.split("/")[2] || undefined}
+                        previewUrl={documentPreview}
+                        handleDelete={() => editDocument('doc', 'delete')}
+                        handleDownload={(url) => window.open(url, "_blank")}
+                        handleUpload={(file) => editDocument("doc", "update", file)}
+                        isLoading={isLoadingDoc}
+                      />
+                    }
+                  >
+                    Règlement intérieur
+                  </EmployeeList>
+                  <EmployeeList
+                    value={
+                      <UploadDocument
+                        id="passport"
+                        defaultDoc={passport.split("/")[2] || undefined}
+                        previewUrl={passportPreview}
+                        handleDelete={() => editDocument('passport', 'delete')}
+                        handleDownload={(url) => window.open(url, "_blank")}
+                        handleUpload={(file) => editDocument("passport", "update", file)}
+                        isLoading={isLoadingPassport}
 
-                <EmployeeList
-                  value={
-                    <UploadDocument
-                      id="document"
-                      defaultDoc={document.split("/")[2] || undefined}
-                      previewUrl={documentPreview}
-                      handleDelete={() => editDocument('doc', 'delete')}
-                      handleDownload={(url) => window.open(url, "_blank")}
-                      handleUpload={(file) => editDocument("doc", "update", file)}
-                      isLoading={isLoadingDoc}
-                    />
-                  }
-                >
-                  Règlement intérieur
-                </EmployeeList>
-                <EmployeeList
-                  value={
-                    <UploadDocument
-                      id="passport"
-                      defaultDoc={passport.split("/")[2] || undefined}
-                      previewUrl={passportPreview}
-                      handleDelete={() => editDocument('passport', 'delete')}
-                      handleDownload={(url) => window.open(url, "_blank")}
-                      handleUpload={(file) => editDocument("passport", "update", file)}
-                      isLoading={isLoadingPassport}
-
-                    />
-                  }
-                  className="border-none"
-                >
-                  Passport
-                </EmployeeList>
+                      />
+                    }
+                    className="border-none"
+                  >
+                    Passport
+                  </EmployeeList>
+                </>
+                }
               </div>
 
             }

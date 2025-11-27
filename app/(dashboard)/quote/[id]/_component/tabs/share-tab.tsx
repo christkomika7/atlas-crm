@@ -38,8 +38,8 @@ export default function ShareTab() {
 
   const param = useParams();
 
-  const readAccess = useAccess("QUOTES", "READ");
-  const modifyAccess = useAccess("QUOTES", "MODIFY");
+  const { access: readAccess, loading } = useAccess("QUOTES", "READ");
+  const { access: modifyAccess } = useAccess("QUOTES", "MODIFY");
 
   const form = useForm<RecordEmailSchemaType>({
     resolver: zodResolver(recordEmailSchema),
@@ -151,6 +151,8 @@ export default function ShareTab() {
       mutateShareQuote(data);
     }
   }
+
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="QUOTES"  >

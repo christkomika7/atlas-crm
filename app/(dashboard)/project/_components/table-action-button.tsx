@@ -35,8 +35,8 @@ export default function TableActionButton({
   const [open, setOpen] = useState(false)
   const router = useRouter();
 
-  const readAccess = useAccess("PROJECTS", "READ");
-  const modifyAccess = useAccess("PROJECTS", "MODIFY");
+  const { access: readAccess } = useAccess("PROJECTS", "READ");
+  const { access: modifyAccess } = useAccess("PROJECTS", "MODIFY");
 
   const hasAnyAccess = modifyAccess || readAccess;
 

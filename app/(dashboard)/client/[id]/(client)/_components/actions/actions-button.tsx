@@ -25,10 +25,10 @@ export default function ActionsButton() {
   const param = useParams();
   const reset = useDataStore.use.reset();
 
-  const createInvoiceAccess = useAccess("INVOICES", "CREATE");
-  const createQuoteAccess = useAccess("QUOTES", "CREATE");
-  const createDeliveryNoteAccess = useAccess("DELIVERY_NOTES", "CREATE");
-  const createTransactionAccess = useAccess("TRANSACTION", "CREATE");
+  const { access: createInvoiceAccess } = useAccess("INVOICES", "CREATE");
+  const { access: createQuoteAccess } = useAccess("QUOTES", "CREATE");
+  const { access: createDeliveryNoteAccess } = useAccess("DELIVERY_NOTES", "CREATE");
+  const { access: createTransactionAccess } = useAccess("TRANSACTION", "CREATE");
 
   const hasAccess =
     createInvoiceAccess || createQuoteAccess || createDeliveryNoteAccess || createTransactionAccess;

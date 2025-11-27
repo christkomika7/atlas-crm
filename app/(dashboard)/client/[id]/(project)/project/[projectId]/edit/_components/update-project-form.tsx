@@ -41,7 +41,7 @@ export default function UpdateProjectForm() {
   const param = useParams();
   const [lastUploadDocuments, setLastUploadDocuments] = useState<string[]>([]);
 
-  const modifyAccess = useAccess("PROJECTS", "MODIFY");
+  const { access: modifyAccess, loading } = useAccess("PROJECTS", "MODIFY");
 
   const form = useForm<EditProjectSchemaType>({
     resolver: zodResolver(editProjectSchema),
@@ -140,6 +140,8 @@ export default function UpdateProjectForm() {
       );
     }
   }
+
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={modifyAccess} resource="PROJECTS">

@@ -15,9 +15,9 @@ export default function PlanningTab() {
   const param = useParams();
   const [items, setItems] = useState<ItemPlanning[]>([]);
 
-  const readAccess = useAccess("BILLBOARDS", "READ");
+  const { access: readAccess, loading } = useAccess("BILLBOARDS", "READ");
 
-  const { mutate, isPending } = useQueryAction<
+  const { mutate, isPending, } = useQueryAction<
     { billboardId: string },
     RequestResponse<ItemType[]>
   >(allBillboardItem, () => { }, "items");
@@ -48,7 +48,7 @@ export default function PlanningTab() {
     }
   }, [param, readAccess]);
 
-  if (isPending) return <Spinner />;
+  if (isPending || loading) return <Spinner />;
   return (
     <AccessContainer hasAccess={readAccess} resource="BILLBOARDS">
       <ScrollArea className="h-[calc(100vh-176px)]">

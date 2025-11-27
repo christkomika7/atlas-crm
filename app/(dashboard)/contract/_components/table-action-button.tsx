@@ -10,20 +10,19 @@ import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { removeContract } from "@/action/contract.action";
+import { exportClientContractToWord, removeContract } from "@/action/contract.action";
 import { $Enums } from "@/lib/generated/prisma";
-import ClientContractEdit from "./client-contract-edit";
-import LessorContractEdit from "./lessor-contract-edit";
-import ModalContainer from "@/components/modal/modal-container";
-import { SetStateAction, useState } from "react";
+import { useAccess } from "@/hook/useAccess";
+import Spinner from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 type TableActionButtonProps = {
   id: string;
   menus: TableActionButtonType[];
   deleteTitle: string;
-  contract: $Enums.ContractType;
   deleteMessage: string | React.ReactNode;
   refreshContract: () => void;
+  contract: $Enums.ContractType
 };
 
 export default function TableActionButton({
@@ -36,12 +35,61 @@ export default function TableActionButton({
 }: TableActionButtonProps) {
 
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const { access: createAccess } = useAccess("CONTRACT", "CREATE");
+  const { access: modifyAccess } = useAccess("CONTRACT", "MODIFY");
+
+  const isFullyRestricted =
+    !createAccess &&
+    !modifyAccess;
+
+
+  const { mutate: mutateExportToClientContract, isPending: isExportingClientContract } =
+    useQueryAction<{ contractId: string }, { status: string, message: string }>(
+      exportClientContractToWord,
+      () => { },
+      "client-contract",
+    );
+
+  const { mutate: mutateExportToLessorContract, isPending: isExportingLessorContract } =
+    useQueryAction<{ contractId: string }, { status: string, message: string }>(
+      exportClientContractToWord,
+      () => { },
+      "lessor-contract",
+    );
 
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<null>
   >(removeContract, () => { }, "contracts");
+
+  function convertToWord(id: string, action: "duplicate" | "convert") {
+    id
+    switch (action) {
+      case "duplicate":
+        mutateExportToClientContract({ contractId: id }, {
+          onSuccess(data) {
+            toast.success(data.message);
+          },
+          onError(error) {
+            toast.error("Erreur lors de l'export du contrat");
+            console.error(error);
+          }
+        });
+        break;
+      case "convert":
+        mutateExportToLessorContract({ contractId: id }, {
+          onSuccess(data) {
+            toast.success(data.message);
+          },
+          onError(error) {
+            toast.error("Erreur lors de l'export du contrat");
+            console.error(error);
+          }
+        });
+        break;
+    }
+
+  }
 
   function handleDelete() {
     if (id) {
@@ -56,82 +104,59 @@ export default function TableActionButton({
     }
   }
 
-  function goto(id: string) {
-    return router.push(`/contract/${id}/${contract}`);
-  }
-
-
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="primary" className="p-0 rounded-lg !w-9 !h-9">
+        <Button variant="primary" disabled={isFullyRestricted} className="p-0 rounded-lg !w-9 !h-9">
           <ChevronDownIcon className="text-white" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0 w-[180px]">
-        <ul>
-          {menus.map((menu) => {
-            if (menu.action === "infos") {
-              return <li key={menu.id}>
-                <button
-                  className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
-                  onClick={() => goto(id)}
-                >
-                  <menu.icon className="w-4 h-4" />
-                  {menu.title}
-                </button>
-              </li>
-            }
-            if (menu.action === "delete") {
-              return (
-                <ConfirmDialog
-                  key={menu.id}
-                  type="delete"
-                  title={deleteTitle}
-                  message={deleteMessage}
-                  action={handleDelete}
-                  loading={isPending}
-                />
-              );
+      {!isFullyRestricted &&
+        <PopoverContent align="end" className="p-0 w-[180px]">
+          <ul>
+            {menus.map((menu) => {
+              if (contract === "CLIENT" && menu.action === "duplicate") return null;
+              if (contract === "LESSOR" && menu.action === "convert") return null;
 
-            }
-            if (menu.action === "update") {
-              return (
-                <li key={menu.id}>
-                  <ModalContainer
-                    size="sm"
-                    action={
+              if (
+                (["convert", "duplicate"].includes(menu.action as string) &&
+                  !createAccess)
+              )
+                return null;
+              if (menu.action === "delete" && !modifyAccess) return null;
+
+              switch (menu.action) {
+                case "delete":
+                  return (
+                    <ConfirmDialog
+                      key={menu.id}
+                      type="delete"
+                      title={deleteTitle}
+                      message={deleteMessage}
+                      action={handleDelete}
+                      loading={isPending}
+                    />
+                  );
+                default:
+                  return (
+                    <li key={menu.id}>
                       <button
                         className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                        onClick={() => convertToWord(id, menu.action as "duplicate" | "convert")}
                       >
                         <menu.icon className="w-4 h-4" />
                         {menu.title}
+                        {menu.action === "duplicate" && isExportingClientContract && <Spinner size={10} />}
+                        {menu.action === "convert" && isExportingLessorContract && <Spinner size={10} />}
                       </button>
-                    }
-                    title={`Modifier le contrat du ${contract === "CLIENT" ? "client" : "bailleur"}`}
-                    open={open}
-                    setOpen={function (value: SetStateAction<boolean>): void {
-                      setOpen(value);
-                    }}
-                  >
-                    {
-                      contract === "CLIENT" ?
-                        <ClientContractEdit id={id}
-                          refreshContract={refreshContract}
-                          closeModal={() => setOpen(false)}
-                        /> :
-                        <LessorContractEdit id={id}
-                          refreshContract={refreshContract}
-                          closeModal={() => setOpen(false)}
-                        />
-                    }
-                  </ModalContainer>
-                </li>
-              );
-            }
-          })}
-        </ul>
-      </PopoverContent>
+                    </li>
+                  );
+              }
+            })}
+
+          </ul>
+        </PopoverContent>
+      }
     </Popover>
   );
 }

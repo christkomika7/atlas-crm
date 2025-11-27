@@ -21,8 +21,8 @@ export default function QuotePage() {
 
   const quoteTableRef = useRef<QuoteTableRef>(null);
 
-  const createAccess = useAccess("QUOTES", "CREATE");
-  const modifyAccess = useAccess("QUOTES", "MODIFY");
+  const { access: createAccess } = useAccess("QUOTES", "CREATE");
+  const { access: modifyAccess } = useAccess("QUOTES", "MODIFY");
 
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },

@@ -25,6 +25,7 @@ import { ClientType } from "@/types/client.types";
 import { dropdownMenu } from "./table";
 import TableActionButton from "./table-action-button";
 import { formatNumber } from "@/lib/utils";
+import { useAccess } from "@/hook/useAccess";
 
 type ClientsTableProps = {
   selectedClientIds: string[];
@@ -39,6 +40,8 @@ const ClientsTable = forwardRef<ClientsTableRef, ClientsTableProps>(
   ({ selectedClientIds, setSelectedClientIds }, ref) => {
     const id = useDataStore.use.currentCompany();
 
+    const { access: readAccess, loading } = useAccess("CLIENTS", "READ");
+
     const { mutate, isPending, data } = useQueryAction<
       { id: string },
       RequestResponse<ClientType[]>
@@ -51,7 +54,7 @@ const ClientsTable = forwardRef<ClientsTableRef, ClientsTableProps>(
     };
 
     const refreshClients = () => {
-      if (id) {
+      if (id && readAccess) {
         mutate({ id });
       }
     };
@@ -62,9 +65,11 @@ const ClientsTable = forwardRef<ClientsTableRef, ClientsTableProps>(
 
     useEffect(() => {
       refreshClients();
-    }, [id]);
+    }, [id, readAccess]);
 
     const isSelected = (id: string) => selectedClientIds.includes(id);
+
+    if (loading) return <Spinner />
 
     return (
       <div className="border border-neutral-200 rounded-xl w-full">

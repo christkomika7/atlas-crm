@@ -30,7 +30,7 @@ export default function DeliveryNotesTab() {
   const addId = useDataStore.use.addId();
   const removeId = useDataStore.use.addId();
 
-  const readAccess = useAccess("DELIVERY_NOTES", "READ");
+  const { access: readAccess, loading } = useAccess("DELIVERY_NOTES", "READ");
 
   const { mutate: mutateGetDeliveryNote, isPending: isGettingDeliveryNote } = useQueryAction<
     { id: string },
@@ -70,6 +70,8 @@ export default function DeliveryNotesTab() {
   };
 
   const isSelected = (id: string) => ids.includes(id);
+
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="DELIVERY_NOTES">

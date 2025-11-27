@@ -21,7 +21,7 @@ type TaskInfoProps = {
 
 export default function TaskInfo({ id, closeModal }: TaskInfoProps) {
   const [data, setData] = useState<TaskType>()
-  const readAccess = useAccess("PROJECTS", "READ");
+  const { access: readAccess } = useAccess("PROJECTS", "READ");
 
   const { mutate, isPending } = useQueryAction<
     { id: string },

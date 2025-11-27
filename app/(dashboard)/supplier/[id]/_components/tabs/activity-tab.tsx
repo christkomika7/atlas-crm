@@ -30,7 +30,7 @@ export default function ActivityTab() {
   const addId = useDataStore.use.addId();
   const removeId = useDataStore.use.removeId();
 
-  const readAccess = useAccess("PURCHASE_ORDER", "READ");
+  const { access: readAccess, loading } = useAccess("PURCHASE_ORDER", "READ");
 
   const { mutate: mutateGetPurchaseOrder, isPending: isGettingPurchaseOrdeer } = useQueryAction<
     { id: string },
@@ -63,6 +63,8 @@ export default function ActivityTab() {
   };
 
   const isSelected = (id: string) => ids.includes(id);
+
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER">

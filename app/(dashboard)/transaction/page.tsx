@@ -14,6 +14,7 @@ import TransactionFilters from "./_components/transaction-filters";
 import { deleteTransactions } from "@/action/transaction.action";
 import { FilterXIcon } from "lucide-react";
 import { useDataStore } from "@/stores/data.store";
+import { useAccess } from "@/hook/useAccess";
 
 export default function TransactionPage() {
   const companyId = useDataStore.use.currentCompany();
@@ -22,6 +23,9 @@ export default function TransactionPage() {
     DeletedTransactions[]
   >([]);
   const transactionTableRef = useRef<TransactionTableRef>(null);
+
+  const { access: createAccess } = useAccess("TRANSACTION", "CREATE");
+  const { access: modifyAcccess } = useAccess("TRANSACTION", "MODIFY");
 
   const { mutate: mutateDeleteTransactions, isPending } = useQueryAction<
     { data: DeletedTransactions[], companyId: string },
@@ -62,22 +66,27 @@ export default function TransactionPage() {
           )}
           <div className="grid grid-cols-[120px_120px_140px] gap-x-2">
             <Button variant="inset-primary">Exporter</Button>
-            <Button
-              variant="primary"
-              className="bg-red font-medium"
-              onClick={removeTransactions}
-            >
-              {isPending ? (
-                <Spinner />
-              ) : (
-                <>
-                  {selectedTransactionIds.length > 0 &&
-                    `(${selectedTransactionIds.length})`}{" "}
-                  Suppression
-                </>
-              )}
-            </Button>
-            <HeaderMenu refreshTransaction={handleTransactionAdded} />
+            {modifyAcccess &&
+              <Button
+                variant="primary"
+                className="bg-red font-medium"
+                onClick={removeTransactions}
+              >
+                {isPending ? (
+                  <Spinner />
+                ) : (
+                  <>
+                    {selectedTransactionIds.length > 0 &&
+                      `(${selectedTransactionIds.length})`}{" "}
+                    Suppression
+                  </>
+                )}
+              </Button>
+            }
+
+            {createAccess &&
+              <HeaderMenu refreshTransaction={handleTransactionAdded} />
+            }
           </div>
         </div>
       </Header>

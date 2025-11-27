@@ -1,18 +1,18 @@
 import { TableActionButtonType } from "@/types/table.types";
-import { EditIcon, EyeIcon, Trash2Icon } from "lucide-react";
+import { ClipboardList, HandshakeIcon, Trash2Icon } from "lucide-react";
 
 export const dropdownMenu: TableActionButtonType[] = [
     {
         id: 1,
-        icon: EyeIcon,
-        title: "Visualiser",
-        action: "infos"
+        icon: HandshakeIcon,
+        title: "Export contrat",
+        action: "convert"
     },
     {
         id: 2,
-        icon: EditIcon,
-        title: "Modifier",
-        action: "update"
+        icon: ClipboardList,
+        title: "Export contrat",
+        action: "duplicate"
     },
     {
         id: 3,

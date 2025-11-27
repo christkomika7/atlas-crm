@@ -19,8 +19,8 @@ export default function BillboardPage() {
 
   const billboardTableRef = useRef<BillboardTableRef>(null);
 
-  const createAccess = useAccess("BILLBOARDS", "CREATE");
-  const modifyAccess = useAccess("BILLBOARDS", "MODIFY");
+  const { access: createAccess } = useAccess("BILLBOARDS", "CREATE");
+  const { access: modifyAccess } = useAccess("BILLBOARDS", "MODIFY");
 
   const { mutate, isPending } = useQueryAction<
     { ids: string[] },

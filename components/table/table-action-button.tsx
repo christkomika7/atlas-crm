@@ -11,7 +11,6 @@ import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
 import { CompanyType } from "@/types/company.types";
 import { remove } from "@/action/company.action";
-import { UserType } from "@/types/user.types";
 import useCompanyStore from "@/stores/company.store";
 import { useEmployeeStore } from "@/stores/employee.store";
 import { useRouter } from "next/navigation";
@@ -19,6 +18,7 @@ import AlertDialogMessage from "../alert-dialog/alert-dialog-message";
 import { Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import Spinner from "../ui/spinner";
+import { useAccess } from "@/hook/useAccess";
 
 type TableActionButtonProps = {
   id: string;
@@ -38,13 +38,14 @@ export default function TableActionButton({
 
   const router = useRouter();
 
+  const { access: modifyAccess } = useAccess("SETTING", "MODIFY");
+
   const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<CompanyType[]>
   >(remove, () => { }, "companies");
 
   function handleDelete() {
-
     if (id) {
       setCurrentId(id)
       mutate({ id }, {
@@ -63,46 +64,57 @@ export default function TableActionButton({
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild disabled={!modifyAccess}>
         <Button variant="primary" className="p-0 rounded-lg !w-9 !h-9">
           <ChevronDownIcon className="stroke-white !w-3.5 !h-3.5" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0 w-[180px]">
-        <ul>
-          {menus.map((menu) => {
-            if (menu.action === "delete")
-              return (
-                <AlertDialogMessage
-                  key={menu.id}
-                  type="delete"
-                  isLoading={isPending}
-                  actionButton={
-                    <button className="flex items-center gap-x-2 hover:bg-red/5 px-4 py-3 w-full font-medium text-red text-sm cursor-pointer">
-                      <Trash2Icon className="w-4 h-4" />
-                      Supprimer
-                    </button>
-                  }
-                  title="Confirmer la suppression"
-                  message={deleteMessage}
-                  confirmAction={handleDelete}
-                />
-              );
-            return (
-              <li key={menu.id}>
-                <button
-                  className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
-                  onClick={() => goTo(id)}
-                >
-                  <menu.icon className="w-4 h-4" />
-                  {menu.title}
-                  {currentId === id && isPending && <Spinner size={14} />}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </PopoverContent>
+      {modifyAccess &&
+        <PopoverContent align="end" className="p-0 w-[180px]">
+          <ul>
+            {menus.map((menu) => {
+              if (
+                (["update", "delete"].includes(menu.action as string) &&
+                  !modifyAccess)
+              )
+                return null;
+
+              switch (menu.action) {
+                case "delete":
+                  return (
+                    <AlertDialogMessage
+                      key={menu.id}
+                      type="delete"
+                      isLoading={isPending}
+                      actionButton={
+                        <button className="flex items-center gap-x-2 hover:bg-red/5 px-4 py-3 w-full font-medium text-red text-sm cursor-pointer">
+                          <Trash2Icon className="w-4 h-4" />
+                          Supprimer
+                        </button>
+                      }
+                      title="Confirmer la suppression"
+                      message={deleteMessage}
+                      confirmAction={handleDelete}
+                    />
+                  );
+                default:
+                  return (
+                    <li key={menu.id}>
+                      <button
+                        className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                        onClick={() => goTo(id)}
+                      >
+                        <menu.icon className="w-4 h-4" />
+                        {menu.title}
+                        {currentId === id && isPending && <Spinner size={14} />}
+                      </button>
+                    </li>
+                  );
+              }
+            })}
+          </ul>
+        </PopoverContent>
+      }
     </Popover>
   );
 }

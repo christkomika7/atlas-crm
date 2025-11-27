@@ -31,8 +31,8 @@ export default function TableActionButton({
 }: TableActionButtonProps) {
   const router = useRouter();
 
-  const readAccess = useAccess("SUPPLIERS", "READ");
-  const modifyAccess = useAccess("SUPPLIERS", "MODIFY");
+  const { access: readAccess } = useAccess("SUPPLIERS", "READ");
+  const { access: modifyAccess } = useAccess("SUPPLIERS", "MODIFY");
   const hasAnyAccess = modifyAccess || readAccess;
 
 

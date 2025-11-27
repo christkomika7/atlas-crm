@@ -160,15 +160,50 @@ export async function removeManyContract({ ids }: { ids: string[] }) {
     }
 }
 
-
-export async function exportToWord(data: { contract: ContractType }) {
+export async function exportClientContractToWord({ contractId }: { contractId: string }) {
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/upload/word`, {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/contract/${contractId}/client`, {
+            method: "GET",
+        });
+
+        if (!response.ok) {
+            const errRes = await response.json().catch(() => null);
+            throw new Error(errRes?.message || "Erreur lors de l'export Word");
+        }
+
+        const contentDisposition = response.headers.get("Content-Disposition");
+        let filename = "export.docx";
+
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="(.+)"/);
+            if (match && match[1]) {
+                filename = match[1];
+            }
+        }
+
+        const blob = await response.blob();
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        return { status: "success", message: "Fichier téléchargé avec succès" };
+    } catch (error) {
+        console.error("Erreur dans la fonction exportToWord:", error);
+        throw error;
+    }
+}
+
+export async function exportLessorContractToWord({ contractId }: { contractId: string }) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/contract/${contractId}/lessor`, {
+            method: "GET",
         });
 
         if (!response.ok) {
@@ -194,3 +229,4 @@ export async function exportToWord(data: { contract: ContractType }) {
         throw error;
     }
 }
+

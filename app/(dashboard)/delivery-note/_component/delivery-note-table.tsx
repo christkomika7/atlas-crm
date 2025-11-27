@@ -45,7 +45,7 @@ const DeliveryNoteTable = forwardRef<DeliveryNoteTableRef, DeliveryNoteTableProp
     const id = useDataStore.use.currentCompany();
     const currency = useDataStore.use.currency();
 
-    const readAccess = useAccess("DELIVERY_NOTES", "READ");
+    const { access: readAccess, loading } = useAccess("DELIVERY_NOTES", "READ");
 
     const { mutate, isPending, data } = useQueryAction<
       { companyId: string; filter: "progress" | "complete" },
@@ -73,6 +73,8 @@ const DeliveryNoteTable = forwardRef<DeliveryNoteTableRef, DeliveryNoteTableProp
     }, [id, readAccess]);
 
     const isSelected = (id: string) => selectedDeleveryNoteIds.includes(id);
+
+    if (loading) return <Spinner />
 
     return (
       <AccessContainer hasAccess={readAccess} resource="DELIVERY_NOTES" >

@@ -1,23 +1,43 @@
-'use client';
+"use client";
+
 import { getSession } from "@/lib/auth-client";
 import { $Enums, Resource } from "@/lib/generated/prisma";
 import { hasAccess } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
-export function useAccess(resource: Resource, action: $Enums.Action | $Enums.Action[]) {
-    const session = getSession();
-    const role = session.data?.user.role || "USER";
+export function useAccess(
+    resource: Resource,
+    action: $Enums.Action | $Enums.Action[]
+) {
+    const [loading, setLoading] = useState(true);
     const [access, setAccess] = useState(false);
 
+    const session = getSession();
+
     useEffect(() => {
-        if (session) {
-            const profile = session.data?.user.currentProfile as string;
-            const permissions = session.data?.user.profiles?.find(p => p.id === profile)?.permissions || [];
-            console.log({ permissions, hasAccess: hasAccess(resource, action, permissions) })
-            setAccess(hasAccess(resource, action, permissions, role));
-
+        if (!session || session.isPending) {
+            setLoading(true);
+            return;
         }
-    }, [session])
 
-    return access
+        if (session.data) {
+            const role = session.data.user.role || "USER";
+            const profile = session.data.user.currentProfile as string;
+            const permissions =
+                session.data.user.profiles?.find((p) => p.id === profile)
+                    ?.permissions || [];
+
+            const ok = hasAccess(resource, action, permissions, role);
+
+            setAccess(ok);
+            setLoading(false);
+        }
+
+        if (!session.data) {
+            setAccess(false);
+            setLoading(false);
+        }
+    }, [session, resource, action]);
+
+    return { loading, access };
 }

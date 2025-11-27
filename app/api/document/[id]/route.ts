@@ -1,4 +1,4 @@
-import { sessionAccess } from "@/lib/access";
+import { checkAccess, sessionAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
@@ -7,19 +7,17 @@ import { documentSchema, DocumentSchemaType } from "@/lib/zod/document.schema";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
-    const { hasSession, userId } = await sessionAccess();
+    const result = await checkAccess("SETTING", "READ");
 
-    if (!hasSession || !userId) {
+    if (!result.authorized) {
         return Response.json({
             status: "error",
-            message: "Aucune session trouvée",
+            message: result.message,
             data: []
         }, { status: 200 });
     }
 
     const id = getIdFromUrl(req.url, "last") as string;
-
-
 
     const document = await prisma.documentModel.findUnique({
         where: { companyId: id },

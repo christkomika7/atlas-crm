@@ -23,7 +23,8 @@ import { ModelDocumentType } from "@/types/document.types";
 import { unique, update } from "@/action/document.action";
 import Spinner from "@/components/ui/spinner";
 import { resolveImageSrc, urlToFile } from "@/lib/utils";
-import { getSession } from "@/lib/auth-client";
+import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
 
 export default function DocumentTab() {
   const idCompany = useDataStore.use.currentCompany();
@@ -62,6 +63,10 @@ export default function DocumentTab() {
     position: string;
   }>({ size: "Medium", position: "Center" });
 
+
+  const { access: readAccess, loading } = useAccess("SETTING", "READ");
+  const { access: modifyAccess } = useAccess("SETTING", "MODIFY");
+
   const { mutate: mutateDocument, isPending: isDocumentPending } =
     useQueryAction<{ id: string }, RequestResponse<ModelDocumentType>>(
       unique,
@@ -76,7 +81,7 @@ export default function DocumentTab() {
     >(update, () => { }, ["model-document"]);
 
   useEffect(() => {
-    if (idCompany) {
+    if (idCompany && readAccess) {
       mutateDocument(
         { id: idCompany },
         {
@@ -116,7 +121,7 @@ export default function DocumentTab() {
         }
       );
     }
-  }, [idCompany]);
+  }, [idCompany, readAccess]);
 
   useEffect(() => {
     getLogo()
@@ -184,179 +189,192 @@ export default function DocumentTab() {
     return toast.error("Aucun document trouvé.");
   }
 
-  if (isDocumentPending) {
+  if (isDocumentPending || loading) {
     return <Spinner />;
   }
 
-  if (!idCompany) {
-    return (
-      <Alert variant="primary">
-        <MessageCircleWarningIcon />
-        <AlertTitle>Entreprise non sélectionnée</AlertTitle>
-        <AlertDescription>
-          Veuillez choisir une entreprise avant de poursuivre la configuration
-          des documents.
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   return (
-    <ScrollArea className="pr-4 h-full">
-      <div className="gap-x-2 grid grid-cols-[1fr_1.3fr] pt-4 h-full">
-        <div className="space-y-4 w-full">
-          <h2 className="font-semibold text-xl">Configuration</h2>
-          <TextInput
-            type="file"
-            value={logo}
-            accept="image/png, image/jpeg, image/jpg"
-            handleChange={(file) =>
-              setLogo(file as File)
-            }
-          />
-          <Combobox
-            className="w-full"
-            datas={[
-              { id: 1, value: "Left", label: "Gauche" },
-              { id: 2, value: "Right", label: "Droite" },
-              { id: 3, value: "Center", label: "Centre" },
-            ]}
-            value={dimension?.position ?? "Center"}
-            setValue={(value) =>
-              setDimension({ ...dimension, position: value as string })
-            }
-            placeholder="Position du logo"
-            searchMessage="Rechercher une position"
-            noResultsMessage="Aucune position trouvée."
-          />
-          <Combobox
-            className="w-full"
-            datas={[
-              { id: 1, value: "Small", label: "Petite" },
-              { id: 2, value: "Medium", label: "Moyenne" },
-              { id: 3, value: "Large", label: "Grande" },
-            ]}
-            value={dimension?.size ?? "Medium"}
-            setValue={(value) => setDimension({ ...dimension, size: value as string })}
-            placeholder="Taille du logo"
-            searchMessage="Rechercher une taille"
-            noResultsMessage="Aucune taille trouvée."
-          />
-
-          <div className="gap-x-2 grid grid-cols-2 bg-gray px-2 py-2 rounded-lg w-full h-fit">
-            <div className="items-center gap-x-2 grid grid-cols-[30px_1fr]">
-              <span className="font-medium text-sm">Trait</span>
-              <input
-                type="color"
-                className="bg-white p-0.5 !border w-full text-sm text-center"
-                value={colors.primary}
-                onChange={(e) =>
-                  setColors({
-                    ...colors,
-                    primary: e.target.value,
-                  })
+    <AccessContainer hasAccess={readAccess} resource="SETTING" >
+      {!idCompany ?
+        <Alert variant="primary">
+          <MessageCircleWarningIcon />
+          <AlertTitle>Entreprise non sélectionnée</AlertTitle>
+          <AlertDescription>
+            Veuillez choisir une entreprise avant de poursuivre la configuration
+            des documents.
+          </AlertDescription>
+        </Alert>
+        :
+        <ScrollArea className="pr-4 h-full">
+          <div className="gap-x-2 grid grid-cols-[1fr_1.3fr] pt-4 h-full">
+            <div className="space-y-4 w-full">
+              <h2 className="font-semibold text-xl">Configuration</h2>
+              <TextInput
+                type="file"
+                value={logo}
+                disabled={!modifyAccess}
+                accept="image/png, image/jpeg, image/jpg"
+                handleChange={(file) =>
+                  setLogo(file as File)
                 }
               />
-            </div>
-            <div className="items-center gap-x-2 grid grid-cols-[40px_1fr]">
-              <span className="font-medium text-sm">Bande</span>
-              <input
-                type="color"
-                className="bg-white p-0.5 !border w-full text-sm text-center"
-                value={colors.secondary}
-                onChange={(e) =>
-                  setColors({
-                    ...colors,
-                    secondary: e.target.value,
-                  })
+              <Combobox
+                className="w-full"
+                disabled={!modifyAccess}
+                datas={[
+                  { id: 1, value: "Left", label: "Gauche" },
+                  { id: 2, value: "Right", label: "Droite" },
+                  { id: 3, value: "Center", label: "Centre" },
+                ]}
+                value={dimension?.position ?? "Center"}
+                setValue={(value) =>
+                  setDimension({ ...dimension, position: value as string })
                 }
+                placeholder="Position du logo"
+                searchMessage="Rechercher une position"
+                noResultsMessage="Aucune position trouvée."
+              />
+              <Combobox
+                disabled={!modifyAccess}
+                className="w-full"
+                datas={[
+                  { id: 1, value: "Small", label: "Petite" },
+                  { id: 2, value: "Medium", label: "Moyenne" },
+                  { id: 3, value: "Large", label: "Grande" },
+                ]}
+                value={dimension?.size ?? "Medium"}
+                setValue={(value) => setDimension({ ...dimension, size: value as string })}
+                placeholder="Taille du logo"
+                searchMessage="Rechercher une taille"
+                noResultsMessage="Aucune taille trouvée."
+              />
+
+              <div className="gap-x-2 grid grid-cols-2 bg-gray px-2 py-2 rounded-lg w-full h-fit">
+                <div className="items-center gap-x-2 grid grid-cols-[30px_1fr]">
+                  <span className="font-medium text-sm">Trait</span>
+                  <input
+                    disabled={!modifyAccess}
+                    type="color"
+                    className="bg-white p-0.5 !border w-full text-sm text-center"
+                    value={colors.primary}
+                    onChange={(e) =>
+                      setColors({
+                        ...colors,
+                        primary: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="items-center gap-x-2 grid grid-cols-[40px_1fr]">
+                  <span className="font-medium text-sm">Bande</span>
+                  <input
+                    disabled={!modifyAccess}
+                    type="color"
+                    className="bg-white p-0.5 !border w-full text-sm text-center"
+                    value={colors.secondary}
+                    onChange={(e) =>
+                      setColors({
+                        ...colors,
+                        secondary: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <Tabs
+                className="h-fit"
+                tabs={[
+                  {
+                    id: 1,
+                    title: "Devis",
+                    content: (
+                      <QuotesTab
+                        disabled={!modifyAccess}
+                        prefix={quotes.prefix}
+                        setPrefix={(value) =>
+                          setQuotes({ ...quotes, prefix: value })
+                        }
+                        notes={quotes.notes}
+                        setNotes={(value) => setQuotes({ ...quotes, notes: value })}
+                      />
+                    ),
+                  },
+                  {
+                    id: 2,
+                    title: "Factures",
+                    content: (
+                      <InvoicesTab
+                        disabled={!modifyAccess}
+                        prefix={invoices.prefix}
+                        setPrefix={(value) =>
+                          setInvoices({ ...invoices, prefix: value })
+                        }
+                        notes={invoices.notes}
+                        setNotes={(value) =>
+                          setInvoices({ ...invoices, notes: value })
+                        }
+                      />
+                    ),
+                  },
+                  {
+                    id: 3,
+                    title: "Bons de livraison",
+                    content: (
+                      <DeliveryNotesTab
+                        disabled={!modifyAccess}
+                        prefix={deliveryNotes.prefix}
+                        setPrefix={(value) =>
+                          setDeliveryNotes({ ...deliveryNotes, prefix: value })
+                        }
+                        notes={deliveryNotes.notes}
+                        setNotes={(value) =>
+                          setDeliveryNotes({ ...deliveryNotes, notes: value })
+                        }
+                      />
+                    ),
+                  },
+                  {
+                    id: 4,
+                    title: "Bons de commande",
+                    content: (
+                      <PurchaseOrderTab
+                        disabled={!modifyAccess}
+                        prefix={purchaseOrders.prefix}
+                        setPrefix={(value) =>
+                          setPurchaseOrders({ ...purchaseOrders, prefix: value })
+                        }
+                        notes={purchaseOrders.notes}
+                        setNotes={(value) =>
+                          setPurchaseOrders({ ...purchaseOrders, notes: value })
+                        }
+                      />
+                    ),
+                  },
+                ]}
+                tabId="document"
+              />
+
+              {modifyAccess &&
+                <Button onClick={submit} disabled={updateDocumentPending} variant="primary" className="max-w-[200px]">
+                  {updateDocumentPending ? <Spinner /> : "Valider"}
+                </Button>
+              }
+            </div>
+            <div className="space-y-2 pl-2 border-l w-full min-w-[700px]">
+              <h2 className="font-semibold text-xl">Aperçu</h2>
+              <DocumentPreview
+                firstColor={colors.primary}
+                secondColor={colors.secondary}
+                logo={preview}
+                logoSize={dimension?.size}
+                logoPosition={dimension?.position}
               />
             </div>
           </div>
-
-          <Tabs
-            className="h-fit"
-            tabs={[
-              {
-                id: 1,
-                title: "Devis",
-                content: (
-                  <QuotesTab
-                    prefix={quotes.prefix}
-                    setPrefix={(value) =>
-                      setQuotes({ ...quotes, prefix: value })
-                    }
-                    notes={quotes.notes}
-                    setNotes={(value) => setQuotes({ ...quotes, notes: value })}
-                  />
-                ),
-              },
-              {
-                id: 2,
-                title: "Factures",
-                content: (
-                  <InvoicesTab
-                    prefix={invoices.prefix}
-                    setPrefix={(value) =>
-                      setInvoices({ ...invoices, prefix: value })
-                    }
-                    notes={invoices.notes}
-                    setNotes={(value) =>
-                      setInvoices({ ...invoices, notes: value })
-                    }
-                  />
-                ),
-              },
-              {
-                id: 3,
-                title: "Bons de livraison",
-                content: (
-                  <DeliveryNotesTab
-                    prefix={deliveryNotes.prefix}
-                    setPrefix={(value) =>
-                      setDeliveryNotes({ ...deliveryNotes, prefix: value })
-                    }
-                    notes={deliveryNotes.notes}
-                    setNotes={(value) =>
-                      setDeliveryNotes({ ...deliveryNotes, notes: value })
-                    }
-                  />
-                ),
-              },
-              {
-                id: 4,
-                title: "Bons de commande",
-                content: (
-                  <PurchaseOrderTab
-                    prefix={purchaseOrders.prefix}
-                    setPrefix={(value) =>
-                      setPurchaseOrders({ ...purchaseOrders, prefix: value })
-                    }
-                    notes={purchaseOrders.notes}
-                    setNotes={(value) =>
-                      setPurchaseOrders({ ...purchaseOrders, notes: value })
-                    }
-                  />
-                ),
-              },
-            ]}
-            tabId="document"
-          />
-          <Button onClick={submit} variant="primary" className="max-w-[200px]">
-            {updateDocumentPending ? <Spinner /> : "Valider"}
-          </Button>
-        </div>
-        <div className="space-y-2 pl-2 border-l w-full min-w-[700px]">
-          <h2 className="font-semibold text-xl">Aperçu</h2>
-          <DocumentPreview
-            firstColor={colors.primary}
-            secondColor={colors.secondary}
-            logo={preview}
-            logoSize={dimension?.size}
-            logoPosition={dimension?.position}
-          />
-        </div>
-      </div>
-    </ScrollArea>
+        </ScrollArea>
+      }
+    </AccessContainer>
   );
 }

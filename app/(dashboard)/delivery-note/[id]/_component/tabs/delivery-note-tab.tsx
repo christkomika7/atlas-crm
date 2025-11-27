@@ -94,8 +94,8 @@ export default function DeliveryNoteTab() {
   const [lastUploadFiles, setLastUploadFiles] = useState<string[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  const readAccess = useAccess("DELIVERY_NOTES", "READ");
-  const modifyAccess = useAccess("DELIVERY_NOTES", "MODIFY");
+  const { access: readAccess, loading } = useAccess("DELIVERY_NOTES", "READ");
+  const { access: modifyAccess } = useAccess("DELIVERY_NOTES", "MODIFY");
 
   const form = useForm<DeliveryNoteUpdateSchemaType>({
     resolver: zodResolver(deliveryNoteUpdateSchema),
@@ -462,6 +462,8 @@ export default function DeliveryNoteTab() {
     },
     [mutateUpdateDeliveryNote, form, lastUploadFiles]
   );
+
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="DELIVERY_NOTES">

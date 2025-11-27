@@ -47,7 +47,7 @@ export default function InfoTab() {
     creditNotes: "",
   });
 
-  const readAccess = useAccess("BILLBOARDS", "READ");
+  const { access: readAccess, loading } = useAccess("BILLBOARDS", "READ");
 
 
   const { mutate, isPending } = useQueryAction<
@@ -141,7 +141,7 @@ export default function InfoTab() {
     }
   }, [companyId, readAccess]);
 
-  if (isPending || isLoadingDocumentModel || isLoadingBillboard)
+  if (isPending || isLoadingDocumentModel || isLoadingBillboard || loading)
     return <Spinner />;
   return (
     <AccessContainer hasAccess={readAccess} resource="BILLBOARDS" >

@@ -91,8 +91,8 @@ export default function PurchaseOrderTab() {
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState(0);
   const [lastUploadFiles, setLastUploadFiles] = useState<string[]>([]);
 
-  const readAccess = useAccess("PURCHASE_ORDER", "READ");
-  const modifyAccess = useAccess("PURCHASE_ORDER", "MODIFY");
+  const { access: readAccess, loading } = useAccess("PURCHASE_ORDER", "READ");
+  const { access: modifyAccess } = useAccess("PURCHASE_ORDER", "MODIFY");
 
   const form = useForm<PurchaseOrderUpdateSchemaType>({
     resolver: zodResolver(purchaseOrderUpdateSchema),
@@ -416,6 +416,7 @@ export default function PurchaseOrderTab() {
     [mutateUpdatePurchaseOrder, form, lastUploadFiles]
   );
 
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER">

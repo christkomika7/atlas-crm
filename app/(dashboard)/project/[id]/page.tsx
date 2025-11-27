@@ -14,7 +14,7 @@ import AccessContainer from "@/components/errors/access-container";
 
 export default function ClientProjectPage() {
   const param = useParams();
-  const readAccess = useAccess("PROJECTS", "READ");
+  const { access: readAccess, loading } = useAccess("PROJECTS", "READ");
 
   const { mutate, isPending, data } = useQueryAction<
     { id: string },
@@ -34,38 +34,40 @@ export default function ClientProjectPage() {
           <Header back={1} title="Informations du client" />
         </div>
       </div>
-      <AccessContainer hasAccess={readAccess} resource="PROJECTS">
-        <>
-          {isPending ? (
-            <Spinner />
-          ) : (
-            <>
-              <div className="flex mb-5 justify-between items-center gap-x-2 px-6">
-                {isPending ? (
-                  <Spinner />
-                ) : (
-                  <h2 className="flex-shrink-0 font-semibold text-xl">
-                    {data?.data?.company.companyName}
-                  </h2>
-                )}
-                <div className="flex items-center gap-x-2 mr-4">
-                  <p className="font-semibold text-lg">Solde:</p>
+      {loading ? <Spinner /> :
+        <AccessContainer hasAccess={readAccess} resource="PROJECTS">
+          <>
+            {isPending ? (
+              <Spinner />
+            ) : (
+              <>
+                <div className="flex mb-5 justify-between items-center gap-x-2 px-6">
                   {isPending ? (
                     <Spinner />
                   ) : (
-                    <p className="text-sm">
-                      {formatNumber(data?.data?.amount || 0)} {data?.data?.company.currency}
-                    </p>
+                    <h2 className="flex-shrink-0 font-semibold text-xl">
+                      {data?.data?.company.companyName}
+                    </h2>
                   )}
+                  <div className="flex items-center gap-x-2 mr-4">
+                    <p className="font-semibold text-lg">Solde:</p>
+                    {isPending ? (
+                      <Spinner />
+                    ) : (
+                      <p className="text-sm">
+                        {formatNumber(data?.data?.amount || 0)} {data?.data?.company.currency}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 min-h-0">
-                <TaskContainer projectId={data?.data?.id as string} />
-              </div>
-            </>
-          )}
-        </>
-      </AccessContainer>
+                <div className="flex-1 min-h-0">
+                  <TaskContainer projectId={data?.data?.id as string} />
+                </div>
+              </>
+            )}
+          </>
+        </AccessContainer>
+      }
     </div>
   );
 }

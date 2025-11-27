@@ -58,7 +58,7 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
     const id = useDataStore.use.currentCompany();
     const currency = useDataStore.use.currency();
 
-    const readAccess = useAccess("INVOICES", "READ");
+    const { access: readAccess, loading } = useAccess("INVOICES", "READ");
 
     const { mutate: mutateGetInvoice, isPending: isGettingInvoices } = useQueryAction<
       { companyId: string; filter: "unpaid" | "paid", skip?: number; take?: number },
@@ -109,6 +109,7 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
       }
     }
 
+    if (loading) return <Spinner />
 
     return (
       <AccessContainer hasAccess={readAccess} resource="INVOICES" >

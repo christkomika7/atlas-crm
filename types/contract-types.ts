@@ -73,6 +73,7 @@ export type ContractCompanyType = {
 
 export type ContractType = {
     id: string,
+    filename: string;
     type: $Enums.ContractType,
     totalHT: string,
     totalTTC: string,

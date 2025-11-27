@@ -25,7 +25,7 @@ import AccessContainer from "@/components/errors/access-container";
 export default function ProjectTable() {
   const params = useParams();
 
-  const readAccess = useAccess("PROJECTS", "READ");
+  const { access: readAccess, loading } = useAccess("PROJECTS", "READ");
 
   const { mutate, isPending, data } = useQueryAction<
     { clientId: string },
@@ -43,6 +43,8 @@ export default function ProjectTable() {
       mutate({ clientId: params.id as string });
     }
   }
+
+  if (loading) return <Spinner />
 
   return (
     <AccessContainer hasAccess={readAccess} resource="PROJECTS">

@@ -3,13 +3,13 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, Table
 import { formatList, formatNumber } from './utils';
 import { TitleContentType, TitleType } from '@/types/word.types';
 
-export async function generateContractDocument(contract: ContractType): Promise<Blob> {
+export async function generateClientContractDocument(contract: ContractType): Promise<Blob> {
     const doc = new Document({
         sections: [
             {
                 properties: {},
                 footers: {
-                    default: createFooter()
+                    default: createFooter(contract.filename)
                 },
 
                 children: [
@@ -186,7 +186,7 @@ l’Annonceur sont les suivantes :`),
                         title: "Montant Total de la Campagne", content: `Le montant total hors taxes (HT) pour l'ensemble de la campagne
 de location des panneaux publicitaires, comme spécifié dans l'Article 2, est de ${contract.totalHT}  ${contract.company.currency}
 En y ajoutant les taxes, le montant total toutes taxes comprises (TTC) pour la campagne est de  ${contract.totalTTC} ${contract.company.currency}
-mentionné dans les factures ${formatList(contract.record)}.`, paddingBottom: 100
+mentionné dans ${contract.record.length > 1 ? "les" : "la"} facture${contract.record.length > 1 ? "s" : ""} ${formatList(contract.record)}.`, paddingBottom: 100
                     }),
                     createTitleContent({
                         indent: 720,
@@ -652,7 +652,7 @@ tous les termes et conditions énoncés dans ce contrat.`, 600),
     return await Packer.toBlob(doc);
 }
 
-function createFooter() {
+function createFooter(filename: string) {
     const noBorders = {
         top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
         bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
@@ -678,7 +678,7 @@ function createFooter() {
                                     new Paragraph({
                                         children: [
                                             new TextRun({
-                                                text: "Hello world",
+                                                text: filename,
                                                 bold: true,
                                                 size: 20,
                                                 font: "Arial",
@@ -783,7 +783,7 @@ function creatHeader(country: string) {
                             new Paragraph({
                                 children: [
                                     new TextRun({
-                                        text: `CONTRAT DE LOCATION DE PANNEAUX PUBLICITAIRES\n${country}`,
+                                        text: `CONTRAT DE LOCATION DE PANNEAUX PUBLICITAIRES\n${country.toUpperCase()}`,
                                         bold: true,
                                         size: 30,
                                         font: "Arial"
