@@ -12,37 +12,45 @@ export async function GET(req: NextRequest) {
   const result = await checkAccess("CLIENTS", "READ");
 
   if (!result.authorized) {
-    return Response.json({
-      status: "error",
-      message: result.message,
-      data: []
-    }, { status: 200 });
+    return Response.json(
+      {
+        status: "error",
+        message: result.message,
+      },
+      { status: 403 },
+    );
   }
   const id = getIdFromUrl(req.url, "last") as string;
   const filter = req.nextUrl.searchParams.get("filter")?.trim() ?? "";
 
   const companyExist = await prisma.company.findUnique({ where: { id } });
   if (!companyExist) {
-    return NextResponse.json({
-      status: "error",
-      message: "Aucun élément trouvé pour cet identifiant.",
-    }, { status: 404 });
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "Aucun élément trouvé pour cet identifiant.",
+      },
+      { status: 404 },
+    );
   }
 
   if (!filter) {
     const clients = await prisma.client.findMany({
       where: {
-        companyId: id
+        companyId: id,
       },
       include: {
-        company: true
-      }
-    })
+        company: true,
+      },
+    });
 
-    return NextResponse.json({
-      state: "success",
-      data: clients,
-    }, { status: 200 })
+    return NextResponse.json(
+      {
+        state: "success",
+        data: clients,
+      },
+      { status: 200 },
+    );
   }
 
   const clients = await prisma.client.findMany({
@@ -52,42 +60,48 @@ export async function GET(req: NextRequest) {
         some: {
           items: {
             some: {
-              itemType: "billboard"
-            }
-          }
-        }
-      }
+              itemType: "billboard",
+            },
+          },
+        },
+      },
     },
-    include: { company: true }
+    include: { company: true },
   });
 
-  return NextResponse.json({
-    state: "success",
-    data: clients,
-  }, { status: 200 });
-
+  return NextResponse.json(
+    {
+      state: "success",
+      data: clients,
+    },
+    { status: 200 },
+  );
 }
 
 export async function POST(req: NextRequest) {
   const result = await checkAccess("CLIENTS", "CREATE");
 
   if (!result.authorized) {
-    return Response.json({
-      status: "error",
-      message: result.message,
-      data: []
-    }, { status: 200 });
+    return Response.json(
+      {
+        status: "error",
+        message: result.message,
+      },
+      { status: 403 },
+    );
   }
 
   const id = getIdFromUrl(req.url, "last") as string;
 
-
   const companyExist = await prisma.company.findUnique({ where: { id } });
   if (!companyExist) {
-    return NextResponse.json({
-      status: "error",
-      message: "Aucun élément trouvé pour cet identifiant.",
-    }, { status: 404 });
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "Aucun élément trouvé pour cet identifiant.",
+      },
+      { status: 404 },
+    );
   }
 
   const formData = await req.formData();
@@ -105,15 +119,19 @@ export async function POST(req: NextRequest) {
   const data = parseData<ClientSchemaType>(clientSchema, {
     ...rawData,
     uploadDocuments: files,
-  }) as ClientSchemaType
+  }) as ClientSchemaType;
 
-  const folder = createFolder([companyExist.companyName, "client", `${data.firstname}_${data.lastname}`])
+  const folder = createFolder([
+    companyExist.companyName,
+    "client",
+    `${data.firstname}_${data.lastname}`,
+  ]);
   let savedPaths: string[] = [];
 
   try {
     for (const file of files) {
       const upload = await createFile(file, folder);
-      savedPaths = [...savedPaths, upload]
+      savedPaths = [...savedPaths, upload];
     }
 
     const createdClient = await prisma.client.create({
@@ -138,9 +156,9 @@ export async function POST(req: NextRequest) {
         uploadDocuments: savedPaths,
         company: {
           connect: {
-            id
-          }
-        }
+            id,
+          },
+        },
       },
     });
 
@@ -149,15 +167,17 @@ export async function POST(req: NextRequest) {
       message: "Client ajouté avec succès.",
       data: createdClient,
     });
-
   } catch (error) {
-    await removePath(savedPaths)
-    console.log({ error })
+    await removePath(savedPaths);
+    console.log({ error });
 
-    return NextResponse.json({
-      status: "error",
-      message: "Erreur lors de l'ajout du client.",
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "Erreur lors de l'ajout du client.",
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -165,41 +185,55 @@ export async function DELETE(req: NextRequest) {
   const result = await checkAccess("CLIENTS", "MODIFY");
 
   if (!result.authorized) {
-    return Response.json({
-      status: "error",
-      message: result.message,
-      data: []
-    }, { status: 200 });
+    return Response.json(
+      {
+        status: "error",
+        message: result.message,
+      },
+      { status: 403 },
+    );
   }
 
   const id = getIdFromUrl(req.url, "last") as string;
 
   const client = await prisma.client.findUnique({
     where: { id },
-    include: { company: true }
+    include: { company: true },
   });
 
   if (!client) {
-    return NextResponse.json({
-      message: "Client introuvable.",
-      state: "error",
-    }, { status: 400 })
+    return NextResponse.json(
+      {
+        message: "Client introuvable.",
+        state: "error",
+      },
+      { status: 400 },
+    );
   }
 
-  const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.CLIENTS, [id], client.company.id);
+  const hasAccessDeletion = await checkAccessDeletion(
+    $Enums.DeletionType.CLIENTS,
+    [id],
+    client.company.id,
+  );
 
   if (hasAccessDeletion) {
-    return NextResponse.json({
-      state: "success",
-      message: "Suppression en attente de validation.",
-    }, { status: 200 })
+    return NextResponse.json(
+      {
+        state: "success",
+        message: "Suppression en attente de validation.",
+      },
+      { status: 200 },
+    );
   }
 
   await prisma.client.delete({ where: { id } });
   await removePath(client.uploadDocuments);
-  return NextResponse.json({
-    state: "success",
-    message: "Client supprimé avec succès.",
-  }, { status: 200 }
-  )
+  return NextResponse.json(
+    {
+      state: "success",
+      message: "Client supprimé avec succès.",
+    },
+    { status: 200 },
+  );
 }

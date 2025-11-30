@@ -11,6 +11,7 @@ interface AuthorizeResponse {
   authorized: boolean;
   message: string;
 }
+
 function authorize({
   resource,
   action,
@@ -39,27 +40,26 @@ function authorize({
     };
   }
 
-  // Normalisation en tableau
   const resources = Array.isArray(resource) ? resource : [resource];
   const actions = Array.isArray(action) ? action : [action];
 
-  // Vérification pour chaque combinaison ressource/action
+  let hasAccess = false;
+  const errorMessages: string[] = [];
+
   for (const res of resources) {
     const normalizedResource = res.toUpperCase();
-
     const permission = userPermissions.find(
-      (p) => p.resource.toUpperCase() === normalizedResource
+      (p) => p.resource.toUpperCase() === normalizedResource,
     );
 
     if (!permission) {
-      return {
-        authorized: false,
-        message: `Accès refusé : aucune permission pour la ressource ${res}`,
-      };
+      errorMessages.push(`Aucune permission pour la ressource ${res}`);
+      continue;
     }
 
+    let resourceHasAccess = true;
+
     for (const act of actions) {
-      // RÈGLE READ → hérité de CREATE ou MODIFY
       if (act === "READ") {
         const hasRead =
           permission.actions.includes("READ") ||
@@ -67,29 +67,35 @@ function authorize({
           permission.actions.includes("MODIFY");
 
         if (!hasRead) {
-          return {
-            authorized: false,
-            message: `Accès READ refusé pour la ressource ${res}`,
-          };
+          resourceHasAccess = false;
+          errorMessages.push(`Accès READ refusé pour la ressource ${res}`);
         }
       } else {
-        // CREATE ou MODIFY → vérification classique
         if (!permission.actions.includes(act)) {
-          return {
-            authorized: false,
-            message: `Accès refusé : action ${act} non autorisée pour ${res}`,
-          };
+          resourceHasAccess = false;
+          errorMessages.push(
+            `Action ${act} non autorisée pour la ressource ${res}`,
+          );
         }
       }
     }
+
+    if (resourceHasAccess) {
+      hasAccess = true;
+    }
+  }
+
+  if (hasAccess) {
+    return {
+      authorized: true,
+      message: "Accès autorisé",
+    };
   }
 
   return {
-    authorized: true,
-    message: "Accès autorisé",
+    authorized: false,
+    message: errorMessages.join(" | "),
   };
 }
-
-
 
 export { authorize, type AuthorizeParams, type AuthorizeResponse };
