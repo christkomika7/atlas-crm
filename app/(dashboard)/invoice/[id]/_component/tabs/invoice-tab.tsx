@@ -569,7 +569,7 @@ export default function InvoiceTab() {
               </h2>
               <div className="space-y-2">
                 {items.map((item) => (
-                  <ItemList key={item.id} item={item} locationBillboardDate={locationBillboardDate} calculate={calculate} taxes={company?.vatRates ?? []} amountPaid={amountPaid} amountType={amountType} disabled={!modifyAccess} />
+                  <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} amountPaid={amountPaid} amountType={amountType} disabled={!modifyAccess} />
                 ))}
               </div>
               {amountPaid.eq(0) || modifyAccess &&

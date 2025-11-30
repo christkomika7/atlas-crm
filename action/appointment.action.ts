@@ -11,12 +11,10 @@ export async function all(params: GetAppointmentsParams) {
 
         if (params.type) query.set("type", params.type);
 
-        // Sort keys (only one active)
-        const sortKeys: string[] = ["byDate", "byClient", "byEmail", "byTime", "byAddress"];
+        const sortKeys: string[] = ["byDate", "byClient", "byEmail", "byTime", "byAddress", "byCompany"];
 
         for (const key of sortKeys) {
             if (params[key]) {
-                // params[key] expected to be "asc" | "desc"
                 query.set(key, String(params[key]));
                 break;
             }

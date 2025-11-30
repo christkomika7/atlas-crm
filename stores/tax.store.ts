@@ -91,7 +91,7 @@ const useTaxStore = createSelectors(
             }),
             {
                 name: "taxs-data",
-                storage: createJSONStorage(() => localStorage),
+                storage: createJSONStorage(() => sessionStorage),
             }
         )
     )

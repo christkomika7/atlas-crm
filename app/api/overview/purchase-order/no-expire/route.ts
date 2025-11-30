@@ -9,10 +9,9 @@ export async function GET(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
     const companyId = req.nextUrl.searchParams.get("companyId") as string;
 

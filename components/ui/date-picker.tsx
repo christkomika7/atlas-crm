@@ -22,6 +22,7 @@ type DatePickerProps = {
   label: string;
   value?: Date | Date[] | { from: Date; to: Date };
   onChange?: (value: Date | Date[] | { from: Date; to: Date } | undefined) => void;
+  onOpenCalendar?: () => void;
   disabled?: boolean;
   disabledRanges?: DateRange[];
   className?: string;
@@ -33,6 +34,7 @@ export function DatePicker({
   label,
   value,
   onChange,
+  onOpenCalendar,
   disabled,
   disabledRanges = [],
   className,
@@ -122,7 +124,7 @@ export function DatePicker({
 
   return (
     <Popover>
-      <PopoverTrigger className="relative" disabled={disabled}>
+      <PopoverTrigger className="relative" disabled={disabled} onClick={onOpenCalendar}>
         <FloatingInput
           type="text"
           disabled={true}

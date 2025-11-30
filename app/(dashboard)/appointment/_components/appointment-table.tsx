@@ -155,6 +155,7 @@ const AppointmentTable = forwardRef<AppointmentTableRef, AppointmentTableProps>(
               <TableRow className="h-14">
                 <TableHead className="min-w-[50px] font-medium" />
                 {[
+                  { label: "Société", field: "byCompany" as SortField },
                   { label: "Client", field: "byClient" as SortField },
                   { label: "Email", field: "byEmail" as SortField },
                   { label: "Date", field: "byDate" as SortField },
@@ -167,7 +168,7 @@ const AppointmentTable = forwardRef<AppointmentTableRef, AppointmentTableProps>(
                   <TableHead key={idx} className="font-medium text-center">
                     {col.field ? (
                       <span
-                        className="flex items-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
+                        className="flex items-center text-center justify-center gap-x-1 cursor-pointer hover:text-blue-600"
                         onClick={() => handleSort(col.field!)}
                       >
                         {col.label}
@@ -212,7 +213,9 @@ const AppointmentTable = forwardRef<AppointmentTableRef, AppointmentTableProps>(
                           />
                         </div>
                       </TableCell>
-
+                      <TableCell className="text-neutral-600 text-center">
+                        {appointment.client.companyName}
+                      </TableCell>
                       <TableCell className="text-neutral-600 text-center">
                         {appointment.client.firstname} {appointment.client.lastname}
                       </TableCell>

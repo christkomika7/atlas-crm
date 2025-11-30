@@ -83,6 +83,7 @@
     --sidebar-width: calc(260px - 100vw);
     --modal-width: calc(100vw - 260px);
     --left-sidebar-width: calc(100vw - 296px);
+    --deletion-width: calc(100vw - 320px);
 }
 
 .dark {

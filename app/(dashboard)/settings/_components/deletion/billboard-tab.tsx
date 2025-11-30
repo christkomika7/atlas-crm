@@ -76,6 +76,7 @@ export default function BillboardTab() {
                         <TableHead className="font-medium text-center">Catégorie</TableHead>
                         <TableHead className="font-medium text-center">Désignatio </TableHead>
                         <TableHead className="font-medium text-center">Prix</TableHead>
+                        <TableHead className="font-medium text-center">Actioné par</TableHead>
                         <TableHead className="font-medium text-center">Action</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -95,7 +96,7 @@ export default function BillboardTab() {
                                 className={`h-16 transition-color`}
                             >
                                 <TableCell className="text-neutral-600 text-center">
-                                    {generateAmaId(index + 1, false)}
+                                    {deletion.reference}
                                 </TableCell>
                                 <TableCell className="text-neutral-600 text-center">
                                     {formatDateToDashModel(deletion.date)}
@@ -108,6 +109,9 @@ export default function BillboardTab() {
                                 </TableCell>
                                 <TableCell className="text-neutral-600 text-center">
                                     {deletion.price}
+                                </TableCell>
+                                <TableCell className="text-neutral-600 text-center">
+                                    {deletion.actionBy}
                                 </TableCell>
                                 <TableCell className="text-center">
                                     <div className='flex justify-center items-center gap-x-2 mx-auto w-full'>

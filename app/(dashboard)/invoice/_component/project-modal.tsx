@@ -44,7 +44,6 @@ export default function ProjectModal({ clientId }: ProjectModalProps) {
   const addProject = useProjectStore.use.addProject();
   const removeProject = useProjectStore.use.removeProject();
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
   const [currentId, setCurrentId] = useState("");
 
   const form = useForm<ProjectSchemaType>({
@@ -125,6 +124,7 @@ export default function ProjectModal({ clientId }: ProjectModalProps) {
       { ...data },
       {
         onSuccess(data) {
+          console.log("Hello")
           if (data.data) {
             addProject(data.data);
           }

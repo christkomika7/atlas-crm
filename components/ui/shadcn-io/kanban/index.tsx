@@ -11,7 +11,6 @@ import {
   closestCenter,
   DndContext,
   DragOverlay,
-  KeyboardSensor,
   MouseSensor,
   TouchSensor,
   useDroppable,
@@ -91,7 +90,7 @@ export const KanbanBoard = ({ id, children, className }: KanbanBoardProps) => {
     <div
       className={cn(
         "flex size-full min-h-40 flex-col divide-y overflow-hidden rounded-md border bg-secondary text-xs shadow-sm ring-2 transition-all",
-        isOver ? "ring-primary" : "ring-transparent",
+        isOver ? "ring-blue" : "ring-transparent",
         className
       )}
       ref={setNodeRef}
@@ -104,6 +103,7 @@ export const KanbanBoard = ({ id, children, className }: KanbanBoardProps) => {
 export type KanbanCardProps<T extends KanbanItemProps = KanbanItemProps> = T & {
   children?: ReactNode;
   className?: string;
+  disabled?: boolean
 };
 
 export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
@@ -111,8 +111,10 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
   name,
   children,
   className,
+  disabled
 
 }: KanbanCardProps<T>) => {
+
   const {
     attributes,
     listeners,
@@ -136,6 +138,7 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
         <Card
           className={cn(
             "cursor-grab gap-4 rounded-md p-3 shadow-sm",
+            disabled && "cursor-not-allowed opacity-60",
             isDragging && "pointer-events-none cursor-grabbing opacity-30",
             className
           )}
@@ -147,7 +150,7 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
         <t.In>
           <Card
             className={cn(
-              "cursor-grab gap-4 rounded-md p-3 shadow-sm ring-2 ring-primary",
+              "cursor-grab gap-4 rounded-md p-3 shadow-sm ring-2 ring-blue",
               isDragging && "cursor-grabbing",
               className
             )}
@@ -204,6 +207,7 @@ export type KanbanProviderProps<
   className?: string;
   columns: C[];
   data: T[];
+  disabled?: boolean;
   onDataChange?: (data: T[]) => void;
   onDragStart?: (event: DragStartEvent) => void;
   onDragEnd?: (event: DragEndEvent) => void;
@@ -222,15 +226,18 @@ export const KanbanProvider = <
   columns,
   data,
   onDataChange,
+  disabled,
   ...props
 }: KanbanProviderProps<T, C>) => {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
+
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor)
-    // useSensor(KeyboardSensor)
   );
+
+  const sensorsToUse = disabled ? undefined : sensors;
 
   const isInteractiveElement = (el: EventTarget | null) => {
     if (!(el instanceof HTMLElement)) return false;
@@ -244,6 +251,7 @@ export const KanbanProvider = <
   };
 
   const handleDragStart = (event: DragStartEvent) => {
+    if (disabled) return;
     if (isInteractiveElement(event.activatorEvent?.target)) return;
     const card = data.find((item) => item.id === event.active.id);
     if (card) {
@@ -253,6 +261,7 @@ export const KanbanProvider = <
   };
 
   const handleDragOver = (event: DragOverEvent) => {
+    if (disabled) return;
     if (isInteractiveElement(event.activatorEvent?.target)) return;
 
     const { active, over } = event;
@@ -289,6 +298,7 @@ export const KanbanProvider = <
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (disabled) return;
     setActiveCardId(null);
 
     onDragEnd?.(event);
@@ -342,7 +352,7 @@ export const KanbanProvider = <
         onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
         onDragStart={handleDragStart}
-        sensors={sensors}
+        sensors={sensorsToUse}
         {...props}
       >
         <div

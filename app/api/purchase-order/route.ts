@@ -1,4 +1,4 @@
-import { checkAccess } from "@/lib/access";
+import { checkAccess, sessionAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
@@ -14,13 +14,13 @@ import { $Enums } from "@/lib/generated/prisma";
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess("PURCHASE_ORDER", "CREATE");
+    const { userId } = await sessionAccess();
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
     const formData = await req.formData();
@@ -156,6 +156,9 @@ export async function POST(req: NextRequest) {
                     payee: data.payee,
                     note: data.note!,
                     files: savedFilePaths,
+                    createdBy: {
+                        connect: { id: userId as string }
+                    },
                     items: {
                         create: itemForCreate
                     },
@@ -227,10 +230,9 @@ export async function DELETE(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
     const data = await req.json();

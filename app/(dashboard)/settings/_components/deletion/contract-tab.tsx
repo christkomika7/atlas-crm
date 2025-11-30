@@ -75,6 +75,7 @@ export default function ContractTab() {
                         <TableHead className="font-medium text-center">Date</TableHead>
                         <TableHead className="font-medium text-center">Client | Fournisseur</TableHead>
                         <TableHead className="font-medium text-center">Type de contrat</TableHead>
+                        <TableHead className="font-medium text-center">Actioné par</TableHead>
                         <TableHead className="font-medium text-center">Action</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -104,6 +105,9 @@ export default function ContractTab() {
                                 </TableCell>
                                 <TableCell className="text-neutral-600 text-center">
                                     {deletion.categorie}
+                                </TableCell>
+                                <TableCell className="text-neutral-600 text-center">
+                                    {deletion.actionBy}
                                 </TableCell>
                                 <TableCell className="text-center">
                                     <div className='flex justify-center items-center gap-x-2 mx-auto w-full'>

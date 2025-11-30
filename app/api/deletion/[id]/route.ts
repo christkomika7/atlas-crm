@@ -48,6 +48,9 @@ export async function GET(req: NextRequest) {
                     companyId: id,
                     isValidate: false
                 },
+                include: {
+                    user: true
+                }
             });
 
             let transformQuote: DeletionType[] = [];
@@ -71,7 +74,8 @@ export async function GET(req: NextRequest) {
                     recordId: deletion.recordId,
                     reference: `${quote?.company.documentModel?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(quote?.quoteNumber, false)}`,
                     date: deletion.createdAt,
-                    forUser: `${quote.client?.lastname} ${quote.client?.firstname}`,
+                    actionBy: deletion.user?.name || "Inconnu",
+                    forUser: `${quote.client?.companyName}`,
                     amount: `${formatNumber(new Decimal(amount.toString()))} ${quote.company.currency}`
                 }];
 
@@ -88,7 +92,9 @@ export async function GET(req: NextRequest) {
                     type: type as $Enums.DeletionType,
                     companyId: id,
                     isValidate: false
-                },
+                }, include: {
+                    user: true
+                }
             });
 
             let transformInvoices: DeletionType[] = [];
@@ -112,7 +118,8 @@ export async function GET(req: NextRequest) {
                     recordId: deletion.recordId,
                     reference: `${invoice?.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice?.invoiceNumber, false)}`,
                     date: deletion.createdAt,
-                    forUser: `${invoice.client?.lastname} ${invoice.client?.firstname}`,
+                    forUser: `${invoice.client?.companyName}`,
+                    actionBy: deletion.user?.name || "Inconnu",
                     amount: `${formatNumber(new Decimal(amount.toString()))} ${invoice.company.currency}`
                 }];
 
@@ -129,7 +136,9 @@ export async function GET(req: NextRequest) {
                     type: type as $Enums.DeletionType,
                     companyId: id,
                     isValidate: false
-                },
+                }, include: {
+                    user: true
+                }
             });
 
             let transformDeliveryNotes: DeletionType[] = [];
@@ -153,7 +162,8 @@ export async function GET(req: NextRequest) {
                     recordId: deletion.recordId,
                     reference: `${deliveryNote?.company.documentModel?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(deliveryNote?.deliveryNoteNumber, false)}`,
                     date: deletion.createdAt,
-                    forUser: `${deliveryNote.client?.lastname} ${deliveryNote.client?.firstname}`,
+                    forUser: `${deliveryNote.client?.companyName}`,
+                    actionBy: deletion.user?.name || "Inconnu",
                     amount: `${formatNumber(new Decimal(amount.toString()))} ${deliveryNote.company.currency}`
                 }];
 
@@ -170,7 +180,9 @@ export async function GET(req: NextRequest) {
                     type: type as $Enums.DeletionType,
                     companyId: id,
                     isValidate: false
-                },
+                }, include: {
+                    user: true
+                }
             });
 
             let transformPurchaseOrders: DeletionType[] = [];
@@ -194,7 +206,8 @@ export async function GET(req: NextRequest) {
                     recordId: deletion.recordId,
                     reference: `${purchaseOrder?.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrder?.purchaseOrderNumber, false)}`,
                     date: deletion.createdAt,
-                    forUser: `${purchaseOrder.supplier?.lastname} ${purchaseOrder.supplier?.firstname}`,
+                    forUser: `${purchaseOrder.supplier?.companyName}`,
+                    actionBy: deletion.user?.name || "Inconnu",
                     amount: `${formatNumber(new Decimal(amount.toString()))} ${purchaseOrder.company.currency}`
                 }];
 
@@ -212,6 +225,9 @@ export async function GET(req: NextRequest) {
                     companyId: id,
                     isValidate: false
                 },
+                include: {
+                    user: true
+                }
             });
 
             let transformReceipts: DeletionType[] = [];
@@ -220,6 +236,7 @@ export async function GET(req: NextRequest) {
                     where: { id: deletion.recordId },
                     include: {
                         client: true,
+                        referenceInvoice: true,
                         company: {
                             include: { documentModel: true }
                         }
@@ -233,9 +250,10 @@ export async function GET(req: NextRequest) {
                 transformReceipts = [...transformReceipts, {
                     id: deletion.id,
                     recordId: deletion.recordId,
-                    reference: '',
+                    reference: `${receipt.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(receipt.referenceInvoice?.invoiceNumber || 0, false)}`,
                     date: deletion.createdAt,
-                    forUser: `${receipt.client?.lastname} ${receipt.client?.firstname}`,
+                    actionBy: deletion.user?.name || "Inconnu",
+                    forUser: `${receipt.client?.companyName}`,
                     amount: `${formatNumber(new Decimal(receipt.amount.toString()))} ${receipt.company.currency}`
                 }];
 
@@ -252,7 +270,10 @@ export async function GET(req: NextRequest) {
                     type: type as $Enums.DeletionType,
                     companyId: id,
                     isValidate: false
-                },
+                }
+                , include: {
+                    user: true
+                }
             });
 
             let transformDisbursement: DeletionType[] = [];
@@ -261,6 +282,7 @@ export async function GET(req: NextRequest) {
                     where: { id: deletion.recordId },
                     include: {
                         supplier: true,
+                        referencePurchaseOrder: true,
                         company: {
                             include: { documentModel: true }
                         }
@@ -274,9 +296,10 @@ export async function GET(req: NextRequest) {
                 transformDisbursement = [...transformDisbursement, {
                     id: deletion.id,
                     recordId: deletion.recordId,
-                    reference: '',
+                    reference: `${dibursement.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(dibursement.referencePurchaseOrder?.purchaseOrderNumber || 0, false)}`,
                     date: deletion.createdAt,
-                    forUser: `${dibursement.supplier?.lastname} ${dibursement.supplier?.firstname}`,
+                    actionBy: deletion.user?.name || "Inconnu",
+                    forUser: `${dibursement.supplier?.companyName}`,
                     amount: `${formatNumber(new Decimal(dibursement.amount.toString()))} ${dibursement.company.currency}`
                 }];
 
@@ -293,7 +316,9 @@ export async function GET(req: NextRequest) {
                     type: type as $Enums.DeletionType,
                     companyId: id,
                     isValidate: false
-                },
+                }, include: {
+                    user: true
+                }
             });
 
             let transformProductServices: DeletionType[] = [];
@@ -314,9 +339,10 @@ export async function GET(req: NextRequest) {
                 transformProductServices = [...transformProductServices, {
                     id: deletion.id,
                     recordId: deletion.recordId,
-                    reference: '',
+                    reference: productService.reference,
                     date: deletion.createdAt,
                     categorie: productService.category,
+                    actionBy: deletion.user?.name || "Inconnu",
                     designation: productService.designation,
                     price: `${formatNumber(new Decimal(productService.cost.toString()))} ${productService.company.currency}`
                 }];
@@ -334,7 +360,9 @@ export async function GET(req: NextRequest) {
                     type: type as $Enums.DeletionType,
                     companyId: id,
                     isValidate: false
-                },
+                }, include: {
+                    user: true
+                }
             });
 
             let transformBillboards: DeletionType[] = [];
@@ -356,10 +384,11 @@ export async function GET(req: NextRequest) {
                 transformBillboards = [...transformBillboards, {
                     id: deletion.id,
                     recordId: deletion.recordId,
-                    reference: '',
+                    reference: billboard.reference,
                     date: deletion.createdAt,
                     categorie: billboard.type.name,
                     designation: billboard.name,
+                    actionBy: deletion.user?.name || "Inconnu",
                     price: `${formatNumber(new Decimal(billboard.rentalPrice.toString()))} ${billboard.company.currency}`
                 }];
 
@@ -376,7 +405,9 @@ export async function GET(req: NextRequest) {
                     type: type as $Enums.DeletionType,
                     companyId: id,
                     isValidate: false
-                },
+                }, include: {
+                    user: true
+                }
             });
 
             let transformClient: DeletionType[] = [];
@@ -399,7 +430,8 @@ export async function GET(req: NextRequest) {
                     recordId: deletion.recordId,
                     reference: '',
                     date: deletion.createdAt,
-                    forUser: `${client.lastname} ${client.firstname}`,
+                    forUser: `${client.companyName}`,
+                    actionBy: deletion.user?.name || "Inconnu",
                     amount: `${formatNumber(client.paidAmount.toString())} ${client.company.currency}`,
                     due: `${formatNumber(client.due.toString())} ${client.company.currency}`,
                 }];
@@ -417,7 +449,9 @@ export async function GET(req: NextRequest) {
                     type: type as $Enums.DeletionType,
                     companyId: id,
                     isValidate: false
-                },
+                }, include: {
+                    user: true
+                }
             });
 
             let transformSuppliers: DeletionType[] = [];
@@ -440,7 +474,8 @@ export async function GET(req: NextRequest) {
                     recordId: deletion.recordId,
                     reference: '',
                     date: deletion.createdAt,
-                    forUser: `${supplier.lastname} ${supplier.firstname}`,
+                    forUser: `${supplier.companyName}`,
+                    actionBy: deletion.user?.name || "Inconnu",
                     amount: `${formatNumber(supplier.paidAmount.toString())} ${supplier.company.currency}`,
                     due: `${formatNumber(supplier.due.toString())} ${supplier.company.currency}`,
                 }];
@@ -458,7 +493,9 @@ export async function GET(req: NextRequest) {
                     type: type as $Enums.DeletionType,
                     companyId: id,
                     isValidate: false
-                },
+                }, include: {
+                    user: true
+                }
             });
 
             let transformProjects: DeletionType[] = [];
@@ -482,7 +519,8 @@ export async function GET(req: NextRequest) {
                     recordId: deletion.recordId,
                     reference: '',
                     date: deletion.createdAt,
-                    forUser: `${project.client.lastname} ${project.client.firstname}`,
+                    forUser: `${project.client.companyName}`,
+                    actionBy: deletion.user?.name || "Inconnu",
                     amount: `${formatNumber(project.amount.toString())} ${project.company.currency}`,
                     due: `${formatNumber(project.balance.toString())} ${project.company.currency}`,
                 }];
@@ -500,7 +538,9 @@ export async function GET(req: NextRequest) {
                     type: type as $Enums.DeletionType,
                     companyId: id,
                     isValidate: false
-                },
+                }, include: {
+                    user: true
+                }
             });
 
             let transformContracts: DeletionType[] = [];
@@ -531,6 +571,7 @@ export async function GET(req: NextRequest) {
                     reference: '',
                     categorie: contract.type === "CLIENT" ? "Client" : "Bailleur",
                     date: deletion.createdAt,
+                    actionBy: deletion.user?.name || "Inconnu",
                     forUser,
                 }];
 
@@ -547,7 +588,9 @@ export async function GET(req: NextRequest) {
                     type: type as $Enums.DeletionType,
                     companyId: id,
                     isValidate: false
-                },
+                }, include: {
+                    user: true
+                }
             });
 
             let transformAppointments: DeletionType[] = [];
@@ -571,7 +614,8 @@ export async function GET(req: NextRequest) {
                     recordId: deletion.recordId,
                     reference: '',
                     date: deletion.createdAt,
-                    forUser: `${appointment.client.lastname} ${appointment.client.firstname}`,
+                    actionBy: deletion.user?.name || "Inconnu",
+                    forUser: `${appointment.client.companyName}`,
                 }];
             }
 

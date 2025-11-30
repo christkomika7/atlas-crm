@@ -1,6 +1,6 @@
 "use client";
 import Header from "@/components/header/header";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import TaskContainer from "./_components/task-container";
 import { useParams } from "next/navigation";
 import useQueryAction from "@/hook/useQueryAction";
@@ -13,17 +13,24 @@ import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
 
 export default function ClientProjectPage() {
+  const [project, setProject] = useState<ProjectType | undefined>(undefined);
   const param = useParams();
   const { access: readAccess, loading } = useAccess("PROJECTS", "READ");
 
-  const { mutate, isPending, data } = useQueryAction<
+  const { mutate, isPending } = useQueryAction<
     { id: string },
     RequestResponse<ProjectType>
   >(uniqueByClient, () => { }, "project");
 
   useEffect(() => {
     if (param.id, readAccess) {
-      mutate({ id: param.id as string });
+      mutate({ id: param.id as string }, {
+        onSuccess(data) {
+          if (data.data) {
+            setProject(data.data);
+          }
+        },
+      });
     }
   }, [param.id, readAccess]);
 
@@ -31,13 +38,13 @@ export default function ClientProjectPage() {
     <div className="flex flex-col h-full">
       <div className="flex-shrink-0 mb-5 ">
         <div>
-          <Header back={1} title="Informations du client" />
+          <Header back={1} title="Informations du projet" />
         </div>
       </div>
       {loading ? <Spinner /> :
         <AccessContainer hasAccess={readAccess} resource="PROJECTS">
           <>
-            {isPending ? (
+            {isPending || !project ? (
               <Spinner />
             ) : (
               <>
@@ -46,7 +53,7 @@ export default function ClientProjectPage() {
                     <Spinner />
                   ) : (
                     <h2 className="flex-shrink-0 font-semibold text-xl">
-                      {data?.data?.company.companyName}
+                      {project?.name}
                     </h2>
                   )}
                   <div className="flex items-center gap-x-2 mr-4">
@@ -55,13 +62,13 @@ export default function ClientProjectPage() {
                       <Spinner />
                     ) : (
                       <p className="text-sm">
-                        {formatNumber(data?.data?.amount || 0)} {data?.data?.company.currency}
+                        {formatNumber(project?.amount || 0)} {project?.company.currency}
                       </p>
                     )}
                   </div>
                 </div>
                 <div className="flex-1 min-h-0">
-                  <TaskContainer projectId={data?.data?.id as string} />
+                  <TaskContainer projectId={project.id as string} />
                 </div>
               </>
             )}

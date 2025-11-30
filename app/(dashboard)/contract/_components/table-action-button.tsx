@@ -6,15 +6,15 @@ import {
 import { TableActionButtonType } from "@/types/table.types";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
-import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { exportClientContractToWord, removeContract } from "@/action/contract.action";
+import { exportClientContractToWord, exportLessorContractToWord, removeContract } from "@/action/contract.action";
 import { $Enums } from "@/lib/generated/prisma";
 import { useAccess } from "@/hook/useAccess";
-import Spinner from "@/components/ui/spinner";
 import { toast } from "sonner";
+
+import ConfirmDialog from "@/components/ui/confirm-dialog";
+import Spinner from "@/components/ui/spinner";
 
 type TableActionButtonProps = {
   id: string;
@@ -34,7 +34,6 @@ export default function TableActionButton({
   contract
 }: TableActionButtonProps) {
 
-  const router = useRouter();
   const { access: createAccess } = useAccess("CONTRACT", "CREATE");
   const { access: modifyAccess } = useAccess("CONTRACT", "MODIFY");
 
@@ -52,7 +51,7 @@ export default function TableActionButton({
 
   const { mutate: mutateExportToLessorContract, isPending: isExportingLessorContract } =
     useQueryAction<{ contractId: string }, { status: string, message: string }>(
-      exportClientContractToWord,
+      exportLessorContractToWord,
       () => { },
       "lessor-contract",
     );
@@ -65,7 +64,7 @@ export default function TableActionButton({
   function convertToWord(id: string, action: "duplicate" | "convert") {
     id
     switch (action) {
-      case "duplicate":
+      case "convert":
         mutateExportToClientContract({ contractId: id }, {
           onSuccess(data) {
             toast.success(data.message);
@@ -76,7 +75,7 @@ export default function TableActionButton({
           }
         });
         break;
-      case "convert":
+      case "duplicate":
         mutateExportToLessorContract({ contractId: id }, {
           onSuccess(data) {
             toast.success(data.message);

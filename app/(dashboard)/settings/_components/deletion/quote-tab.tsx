@@ -75,6 +75,7 @@ export default function QuoteTab() {
             <TableHead className="font-medium text-center">Client</TableHead>
             <TableHead className="font-medium text-center">Date</TableHead>
             <TableHead className="font-medium text-center">Montant</TableHead>
+            <TableHead className="font-medium text-center">Actioné par</TableHead>
             <TableHead className="font-medium text-center">Action</TableHead>
           </TableRow>
         </TableHeader>
@@ -94,7 +95,7 @@ export default function QuoteTab() {
                 className={`h-16 transition-color`}
               >
                 <TableCell className="text-neutral-600 text-center">
-                  {generateAmaId(index + 1, false)}
+                  {deletion.actionBy}
                 </TableCell>
                 <TableCell className="text-neutral-600 text-center">
                   {deletion.forUser}
@@ -104,6 +105,9 @@ export default function QuoteTab() {
                 </TableCell>
                 <TableCell className="text-neutral-600 text-center">
                   {deletion.amount}
+                </TableCell>
+                <TableCell className="text-neutral-600 text-center">
+                  {deletion.actionBy}
                 </TableCell>
                 <TableCell className="text-center">
                   <div className='flex justify-center items-center gap-x-2 mx-auto w-full'>

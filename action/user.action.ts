@@ -148,7 +148,6 @@ export async function getUser({ id }: { id: string }) {
     }
 }
 
-
 export async function editProfileDocument({ profileId, document, type, state }: { profileId: string; document?: File; type: "doc" | "passport", state: "update" | "delete" }) {
     try {
         const formData = new FormData();
@@ -198,9 +197,16 @@ export async function getUserByCurrentCompany({ userId, companyId }: { userId: s
     }
 }
 
-export async function getCollaborators({ id }: { id: string }) {
+export async function getCollaborators({ id, includeMe = false }: { id: string, includeMe?: boolean }) {
+    const params = new URLSearchParams();
+    params.append("includeMe", JSON.stringify(includeMe));
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/user/${id}/collaborator${queryString ? `?${queryString}` : ""
+        }`;
+
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/user/${id}/collaborator`, {
+        const response = await fetch(url, {
             method: 'GET',
         });
 

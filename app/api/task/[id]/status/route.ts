@@ -9,10 +9,9 @@ export async function PUT(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
     const id = getIdFromUrl(req.url, 2) as string;
@@ -46,6 +45,46 @@ export async function PUT(req: NextRequest) {
                 }
             }
         });
+
+
+        console.log("HELLO WORLD");
+
+        const project = await prisma.project.findUnique({
+            where: { id: updateTask.projectId },
+            include: {
+                tasks: true
+            }
+        });
+
+        if (project) {
+            const tasks = project.tasks;
+
+            const allDone = tasks.every((t) => t.status === "DONE");
+            const hasBlocked = tasks.every((t) => t.status === "BLOCKED");
+            const hasInProgress = tasks.some((t) => t.status === "IN_PROGRESS");
+            const allTodo = tasks.some((t) => t.status === "TODO");
+
+            let newProjectStatus: $Enums.ProjectStatus = project.status;
+
+            if (allDone) {
+                newProjectStatus = "DONE";
+            } else if (hasBlocked) {
+                newProjectStatus = "BLOCKED";
+            } else if (hasInProgress) {
+                newProjectStatus = "IN_PROGRESS";
+            } else if (allTodo) {
+                newProjectStatus = "TODO";
+            } else {
+                newProjectStatus = "IN_PROGRESS";
+            }
+            if (newProjectStatus !== project.status) {
+                await prisma.project.update({
+                    where: { id: project.id },
+                    data: { status: newProjectStatus }
+                });
+            }
+        }
+
         return NextResponse.json({
             state: "success",
             data: updateTask,

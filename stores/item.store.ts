@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { createSelectors } from "@/lib/store";
+import { createJSONStorage, createSelectors, persist } from "@/lib/store";
 import { Decimal } from "decimal.js"
 
 
@@ -59,108 +59,114 @@ type ItemStore = {
 };
 
 const useItemStore = createSelectors(
-    create<ItemStore>()((set, get) => ({
-        items: [],
-        locationBillboardDate: [],
-        itemQuantity: [],
+    create<ItemStore>()(
+        persist(
+            (set, get) => ({
+                items: [],
+                locationBillboardDate: [],
+                itemQuantity: [],
 
 
-        setItemQuantity(items) {
-            set({ itemQuantity: items })
-        },
+                setItemQuantity(items) {
+                    set({ itemQuantity: items })
+                },
 
-        setLocationBillboard(itemLocation) {
-            set({ locationBillboardDate: itemLocation })
-        },
+                setLocationBillboard(itemLocation) {
+                    set({ locationBillboardDate: itemLocation })
+                },
 
-        addLocationBillboard(item) {
-            set((state) => {
-                const exists = state.locationBillboardDate.some((i) => i.id === item.id);
-                if (exists) return state;
-                return { locationBillboardDate: [...state.locationBillboardDate, item] };
-            });
-        }
-        ,
-        addItem(item) {
-            set((state) => {
-                if (item.id) {
-                    const exists = state.items.some((i) => i.id === item.id);
-                    if (exists) return state;
+                addLocationBillboard(item) {
+                    set((state) => {
+                        const exists = state.locationBillboardDate.some((i) => i.id === item.id);
+                        if (exists) return state;
+                        return { locationBillboardDate: [...state.locationBillboardDate, item] };
+                    });
                 }
+                ,
+                addItem(item) {
+                    set((state) => {
+                        if (item.id) {
+                            const exists = state.items.some((i) => i.id === item.id);
+                            if (exists) return state;
+                        }
 
-                return { items: [...state.items, item] };
-            });
-        },
+                        return { items: [...state.items, item] };
+                    });
+                },
 
+                removeItem(id) {
+                    set({
+                        items: get().items.filter(
+                            (i) => i.billboardId !== id && i.productServiceId !== id
+                        ),
+                    });
+                },
 
-        removeItem(id) {
-            set({
-                items: get().items.filter(
-                    (i) => i.billboardId !== id && i.productServiceId !== id
-                ),
-            });
-        },
+                clearLocationBillboard() {
+                    set({ locationBillboardDate: [] })
+                },
 
+                removeLocationBillboard(id: string) {
+                    set({
+                        locationBillboardDate: get().locationBillboardDate.filter(
+                            (item) =>
+                                item.id !== id && item.id !== `random-id-${id.replace("random-id-", "")}`
+                        ),
+                    });
+                },
 
-        clearLocationBillboard() {
-            set({ locationBillboardDate: [] })
-        },
+                updateItem(item) {
+                    set((state) => {
+                        const exists = state.items.some((i) => i.id === item.id);
+                        if (!exists) return state;
+                        return {
+                            items: state.items.map((i) =>
+                                i.id === item.id ? { ...i, ...item } : i
+                            ),
+                        };
+                    });
+                },
 
-        removeLocationBillboard(id: string) {
-            set({
-                locationBillboardDate: get().locationBillboardDate.filter(
-                    (item) =>
-                        item.id !== id && item.id !== `random-id-${id.replace("random-id-", "")}`
-                ),
-            });
-        },
+                editItemField(id, field, value) {
+                    set((state) => {
+                        const exists = state.items.some((i) => i.id === id);
+                        if (!exists) return state;
+                        return {
+                            items: state.items.map((i) =>
+                                i.id === id ? { ...i, [field]: value } : i
+                            ),
+                        };
+                    });
+                },
 
+                setItems(items) {
+                    const uniqueItems = items.filter(
+                        (item, index, self) =>
+                            index === self.findIndex((i) => i.id === item.id)
+                    );
+                    set({ items: uniqueItems });
+                },
 
-        updateItem(item) {
-            set((state) => {
-                const exists = state.items.some((i) => i.id === item.id);
-                if (!exists) return state;
-                return {
-                    items: state.items.map((i) =>
-                        i.id === item.id ? { ...i, ...item } : i
-                    ),
-                };
-            });
-        },
+                clearItem() {
+                    set({ items: [] });
+                },
 
-        editItemField(id, field, value) {
-            set((state) => {
-                const exists = state.items.some((i) => i.id === id);
-                if (!exists) return state;
-                return {
-                    items: state.items.map((i) =>
-                        i.id === id ? { ...i, [field]: value } : i
-                    ),
-                };
-            });
-        },
+                updateDiscount(discount) {
+                    set((state) => ({
+                        items: state.items.map((i) => ({
+                            ...i,
+                            discount,
+                        })),
+                    }));
+                },
+            }),
+            {
+                name: "location-data",
+                storage: createJSONStorage(() => sessionStorage)
+            }
 
-        setItems(items) {
-            const uniqueItems = items.filter(
-                (item, index, self) =>
-                    index === self.findIndex((i) => i.id === item.id)
-            );
-            set({ items: uniqueItems });
-        },
-
-        clearItem() {
-            set({ items: [] });
-        },
-
-        updateDiscount(discount) {
-            set((state) => ({
-                items: state.items.map((i) => ({
-                    ...i,
-                    discount,
-                })),
-            }));
-        },
-    }))
+        )
+    )
 );
 
 export default useItemStore;

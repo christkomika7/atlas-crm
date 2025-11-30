@@ -38,6 +38,7 @@ export type ContractItemType = {
     delay: string;
     price: string;
     delayPrice: string;
+    images?: string[];
 }
 
 export type ContractClientType = {

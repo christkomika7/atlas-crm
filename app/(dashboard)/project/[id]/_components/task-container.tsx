@@ -7,7 +7,7 @@ import {
   KanbanTask,
   KanbanProvider,
 } from "@/components/ui/shadcn-io/kanban";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
@@ -21,8 +21,11 @@ import TaskModal from "./task-modal";
 import { PlusIcon } from "lucide-react";
 import { $Enums } from "@/lib/generated/prisma";
 import { useAccess } from "@/hook/useAccess";
+import { getSession } from "@/lib/auth-client";
+import clsx from "clsx";
 
 const columns = [
+  { id: "blocked", name: "Bloqué", color: "#d80f0f0" },
   { id: "todo", name: "A faire", color: "#6B7280" },
   { id: "inProgress", name: "En cours", color: "#F59E0B" },
   { id: "done", name: "Terminé", color: "#10B981" },
@@ -35,6 +38,7 @@ type TaskContainerProps = {
 export default function TaskContainer({ projectId }: TaskContainerProps) {
   const tasks = useTaskStore.use.tasks();
   const setTask = useTaskStore.use.setTask();
+  const session = getSession();
 
   const { access: modifyAccess } = useAccess("PROJECTS", "MODIFY");
   const { access: readAccess } = useAccess("PROJECTS", "READ");
@@ -66,7 +70,7 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
                     ? "todo"
                     : task.status === "IN_PROGRESS"
                       ? "inProgress"
-                      : "done",
+                      : task.status === "BLOCKED" ? "blocked" : "done",
                 owner: [],
                 description: task.desc,
                 status: task.status,
@@ -94,7 +98,7 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
       case "done":
         return "DONE";
       default:
-        return "TODO";
+        return "BLOCKED";
     }
   }
 
@@ -115,8 +119,9 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
           <KanbanProvider<KanbanTask>
             columns={columns}
             data={tasks}
+            disabled={!modifyAccess}
             onDragEnd={(event) => {
-              if (!readAccess) return null;
+              if (!modifyAccess) return null;
               const { active, over } = event;
 
               if (!over) return;
@@ -153,7 +158,9 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
                     </div>
                   </KanbanHeader>
                   {isPending ? (
-                    <Spinner />
+                    <span className="p-2">
+                      <Spinner />
+                    </span>
                   ) : (
                     <KanbanCards id={column.id}>
                       {(task: KanbanTask) => (
@@ -162,6 +169,10 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
                           id={task.id}
                           key={task.id}
                           name={task.name}
+                          disabled={!modifyAccess}
+                          className={clsx(
+                            task.users.some(user => user.userId === session.data?.user.id) ? 'ring-2 ring-blue' : 'bg-neutral-100/70'
+                          )}
                         >
                           <TaskCard
                             task={task}

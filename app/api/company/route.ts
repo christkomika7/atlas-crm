@@ -13,10 +13,9 @@ export async function GET(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
     try {
@@ -59,10 +58,9 @@ export async function POST(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
     let uploadedPaths: string[] = [];

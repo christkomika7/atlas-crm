@@ -180,7 +180,7 @@ export default function TaskStep({ id, readAccess, modifyAccess }: TaskStepProps
             </div>
           ))
         ) : (
-          <p className="text-xs text-neutral-600">Aucune étape ajooutée</p>
+          <p className="text-xs text-neutral-600">Aucune étape ajoutée</p>
         )}
       </div>
     </div>

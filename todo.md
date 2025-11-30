@@ -41,3 +41,12 @@ voir l erreur au niveau de la modification des access
 - Donnée la possibilité de tout cocher ou l inverse
 - ne pas delete avant d'avoir tout supprimer
 - supplier et client infos pas de  scrollbar
+
+
+
+0----------------------------------
+Quand je retire le client dans facture j aimerais que l entrprise soit remis a zero
+Ajouter contrat dans la mise a jour du profile
+revoir le calcul de projet lors de la suppression d un encaissement, facture, paiement
+voir aussi le fait que le projet soit terminé
+Faire les notifications

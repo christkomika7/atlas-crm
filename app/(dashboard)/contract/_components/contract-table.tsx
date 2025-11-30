@@ -169,7 +169,7 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
                         menus={dropdownMenu}
                         id={contract.id}
                         refreshContract={refreshContract}
-                        contract={contract.type}
+                        contract={filter}
                         deleteTitle="Confirmer la suppression du contrat"
                         deleteMessage={
                           <p>

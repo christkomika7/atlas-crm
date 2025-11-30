@@ -5,6 +5,7 @@ export type DeletionType = {
     recordId: string;
     reference: string;
     date: Date;
+    actionBy?: string;
     forUser?: string;
     amount?: string;
     due?: string;

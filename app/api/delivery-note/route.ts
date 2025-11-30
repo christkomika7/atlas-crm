@@ -1,4 +1,4 @@
-import { checkAccess } from "@/lib/access";
+import { checkAccess, sessionAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
@@ -14,13 +14,13 @@ import { ItemType } from "@/types/item.type";
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess("DELIVERY_NOTES", "CREATE");
+    const { userId } = await sessionAccess()
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
 
@@ -216,6 +216,9 @@ export async function POST(req: NextRequest) {
                             id: data.companyId
                         }
                     },
+                    createdBy: {
+                        connect: { id: userId as string }
+                    },
                     billboards: {
                         connect: data.item.billboards?.map(billboard => ({
                             id: billboard.billboardId
@@ -253,10 +256,9 @@ export async function DELETE(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
 

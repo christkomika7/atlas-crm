@@ -74,6 +74,7 @@ export default function AppointementTab() {
                         <TableHead className="font-medium text-center">N°</TableHead>
                         <TableHead className="font-medium text-center">Client</TableHead>
                         <TableHead className="font-medium text-center">Date</TableHead>
+                        <TableHead className="font-medium text-center">Actioné par</TableHead>
                         <TableHead className="font-medium text-center">Action</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -100,6 +101,9 @@ export default function AppointementTab() {
                                 </TableCell>
                                 <TableCell className="text-neutral-600 text-center">
                                     {formatDateToDashModel(deletion.date)}
+                                </TableCell>
+                                <TableCell className="text-neutral-600 text-center">
+                                    {deletion.actionBy}
                                 </TableCell>
                                 <TableCell className="text-center">
                                     <div className='flex justify-center items-center gap-x-2 mx-auto w-full'>

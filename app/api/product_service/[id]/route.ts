@@ -103,10 +103,9 @@ export async function PUT(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
     const id = getIdFromUrl(req.url, "last") as string;
@@ -175,10 +174,9 @@ export async function DELETE(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
     const id = getIdFromUrl(req.url, "last") as string;

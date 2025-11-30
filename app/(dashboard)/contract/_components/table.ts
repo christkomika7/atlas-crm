@@ -5,13 +5,13 @@ export const dropdownMenu: TableActionButtonType[] = [
     {
         id: 1,
         icon: HandshakeIcon,
-        title: "Export contrat",
+        title: "Export Client",
         action: "convert"
     },
     {
         id: 2,
         icon: ClipboardList,
-        title: "Export contrat",
+        title: "Export Lessor",
         action: "duplicate"
     },
     {

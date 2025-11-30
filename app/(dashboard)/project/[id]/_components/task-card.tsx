@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, getFilePath } from "@/lib/utils";
+import { cn, cutText, getFilePath } from "@/lib/utils";
 import { TaskType } from "@/types/task.type";
 import {
   CheckIcon,
@@ -61,7 +61,7 @@ export default function TaskCard({ task, readAccess, modifyAccess }: TaskCardPro
   }
 
   return (
-    <div className="">
+    <div>
       <div className="flex justify-end items-center gap-x-1">
         {readAccess &&
           <TaskModal title="Information" type="info" id={task.id}>
@@ -113,8 +113,8 @@ export default function TaskCard({ task, readAccess, modifyAccess }: TaskCardPro
         }
       </div>
       <div className="space-y-2 mb-3 ">
-        <div className="flex gap-x-1 justify-between items-end">
-          <h2 className="mb-1 font-medium text-xs">{task.name}</h2>
+        <div className="flex gap-x-1 justify-between items-center">
+          <h2 className="mb-1 font-semibold text-base">{cutText(task.name, 22)}</h2>
           <small className="text-neutral-600 text-[11px]">
             {new Date(task.time).toLocaleDateString()}
           </small>

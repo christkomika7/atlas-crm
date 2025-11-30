@@ -15,10 +15,9 @@ export async function POST(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
     const { hasSession, userId } = await sessionAccess();
@@ -113,6 +112,9 @@ export async function POST(req: NextRequest) {
                 },
 
             },
+            include: {
+                teamMember: true
+            }
         });
 
 
@@ -123,23 +125,23 @@ export async function POST(req: NextRequest) {
                     address: process.env.EMAIL_USER as string
                 },
                 to: data.email,
-                subject: "📅 Rappel de votre rendez-vous à venir",
+                subject: data.subject,
                 html: `
-                  <div style="font-family: Arial, sans-serif; color: #333;">
-    <h2 style="color:#2a7ae2;">📅 Rappel de rendez-vous</h2>
-    <p>Bonjour,</p>
-    <p>Nous vous rappelons que votre rendez-vous est prévu :</p>
-    <p style="font-size:16px; font-weight:bold; color:#2a7ae2;">
-      🗓️ Le <strong>${formatDateToDashModel(data.date)}</strong> à <strong>${data.time}</strong>
-    </p>
-    <p>Merci de bien vouloir vous présenter quelques minutes à l’avance.</p>
-    <p>
-      Si vous souhaitez modifier ou annuler ce rendez-vous,
-      veuillez nous contacter au plus tard 24h à l’avance.
-    </p>
-    <br />
-    <p>Cordialement,<br />L’équipe <strong>${companyExist.companyName}</strong></p>
-  </div>
+                <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <p>
+                    Bonjour,<br />
+                    Nous vous rappelons que votre rendez-vous est fixé le 
+                    <strong>${formatDateToDashModel(data.date)}</strong> à <strong>${data.time}</strong>.<br />
+                    Celui-ci se tiendra à l’adresse suivante : <strong>${data.address}</strong><br />
+                    Vous serez reçu par 
+                    <strong>${createdAppointment.teamMember?.firstname} ${createdAppointment.teamMember?.lastname}</strong>.<br />
+                    Merci de vous présenter quelques minutes à l’avance. Pour toute modification ou annulation,
+                    nous vous invitons à nous contacter au plus tard 24 heures avant l’heure prévue.<br /><br />
+
+                    Cordialement,<br />
+                    L’équipe <strong>${companyExist.companyName}</strong>
+                </p>
+                </div>
                 `
             }
             await sendMail(mailOptions);
@@ -167,10 +169,9 @@ export async function DELETE(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
     const data = await req.json();
 

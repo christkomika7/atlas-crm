@@ -10,6 +10,7 @@ import useItemStore, { ItemType, LocationBillboardDateType } from "@/stores/item
 import { VatRateType } from "@/types/company.types";
 import { CalculateTaxesResult, TaxItem } from "@/types/tax.type";
 import Decimal from "decimal.js";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export type ItemListProps = {
@@ -22,12 +23,16 @@ export type ItemListProps = {
         taxOperation?: "cumul" | "sequence";
     }): CalculateTaxesResult;
     isCompleted?: boolean;
-    locationBillboardDate: LocationBillboardDateType[];
     amountType: "TTC" | "HT";
     disabled?: boolean;
 
 }
-export default function ItemList({ item, taxes, calculate, disabled, isCompleted, locationBillboardDate, amountType }: ItemListProps) {
+export default function ItemList({ item, taxes, calculate, disabled, isCompleted, amountType }: ItemListProps) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [disabledRanges, setDisabledRanges] = useState<[Date, Date][]>([]);
+    const locationBillboardDate = useItemStore.use.locationBillboardDate();
+
+
     const updateItem = useItemStore.use.updateItem();
     const removeItem = useItemStore.use.removeItem();
     const editItemField = useItemStore.use.editItemField();
@@ -38,6 +43,27 @@ export default function ItemList({ item, taxes, calculate, disabled, isCompleted
             ? Number(String(item.discount).replace("%", ""))
             : Number(item.discount)
         : 0;
+
+
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        setDisabledRanges(getDisabledRanges());
+                    }
+                });
+            },
+            { threshold: 0.2 }
+        );
+
+        observer.observe(el);
+
+        return () => observer.disconnect();
+    }, [locationBillboardDate, item.billboardId]);
 
     function getDisabledRanges() {
         const disabledData = locationBillboardDate.filter(billboard => billboard.billboardReference === item.billboardId);
@@ -151,7 +177,7 @@ export default function ItemList({ item, taxes, calculate, disabled, isCompleted
                         <DatePicker
                             disabled={isCompleted || disabled}
                             className="flex w-[300px]"
-                            disabledRanges={getDisabledRanges()}
+                            disabledRanges={disabledRanges}
                             label=""
                             mode="range"
                             value={
@@ -162,6 +188,9 @@ export default function ItemList({ item, taxes, calculate, disabled, isCompleted
                                     }
                                     : undefined
                             }
+                            onOpenCalendar={() => {
+                                setDisabledRanges(getDisabledRanges());
+                            }}
                             onChange={(e) => {
                                 const range = e as
                                     | { from: Date; to: Date }

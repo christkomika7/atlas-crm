@@ -186,8 +186,13 @@ model User {
   banReason  String?
   banExpires DateTime?
 
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdAt      DateTime        @default(now())
+  deletions      Deletion[]
+  invoices       Invoice[]
+  purchaseOrders PurchaseOrder[]
+  quotes         Quote[]
+  deliveryNotes  DeliveryNote[]
 
   @@map("user")
 }
@@ -487,6 +492,9 @@ model Invoice {
   isPaid        Boolean    @default(false)
   amountType    AmountType @default(TTC)
 
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
@@ -533,6 +541,9 @@ model PurchaseOrder {
   isPaid              Boolean    @default(false)
   amountType          AmountType @default(TTC)
 
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
   supplierId String?
   supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
@@ -573,6 +584,9 @@ model Quote {
   fromRecordId        String @default("")
   fromRecordName      String @default("")
 
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
@@ -610,6 +624,9 @@ model DeliveryNote {
   fromRecordReference String @default("")
   fromRecordId        String @default("")
   fromRecordName      String @default("")
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -1064,6 +1081,9 @@ model Deletion {
   type       DeletionType
   recordId   String       @unique
   isValidate Boolean      @default(false)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)

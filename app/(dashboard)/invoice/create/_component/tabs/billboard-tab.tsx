@@ -56,7 +56,6 @@ export default function BillboardTab({ isGettingBillboards, billboards,
     const defaultDiscount = "0";
     const enableDate = getEnableDate(locationBillboardDate, billboard.id, invoiceId);
 
-
     if (check) {
       addLocationBillboard({
         id: billboard.id,

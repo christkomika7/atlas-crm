@@ -53,7 +53,7 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
     data,
-  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
+  } = useQueryAction<{ id: string, includeMe?: boolean }, RequestResponse<ProfileType[]>>(
     getCollaborators,
     () => { },
     "collaborators"
@@ -67,7 +67,7 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
 
   useEffect(() => {
     if (id) {
-      mutateCollaborators({ id });
+      mutateCollaborators({ id, includeMe: true });
     }
   }, [id]);
 

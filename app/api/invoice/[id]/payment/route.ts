@@ -13,10 +13,9 @@ export async function POST(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
     const id = getIdFromUrl(req.url, 2) as string;
@@ -96,6 +95,8 @@ export async function POST(req: NextRequest) {
 
                 },
             });
+
+
 
             return { invoice, payment };
         });
@@ -214,6 +215,12 @@ export async function POST(req: NextRequest) {
                     paidAmount: {
                         increment: data.amount
                     }
+                }
+            }),
+            prisma.project.update({
+                where: { id: invoice.projectId as string },
+                data: {
+                    balance: { increment: data.amount }
                 }
             })
         ]);

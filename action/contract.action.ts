@@ -211,12 +211,22 @@ export async function exportLessorContractToWord({ contractId }: { contractId: s
             throw new Error(errRes?.message || "Erreur lors de l'export Word");
         }
 
+        const contentDisposition = response.headers.get("Content-Disposition");
+        let filename = "export.docx";
+
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="(.+)"/);
+            if (match && match[1]) {
+                filename = match[1];
+            }
+        }
+
         const blob = await response.blob();
 
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'export.docx';
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
 

@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
             "byEmail",
             "byTime",
             "byAddress",
+            "byCompany"
         ] as const;
 
         let orderBy: any = { date: "desc" };
@@ -50,8 +51,10 @@ export async function GET(req: NextRequest) {
                         orderBy = { date: order };
                         break;
                     case "byClient":
-                        // order by client.lastname then client.firstname
                         orderBy = [{ client: { lastname: order } }, { client: { firstname: order } }];
+                        break;
+                    case "byCompany":
+                        orderBy = [{ client: { companyName: order } }];
                         break;
                     case "byEmail":
                         orderBy = { email: order };
@@ -101,10 +104,9 @@ export async function POST(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
     try {
@@ -165,10 +167,9 @@ export async function PUT(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
 
     const { hasSession, userId } = await sessionAccess();
@@ -238,7 +239,6 @@ export async function PUT(req: NextRequest) {
 
     }
 
-    // 🛠 Construction dynamique de l’objet de mise à jour
     const updateData: Prisma.AppointmentUpdateInput = {
         email: data.email,
         date: data.date,
@@ -293,10 +293,9 @@ export async function DELETE(req: NextRequest) {
 
     if (!result.authorized) {
         return Response.json({
-            status: "error",
+            state: "error",
             message: result.message,
-            data: []
-        }, { status: 200 });
+        }, { status: 403 });
     }
     const id = getIdFromUrl(req.url, "last") as string;
 

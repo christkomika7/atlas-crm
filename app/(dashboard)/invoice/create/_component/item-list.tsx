@@ -11,11 +11,11 @@ import useRecordIdStore from "@/stores/record-id.store";
 import { VatRateType } from "@/types/company.types";
 import { CalculateTaxesResult, TaxItem } from "@/types/tax.type";
 import Decimal from "decimal.js";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 
 export type ItemListProps = {
     item: ItemType;
-    locationBillboardDate: LocationBillboardDateType[];
     taxes: VatRateType[];
     calculate(params: {
         items: TaxItem[];
@@ -27,8 +27,10 @@ export type ItemListProps = {
     amountType: "TTC" | "HT";
     disabled?: boolean;
 }
-export default function ItemList({ item, locationBillboardDate, taxes, calculate, amountPaid, amountType, disabled }: ItemListProps) {
-
+export default function ItemList({ item, taxes, calculate, amountPaid, amountType, disabled }: ItemListProps) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [disabledRanges, setDisabledRanges] = useState<[Date, Date][]>([]);
+    const locationBillboardDate = useItemStore.use.locationBillboardDate();
     const invoiceId = useRecordIdStore.use.recordId();
 
     const updateItem = useItemStore.use.updateItem();
@@ -42,7 +44,25 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
             : Number(item.discount)
         : 0;
 
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
 
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        setDisabledRanges(getDisabledRanges());
+                    }
+                });
+            },
+            { threshold: 0.2 }
+        );
+
+        observer.observe(el);
+
+        return () => observer.disconnect();
+    }, [locationBillboardDate, item.billboardId]);
 
     function getDisabledRanges() {
         const disabledData = locationBillboardDate.filter(billboard => billboard.billboardReference === item.billboardId && !billboard.isNew && billboard.invoiceId !== invoiceId);
@@ -60,6 +80,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
 
     return (
         <div
+            ref={containerRef}
             className="group relative flex flex-col hover:bg-blue/5 p-1.5 border-blue border-l-4 w-full"
         >
             {amountPaid?.eq(0) && !disabled &&
@@ -159,7 +180,7 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                             className="flex w-[300px]"
                             label=""
                             mode="range"
-                            disabledRanges={getDisabledRanges()}
+                            disabledRanges={disabledRanges}
                             value={
                                 item.locationStart && item.locationEnd
                                     ? {
@@ -168,6 +189,9 @@ export default function ItemList({ item, locationBillboardDate, taxes, calculate
                                     }
                                     : undefined
                             }
+                            onOpenCalendar={() => {
+                                setDisabledRanges(getDisabledRanges());
+                            }}
                             onChange={(e) => {
                                 const range = e as
                                     | { from: Date; to: Date }

@@ -60,6 +60,11 @@ export async function DELETE(req: NextRequest) {
           data: {
             type: $Enums.DeletionType.RECEIPTS,
             recordId: receipt.id,
+            user: {
+              connect: {
+                id: user.id
+              }
+            },
             company: {
               connect: {
                 id: companyId
@@ -81,6 +86,11 @@ export async function DELETE(req: NextRequest) {
           data: {
             type: $Enums.DeletionType.DISBURSEMENTS,
             recordId: disbursement.id,
+            user: {
+              connect: {
+                id: user.id
+              }
+            },
             company: {
               connect: {
                 id: companyId

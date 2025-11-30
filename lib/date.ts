@@ -165,27 +165,33 @@ export function getTotalDuration(sales: Sale[]): string {
 }
 
 export function durationInMonths(start: Date, end: Date): number {
-    if (end < start) return 0;
+    const s = new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate()));
+    const e = new Date(Date.UTC(end.getFullYear(), end.getMonth(), end.getDate()));
 
-    const years = end.getFullYear() - start.getFullYear();
-    const months = end.getMonth() - start.getMonth();
+    if (e < s) return 0;
 
-    let totalMonths = years * 12 + months;
+    let months = (e.getUTCFullYear() - s.getUTCFullYear()) * 12 + (e.getUTCMonth() - s.getUTCMonth());
 
-    let dayFraction = 0;
-    if (end.getDate() >= start.getDate()) {
-        const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
-        const dayDiff = end.getDate() - start.getDate();
-        dayFraction = dayDiff / daysInMonth;
-    } else {
-        totalMonths -= 1;
-        const prevMonthDays = new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate();
-        const dayDiff = end.getDate() + (prevMonthDays - start.getDate());
-        dayFraction = dayDiff / prevMonthDays;
+    const candidate = new Date(Date.UTC(s.getUTCFullYear(), s.getUTCMonth() + months, s.getUTCDate()));
+
+    if (candidate > e) {
+        months -= 1;
     }
 
-    return Math.ceil(+(totalMonths + dayFraction).toFixed(2));
+    const reference = new Date(Date.UTC(s.getUTCFullYear(), s.getUTCMonth() + months, s.getUTCDate()));
+
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const dayDiff = Math.round((e.getTime() - reference.getTime()) / msPerDay);
+
+    let extra = 0;
+    if (dayDiff > 0) {
+        extra = dayDiff <= 15 ? 0.5 : 1;
+    }
+
+    return months + extra;
 }
+
+
 
 export function getEnableDate(
     locations: LocationBillboardDateType[],
