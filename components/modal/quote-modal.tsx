@@ -451,7 +451,7 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
                             </h2>
                             <div className="space-y-2">
                                 {items.map((item) => (
-                                    <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} calculate={calculate} locationBillboardDate={locationBillboardDate} taxes={company?.vatRates ?? []} amountType={amountType} />
+                                    <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} calculate={calculate} taxes={company?.vatRates ?? []} amountType={amountType} />
                                 ))}
                             </div>
 

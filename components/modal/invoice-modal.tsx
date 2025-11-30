@@ -453,7 +453,7 @@ export default function InvoiceModal({ idClient, closeModal, refreshData }: Invo
                             </h2>
                             <div className="space-y-2">
                                 {items.map((item) => (
-                                    <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} locationBillboardDate={locationBillboardDate} calculate={calculate} taxes={company?.vatRates ?? []} amountPaid={new Decimal(0)} amountType={amountType} />
+                                    <ItemList key={item.itemType === "billboard" ? item.billboardId : item.productServiceId} item={item} calculate={calculate} taxes={company?.vatRates ?? []} amountPaid={new Decimal(0)} amountType={amountType} />
                                 ))}
                             </div>
                             <FormField
