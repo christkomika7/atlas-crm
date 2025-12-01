@@ -50,6 +50,20 @@ export default function InvoiceTable({ canViewDashboard }: InvoiceTableProps) {
     router.push(`/${type}/${id}`);
   }
 
+  function getStatus(status: string, type: "invoice" | "quote" | "purchase-order" | "delivery-note") {
+    switch (type) {
+      case "invoice":
+        return status === "WAIT" ? "Non réglé" : status === "PENDING" ? "Partiel" : "Soldé"
+      case "quote":
+        return status === "WAIT" ? "En attente" : "Validé"
+      case "purchase-order":
+        return status === "WAIT" ? "Non réglé" : status === "PENDING" ? "Partiel" : "Soldé"
+      case "delivery-note":
+        return status === "WAIT" ? "En attente" : "Validé"
+    }
+
+  }
+
   return (
     <div className="p-4 border border-neutral-200 gap-x-8 rounded-lg space-y-2">
       <h2 className="font-semibold">État des factures</h2>
@@ -98,8 +112,10 @@ export default function InvoiceTable({ canViewDashboard }: InvoiceTableProps) {
                 </TableCell>
                 <TableCell className="text-neutral-600 text-center">
                   {record.status ?
-                    <Badge className="w-[100px]" variant={record.status === "WAIT" ? "TODO" : record.status === "PENDING" ? "IN_PROGRESS" : "DONE"}>
-                      {record.status === "WAIT" ? "En attente" : record.status === "PENDING" ? "En cour" : "VALIDER"}
+                    <Badge className="w-[100px]" variant={record.status === "WAIT" ? "BLOCKED" : record.status === "PENDING" ? "orange" : "IN_PROGRESS"}
+
+                    >
+                      {getStatus(record.status, record.type as "invoice" | "quote" | "purchase-order" | "delivery-note")}
                     </Badge> : "-"
                   }
                 </TableCell>

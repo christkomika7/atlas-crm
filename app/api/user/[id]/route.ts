@@ -282,7 +282,6 @@ export async function PUT(req: NextRequest) {
         }
 
         if (typeof image === "string" && image === "undefined") {
-            console.log({ img: profileExist.image })
             savedImage = profileExist.image;
         }
 

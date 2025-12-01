@@ -572,7 +572,7 @@ export default function InvoiceTab() {
                   <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} amountPaid={amountPaid} amountType={amountType} disabled={!modifyAccess} />
                 ))}
               </div>
-              {amountPaid.eq(0) || modifyAccess &&
+              {amountPaid.eq(0) && modifyAccess &&
                 <FormField
                   control={form.control}
                   name="item"
@@ -751,7 +751,7 @@ export default function InvoiceTab() {
 
             {modifyAccess &&
               <div className="flex justify-center pt-2">
-                <Button type="submit" disabled={isPaid} variant="primary" className="justify-center">
+                <Button type="submit" disabled={isPaid || isUpdatingInvoice} variant="primary" className="justify-center">
                   {isUpdatingInvoice ? <Spinner /> : "Valider"}
                 </Button>
               </div>

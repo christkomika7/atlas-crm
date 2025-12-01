@@ -192,7 +192,6 @@ export function durationInMonths(start: Date, end: Date): number {
 }
 
 
-
 export function getEnableDate(
     locations: LocationBillboardDateType[],
     billboardId: string,

@@ -167,6 +167,8 @@ export async function create(data: BillboardSchemaFormType) {
         // LESSOR - Infos bailleur
         formData.append("lessorType", data.lessor.lessorType);
         formData.append("lessorSpaceType", data.lessor.lessorSpaceType);
+        formData.append("locationPrice", data.lessor.locationPrice as string);
+        formData.append("nonLocationPrice", data.lessor.nonLocationPrice as string);
         if (data.lessor.lessorSpaceType === "private") {
             formData.append("lessorName", data.lessor.lessorName as string);
             formData.append("lessorAddress", data.lessor.lessorAddress as string);
@@ -201,7 +203,9 @@ export async function create(data: BillboardSchemaFormType) {
             formData.append("specificCondition", data.lessor.specificCondition as string);
 
         } else {
-            formData.append("lessorCustomer", data.lessor.lessorCustomer as string)
+            formData.append("lessorCustomer", data.lessor.lessorCustomer as string);
+            formData.append("delayContract", JSON.stringify(data.lessor.delayContract) as string);
+
         }
 
         // Envoi de la requête
@@ -281,6 +285,8 @@ export async function update(data: EditBillboardSchemaFormType) {
         // LESSOR - Infos bailleur
         formData.append("lessorType", data.lessor.lessorType);
         formData.append("lessorSpaceType", data.lessor.lessorSpaceType);
+        formData.append("locationPrice", data.lessor.locationPrice as string);
+        formData.append("nonLocationPrice", data.lessor.nonLocationPrice as string);
 
         if (data.lessor.lessorSpaceType === "private") {
             formData.append("lessorName", data.lessor.lessorName as string);
@@ -316,7 +322,8 @@ export async function update(data: EditBillboardSchemaFormType) {
             formData.append("specificCondition", data.lessor.specificCondition as string);
 
         } else {
-            formData.append("lessorCustomer", data.lessor.lessorCustomer as string)
+            formData.append("lessorCustomer", data.lessor.lessorCustomer as string);
+            formData.append("delayContract", JSON.stringify(data.lessor.delayContract) as string);
         }
 
         // Envoi de la requête

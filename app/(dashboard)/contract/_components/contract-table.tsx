@@ -25,12 +25,19 @@ import TableActionButton from "./table-action-button";
 import { dropdownMenu } from "./table";
 import { getAllContracts } from "@/action/contract.action";
 import { $Enums } from "@/lib/generated/prisma";
-import { ClientContractType, LessorContractType } from "@/types/contract-types";
+import { DataContractType } from "@/types/contract-types";
 import { formatDateToDashModel } from "@/lib/date";
 import Paginations from "@/components/paginations";
-import { DEFAULT_PAGE_SIZE } from "@/config/constant";
+import { DEFAULT_PAGE_SIZE, INVOICE_PREFIX } from "@/config/constant";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
+import { InvoiceType } from "@/types/invoice.types";
+import { cutText, generateAmaId } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type ContractTableProps = {
   filter: $Enums.ContractType;
@@ -53,7 +60,7 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
     const skip = (currentPage - 1) * pageSize;
 
     const [contracts, setContracts] = useState<
-      ClientContractType[] | LessorContractType[]
+      DataContractType[]
     >([]);
 
     const { access: readAccess, loading } = useAccess("CONTRACT", "READ");
@@ -61,7 +68,7 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
 
     const { mutate, isPending } = useQueryAction<
       { companyId: string; filter: $Enums.ContractType; skip?: number; take?: number },
-      RequestResponse<ClientContractType[] | LessorContractType[]>
+      RequestResponse<DataContractType[]>
     >(getAllContracts, () => { }, "contracts");
 
     const toggleSelection = (contractId: string, checked: boolean) => {
@@ -94,12 +101,12 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
 
     const isSelected = (id: string) => selectedContractIds.includes(id);
 
-    function getUser(contract: ClientContractType | LessorContractType) {
+    function getUser(contract: DataContractType) {
       if (contract.type === "CLIENT") {
-        const c = contract as ClientContractType;
+        const c = contract;
         return `${c.client.companyName}`;
       } else {
-        const c = contract as LessorContractType;
+        const c = contract;
         if (c.lessor) {
           return `${c.lessor?.companyName}`;
         } else {
@@ -109,6 +116,19 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
           return `${c.billboard?.lessorName}`;
         }
       }
+    }
+
+    function getInvoices(invoices: InvoiceType[] | undefined, prefix: string): string {
+      if (!invoices || invoices.length === 0) return "-";
+      const references = invoices.map(invoice => `${prefix}-${generateAmaId(invoice.invoiceNumber, false)}`)
+      return references.join("; ")
+    }
+
+    function getProjects(invoices: InvoiceType[] | undefined) {
+      if (!invoices || invoices.length === 0) return "-";
+      const projects = invoices.map(invoice => `${invoice.project.name}`)
+      return projects.join("; ");
+
     }
 
     if (loading) return <Spinner />
@@ -121,7 +141,8 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
               <TableRow className="h-14">
                 <TableHead className="min-w-[50px] font-medium" />
                 <TableHead className="font-medium text-center">Date</TableHead>
-                <TableHead className="font-medium text-center">Contrat</TableHead>
+                <TableHead className="font-medium text-center">Facture(s)</TableHead>
+                <TableHead className="font-medium text-center">Projet</TableHead>
                 <TableHead className="font-medium text-center">
                   Société
                 </TableHead>
@@ -138,7 +159,7 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
                   </TableCell>
                 </TableRow>
               ) : contracts.length > 0 ? (
-                contracts.map((contract: ClientContractType | LessorContractType) => (
+                contracts.map((contract: DataContractType) => (
                   <TableRow
                     key={contract.id}
                     className={`h-16 transition-colors ${isSelected(contract.id) ? "bg-neutral-100" : ""
@@ -158,7 +179,32 @@ const ContractTable = forwardRef<ContractTableRef, ContractTableProps>(
                       {formatDateToDashModel(contract.createdAt)}
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
-                      {contract.type === "CLIENT" ? "Client" : "Bailleur"}
+                      {!contract.invoices || contract.invoices.length === 0 ? "-" :
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>
+                              {cutText(getInvoices(contract.invoices, contract.company.documentModel.invoicesPrefix || INVOICE_PREFIX), 20)}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            {getInvoices(contract.invoices, contract.company.documentModel.invoicesPrefix || INVOICE_PREFIX)}
+                          </TooltipContent>
+                        </Tooltip>
+                      }
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {!contract.invoices || contract.invoices.length === 0 ? "-" :
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>
+                              {cutText(getProjects(contract.invoices), 20)}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            {getProjects(contract.invoices)}
+                          </TooltipContent>
+                        </Tooltip>
+                      }
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
                       {getUser(contract)}

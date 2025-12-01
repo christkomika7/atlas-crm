@@ -11,7 +11,7 @@ import { lessorContractSchema, LessorContractSchemaType } from "@/lib/zod/contra
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { BillboardType } from "@/types/billboard.types";
-import { ClientContractType, ContractType, LessorContractType } from "@/types/contract-types";
+import { ContractType, DataContractType } from "@/types/contract-types";
 import { BillboardSupplier } from "@/types/supplier.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
@@ -40,7 +40,7 @@ export default function LessorContractEdit({ id, refreshContract, closeModal }: 
 
     const { mutate: mutateUpdateLessorContract, isPending: isUpdatingLessorContract } = useQueryAction<
         LessorContractSchemaType,
-        RequestResponse<ClientContractType | LessorContractType>
+        RequestResponse<DataContractType>
     >(updateContract, () => { }, "contract");
 
 

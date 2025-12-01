@@ -24,21 +24,25 @@ export async function getTransactions(params: GetTransactionsParams) {
   try {
     const query = new URLSearchParams();
 
-    // Pagination
     if (params.skip !== undefined) query.set("skip", String(params.skip));
     if (params.take !== undefined) query.set("take", String(params.take));
 
-    // Filtres directs
     if (params.startDate) query.set("startDate", params.startDate);
     if (params.endDate) query.set("endDate", params.endDate);
-    if (params.movementValue) query.set("movementValue", params.movementValue);
-    if (params.categoryValue) query.set("categoryValue", params.categoryValue);
-    if (params.natureValue) query.set("natureValue", params.natureValue);
-    if (params.paymentModeValue) query.set("paymentModeValue", params.paymentModeValue);
-    if (params.sourceValue) query.set("sourceValue", params.sourceValue);
+
+    if (params.movementValue && params.movementValue.length > 0)
+      query.set("movementValue", params.movementValue.join(","));
+    if (params.categoryValue && params.categoryValue.length > 0)
+      query.set("categoryValue", params.categoryValue.join(","));
+    if (params.natureValue && params.natureValue.length > 0)
+      query.set("natureValue", params.natureValue.join(","));
+    if (params.paymentModeValue && params.paymentModeValue.length > 0)
+      query.set("paymentModeValue", params.paymentModeValue.join(","));
+    if (params.sourceValue && params.sourceValue.length > 0)
+      query.set("sourceValue", params.sourceValue.join(","));
+
     if (params.paidForValue) query.set("paidForValue", params.paidForValue);
 
-    // Tri (un seul tri actif)
     const sortKeys: (keyof GetTransactionsParams)[] = [
       "byDate",
       "byAmount",
@@ -61,7 +65,12 @@ export async function getTransactions(params: GetTransactionsParams) {
 
     const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${params.companyId}?${query.toString()}`;
 
-    const response = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" }, cache: "no-store" });
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+    });
+
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     const res: RequestResponse<TransactionType[]> = await response.json();
@@ -74,9 +83,10 @@ export async function getTransactions(params: GetTransactionsParams) {
   }
 }
 
-export async function getCategories({ companyId, type }: { companyId: string, type?: "receipt" | "dibursement" }) {
+export async function getCategories({ companyId, type, filter = false }: { companyId: string, type?: "receipt" | "dibursement", filter?: boolean }) {
   const params = new URLSearchParams();
   if (type) params.append("type", type);
+  if (filter) params.append("filter", JSON.stringify(filter));
 
   const queryString = params.toString();
   const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/category/${companyId}${queryString ? `?${queryString}` : ""
@@ -87,6 +97,7 @@ export async function getCategories({ companyId, type }: { companyId: string, ty
       url,
       {
         method: "GET",
+        cache: "no-store"
       },
     );
 
@@ -110,6 +121,7 @@ export async function getFisclaObjects({ companyId }: { companyId: string }) {
       url,
       {
         method: "GET",
+        cache: "no-store"
       },
     );
 
@@ -124,10 +136,37 @@ export async function getFisclaObjects({ companyId }: { companyId: string }) {
   }
 }
 
+export async function getSourcesByCompany({ companyId, filter }: { companyId: string, filter?: boolean }) {
+  const params = new URLSearchParams();
+  if (filter) params.append("filter", JSON.stringify(filter));
 
-export async function getSources({ companyId, type }: { companyId: string, type?: "cash" | "check" | "bank-transfer" }) {
+  const queryString = params.toString();
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/source/${companyId}/company${queryString ? `?${queryString}` : ""
+    }`;
+
+  try {
+    const response = await fetch(
+      url,
+      {
+        method: "GET",
+        cache: "no-store"
+      },
+    );
+
+    const res: RequestResponse<SourceType[]> = await response.json();
+    if (!response.ok) {
+      throw new Error(res.message);
+    }
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getSources({ companyId, type, filter }: { companyId: string, type?: "cash" | "check" | "bank-transfer", filter?: boolean }) {
   const params = new URLSearchParams();
   if (type) params.append("type", type);
+  if (filter) params.append("filter", JSON.stringify(filter));
 
   const queryString = params.toString();
   const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/source/${companyId}${queryString ? `?${queryString}` : ""
@@ -138,6 +177,7 @@ export async function getSources({ companyId, type }: { companyId: string, type?
       url,
       {
         method: "GET",
+        cache: "no-store"
       },
     );
 
@@ -157,6 +197,7 @@ export async function getAllocations({ companyId }: { companyId: string }) {
       `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/allocation/${companyId}`,
       {
         method: "GET",
+        cache: "no-store"
       },
     );
 
@@ -170,12 +211,41 @@ export async function getAllocations({ companyId }: { companyId: string }) {
   }
 }
 
+export async function getNaturesByCompanyId({ companyId, filter }: { companyId: string, filter?: boolean }) {
+  const params = new URLSearchParams();
+  if (filter) params.append("filter", JSON.stringify(filter));
+
+  const queryString = params.toString();
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/nature/${companyId}/company${queryString ? `?${queryString}` : ""
+    }`;
+
+  try {
+    const response = await fetch(
+      url,
+      {
+        method: "GET",
+        cache: "no-store"
+      },
+    );
+
+    const res: RequestResponse<TransactionNatureType[]> = await response.json();
+    if (!response.ok) {
+      throw new Error(res.message);
+    }
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
+
+
 export async function getNatures({ categoryId }: { categoryId: string }) {
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/nature/${categoryId}`,
       {
         method: "GET",
+        cache: "no-store"
       },
     );
 
@@ -202,6 +272,7 @@ export async function getDocuments({ companyId, type }: { companyId: string, typ
       url,
       {
         method: "GET",
+        cache: "no-store"
       },
     );
 

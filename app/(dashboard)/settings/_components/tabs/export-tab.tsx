@@ -67,21 +67,24 @@ export default function ExportTab() {
     }
   }, [filters, readAccess])
 
+  if (loading) return <Spinner />
+
   return (
     <AccessContainer hasAccess={readAccess} resource="SETTING">
       <div className="space-y-4 pt-4">
-        <div className="flex gap-x-2 justify-between items-center">
-          <div className="grid grid-cols-[300px_220px_160px_160px] gap-x-2 max-w-3xl w-full">
+        <div className="flex gap-2 flex-wrap justify-between items-center">
+          <div className="flex flex-wrap gap-2 ">
             <Combobox
+              className="w-[300px]"
               datas={reportTypes}
               value={filters.reportType}
-
               setValue={(e) => setFilters({ ...filters, reportType: String(e) })}
               placeholder="Type de rapport"
               searchMessage="Rechercher un type de rapport"
               noResultsMessage="Aucun type de rapport trouvé."
             />
             <Combobox
+              className="w-[220px]"
               required={false}
               datas={periods}
               value={filters.period}
@@ -91,6 +94,7 @@ export default function ExportTab() {
               noResultsMessage="Aucune période trouvée."
             />
             <DatePicker
+              className="w-[160px]"
               label="Date de début"
               required={false}
               mode="single"
@@ -100,6 +104,7 @@ export default function ExportTab() {
             />
             <DatePicker
               required={false}
+              className="w-[160px]"
               label="Date de fin"
               mode="single"
               value={filters.end || undefined}

@@ -24,7 +24,6 @@ import { getCollaborators } from "@/action/user.action";
 import { ProfileType } from "@/types/user.types";
 import { unique, update } from "@/action/task.action";
 import { TaskType } from "@/types/task.type";
-import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import useTaskStore from "@/stores/task.store";
 import { Badge } from "@/components/ui/badge";
@@ -37,15 +36,16 @@ import { KanbanTask } from "@/components/ui/shadcn-io/kanban";
 type EditTaskFormProps = {
   closeModal: Dispatch<SetStateAction<boolean>>;
   id: string;
+  projectId: string;
 };
 
 export default function EditTaskForm({
   closeModal,
   id: taskId,
+  projectId
 }: EditTaskFormProps) {
   const [lastUploadDocuments, setLastUploadDocuments] = useState<string[]>([]);
   const id = useDataStore.use.currentCompany();
-  const param = useParams();
   const editTask = useTaskStore.use.editTask();
 
   const form = useForm<EditTaskSchemaType>({
@@ -123,11 +123,11 @@ export default function EditTaskForm({
   async function submit(taskData: EditTaskSchemaType) {
     const { success, data } = editTaskSchema.safeParse(taskData);
     if (!success) return;
-    if (!param.id) return toast.error("Aucun projet trouvé.");
+    if (!projectId) return toast.error("Aucun projet trouvé.");
     mutate(
       {
         ...data,
-        projectId: param.id as string,
+        projectId: projectId as string,
         lastUploadDocuments: lastUploadDocuments,
       },
       {

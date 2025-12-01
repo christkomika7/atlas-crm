@@ -23,6 +23,7 @@ const badgeVariants = cva(
         DONE: "bg-emerald-500 border-emerald-500 text-white py-2 px-4 rounded-full font-semibold",
         BLOCKED:
           "bg-red border-red text-white py-2 px-4 rounded-full font-semibold",
+        orange: "bg-amber-400 border-amber-400 text-white py-2 px-4 rounded-full font-semibold",
       },
     },
     defaultVariants: {

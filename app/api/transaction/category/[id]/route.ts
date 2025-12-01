@@ -13,10 +13,10 @@ export async function GET(req: NextRequest) {
             message: result.message,
         }, { status: 403 });
     }
+
     const id = getIdFromUrl(req.url, "last") as string;
-
     const type = req.nextUrl.searchParams.get("type")?.trim() ?? "";
-
+    const filter = JSON.parse(req.nextUrl.searchParams.get("filter")?.trim() as string) as boolean;
 
     if (!id) {
         return NextResponse.json({
@@ -24,41 +24,51 @@ export async function GET(req: NextRequest) {
             message: "identifiant invalide.",
         }, { status: 404 });
     }
+
     if (!type) {
-        const categories = await prisma.transactionCategory.findMany({
-            where: {
-                companyId: id
-            },
+        let categories = await prisma.transactionCategory.findMany({
+            where: { companyId: id },
             include: {
-                natures: true
+                receipts: true,
+                dibursements: true
             }
         });
+
+        if (filter) {
+            categories = categories.filter(c => (c.receipts.length > 0 || c.dibursements.length > 0));
+        }
 
         return NextResponse.json({
             state: "success",
             data: categories,
-        }, { status: 200 })
-
+        }, { status: 200 });
     }
 
     const categories = await prisma.transactionCategory.findMany({
         where: {
             type: type === "receipt" ? $Enums.TransactionType.RECEIPT : $Enums.TransactionType.DISBURSEMENT,
-            companyId: id
+            companyId: id,
+            ...(filter && {
+                OR: [
+                    { receipts: { some: {} } },
+                    { dibursements: { some: {} } }
+                ]
+            })
         },
         include: {
-            natures: true
+            natures: true,
+            receipts: filter ? true : undefined,
+            dibursements: filter ? true : undefined,
         },
-        orderBy: {
-            createdAt: "desc"
-        }
+        orderBy: { createdAt: "desc" }
     });
 
     return NextResponse.json({
         state: "success",
         data: categories,
-    }, { status: 200 })
+    }, { status: 200 });
 }
+
 
 export async function DELETE(req: NextRequest) {
     const result = await checkAccess("TRANSACTION", ["CREATE", "MODIFY", "READ"]);

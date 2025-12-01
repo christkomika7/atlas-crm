@@ -52,11 +52,11 @@ export default function ClientProjectPage() {
                   {isPending ? (
                     <Spinner />
                   ) : (
-                    <h2 className="flex-shrink-0 font-semibold text-xl">
+                    <h2 className="flex-shrink-0 pl-1 font-semibold text-xl">
                       {project?.name}
                     </h2>
                   )}
-                  <div className="flex items-center gap-x-2 mr-4">
+                  <div className="flex items-center gap-x-2 mr-4 pr-1">
                     <p className="font-semibold text-lg">Solde:</p>
                     {isPending ? (
                       <Spinner />

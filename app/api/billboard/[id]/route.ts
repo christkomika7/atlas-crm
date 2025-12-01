@@ -203,6 +203,9 @@ export async function POST(req: NextRequest) {
 
                     lessorSpaceType: billboard.lessorSpaceType,
                     lessorType: { connect: { id: billboard.lessorTypeId } },
+                    locationPrice: billboard.locationPrice,
+                    nonLocationPrice: billboard.nonLocationPrice,
+
 
                     lessorName: billboard.lessorName,
                     lessorAddress: billboard.lessorAddress,
@@ -278,12 +281,15 @@ export async function POST(req: NextRequest) {
 
                     lessorSpaceType: billboard.lessorSpaceType,
                     lessorType: { connect: { id: billboard.lessorTypeId } },
-
                     lessorSupplier: {
                         connect: {
                             id: billboard.lessorSupplierId as string
                         }
                     },
+                    locationPrice: billboard.locationPrice,
+                    nonLocationPrice: billboard.nonLocationPrice,
+                    delayContractStart: billboard.delayContractStart,
+                    delayContractEnd: billboard.delayContractEnd,
                     company: { connect: { id: billboard.companyId } },
                 },
             });
@@ -349,7 +355,7 @@ export async function PUT(req: NextRequest) {
     const lessorFields = [
         "lessorSpaceType", "lessorType", "lessorCustomer", "lessorName", "lessorAddress", "lessorCity", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "rib", "iban", "bicSwift", "bankName",
         "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition",
-        'niu', "legalForms"
+        'niu', "legalForms", "locationPrice", "nonLocationPrice", "delayContract"
     ];
 
     const billboardData: Record<string, any> = {};
@@ -365,6 +371,7 @@ export async function PUT(req: NextRequest) {
 
     // Conversion des dates
     lessorData.rentalStartDate = rawData["rentalStartDate"] ? new Date(rawData["rentalStartDate"]) : undefined;
+    lessorData.delayContract = rawData["delayContract"] ? JSON.parse(lessorData.delayContract) : undefined;
 
     // Fichiers uploadés
     billboardData.photos = filesMap["photos"] ?? [];
@@ -386,6 +393,10 @@ export async function PUT(req: NextRequest) {
         lessor: {
             ...(lessorData as EditLessorSchemaType),
             capital: new Decimal(lessorData.capital || 0),
+            delayContract: lessorData.delayContract?.from && lessorData.delayContract?.to ? {
+                from: new Date(lessorData.delayContract.from),
+                to: new Date(lessorData.delayContract.to)
+            } : undefined,
             paymentMode: lessorData.paymentMode ? JSON.parse(lessorData.paymentMode) : []
         }
     };
@@ -397,13 +408,18 @@ export async function PUT(req: NextRequest) {
     ) as EditBillboardSchemaFormType;
 
     // Vérifications préalables
-    const [companyExist, refExist] = await prisma.$transaction([
+    const [companyExist, refExist, billboardExist] = await prisma.$transaction([
         prisma.company.findUnique({ where: { id: data.billboard.companyId } }),
         prisma.billboard.findUnique({ where: { reference: data.billboard.reference } }),
+        prisma.billboard.findUnique({ where: { id: data.billboard.id } })
     ]);
 
     if (!companyExist) {
         return NextResponse.json({ status: "error", message: "Société introuvable." }, { status: 404 });
+    }
+
+    if (!billboardExist) {
+        return NextResponse.json({ status: "error", message: "Panneau introuvable." }, { status: 404 });
     }
 
     if (refExist && refExist.id !== data.billboard.id) {
@@ -460,45 +476,87 @@ export async function PUT(req: NextRequest) {
                 electricity: data.billboard.electricity,
                 framework: data.billboard.framework,
                 note: data.billboard.note,
-
+                locationPrice: data.lessor.locationPrice,
+                nonLocationPrice: data.lessor.nonLocationPrice,
                 lessorSpaceType: data.lessor.lessorSpaceType,
                 lessorType: { connect: { id: data.lessor.lessorType } },
-                ...(data.lessor.lessorSpaceType === "public" ? {
-                    lessorSupplier: {
-                        connect: {
-                            id: data.lessor.lessorCustomer
-                        }
-                    },
-                } : {
-                    lessorName: data.lessor.lessorName,
-                    lessorAddress: data.lessor.lessorAddress,
-                    lessorCity: data.lessor.lessorCity,
-                    lessorPhone: data.lessor.lessorPhone,
-                    lessorEmail: data.lessor.lessorEmail,
 
-                    capital: data.lessor.capital,
-                    rccm: data.lessor.rccm,
-                    taxIdentificationNumber: data.lessor.taxIdentificationNumber,
-                    niu: data.lessor.niu,
-                    legalForms: data.lessor.legalForms,
-                    bankName: data.lessor.bankName,
-                    rib: data.lessor.rib,
-                    iban: data.lessor.iban,
-                    bicSwift: data.lessor.bicSwift,
+                ...(data.lessor.lessorSpaceType === "public" ?
+                    {
+                        lessorSupplier: {
+                            connect: {
+                                id: data.lessor.lessorCustomer
+                            }
+                        },
+                        delayContractStart: data.lessor.delayContract?.from,
+                        delayContractEnd: data.lessor.delayContract?.to,
 
-                    representativeFirstName: data.lessor.representativeFirstName,
-                    representativeLastName: data.lessor.representativeLastName,
-                    representativeJob: data.lessor.representativeJob,
-                    representativePhone: data.lessor.representativePhone,
-                    representativeEmail: data.lessor.representativeEmail,
+                        lessorName: null,
+                        lessorAddress: null,
+                        lessorCity: null,
+                        lessorPhone: null,
+                        lessorEmail: null,
 
-                    rentalStartDate: data.lessor.rentalStartDate ?? null,
-                    rentalPeriod: data.lessor.rentalPeriod,
-                    paymentMode: JSON.stringify(data.lessor.paymentMode),
-                    paymentFrequency: data.lessor.paymentFrequency,
-                    electricitySupply: data.lessor.electricitySupply,
-                    specificCondition: data.lessor.specificCondition,
-                }),
+                        capital: null,
+                        rccm: null,
+                        taxIdentificationNumber: null,
+                        niu: null,
+                        legalForms: undefined,
+                        bankName: null,
+                        rib: null,
+                        iban: null,
+                        bicSwift: null,
+
+                        representativeFirstName: null,
+                        representativeLastName: null,
+                        representativeJob: null,
+                        representativePhone: null,
+                        representativeEmail: null,
+
+                        rentalStartDate: null,
+                        rentalPeriod: null,
+                        paymentMode: null,
+                        paymentFrequency: null,
+                        electricitySupply: null,
+                        specificCondition: null,
+                    } : {
+                        lessorSupplier: {
+                            disconnect: {
+                                id: billboardExist.lessorTypeId as string
+                            }
+                        },
+                        delayContractStart: null,
+                        delayContractEnd: null,
+
+                        lessorName: data.lessor.lessorName,
+                        lessorAddress: data.lessor.lessorAddress,
+                        lessorCity: data.lessor.lessorCity,
+                        lessorPhone: data.lessor.lessorPhone,
+                        lessorEmail: data.lessor.lessorEmail,
+
+                        capital: data.lessor.capital,
+                        rccm: data.lessor.rccm,
+                        taxIdentificationNumber: data.lessor.taxIdentificationNumber,
+                        niu: data.lessor.niu,
+                        legalForms: data.lessor.legalForms,
+                        bankName: data.lessor.bankName,
+                        rib: data.lessor.rib,
+                        iban: data.lessor.iban,
+                        bicSwift: data.lessor.bicSwift,
+
+                        representativeFirstName: data.lessor.representativeFirstName,
+                        representativeLastName: data.lessor.representativeLastName,
+                        representativeJob: data.lessor.representativeJob,
+                        representativePhone: data.lessor.representativePhone,
+                        representativeEmail: data.lessor.representativeEmail,
+
+                        rentalStartDate: data.lessor.rentalStartDate ?? null,
+                        rentalPeriod: data.lessor.rentalPeriod,
+                        paymentMode: JSON.stringify(data.lessor.paymentMode),
+                        paymentFrequency: data.lessor.paymentFrequency,
+                        electricitySupply: data.lessor.electricitySupply,
+                        specificCondition: data.lessor.specificCondition,
+                    }),
                 company: { connect: { id: data.billboard.companyId } },
             },
         });

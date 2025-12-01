@@ -72,6 +72,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const category = searchParams.get("category");
+    const nature = searchParams.get("nature");
     const movement = searchParams.get("movement");
     const paymentMode = searchParams.get("paymentMode");
     const source = searchParams.get("source");
@@ -113,11 +114,12 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
           companyId,
           startDate: startDate || undefined,
           endDate: endDate || undefined,
-          categoryValue: category || undefined,
-          movementValue: movement || undefined,
+          categoryValue: category ? category.split(",") : [],
+          movementValue: movement ? movement.split(",") : [],
+          natureValue: nature ? nature.split(",") : [],
+          paymentModeValue: paymentMode ? paymentMode.split(",") : [],
+          sourceValue: source ? source.split(",") : [],
           paidForValue: paidFor || undefined,
-          paymentModeValue: paymentMode || undefined,
-          sourceValue: source || undefined,
           skip: (page - 1) * pageSize,
           take: pageSize,
           ...buildSortParams(sortField, sortOrder),
@@ -139,17 +141,17 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
         endDate,
         category,
         movement,
-        paidFor,
+        nature,
         paymentMode,
         source,
+        paidFor,
         pageSize,
         sortField,
         sortOrder,
         mutateGetTransactions,
-        readAccess
+        readAccess,
       ]
     );
-
     const handleSort = useCallback(
       (field: SortField) => {
         let newOrder: "asc" | "desc" = "asc";

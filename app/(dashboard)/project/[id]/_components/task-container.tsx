@@ -54,7 +54,13 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
       RequestResponse<TaskType>
     >(updateStatus, () => { }, "task");
 
+
   useEffect(() => {
+    refresh()
+  }, [projectId, readAccess]);
+
+
+  function refresh() {
     if (projectId && readAccess) {
       mutate(
         { projectId },
@@ -86,7 +92,8 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
         }
       );
     }
-  }, [projectId, readAccess]);
+  }
+
 
 
   function mapColumnToStatus(column: string): $Enums.ProjectStatus {
@@ -105,8 +112,8 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
   return (
     <div className="h-full px-6">
       {modifyAccess &&
-        <div className="mb-2">
-          <TaskModal title="Nouvelle tâche" type="create">
+        <div className="mb-2 px-1">
+          <TaskModal title="Nouvelle tâche" type="create" projectId={projectId} >
             <Button variant="primary" className="!h-9 w-fit">
               <PlusIcon />
               Ajouter une nouvelle tâche
@@ -175,6 +182,7 @@ export default function TaskContainer({ projectId }: TaskContainerProps) {
                           )}
                         >
                           <TaskCard
+                            projectId={projectId}
                             task={task}
                             readAccess={readAccess}
                             modifyAccess={modifyAccess}

@@ -505,7 +505,7 @@ export default function PurchaseOrderTab() {
                   />
                 ))}
               </div>
-              {amountPaid.eq(0) || modifyAccess &&
+              {amountPaid.eq(0) && modifyAccess &&
                 <FormField
                   control={form.control}
                   name="item"

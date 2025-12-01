@@ -20,7 +20,6 @@ export async function GET(req: NextRequest) {
         }, { status: 403 });
     }
 
-
     const id = getIdFromUrl(req.url, 2) as string;
 
     const contract = await prisma.contract.findUnique({
@@ -67,48 +66,86 @@ export async function GET(req: NextRequest) {
 
     const updatedItems: ContractItemType[] = [];
 
+    const vats: any[] = Array.isArray(contract.company.vatRates)
+        ? (contract.company.vatRates as any[])
+        : typeof contract.company.vatRates === "string"
+            ? JSON.parse(contract.company.vatRates || "[]")
+            : [];
+
+    const tvaEntry = vats.find(
+        (v) => typeof v.taxName === "string" && v.taxName.toLowerCase() === "tva",
+    );
+
+    const parsePercent = (s: string | number | undefined): Decimal => {
+        if (!s && s !== 0) return new Decimal(0);
+        try {
+            if (typeof s === "number") return new Decimal(s).div(100);
+            const cleaned = String(s).replace(/[%\s]/g, "");
+            if (cleaned === "") return new Decimal(0);
+            return new Decimal(cleaned).div(100);
+        } catch {
+            return new Decimal(0);
+        }
+    };
+
+    const tvaRate = tvaEntry ? parsePercent(tvaEntry.taxValue) : new Decimal(0);
+
+    let totalHT = new Decimal(0);
+    let totalTTC = new Decimal(0);
+
     for (const invoice of contract.invoices) {
         const items = invoice.items;
         for (const item of items) {
-            const price = new Decimal(item.price.toString())
-                .mul(Math.ceil(durationInMonths(item.locationStart, item.locationEnd)));
+            if (item.itemType === "billboard") {
+                const basePrice = new Decimal(item.price.toString())
+                    .mul(durationInMonths(item.locationStart, item.locationEnd));
 
-            const discountType = item.discountType;
-            const discount = new Decimal(item.discount || 0);
+                const discountType = item.discountType;
+                const discount = new Decimal(item.discount || 0);
 
-            let delayPrice = price;
+                let itemPriceHT = basePrice;
 
-            if (discount.gt(0)) {
-                if (discountType === "money") {
-                    delayPrice = price.minus(discount);
-                } else if (discountType === "percent") {
-                    const discountValue = price.mul(discount).div(100);
-                    delayPrice = price.minus(discountValue);
+                if (discount.gt(0)) {
+                    if (discountType === "money") {
+                        itemPriceHT = basePrice.minus(discount);
+                    } else if (discountType === "percent") {
+                        const discountValue = basePrice.mul(discount).div(100);
+                        itemPriceHT = basePrice.minus(discountValue);
+                    }
                 }
-            }
 
-            const billboard: ContractItemType = {
-                id: invoice.id as string,
-                reference: item.billboard?.reference as string,
-                model: item.billboard?.type.name as string,
-                dim: `${item.billboard?.width || 0}m x ${item.billboard?.height || 0}m`,
-                area: `${(item.billboard?.width || 0) * (item.billboard?.height || 0)}m²`,
-                site: item.billboard?.locality as string,
-                lighting: item.billboard?.lighting === "Non éclairé" ? 'Non' : 'Oui',
-                location: `${formatDateToDashModel(item.locationStart)} au ${formatDateToDashModel(item.locationEnd)}`,
-                delay: getMonthsAndDaysDifference(item.locationStart, item.locationEnd),
-                price: formatNumber(item.price.toString()),
-                delayPrice: formatNumber(delayPrice)
+                totalHT = totalHT.add(itemPriceHT);
+
+                let itemPriceTTC = itemPriceHT;
+                if (item.hasTax && tvaRate.gt(0)) {
+                    itemPriceTTC = itemPriceHT.mul(new Decimal(1).add(tvaRate));
+                }
+
+                totalTTC = totalTTC.add(itemPriceTTC);
+
+                const billboard: ContractItemType = {
+                    id: invoice.id as string,
+                    reference: item.billboard?.reference as string,
+                    model: item.billboard?.type.name as string,
+                    dim: `${item.billboard?.width || 0}m x ${item.billboard?.height || 0}m`,
+                    area: `${(item.billboard?.width || 0) * (item.billboard?.height || 0)}m²`,
+                    site: item.billboard?.locality as string,
+                    lighting: item.billboard?.lighting === "Non éclairé" ? 'Non' : 'Oui',
+                    location: `${formatDateToDashModel(item.locationStart)} au ${formatDateToDashModel(item.locationEnd)}`,
+                    delay: getMonthsAndDaysDifference(item.locationStart, item.locationEnd),
+                    price: formatNumber(item.price.toString()),
+                    delayPrice: formatNumber(itemPriceHT)
+                }
+                updatedItems.push(billboard);
             }
-            updatedItems.push(billboard);
         }
     }
 
     Object.assign(formatContract, {
         id: contract.id,
         type: contract.type,
-        totalHT: formatNumber(contract.invoices.reduce((total, n) => new Decimal(total).add(n.totalHT.toString()), new Decimal(0))),
-        totalTTC: formatNumber(contract.invoices.reduce((total, n) => new Decimal(total).add(n.totalTTC.toString()), new Decimal(0))),
+        totalHT: formatNumber(totalHT),
+        totalTTC: formatNumber(totalTTC),
         record: contract.invoices.map(invoice => `${contract.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}`),
         client: {
             id: contract.clientId as string,

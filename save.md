@@ -1,3 +1,4 @@
+- Price.ts
 import Decimal from "decimal.js";
 import {
   CalculateTaxesInput,
@@ -45,8 +46,8 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
   }
 
   const taxResults = new Map<string, TaxResult>();
-  let totalHT = new Decimal(0); // total HT de tous les articles
-  let totalHTWithTaxable = new Decimal(0); // total des articles taxable
+  let totalHT = new Decimal(0);
+  let totalHTWithTax = new Decimal(0);
   let globalDiscountAmount = new Decimal(0);
 
   for (const tax of taxes) {
@@ -58,7 +59,6 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     });
   }
 
-  // Calcul des totaux par article
   for (const item of items) {
     const basePrice = new Decimal(item.price);
     const quantity = new Decimal(Math.max(0.5, item.quantity));
@@ -71,17 +71,15 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     );
 
     const roundedItemTotal = roundToOneDecimal(itemTotalWithDiscount);
-
     totalHT = totalHT.plus(roundedItemTotal);
 
     if (item.hasTax) {
-      totalHTWithTaxable = totalHTWithTaxable.plus(roundedItemTotal);
+      totalHTWithTax = totalHTWithTax.plus(roundedItemTotal);
     }
   }
 
   const SubTotal = roundToOneDecimal(totalHT);
 
-  // Application de la remise globale
   if (discount) {
     const [discountValue, discountType] = discount;
     const decDiscountValue = new Decimal(discountValue);
@@ -91,26 +89,27 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
       globalDiscountAmount = decDiscountValue;
       totalHT = totalHT.minus(globalDiscountAmount);
 
-      if (totalHTWithTaxable.greaterThan(0)) {
-        const proportion = totalHTWithTaxable.div(totalHTBeforeDiscount);
-        totalHTWithTaxable = totalHTWithTaxable.minus(globalDiscountAmount.mul(proportion));
+      if (totalHTBeforeDiscount.greaterThan(0)) {
+        const proportion = totalHTWithTax.div(totalHTBeforeDiscount);
+        totalHTWithTax = totalHTWithTax.minus(globalDiscountAmount.mul(proportion));
       }
     } else {
       globalDiscountAmount = totalHT.mul(decDiscountValue).div(100);
       totalHT = totalHT.minus(globalDiscountAmount);
-      totalHTWithTaxable = totalHTWithTaxable.minus(
-        totalHTWithTaxable.mul(decDiscountValue).div(100)
+      totalHTWithTax = totalHTWithTax.minus(
+        totalHTWithTax.mul(decDiscountValue).div(100)
       );
     }
   }
 
   totalHT = roundToOneDecimal(totalHT);
-  totalHTWithTaxable = roundToOneDecimal(totalHTWithTaxable);
+  totalHTWithTax = roundToOneDecimal(totalHTWithTax);
   globalDiscountAmount = roundToOneDecimal(globalDiscountAmount);
 
   const subTotal = roundToOneDecimal(totalHT);
 
-  // Calcul des taxes uniquement sur les articles taxable
+  const taxableAmount = totalHTWithTax.greaterThan(0) ? totalHTWithTax : totalHT;
+
   for (const tax of taxes) {
     const taxResult = taxResults.get(tax.taxName)!;
     const rate = parseTaxValue(tax.taxValue);
@@ -118,10 +117,10 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
       Array.isArray(tax.cumul) && tax.cumul.some((c) => c.check)
     );
 
-    taxResult.taxPrice = totalHTWithTaxable;
+    taxResult.taxPrice = taxableAmount;
 
     if (!hasCumulChecked) {
-      const taxAmount = totalHTWithTaxable.mul(rate).div(100);
+      const taxAmount = taxableAmount.mul(rate).div(100);
       taxResult.totalTax = roundToOneDecimal(taxAmount);
       taxResult.appliedRates = [rate.toNumber()];
     } else {
@@ -130,7 +129,6 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     }
   }
 
-  // Gestion des taxes cumulées
   for (const tax of taxes) {
     if (!tax.cumul || tax.cumul.length === 0) continue;
 
@@ -153,7 +151,6 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     taxResults.set(tax.taxName, currentTaxResult);
   }
 
-  // Somme totale des taxes
   let totalTaxAmount = new Decimal(0);
   for (const taxResult of taxResults.values()) {
     totalTaxAmount = totalTaxAmount.plus(new Decimal(taxResult.totalTax));
@@ -163,6 +160,7 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
   const totalWithTaxes = roundToOneDecimal(totalHT.plus(totalTaxAmount));
 
   const currentPrice = amountType === "TTC" ? totalWithTaxes : totalHT;
+  const subtotal = totalHT;
 
   return {
     taxes: Array.from(taxResults.values()),
@@ -170,9 +168,9 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
     totalWithTaxes,
     totalWithoutTaxes: totalHT,
     currentPrice,
-    SubTotal,
-    subTotal,
-    subtotal: totalHT,
+    SubTotal, // Total de tous les articles AVANT remise, sans taxe
+    subTotal, // Total APRÈS remise, AVANT taxes
+    subtotal,
     discountAmount: globalDiscountAmount,
   };
 }

@@ -21,12 +21,13 @@ import { KanbanTask } from "@/components/ui/shadcn-io/kanban";
 import { useEffect } from "react";
 
 export type TaskCardProps = {
+  projectId: string;
   task: KanbanTask;
   readAccess: boolean;
   modifyAccess: boolean;
 };
 
-export default function TaskCard({ task, readAccess, modifyAccess }: TaskCardProps) {
+export default function TaskCard({ task, readAccess, modifyAccess, projectId }: TaskCardProps) {
   const retrieveTask = useTaskStore.use.removeTask();
   const setStep = useTaskStore.use.setStep();
 
@@ -64,7 +65,7 @@ export default function TaskCard({ task, readAccess, modifyAccess }: TaskCardPro
     <div>
       <div className="flex justify-end items-center gap-x-1">
         {readAccess &&
-          <TaskModal title="Information" type="info" id={task.id}>
+          <TaskModal title="Information" type="info" id={task.id} projectId="">
             <span
               onClick={handleButtonClick}
               onMouseDown={handleButtonClick}
@@ -77,7 +78,7 @@ export default function TaskCard({ task, readAccess, modifyAccess }: TaskCardPro
 
         {modifyAccess &&
           <>
-            <TaskModal title="Modifier la tâche" type="update" id={task.id}>
+            <TaskModal title="Modifier la tâche" type="update" id={task.id} projectId={projectId}>
               <span
                 onClick={handleButtonClick}
                 onMouseDown={handleButtonClick}

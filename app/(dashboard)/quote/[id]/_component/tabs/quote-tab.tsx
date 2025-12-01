@@ -543,7 +543,7 @@ export default function QuoteTab() {
                   <ItemList key={item.id} item={item} calculate={calculate} taxes={company?.vatRates ?? []} isCompleted={isCompleted} amountType={amountType} disabled={!modifyAccess} />
                 ))}
               </div>
-              {!isCompleted || modifyAccess &&
+              {!isCompleted && modifyAccess &&
                 <FormField
                   control={form.control}
                   name="item"

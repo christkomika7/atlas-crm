@@ -452,12 +452,16 @@ model Billboard {
   representativeEmail     String?
 
   // Detail du contrat
-  rentalStartDate   DateTime?
-  rentalPeriod      String?
-  paymentMode       String?
-  paymentFrequency  String?
-  electricitySupply String?
-  specificCondition String?
+  rentalStartDate    DateTime?
+  delayContractStart DateTime?
+  delayContractEnd   DateTime?
+  locationPrice      String?
+  nonLocationPrice   String?
+  rentalPeriod       String?
+  paymentMode        String?
+  paymentFrequency   String?
+  electricitySupply  String?
+  specificCondition  String?
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -509,9 +513,7 @@ model Invoice {
   dibursements     Dibursement[]
   payments         Payment[]
   recurrences      Recurrence[]
-
-  Contract   Contract? @relation(fields: [contractId], references: [id])
-  contractId String?
+  contracts        Contract[]
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)

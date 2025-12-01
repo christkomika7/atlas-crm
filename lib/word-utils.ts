@@ -1,6 +1,8 @@
 import { ContractItemType } from '@/types/contract-types';
 import { TitleContentType, TitleType } from '@/types/word.types';
-import { Paragraph, TextRun, AlignmentType, BorderStyle, TableCell, TableRow, Table, WidthType, Footer, PageNumber, PageBreak } from 'docx';
+import { Paragraph, TextRun, AlignmentType, BorderStyle, TableCell, TableRow, Table, WidthType, Footer, PageNumber, ImageRun, VerticalAlign } from 'docx';
+import * as fs from "fs";
+import path from 'path';
 
 
 export function createFooter(filename: string) {
@@ -32,7 +34,7 @@ export function createFooter(filename: string) {
                                                 text: filename,
                                                 bold: true,
                                                 size: 20,
-                                                font: "Arial",
+                                                font: "Helvetica",
                                             }),
                                         ],
                                         alignment: AlignmentType.CENTER,
@@ -48,7 +50,7 @@ export function createFooter(filename: string) {
                                             new TextRun({
                                                 children: [PageNumber.CURRENT, " sur ", PageNumber.TOTAL_PAGES],
                                                 size: 20,
-                                                font: "Arial",
+                                                font: "Helvetica",
                                             }),
                                         ],
                                         alignment: AlignmentType.RIGHT,
@@ -90,7 +92,7 @@ export function createTitle({ text, bold = false, size = 10, paddingTop = 200, p
             new TextRun({
                 text,
                 bold,
-                font: "Arial",
+                font: "Helvetica",
                 size: `${size}pt`,
                 ...underline && {
                     underline: {}
@@ -105,8 +107,8 @@ export function createTitleContent({ title, content, paddingBottom = 0, indent =
         spacing: { after: paddingBottom },
         indent: { firstLine: indent },
         children: [
-            new TextRun({ text: `${title} : `, bold: true, font: "Arial" }),
-            new TextRun({ text: content, font: "Arial" }),
+            new TextRun({ text: `${title} : `, bold: true, font: "Helvetica" }),
+            new TextRun({ text: content, font: "Helvetica" }),
         ],
     });
 }
@@ -121,7 +123,7 @@ export function createHeader(country: string, type: "LESSOR" | "CLIENT") {
             text: line,
             bold: true,
             size: 30,
-            font: "Arial",
+            font: "Helvetica",
         }),
         ...(index < title.split("\n").length - 1 ? [new TextRun({ break: 1 })] : [])
     ]);
@@ -161,19 +163,36 @@ export function clientContractOwner(name: string, post: string, paddingBottom: n
     return new Paragraph({
         spacing: { after: paddingBottom },
         children: [new TextRun({
-            font: "Arial",
+            font: "Helvetica",
             text: `Représentée par ${name}, agissant en qualité de ${post}, dûment habilité à cet effet, ci-après
 dénommée le « L’Annonceur ».` })],
+    });
+}
+
+export function lessorContractOwner(name: string, post: string, paddingBottom: number = 0) {
+    return new Paragraph({
+        spacing: { after: paddingBottom },
+        children: [new TextRun({
+            font: "Helvetica",
+            text: `Représentée par ${name}, agissant en qualité de Propriétaire du Batiment, dûment habilité à cet effet, ci-
+après dénommée le « Bailleur ».` })],
     });
 }
 
 export function companyContractOwner(name: string, post: string, paddingBottom: number = 0) {
     return new Paragraph({
         spacing: { after: paddingBottom },
-        children: [new TextRun({
-            font: "Arial",
-            text: `Représentée aux fins des présentes par ${name} agissant en qualité de ${post}.
-Ci-dessous dénommée « La Régie Publicitaire »` })],
+        children: [
+            new TextRun({
+                font: "Helvetica",
+                text: `Représentée aux fins des présentes par ${name} agissant en qualité de ${post}.`,
+            }),
+            new TextRun({ break: 1 }),
+            new TextRun({
+                font: "Helvetica",
+                text: "Ci-dessous dénommée « La Régie Publicitaire »",
+            })
+        ],
     });
 }
 
@@ -183,7 +202,7 @@ export function createText(text: string, paddingBottom: number = 200, indent: nu
         indent: { firstLine: indent },
         children: [
             new TextRun({
-                font: "Arial",
+                font: "Helvetica",
                 text,
             }),
         ],
@@ -200,4 +219,104 @@ export function cell(children: Paragraph[]) {
             right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
         },
     });
+}
+
+export function createImagesTable(imagePaths: string[]): Table[] {
+    const tables: Table[] = [];
+    const imagesPerRow = 3;
+
+    for (let i = 0; i < imagePaths.length; i += imagesPerRow) {
+        const rowImages = imagePaths.slice(i, i + imagesPerRow);
+
+        const cells: TableCell[] = rowImages.map((imagePath) => {
+
+            const fullPath = path.join(process.cwd(), "uploads", imagePath);
+            const extension = path.extname(fullPath).slice(1) || "jpg";
+            const data = fs.readFileSync(fullPath);
+
+            return new TableCell({
+                children: [
+                    new Paragraph({
+                        alignment: "center",
+
+                        children: [
+                            new ImageRun({
+                                data,
+                                type:
+                                    extension === "png" ? "png" :
+                                        extension === "gif" ? "gif" :
+                                            extension === "bmp" ? "bmp" :
+                                                "jpg",
+                                transformation: {
+                                    width: 200,
+                                    height: 200,
+                                },
+                            }),
+                        ],
+                    }),
+                ],
+                width: {
+                    size: 33.33,
+                    type: WidthType.PERCENTAGE,
+                },
+                verticalAlign: VerticalAlign.CENTER,
+                margins: {
+                    top: 100,
+                    bottom: 100,
+                    left: 100,
+                    right: 100,
+                },
+                borders: {
+                    top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                    bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                    left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                    right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                },
+            });
+        });
+
+        while (cells.length < imagesPerRow) {
+            cells.push(
+                new TableCell({
+                    children: [new Paragraph("")],
+                    width: {
+                        size: 33.33,
+                        type: WidthType.PERCENTAGE,
+                    },
+                    borders: {
+                        top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                        bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                        left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                        right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                    },
+                })
+            );
+        }
+
+        tables.push(
+            new Table({
+                rows: [
+                    new TableRow({
+                        children: cells,
+                    }),
+                ],
+                width: {
+                    size: 100,
+                    type: WidthType.PERCENTAGE,
+                },
+                margins: {
+                    top: 200,
+                    bottom: 200,
+                },
+                borders: {
+                    top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                    bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                    left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                    right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                },
+            })
+        );
+    }
+
+    return tables;
 }

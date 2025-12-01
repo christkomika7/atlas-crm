@@ -4,14 +4,13 @@ import { getIdFromUrl } from "@/lib/utils";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    const { hasSession, userId } = await sessionAccess();
+    const result = await checkAccess("BILLBOARDS", "READ");
 
-    if (!hasSession || !userId) {
+    if (!result.authorized) {
         return Response.json({
-            status: "error",
-            message: "Aucune session trouvée",
-            data: []
-        }, { status: 200 });
+            state: "error",
+            message: result.message,
+        }, { status: 403 });
     }
 
     const id = getIdFromUrl(req.url, "last") as string;

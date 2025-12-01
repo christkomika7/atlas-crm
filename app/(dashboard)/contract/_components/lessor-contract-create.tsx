@@ -10,7 +10,7 @@ import { lessorContractSchema, LessorContractSchemaType } from "@/lib/zod/contra
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { BillboardType } from "@/types/billboard.types";
-import { ClientContractType, LessorContractType } from "@/types/contract-types";
+import { DataContractType } from "@/types/contract-types";
 import { BillboardSupplier } from "@/types/supplier.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
@@ -38,7 +38,7 @@ export default function LessorContractCreate({ refreshContract, closeModal }: Le
 
     const { mutate: mutateCreateLessorContract, isPending: isCreatingLessorContract } = useQueryAction<
         LessorContractSchemaType,
-        RequestResponse<ClientContractType | LessorContractType>
+        RequestResponse<DataContractType>
     >(createContract, () => { }, "contract");
 
     const { mutate: mutateGetSuppliers, isPending: isGettingSuppliers } = useQueryAction<

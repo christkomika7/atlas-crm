@@ -24,18 +24,17 @@ import { getCollaborators } from "@/action/user.action";
 import { ProfileType } from "@/types/user.types";
 import { create } from "@/action/task.action";
 import { TaskType } from "@/types/task.type";
-import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import useTaskStore from "@/stores/task.store";
 import { KanbanTask } from "@/components/ui/shadcn-io/kanban";
 
 type AddTaskFormProps = {
   closeModal: Dispatch<SetStateAction<boolean>>;
+  projectId: string;
 };
 
-export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
+export default function AddTaskForm({ closeModal, projectId }: AddTaskFormProps) {
   const id = useDataStore.use.currentCompany();
-  const param = useParams();
   const addTask = useTaskStore.use.addTask();
 
   const form = useForm<TaskSchemaType>({
@@ -60,10 +59,10 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
   );
 
   useEffect(() => {
-    if (param.id) {
-      form.setValue("projectId", param.id as string)
+    if (projectId) {
+      form.setValue("projectId", projectId as string)
     }
-  }, [param.id, form]);
+  }, [projectId, form]);
 
   useEffect(() => {
     if (id) {
@@ -79,9 +78,9 @@ export default function AddTaskForm({ closeModal }: AddTaskFormProps) {
   async function submit(taskData: TaskSchemaType) {
     const { success, data } = taskSchema.safeParse(taskData);
     if (!success) return;
-    if (!param.id) return toast.error("Aucun projet trouvé.");
+    if (!projectId) return toast.error("Aucun projet trouvé.");
     mutate(
-      { ...data, projectId: param.id as string },
+      { ...data, projectId: projectId as string },
       {
         onSuccess(data) {
           if (data.data) {

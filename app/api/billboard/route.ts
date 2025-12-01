@@ -54,10 +54,11 @@ export async function POST(req: NextRequest) {
     const lessorFields = [
         "lessorSpaceType", "lessorType", "lessorCustomer", "lessorName", "lessorAddress", "lessorCity", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "rib", "iban", "bicSwift", "bankName",
         "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition",
-        "niu", "legalForms"
+        "niu", "legalForms", "locationPrice", "nonLocationPrice", "delayContract"
     ];
 
     const rentalStartDate = rawData["rentalStartDate"];
+    const delayContract = rawData["delayContract"];
 
     const billboardData: Record<string, any> = {};
     const lessorData: Record<string, any> = {};
@@ -71,9 +72,11 @@ export async function POST(req: NextRequest) {
     }
 
     lessorData.rentalStartDate = rentalStartDate ? new Date(rentalStartDate) : undefined;
+    lessorData.delayContract = delayContract ? JSON.parse(lessorData.delayContract) : undefined;
 
     billboardData.photos = filesMap["photos"] ?? [];
     billboardData.brochures = filesMap["brochures"] ?? [];
+
 
     const dataToValidate = {
         billboard: {
@@ -87,6 +90,10 @@ export async function POST(req: NextRequest) {
         },
         lessor: {
             ...lessorData,
+            delayContract: lessorData.delayContract?.from && lessorData.delayContract?.to ? {
+                from: new Date(lessorData.delayContract.from),
+                to: new Date(lessorData.delayContract.to)
+            } : undefined,
             capital: new Decimal(lessorData.capital || 0),
             paymentMode: lessorData.paymentMode ? JSON.parse(lessorData.paymentMode) : []
 
@@ -180,6 +187,8 @@ export async function POST(req: NextRequest) {
 
                     lessorSpaceType: data.lessor.lessorSpaceType,
                     lessorType: { connect: { id: data.lessor.lessorType } },
+                    locationPrice: data.lessor.locationPrice,
+                    nonLocationPrice: data.lessor.nonLocationPrice,
 
                     lessorName: data.lessor.lessorName,
                     lessorAddress: data.lessor.lessorAddress,
@@ -263,11 +272,15 @@ export async function POST(req: NextRequest) {
 
                     lessorType: { connect: { id: data.lessor.lessorType } },
                     lessorSpaceType: data.lessor.lessorSpaceType,
+                    locationPrice: data.lessor.locationPrice,
+                    nonLocationPrice: data.lessor.nonLocationPrice,
                     lessorSupplier: {
                         connect: {
                             id: data.lessor.lessorCustomer as string
                         }
                     },
+                    delayContractStart: data.lessor.delayContract?.from,
+                    delayContractEnd: data.lessor.delayContract?.to,
                     company: { connect: { id: data.billboard.companyId } },
                 },
             });

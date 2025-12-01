@@ -83,6 +83,10 @@ export type BillboardType = {
     representativeEmail?: string;
 
 
+    delayContractStart?: Date;
+    delayContractEnd?: Date;
+    locationPrice?: string;
+    nonLocationPrice?: string;
     rentalStartDate?: Date;
     rentalPeriod?: string;
     paymentMode?: string;

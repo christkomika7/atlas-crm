@@ -108,6 +108,8 @@ export default function EditForm() {
         lessor: {
           lessorType: billboard.lessorTypeId,
           lessorSpaceType: billboard.lessorSpaceType,
+          locationPrice: billboard.locationPrice,
+          nonLocationPrice: billboard.nonLocationPrice,
           ...(billboard.lessorSpaceType === 'private' ? {
             lessorName: billboard.lessorName,
             lessorAddress: billboard.lessorAddress,
@@ -138,13 +140,22 @@ export default function EditForm() {
             electricitySupply: billboard.electricitySupply,
             specificCondition: billboard.specificCondition,
           } : {
-            lessorCustomer: billboard.lessorSupplierId
+            lessorCustomer: billboard.lessorSupplierId,
+            delayContract: billboard.delayContractStart && billboard.delayContractEnd ? {
+              from: new Date(billboard.delayContractStart),
+              to: new Date(billboard.delayContractEnd)
+            } : undefined
+
           })
 
         },
       });
     }
   }, [data, form]);
+
+  useEffect(() => {
+    form.watch(() => console.log({ errors: form.formState.errors }))
+  }, [form.watch])
 
   const handleReset = () => {
     if (fileInputRef.current) {
@@ -200,6 +211,8 @@ export default function EditForm() {
           lessor: {
             lessorType: validateData.data.lessor.lessorType,
             lessorSpaceType: validateData.data.lessor.lessorSpaceType,
+            locationPrice: validateData.data.lessor.locationPrice,
+            nonLocationPrice: validateData.data.lessor.nonLocationPrice,
             ...(validateData.data.lessor.lessorSpaceType === "private" ? {
               lessorName: validateData.data.lessor.lessorName,
               lessorAddress: validateData.data.lessor.lessorAddress,
@@ -231,7 +244,8 @@ export default function EditForm() {
               specificCondition: validateData.data.lessor.specificCondition,
 
             } : {
-              lessorCustomer: validateData.data.lessor.lessorCustomer
+              lessorCustomer: validateData.data.lessor.lessorCustomer,
+              delayContract: validateData.data.lessor.delayContract
             })
           },
         },

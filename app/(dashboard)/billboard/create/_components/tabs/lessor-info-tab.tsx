@@ -52,7 +52,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
   const {
     mutate: mutateCity,
     isPending: isPendingCity,
-    data: dataCities,
   } = useQueryAction<{ companyId: string }, RequestResponse<CityType[]>>(
     allCities,
     () => { },
@@ -140,7 +139,7 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
                   <FormControl>
                     <Combobox
                       datas={lessorSpaceType}
-                      value={currentSpaceType ?? ""}
+                      value={currentSpaceType as string}
                       setValue={e => {
                         setCurrentSpaceType(e as "private" | "public");
                         field.onChange(String(e));
@@ -167,7 +166,7 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
                         label: lessorType.name,
                         value: lessorType.id,
                       }))}
-                      value={field.value}
+                      value={field.value as string}
                       setValue={(e) => {
                         field.onChange(String(e));
                       }}
@@ -181,31 +180,99 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="lessor.locationPrice"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      type="number"
+                      design="float"
+                      label="Prix du panneau loué"
+                      value={field.value as string}
+                      handleChange={e => field.onChange(String(e))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="lessor.nonLocationPrice"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <TextInput
+                      type="number"
+                      required={currentSpaceType === "public"}
+                      design="float"
+                      label="Prix du panneau non loué"
+                      value={field.value as string}
+                      handleChange={e => field.onChange(String(e))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             {currentSpaceType === "public" &&
-              <FormField
-                control={form.control}
-                name="lessor.lessorCustomer"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <Combobox
-                        isLoading={isGettingSuppliers}
-                        datas={suppliers.map(supplier => ({
-                          id: supplier.id,
-                          label: `${supplier.companyName} - ${supplier.firstname} ${supplier.lastname}`,
-                          value: supplier.id
-                        }))}
-                        value={field.value as string}
-                        setValue={e => field.onChange(String(e))}
-                        placeholder="Bailleur"
-                        searchMessage="Rechercher un bailleur"
-                        noResultsMessage="Aucun bailleur trouvé."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />}
+              <>
+                <FormField
+                  control={form.control}
+                  name="lessor.lessorCustomer"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <Combobox
+                          isLoading={isGettingSuppliers}
+                          datas={suppliers.map(supplier => ({
+                            id: supplier.id,
+                            label: `${supplier.companyName} - ${supplier.firstname} ${supplier.lastname}`,
+                            value: supplier.id
+                          }))}
+                          value={field.value as string}
+                          setValue={e => field.onChange(String(e))}
+                          placeholder="Bailleur"
+                          searchMessage="Rechercher un bailleur"
+                          noResultsMessage="Aucun bailleur trouvé."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lessor.delayContract"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <DatePicker
+                          label="Durée du contrat"
+                          mode="range"
+                          value={
+                            field.value?.from && field.value.to
+                              ? {
+                                from: new Date(field.value.from),
+                                to: new Date(field.value.to),
+                              }
+                              : undefined
+                          }
+                          onChange={(e) => {
+                            const range = e as { from: Date; to: Date };
+                            field.onChange({ from: range.from, to: range.to });
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+
+            }
             {currentSpaceType === "private" &&
               <>
                 <FormField

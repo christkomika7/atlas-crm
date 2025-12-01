@@ -121,7 +121,12 @@ export const lessorSchemaBase = z.object({
     representativePhone: z.string().optional(),
     representativeEmail: z.string().optional(),
 
-
+    locationPrice: z.string({ error: "Le prix du loyer lorsque le panneau est loué est obligatoire." }),
+    nonLocationPrice: z.string({ error: "Le prix du loyer lorsque le panneau n'est pas loué est obligatoire." }),
+    delayContract: z.object({
+        from: z.date(),
+        to: z.date(),
+    }).optional(),
     rentalStartDate: z.date().optional(),
     rentalPeriod: z.string().optional(),
     paymentMode: z.array(z.string()).optional(),
@@ -238,7 +243,10 @@ export const lessorSchema = lessorSchemaBase
     ).refine(
         (data) => data.lessorSpaceType !== "public" || !!data.lessorCustomer,
         { message: "Le bailleur est requis pour un espace public.", path: ["lessorCustomer"] }
-    );
+    ).refine(
+        (data) => data.lessorSpaceType !== "public" || !!data.delayContract,
+        { message: "Le durée du contrat est obligatoire.", path: ["delayContract"] }
+    )
 
 
 export const billboardFormSchema = z.object({
@@ -387,11 +395,14 @@ export const lessorError = {
     lessorName: "Nom du bailleur",
     lessorAddress: "Adresse du bailleur",
     lessorCity: "Ville du bailleur",
+    delayContract: "Durée du contrat",
     lessorPhone: "Numéro de téléphone du bailleur",
     lessorEmail: "Adresse mail du bailleur",
     capital: "Capital du bailleur",
     rccm: "Registre du commerce (RCCM)",
     taxIdentificationNumber: "Numéro d'identification fiscale",
+    locationPrice: "Prix du panneau loué",
+    nonLocationPrice: "Prix du panneau non loué",
     niu: "NIU",
     legalForms: "Statut juridique",
     rib: "RIB",

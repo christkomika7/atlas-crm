@@ -1,4 +1,5 @@
-import React from "react";
+'use client';
+
 import Header from "@/components/header/header";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import PurchaseOrderForm from "./_component/purchase-order-form";

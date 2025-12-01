@@ -90,6 +90,7 @@ export async function GET(req: NextRequest) {
     _sum: { payee: true },
     where: {
       companyId,
+      amountType: "TTC",
     },
   });
 
@@ -97,6 +98,7 @@ export async function GET(req: NextRequest) {
     _sum: { payee: true },
     where: {
       companyId,
+      amountType: "TTC",
     },
   });
 

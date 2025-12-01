@@ -15,6 +15,10 @@ import { toast } from "sonner";
 
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import Spinner from "@/components/ui/spinner";
+import ModalContainer from "@/components/modal/modal-container";
+import { useState } from "react";
+import ClientContractEdit from "./client-contract-edit";
+import LessorContractEdit from "./lessor-contract-edit";
 
 type TableActionButtonProps = {
   id: string;
@@ -33,7 +37,7 @@ export default function TableActionButton({
   refreshContract,
   contract
 }: TableActionButtonProps) {
-
+  const [open, setOpen] = useState(false);
   const { access: createAccess } = useAccess("CONTRACT", "CREATE");
   const { access: modifyAccess } = useAccess("CONTRACT", "MODIFY");
 
@@ -61,7 +65,7 @@ export default function TableActionButton({
     RequestResponse<null>
   >(removeContract, () => { }, "contracts");
 
-  function convertToWord(id: string, action: "duplicate" | "convert") {
+  function convertToWord(id: string, action: "duplicate" | "convert" | "update") {
     id
     switch (action) {
       case "convert":
@@ -122,7 +126,7 @@ export default function TableActionButton({
                   !createAccess)
               )
                 return null;
-              if (menu.action === "delete" && !modifyAccess) return null;
+              if (["update", "delete"].includes(menu.action as string) && !modifyAccess) return null;
 
               switch (menu.action) {
                 case "delete":
@@ -135,6 +139,35 @@ export default function TableActionButton({
                       action={handleDelete}
                       loading={isPending}
                     />
+                  );
+                case "update":
+                  return (
+                    <ModalContainer
+                      key={menu.id}
+                      size="sm"
+                      action={<button
+                        className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
+                      >
+                        <menu.icon className="w-4 h-4" />
+                        {menu.title}
+                      </button>}
+                      title={`Modifier le contrat du ${contract === "CLIENT" ? "client" : "bailleur"}`}
+                      open={open}
+                      setOpen={(state) => setOpen(state)}
+                    >
+                      {contract === "CLIENT" ?
+                        <ClientContractEdit
+                          id={id}
+                          refreshContract={refreshContract}
+                          closeModal={() => setOpen(false)}
+                        /> :
+                        <LessorContractEdit
+                          id={id}
+                          refreshContract={refreshContract}
+                          closeModal={() => setOpen(false)}
+                        />
+                      }
+                    </ModalContainer>
                   );
                 default:
                   return (

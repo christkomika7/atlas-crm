@@ -1,12 +1,11 @@
 import { checkAccess } from "@/lib/access";
-import { durationInMonths, formatDateToDashModel, getEndDate, getMonthsAndDaysDifference } from "@/lib/date";
+import { getEndDate } from "@/lib/date";
 import { getCountryFrenchName } from "@/lib/helper";
 import { formatNumber, generateAmaId, getIdFromUrl } from "@/lib/utils";
-import { ContractItemType, ContractType } from "@/types/contract-types";
+import { ContractLessorType } from "@/types/contract-types";
 import { NextRequest, NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
-import Decimal from "decimal.js";
 import { generateLessorContractDocument } from "@/lib/word";
 import { RentalPeriodType } from "@/types/data.type";
 
@@ -42,8 +41,6 @@ export async function GET(req: NextRequest) {
         }
     });
 
-    console.log({ contract })
-
     if (!contract) {
         return NextResponse.json({
             state: "error",
@@ -55,22 +52,14 @@ export async function GET(req: NextRequest) {
         filename: `Contrat AG-LOC-${generateAmaId(contract.contractNumber, false)}`
     };
 
-    const updatedItems: ContractItemType[] = [];
-
-    const startDate = contract.billboard?.rentalStartDate || new Date();
-    const endDate = getEndDate(contract.billboard?.rentalStartDate || new Date(), contract.billboard?.rentalPeriod as RentalPeriodType);
-    const price = new Decimal(contract.billboard?.rentalPrice.toString() || 0);
-    const vat = contract.company.vatRates;
 
     const type = contract.lessorType;
 
     Object.assign(formatContract, {
         id: contract.id,
         type: contract.type,
-        totalHT: formatNumber(price),
-        totalTTC: formatNumber(price),
         record: [],
-        client: {
+        lessor: {
             id: `${type === 'supplier' ? contract.lessorId : contract.billboardId}`,
             company: `${type === 'supplier' ? contract.lessor?.companyName : contract.billboard?.lessorName}`,
             legalForm: `${type === 'supplier' ? contract.lessor?.legalForms : contract.billboard?.legalForms}`,
@@ -82,6 +71,13 @@ export async function GET(req: NextRequest) {
             representativeJob: `${type === 'supplier' ? contract.lessor?.job : contract.billboard?.representativeJob}`,
             email: `${type === 'supplier' ? contract.lessor?.email : contract.billboard?.representativeEmail}`,
             phone: `${type === 'supplier' ? contract.lessor?.phone : contract.billboard?.representativePhone}`,
+            country: getCountryFrenchName(contract.company.country),
+            startLocation: type === "supplier" ? (new Date(contract.billboard?.delayContractStart || new Date())) : new Date(contract.billboard?.rentalStartDate || new Date()),
+            endLocation: type === "supplier" ? (new Date(contract.billboard?.delayContractEnd || new Date())) : (getEndDate(contract.billboard?.rentalStartDate || new Date(), contract.billboard?.rentalPeriod as RentalPeriodType)),
+            images: contract.billboard?.photos || [],
+            gmaps: `${contract.billboard?.gmaps}`,
+            locationPrice: `${formatNumber(contract.billboard?.locationPrice || 0)} ${contract.company.currency}`,
+            nonlocationPrice: `${formatNumber(contract.billboard?.nonLocationPrice || 0)} ${contract.company.currency}`,
 
         },
         company: {
@@ -99,26 +95,10 @@ export async function GET(req: NextRequest) {
             phone: contract.company.phoneNumber,
             country: getCountryFrenchName(contract.company.country)
         },
-        items: [{
-            id: contract.billboardId as string,
-            reference: contract.billboard?.reference as string,
-            model: contract.billboard?.type.name as string,
-            dim: `${contract.billboard?.width}m x ${contract.billboard?.height}m`,
-            area: `${(contract.billboard?.width || 0) * (contract.billboard?.height || 0)}m²`,
-            site: contract.billboard?.locality as string,
-            lighting: contract.billboard?.lighting === "Non éclairé" ? 'Non' : 'Oui',
-            location: `${formatDateToDashModel(startDate)} au ${formatDateToDashModel(endDate)}`,
-            delay: getMonthsAndDaysDifference(startDate, endDate),
-            price: formatNumber(price),
-            delayPrice: formatNumber(price.mul(Math.ceil(durationInMonths(startDate, endDate)))),
-            images: contract.billboard?.photos
-        }],
         createdAt: contract.createdAt,
     })
 
-    const lessorContract = formatContract as ContractType;
-
-    console.log("LESSOR CONTRACT");
+    const lessorContract = formatContract as ContractLessorType;
 
     const buffer = await generateLessorContractDocument(lessorContract);
 

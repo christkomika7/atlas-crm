@@ -2,7 +2,7 @@ import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { $Enums } from "@/lib/generated/prisma";
 import { ClientContractSchemaType, LessorContractSchemaType } from "@/lib/zod/contract.schema";
 import { RequestResponse } from "@/types/api.types";
-import { ClientContractType, ContractType, LessorContractType } from "@/types/contract-types";
+import { ContractType, DataContractType } from "@/types/contract-types";
 
 export async function getAllContracts({
     companyId,
@@ -15,7 +15,7 @@ export async function getAllContracts({
     skip?: number;
     take?: number;
 }): Promise<
-    RequestResponse<ClientContractType[] | LessorContractType[]> & { total?: number }
+    RequestResponse<DataContractType[]> & { total?: number }
 > {
     const params = new URLSearchParams();
     params.append("type", filter);
@@ -72,19 +72,12 @@ export async function createContract(data: ClientContractSchemaType | LessorCont
             body: JSON.stringify(data),
         });
 
-        if (data.type === "CLIENT") {
-            const res: RequestResponse<ClientContractType> = await response.json();
-            if (!response.ok) {
-                throw new Error(res.message || "Erreur lors de la création du contrat");
-            }
-            return res;
-        }
-        const res: RequestResponse<LessorContractType> = await response.json();
+        const res: RequestResponse<DataContractType> = await response.json();
         if (!response.ok) {
             throw new Error(res.message || "Erreur lors de la création du contrat");
         }
-
         return res;
+
     } catch (error) {
         console.error("Erreur dans la fonction create:", error);
         throw error;
@@ -102,19 +95,12 @@ export async function updateContract(data: ClientContractSchemaType | LessorCont
             body: JSON.stringify(data),
         });
 
-        if (data.type === "CLIENT") {
-            const res: RequestResponse<ClientContractType> = await response.json();
-            if (!response.ok) {
-                throw new Error(res.message || "Erreur lors de la modification du contrat");
-            }
-            return res;
-        }
-        const res: RequestResponse<LessorContractType> = await response.json();
+        const res: RequestResponse<DataContractType> = await response.json();
         if (!response.ok) {
             throw new Error(res.message || "Erreur lors de la modification du contrat");
         }
-
         return res;
+
     } catch (error) {
         console.error("Erreur dans la fonction update:", error);
         throw error;

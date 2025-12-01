@@ -5,26 +5,21 @@ import { InvoiceType } from "./invoice.types";
 import { SupplierType } from "./supplier.types";
 import { BillboardType } from "./billboard.types";
 
-export type ClientContractType = {
+export type DataContractType = {
     id: string;
     type: $Enums.ContractType;
     company: CompanyType;
     clientId: string;
     client: ClientType;
-    invoices: InvoiceType[];
-    createdAt: Date;
-}
-
-export type LessorContractType = {
-    id: string;
-    type: $Enums.ContractType;
-    company: CompanyType;
     lessorId: string;
     lessor?: SupplierType;
+    invoices?: InvoiceType[];
     billboardId: string;
     billboard: BillboardType;
     createdAt: Date;
 }
+
+
 
 export type ContractItemType = {
     id: string;
@@ -82,5 +77,35 @@ export type ContractType = {
     client: ContractClientType,
     company: ContractCompanyType,
     items: ContractItemType[],
+    createdAt: Date,
+}
+
+export type LessorInfoType = {
+    id: string;
+    company: string;
+    legalForm: string;
+    capital: string;
+    rccm: string;
+    nif: string;
+    address: string;
+    representativeName: string;
+    representativeJob: string | null | undefined;
+    phone: string;
+    email: string;
+    startLocation: Date;
+    endLocation: Date;
+    images: string[];
+    gmaps: string;
+    locationPrice: string;
+    nonlocationPrice: string;
+}
+
+export type ContractLessorType = {
+    id: string,
+    filename: string;
+    type: $Enums.ContractType,
+    record: string[],
+    company: ContractCompanyType,
+    lessor: LessorInfoType,
     createdAt: Date,
 }

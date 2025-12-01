@@ -11,7 +11,7 @@ import { clientContractSchema, ClientContractSchemaType } from "@/lib/zod/contra
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { ClientType } from "@/types/client.types";
-import { ClientContractType, ContractType, LessorContractType } from "@/types/contract-types";
+import { ContractType, DataContractType } from "@/types/contract-types";
 import { InvoiceType } from "@/types/invoice.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
@@ -42,7 +42,7 @@ export default function ClientContractEdit({ id, refreshContract, closeModal }: 
 
     const { mutate: mutateUpdateClientContract, isPending: isUpdatingClientContract } = useQueryAction<
         ClientContractSchemaType,
-        RequestResponse<ClientContractType | LessorContractType>
+        RequestResponse<DataContractType>
     >(updateContract, () => { }, "contract");
 
 

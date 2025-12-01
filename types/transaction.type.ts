@@ -109,11 +109,11 @@ export type GetTransactionsParams = {
   // Filtres
   startDate?: string | null;
   endDate?: string | null;
-  movementValue?: string | null;
-  categoryValue?: string | null;
-  natureValue?: string | null;
-  paymentModeValue?: string | null;
-  sourceValue?: string | null;
+  movementValue?: string[] | null;
+  categoryValue?: string[] | null;
+  natureValue?: string[] | null;
+  paymentModeValue?: string[] | null;
+  sourceValue?: string[] | null;
   paidForValue?: string | null;
 
   // Tri (un seul actif à la fois)

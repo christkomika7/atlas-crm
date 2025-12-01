@@ -93,7 +93,7 @@ export default function TextInput({
               }
               min={min}
               max={max}
-              onValueChange={(val) => handleChange(val ?? 0)}
+              onValueChange={(val) => handleChange(val || 0)}
               placeholder={placeholder}
               disabled={disabled}
               className={cn(
@@ -162,7 +162,7 @@ export default function TextInput({
               value={
                 typeof value === "number" ? value : Number(value || 0)
               }
-              onValueChange={(val) => handleChange(val ?? 0)}
+              onValueChange={(val) => handleChange(val || 0)}
               placeholder=" "
               min={min}
               max={max}

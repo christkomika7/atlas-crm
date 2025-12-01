@@ -385,7 +385,7 @@ export default function CreateCompanyForm() {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <DatePicker
-                      label="Durées de l'exercice fiscal"
+                      label="Durée de l'exercice fiscal"
                       mode="range"
                       value={
                         field.value?.from && field.value.to

@@ -8,11 +8,14 @@ export async function GET(req: NextRequest) {
   const result = await checkAccess("TRANSACTION", ["READ"]);
 
   if (!result.authorized) {
-    return Response.json({
-      status: "error",
-      message: result.message,
-      data: []
-    }, { status: 200 });
+    return NextResponse.json(
+      {
+        status: "error",
+        message: result.message,
+        data: []
+      },
+      { status: 200 }
+    );
   }
 
   try {
@@ -31,11 +34,14 @@ export async function GET(req: NextRequest) {
 
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
-    const movementValue = searchParams.get("movementValue");
-    const categoryValue = searchParams.get("categoryValue");
-    const sourceValue = searchParams.get("sourceValue");
+
+    // Pour les filtres multiples, on récupère les valeurs séparées par une virgule
+    const movementValues = searchParams.get("movementValue")?.split(",") || [];
+    const categoryValues = searchParams.get("categoryValue")?.split(",") || [];
+    const sourceValues = searchParams.get("sourceValue")?.split(",") || [];
+    const natureValues = searchParams.get("natureValue")?.split(",") || [];
     const paidForValue = searchParams.get("paidForValue");
-    const paymentModeValue = searchParams.get("paymentModeValue");
+    const paymentModeValues = searchParams.get("paymentModeValue")?.split(",") || [];
 
     const sortKeys = [
       "byDate",
@@ -53,7 +59,6 @@ export async function GET(req: NextRequest) {
     const activeSort = sortKeys.find((key) => searchParams.has(key));
     const sortOrder = activeSort ? (searchParams.get(activeSort) as "asc" | "desc") : "desc";
 
-    const baseWhere: any = { companyId };
     const parseIso = (s?: string | null) => {
       if (!s) return null;
       const d = new Date(s);
@@ -62,15 +67,18 @@ export async function GET(req: NextRequest) {
     const parsedStart = parseIso(startDate);
     const parsedEnd = parseIso(endDate);
 
+    const baseWhere: any = { companyId };
     if (parsedStart || parsedEnd) {
       baseWhere.date = {};
       if (parsedStart) baseWhere.date.gte = parsedStart;
       if (parsedEnd) baseWhere.date.lte = parsedEnd;
     }
-    if (movementValue) baseWhere.movement = movementValue;
-    if (categoryValue) baseWhere.categoryId = categoryValue;
-    if (sourceValue) baseWhere.sourceId = sourceValue;
-    if (paymentModeValue) baseWhere.paymentType = paymentModeValue;
+
+    if (movementValues.length) baseWhere.movement = { in: movementValues };
+    if (categoryValues.length) baseWhere.categoryId = { in: categoryValues };
+    if (sourceValues.length) baseWhere.sourceId = { in: sourceValues };
+    if (natureValues.length) baseWhere.natureId = { in: natureValues };
+    if (paymentModeValues.length) baseWhere.paymentType = { in: paymentModeValues };
 
     const disbursementWhere = { ...baseWhere };
     if (paidForValue) disbursementWhere.payOnBehalfOfId = paidForValue;
@@ -122,8 +130,6 @@ export async function GET(req: NextRequest) {
       },
     });
 
-
-
     const normalizedReceipts = allReceipts.map((receipt) => ({
       ...receipt,
       allocation: null,
@@ -165,8 +171,7 @@ export async function GET(req: NextRequest) {
 
     let allTransactions = [...normalizedReceipts, ...normalizedDisbursements];
 
-    // Tri côté application — si un tri est demandé, on l'applique,
-    // sinon on garde le tri par défaut (createdAt desc) qui est déjà celui de la DB.
+    // Tri côté application
     allTransactions.sort((a, b) => {
       if (activeSort === "byAmount") {
         const aAmount = parseFloat(a.amount?.toString() || "0");
@@ -175,7 +180,6 @@ export async function GET(req: NextRequest) {
       }
 
       if (activeSort === "byDate") {
-        // on trie par createdAt si on veut trier par date
         const aDate = new Date(a.createdAt).getTime();
         const bDate = new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
@@ -221,7 +225,6 @@ export async function GET(req: NextRequest) {
         return sortOrder === "asc" ? aPaid.localeCompare(bPaid) : bPaid.localeCompare(aPaid);
       }
 
-      // Pas de tri demandé explicitement: garder l'ordre par défaut (createdAt desc)
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 

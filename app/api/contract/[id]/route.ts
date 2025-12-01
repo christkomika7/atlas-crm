@@ -67,6 +67,16 @@ export async function GET(req: NextRequest) {
       include: {
         client: true,
         lessor: true,
+        invoices: {
+          include: {
+            project: true
+          }
+        },
+        company: {
+          include: {
+            documentModel: true
+          }
+        },
         billboard: {
           include: {
             lessorSupplier: true,
@@ -100,7 +110,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const result = await checkAccess("CONTRACT", "CREATE");
-
   if (!result.authorized) {
     return Response.json({
       status: "error",
@@ -109,9 +118,7 @@ export async function POST(req: NextRequest) {
     }, { status: 200 });
   }
 
-
   const id = getIdFromUrl(req.url, "last") as string;
-
   const companyExist = await prisma.company.findUnique({ where: { id } });
 
   if (!companyExist) {
@@ -122,7 +129,6 @@ export async function POST(req: NextRequest) {
   }
 
   const jsonData = await req.json();
-
   const type = jsonData.type as $Enums.ContractType;
 
   if (!type) {
@@ -136,7 +142,7 @@ export async function POST(req: NextRequest) {
     case "CLIENT":
       const data = parseData<ClientContractSchemaType>(clientContractSchema, {
         ...jsonData,
-      }) as ClientContractSchemaType
+      }) as ClientContractSchemaType;
 
       try {
         const createdContract = await prisma.contract.create({
@@ -163,8 +169,8 @@ export async function POST(req: NextRequest) {
           message: "Contrat ajouté avec succès.",
           data: createdContract,
         });
-
-      } catch {
+      } catch (error) {
+        console.error("Erreur création contrat:", error);
         return NextResponse.json({
           status: "error",
           message: "Erreur lors de la création du contrat.",
@@ -174,7 +180,7 @@ export async function POST(req: NextRequest) {
     case "LESSOR":
       const lessorData = parseData<LessorContractSchemaType>(lessorContractSchema, {
         ...jsonData,
-      }) as LessorContractSchemaType
+      }) as LessorContractSchemaType;
 
       try {
         const createdContract = await prisma.contract.create({
@@ -206,8 +212,8 @@ export async function POST(req: NextRequest) {
           message: "Contrat ajouté avec succès.",
           data: createdContract,
         });
-
-      } catch {
+      } catch (error) {
+        console.error("Erreur création contrat:", error);
         return NextResponse.json({
           status: "error",
           message: "Erreur lors de la création du contrat.",

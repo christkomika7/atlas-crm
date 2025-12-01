@@ -124,7 +124,6 @@ export default function ProjectModal({ clientId }: ProjectModalProps) {
       { ...data },
       {
         onSuccess(data) {
-          console.log("Hello")
           if (data.data) {
             addProject(data.data);
           }

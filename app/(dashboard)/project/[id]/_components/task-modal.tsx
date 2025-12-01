@@ -18,12 +18,14 @@ type TaskModalProps = {
   title: string;
   type: "create" | "update" | "info";
   id?: string;
+  projectId: string;
 };
 export default function TaskModal({
   children,
   title,
   type,
   id,
+  projectId
 }: TaskModalProps) {
   const [open, setOpen] = useState(false);
   return (
@@ -34,9 +36,9 @@ export default function TaskModal({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription></DialogDescription>
         </DialogHeader>
-        {type === "create" && <AddTaskForm closeModal={setOpen} />}
+        {type === "create" && <AddTaskForm closeModal={setOpen} projectId={projectId} />}
         {type === "update" && id && (
-          <EditTaskForm closeModal={setOpen} id={id as string} />
+          <EditTaskForm closeModal={setOpen} id={id as string} projectId={projectId} />
         )}
         {type === "info" && id && (
           <TaskInfo closeModal={setOpen} id={id as string} />
