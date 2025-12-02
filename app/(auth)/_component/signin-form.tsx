@@ -45,11 +45,7 @@ export default function SigninForm() {
           },
           onError: (error) => {
             const status = (error as any)?.status;
-            if (status === 401) {
-              toast.error("Identifiant ou mot de passe incorrect.");
-            } else {
-              toast.error("Une erreur est survenue, veuillez réessayer.");
-            }
+            toast.error("Adresse e-mail ou mot de passe incorrect(e).");
             setIsLoading(false);
           },
         },

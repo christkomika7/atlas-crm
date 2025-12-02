@@ -6,7 +6,8 @@ import { userEditSchema, UserEditSchemaType, userSchema, UserSchemaType } from "
 import { parseData } from "@/lib/parse";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { hashPassword, verifyPassword } from "better-auth/crypto"
+import { $Enums } from "@/lib/generated/prisma";
 
 export async function GET(req: NextRequest) {
     const { hasSession, userId } = await sessionAccess();
@@ -53,7 +54,6 @@ export async function POST(req: NextRequest) {
         }
     });
 
-
     const data = parseData<UserSchemaType>(userSchema, {
         ...rawData,
         appointment: JSON.parse(rawData.appointment),
@@ -71,7 +71,6 @@ export async function POST(req: NextRequest) {
         setting: JSON.parse(rawData.setting),
         suppliers: JSON.parse(rawData.suppliers),
         transaction: JSON.parse(rawData.transaction),
-
     }) as UserSchemaType;
 
     const createUserFolder = () =>
@@ -81,7 +80,11 @@ export async function POST(req: NextRequest) {
         return image ? await createFile(image, folder) : "";
     };
 
-    const createProfileWithPermissions = async (userId: string, folder: string, savedImage: string) => {
+    const createProfileWithPermissions = async (
+        userId: string,
+        folder: string,
+        savedImage: string
+    ) => {
         return prisma.profile.create({
             data: {
                 role: "USER",
@@ -106,18 +109,12 @@ export async function POST(req: NextRequest) {
     if (data.userId) {
         try {
             const alreadyLinked = await prisma.profile.findFirst({
-                where: {
-                    companyId,
-                    userId: data.userId,
-                },
+                where: { companyId, userId: data.userId },
             });
 
             if (alreadyLinked) {
                 return NextResponse.json(
-                    {
-                        state: "error",
-                        message: "Cet adresse mail est déjà pris",
-                    },
+                    { state: "error", message: "Cet adresse mail est déjà pris" },
                     { status: 400 }
                 );
             }
@@ -129,10 +126,7 @@ export async function POST(req: NextRequest) {
 
             if (!user) {
                 return NextResponse.json(
-                    {
-                        state: "error",
-                        message: "Aucun utilisateur trouvé.",
-                    },
+                    { state: "error", message: "Aucun utilisateur trouvé." },
                     { status: 400 }
                 );
             }
@@ -140,7 +134,11 @@ export async function POST(req: NextRequest) {
             const folder = createUserFolder();
             const savedImage = await saveImageIfAny(folder);
 
-            const profile = await createProfileWithPermissions(user.id, folder, savedImage);
+            const profile = await createProfileWithPermissions(
+                user.id,
+                folder,
+                savedImage
+            );
 
             if (!user.currentCompany || !user.currentProfile) {
                 await prisma.user.update({
@@ -167,14 +165,77 @@ export async function POST(req: NextRequest) {
         } catch (e) {
             return NextResponse.json(
                 {
-                    message: "Une erreur est survenue lors de la création du collaborateur.",
+                    message:
+                        "Une erreur est survenue lors de la création du collaborateur.",
                     state: "error",
                 },
                 { status: 500 }
             );
         }
     }
+
+    try {
+        const emailExists = await prisma.user.findUnique({
+            where: { email: data.email },
+        });
+
+        if (emailExists) {
+            return NextResponse.json(
+                {
+                    state: "error",
+                    message: "Cet adresse mail est déjà utilisé.",
+                },
+                { status: 400 }
+            );
+        }
+
+
+        const newUser = await auth.api.signUpEmail({
+            body: {
+                name: `${data.firstname} ${data.lastname}`,
+                email: data.email,
+                role: $Enums.Role.USER,
+                password: data.password as string,
+                emailVerified: true
+            },
+        });
+
+
+        const userId = newUser.user.id;
+
+        const folder = createUserFolder();
+        const savedImage = await saveImageIfAny(folder);
+
+        const profile = await createProfileWithPermissions(
+            userId,
+            folder,
+            savedImage
+        );
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { currentProfile: profile.id, currentCompany: companyId },
+        });
+
+        return NextResponse.json(
+            {
+                message: "Nouvel utilisateur créé avec succès.",
+                data: newUser,
+                state: "success",
+            },
+            { status: 200 }
+        );
+    } catch (e) {
+        return NextResponse.json(
+            {
+                message: "Erreur lors de la création du nouvel utilisateur.",
+                state: "error",
+            },
+            { status: 500 }
+        );
+    }
 }
+
 
 export async function PUT(req: NextRequest) {
     await checkAccess(["SETTING"], "CREATE");
@@ -245,33 +306,41 @@ export async function PUT(req: NextRequest) {
     let savedImage: string | null = null;
 
     try {
-        if (data.password && data.newPassword) {
+        if (data.newPassword) {
             try {
-                const rawHeaders = await headers();
-                const headerObject: Record<string, string> = {};
-
-                rawHeaders.forEach((value, key) => {
-                    headerObject[key] = value;
+                const user = await prisma.user.findUnique({
+                    where: { id: profileExist.userId },
+                    select: {
+                        id: true,
+                        accounts: {
+                            where: { providerId: "credential" },
+                            select: { id: true }
+                        }
+                    }
                 });
 
-                await auth.api.changePassword({
-                    body: {
-                        newPassword: data.newPassword,
-                        currentPassword: data.password,
-                        revokeOtherSessions: false,
-                    },
-                    headers: headerObject,
+                if (!user || !user.accounts[0]) {
+                    return NextResponse.json({
+                        state: "error",
+                        message: "Utilisateur non trouvé.",
+                    }, { status: 400 });
+                }
+
+
+                const hashedPassword = await hashPassword(data.newPassword);
+
+                await prisma.account.update({
+                    where: { id: user.accounts[0].id },
+                    data: {
+                        password: hashedPassword
+                    }
                 });
 
             } catch (error: any) {
-                const message =
-                    error?.code === "INVALID_PASSWORD"
-                        ? "Mot de passe actuel incorrect."
-                        : "Impossible de modifier le mot de passe.";
-
+                console.error("Error resetting password:", error);
                 return NextResponse.json({
                     state: "error",
-                    message
+                    message: "Impossible de réinitialiser le mot de passe."
                 }, { status: 400 });
             }
         }
