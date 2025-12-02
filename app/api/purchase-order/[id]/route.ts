@@ -426,8 +426,14 @@ export async function DELETE(req: NextRequest) {
     }, { status: 409 });
   }
 
-  await checkAccessDeletion($Enums.DeletionType.PURCHASE_ORDERS, [id], purchaseOrder.company.id)
+  const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.PURCHASE_ORDERS, [id], purchaseOrder.company.id)
 
+  if (hasAccessDeletion) {
+    return NextResponse.json({
+      state: "success",
+      message: "Suppression en attente de validation.",
+    }, { status: 200 })
+  }
 
   if (purchaseOrder?.items && purchaseOrder?.items.length > 0) {
     await rollbackPurchaseOrder(purchaseOrder as unknown as PurchaseOrderType)

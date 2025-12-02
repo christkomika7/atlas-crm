@@ -25,14 +25,16 @@ export async function invoiceNumber({ companyId }: { companyId: string }) {
 }
 
 export async function all({ companyId, filter, client, skip = 0,
-    take = DEFAULT_PAGE_SIZE, }: {
+    take = DEFAULT_PAGE_SIZE, search }: {
         companyId: string, filter?: "unpaid" | "paid" | 'contract', client?: string, skip?: number;
-        take?: number;
+        take?: number; search?: string
     }) {
 
     const params = new URLSearchParams();
     if (filter) params.append("type", filter);
-    if (client) params.append("client", client)
+    if (client) params.append("client", client);
+    if (search) params.append("search", search);
+
     params.append("skip", String(skip));
     params.append("take", String(take));
 

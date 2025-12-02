@@ -193,7 +193,14 @@ export async function DELETE(req: NextRequest) {
         }, { status: 400 })
     }
 
-    await checkAccessDeletion($Enums.DeletionType.PRODUCT_SERVICES, [id], productService.company.id)
+    const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.PRODUCT_SERVICES, [id], productService.company.id)
+
+    if (hasAccessDeletion) {
+        return NextResponse.json({
+            state: "success",
+            message: "Suppression en attente de validation.",
+        }, { status: 200 })
+    }
 
     const deletedProductService = await prisma.productService.delete({ where: { id } });
     return NextResponse.json({

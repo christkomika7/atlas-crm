@@ -63,7 +63,7 @@ export default function ProjectForm({
   const {
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
-  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
+  } = useQueryAction<{ id: string, includeMe?: boolean }, RequestResponse<ProfileType[]>>(
     getCollaborators,
     () => { },
     "collaborators"
@@ -85,7 +85,7 @@ export default function ProjectForm({
         },
       });
 
-      mutateCollaborators({ id: companyId }, {
+      mutateCollaborators({ id: companyId, includeMe: true }, {
         onSuccess(data) {
           if (data.data) {
             setCollaborators(data.data)

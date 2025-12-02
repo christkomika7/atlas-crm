@@ -25,11 +25,9 @@ export default async function OverviewPage() {
   const purchaseOrderPermission = hasAccess("PURCHASE_ORDER", ["CREATE"], permissions, role);
 
   return (
-    <ScrollArea className="pr-4 h-full">
-      <div className="space-y-4">
-        <div className="sticky top-0 pb-2 z-10 bg-white left-0">
-          <AccountHeader title="Tableau de bord" />
-        </div>
+    <div className="pr-4 h-full">
+      <div className="space-y-4 relative">
+        <AccountHeader title="Tableau de bord" />
 
         {canViewDashboard ? (
           <>
@@ -61,6 +59,6 @@ export default async function OverviewPage() {
           </p>
         )}
       </div>
-    </ScrollArea>
+    </div>
   );
 }

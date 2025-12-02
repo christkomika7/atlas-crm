@@ -36,7 +36,7 @@ export function Tabs({ tabs, tabId, className }: TabsProps) {
             <li
               key={index}
               onClick={() => setTab(tabId, index)}
-              className="px-4 py-1.5 font-semibold text-sm cursor-pointer"
+              className="px-4 py-1.5 font-semibold text-sm cursor-pointer text-nowrap"
             >
               {tab.title}
             </li>

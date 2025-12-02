@@ -109,10 +109,8 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
       }
     }
 
-    if (loading) return <Spinner />
-
     return (
-      <AccessContainer hasAccess={readAccess} resource="INVOICES" >
+      <AccessContainer hasAccess={readAccess} resource="INVOICES" loading={loading} >
         <div className="border border-neutral-200 rounded-xl">
           <Table>
             <TableHeader>

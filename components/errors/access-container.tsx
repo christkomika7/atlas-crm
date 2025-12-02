@@ -1,13 +1,16 @@
 import { $Enums } from "@/lib/generated/prisma";
 import NoAccess from "./no-access";
+import Spinner from "../ui/spinner";
 
 type AccessContainerProps = {
     children: React.ReactNode;
     hasAccess: boolean;
-    resource: $Enums.Resource
+    resource: $Enums.Resource;
+    loading?: boolean;
 }
 
-export default function AccessContainer({ children, hasAccess, resource }: AccessContainerProps) {
+export default function AccessContainer({ children, hasAccess, resource, loading }: AccessContainerProps) {
+    if (loading) return <Spinner />
     return (
         <div className="w-full">
             {hasAccess ?

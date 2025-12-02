@@ -41,7 +41,7 @@ export default function CountrySelect() {
       { id: userId },
       {
         onSuccess(res) {
-          const companies = res.data ?? []; // 🔥 FIX TYPE
+          const companies = res.data ?? [];
           setCompanyCountries(companies);
 
           if (!currentCompany && companies.length > 0) {
@@ -53,6 +53,10 @@ export default function CountrySelect() {
     );
   }, [userId]);
 
+  useEffect(() => {
+
+  }, [companyCountries, currentCompany])
+
   const handleCompany = (companyId: string) => {
     if (!userId) return;
 
@@ -63,7 +67,6 @@ export default function CountrySelect() {
           const companies = res.data ?? [];
           setCompanyCountries(companies);
           setCurrentCompany(companyId);
-
           const selected = companies.find((c) => c.id === companyId);
           setCurrency(selected?.currency ?? "");
 
@@ -73,67 +76,70 @@ export default function CountrySelect() {
     );
   };
 
-  if (isPending && !companyCountries)
-    return <Skeleton className="rounded-lg w-[200px] h-11" />;
 
-  if (!companyCountries || companyCountries.length === 0) return null;
+  const current = companyCountries?.find((c) => c.id === currentCompany);
 
-  const current = companyCountries.find((c) => c.id === currentCompany);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="select" className="w-[230px] !h-12">
-          <div className="flex justify-between items-center pr-1 w-full">
-            <span className="flex items-center gap-x-2">
-              <span className="rounded w-12 h-8">
-                {current?.country && (
-                  <Image
-                    src={getFlagUrl(current.country) as string}
-                    alt={current.country}
-                    width={48}
-                    height={28}
-                    className="rounded w-full h-full overflow-hidden"
-                  />
-                )}
-              </span>
-              <span className="flex flex-col justify-start items-start font-semibold">
-                {current?.country && getCountryFrenchName(current.country)}
-                <small className="font-normal text-xs">
-                  {current?.companyName}
-                </small>
-              </span>
-            </span>
-            <span className="!size-4 flex justify-center items-center">
-              <ChevronDownIcon className="stroke-neutral-600 w-3 h-3" />
-            </span>
-          </div>
-        </Button>
-      </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="w-[230px]">
-        {companyCountries.map(({ id, country, companyName }) => (
-          <DropdownMenuItem key={id} onClick={() => handleCompany(id)}>
-            <span className="grid grid-cols-[48px_1fr] items-center gap-x-2">
-              <span className="rounded h-8 overflow-hidden flex">
-                {country && (
-                  <Image
-                    src={getFlagUrl(country) as string}
-                    alt={country}
-                    width={48}
-                    height={32}
-                    className="rounded w-full h-full"
-                  />
-                )}
-              </span>
-              <span className="flex flex-col justify-start items-start font-medium text-sm">
-                {getCountryFrenchName(country)}
-                <small className="font-normal text-xs">{companyName}</small>
-              </span>
-            </span>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      {isPending || !companyCountries ? <Skeleton className="rounded-lg w-[230px] h-[48px]" /> :
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="select" className="w-[230px] !h-12">
+              <div className="flex justify-between items-center pr-1 w-full">
+                <span className="flex items-center gap-x-2">
+                  <span className="rounded w-12 h-8">
+                    {current?.country && (
+                      <Image
+                        src={getFlagUrl(current.country) as string}
+                        alt={current.country}
+                        width={48}
+                        height={28}
+                        className="rounded w-full h-full overflow-hidden"
+                      />
+                    )}
+                  </span>
+                  <span className="flex flex-col justify-start items-start font-semibold">
+                    {current?.country && getCountryFrenchName(current.country)}
+                    <small className="font-normal text-xs">
+                      {current?.companyName}
+                    </small>
+                  </span>
+                </span>
+                <span className="!size-4 flex justify-center items-center">
+                  <ChevronDownIcon className="stroke-neutral-600 w-3 h-3" />
+                </span>
+              </div>
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent className="w-[230px]">
+            {companyCountries.map(({ id, country, companyName }) => (
+              <DropdownMenuItem key={id} onClick={() => handleCompany(id)}>
+                <span className="grid grid-cols-[48px_1fr] items-center gap-x-2">
+                  <span className="rounded h-8 overflow-hidden flex">
+                    {country && (
+                      <Image
+                        src={getFlagUrl(country) as string}
+                        alt={country}
+                        width={48}
+                        height={32}
+                        className="rounded w-full h-full"
+                      />
+                    )}
+                  </span>
+                  <span className="flex flex-col justify-start items-start font-medium text-sm">
+                    {getCountryFrenchName(country)}
+                    <small className="font-normal text-xs">{companyName}</small>
+                  </span>
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      }
+    </>
+
   );
 }

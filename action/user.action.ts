@@ -50,7 +50,7 @@ export async function createUserByCompany({ companyId, data }: { companyId: stri
         formData.append("phone", data.phone);
         formData.append("job", data.job);
         formData.append("salary", data.salary);
-        formData.append("password", data.password);
+        formData.append("password", data.password || "");
 
         formData.append("appointment", JSON.stringify(data.appointment));
         formData.append("billboards", JSON.stringify(data.billboards));

@@ -71,6 +71,11 @@ export default function CreateEmployeeForm() {
   }, [param])
 
 
+  useEffect(() => {
+    form.watch(() => console.log({ errors: form.formState.errors }))
+  }, [form.watch])
+
+
 
   function getUsers() {
     if (param.id) {
@@ -289,23 +294,25 @@ export default function CreateEmployeeForm() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      design="float"
-                      label="Mot de passe"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {!user &&
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <TextInput
+                        design="float"
+                        label="Mot de passe"
+                        value={field.value}
+                        handleChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            }
 
             <div className="space-y-4 pt-2">
               <div className="grid grid-cols-[200px_80px_80px_80px] pb-2">

@@ -15,6 +15,7 @@ import {
   useEffect,
   forwardRef,
   useImperativeHandle,
+  useState,
 } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
@@ -25,10 +26,11 @@ import { dropdownMenu } from "./table";
 import { cutText, formatNumber, generateAmaId } from "@/lib/utils";
 import { QuoteType } from "@/types/quote.types";
 import { getAllQuotes } from "@/action/quote.action";
-import { QUOTE_PREFIX } from "@/config/constant";
+import { DEFAULT_PAGE_SIZE, QUOTE_PREFIX } from "@/config/constant";
 import { formatDateToDashModel } from "@/lib/date";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
+import Paginations from "@/components/paginations";
 
 type QuoteTableProps = {
   filter: "progress" | "complete";
@@ -42,13 +44,20 @@ export interface QuoteTableRef {
 
 const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
   ({ selectedQuoteIds, setSelectedQuoteIds, filter }, ref) => {
+    const [quotes, setQuotes] = useState<QuoteType[]>([]);
     const id = useDataStore.use.currentCompany();
     const currency = useDataStore.use.currency();
+
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+    const [totalItems, setTotalItems] = useState<number>(0);
+
+    const skip = (currentPage - 1) * pageSize;
 
     const { access: readAccess, loading } = useAccess("QUOTES", "READ");
 
     const { mutate, isPending, data } = useQueryAction<
-      { companyId: string; filter: "progress" | "complete" },
+      { companyId: string; filter: "progress" | "complete", skip?: number; take?: number },
       RequestResponse<QuoteType[]>
     >(getAllQuotes, () => { }, "quotes");
 
@@ -60,7 +69,14 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
 
     const refreshQuote = () => {
       if (id && readAccess) {
-        mutate({ companyId: id, filter });
+        mutate({ companyId: id, filter, skip, take: pageSize }, {
+          onSuccess(data) {
+            if (data.data) {
+              setQuotes(data.data);
+              setTotalItems(data.total);
+            }
+          },
+        });
       }
     };
 
@@ -70,15 +86,12 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
 
     useEffect(() => {
       refreshQuote();
-    }, [id, readAccess]);
+    }, [id, readAccess, currentPage]);
 
     const isSelected = (id: string) => selectedQuoteIds.includes(id);
 
-
-    if (loading) return <Spinner />
-
     return (
-      <AccessContainer hasAccess={readAccess} resource="QUOTES">
+      <AccessContainer hasAccess={readAccess} resource="QUOTES" loading={loading}>
         <div className="border border-neutral-200 rounded-xl">
           <Table>
             <TableHeader>
@@ -101,8 +114,8 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : data?.data && data.data.length > 0 ? (
-                data.data.map((quote) => (
+              ) : quotes.length > 0 ? (
+                quotes.map((quote) => (
                   <TableRow
                     key={quote.id}
                     className={`h-16 transition-colors ${isSelected(quote.id) ? "bg-neutral-100" : ""
@@ -173,6 +186,15 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
               )}
             </TableBody>
           </Table>
+          <div className="flex justify-end p-4">
+            <Paginations
+              totalItems={totalItems}
+              pageSize={pageSize}
+              controlledPage={currentPage}
+              onPageChange={(page) => setCurrentPage(page)}
+              maxVisiblePages={DEFAULT_PAGE_SIZE}
+            />
+          </div>
         </div>
       </AccessContainer>
     );

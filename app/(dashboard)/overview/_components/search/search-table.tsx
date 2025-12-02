@@ -1,14 +1,18 @@
 "use client";
+
+import { Tabs } from "@/components/ui/tabs";
+import { SearchIcon } from "lucide-react";
+import { tabs } from "./tabs/tab";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+
 import UserAccount from "@/components/account/user-account";
 import NotificationButton from "@/components/notification/notification-button";
-import { Tabs } from "@/components/ui/tabs";
 import TextInput from "@/components/ui/text-input";
-import { SearchIcon } from "lucide-react";
-import React, { useState } from "react";
-import { tabs } from "./tabs/tab";
+import useSearchStore from "@/stores/search.store";
 
 export default function SearchTable() {
-  const [search, setSearch] = useState("");
+  const search = useSearchStore.use.search();
+  const setSearch = useSearchStore.use.setSearch();
   return (
     <div className="space-y-4">
       <div className="flex justify-between gap-x-2">
@@ -28,7 +32,10 @@ export default function SearchTable() {
           <UserAccount />
         </div>
       </div>
-      <Tabs tabs={tabs} tabId="overview-tab" />
+      <ScrollArea className="pb-2 overflow-x-hidden w-full">
+        <Tabs tabs={tabs} tabId="overview-tab" />
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
     </div>
   );
 }

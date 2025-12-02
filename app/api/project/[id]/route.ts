@@ -176,7 +176,14 @@ export async function DELETE(req: NextRequest) {
         }, { status: 400 })
     }
 
-    await checkAccessDeletion($Enums.DeletionType.PROJECTS, [id], project.company.id)
+    const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.PROJECTS, [id], project.company.id)
+
+    if (hasAccessDeletion) {
+        return NextResponse.json({
+            state: "success",
+            message: "Suppression en attente de validation.",
+        }, { status: 200 })
+    }
 
     const deletedProject = await prisma.project.delete({ where: { id } });
 

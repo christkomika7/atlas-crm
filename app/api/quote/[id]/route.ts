@@ -459,8 +459,14 @@ export async function DELETE(req: NextRequest) {
   }
 
 
-  await checkAccessDeletion($Enums.DeletionType.QUOTES, [id], quote.company.id)
+  const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.QUOTES, [id], quote.company.id)
 
+  if (hasAccessDeletion) {
+    return NextResponse.json({
+      state: "success",
+      message: "Suppression en attente de validation.",
+    }, { status: 200 })
+  }
 
   if (quote?.items && quote?.items.length > 0) {
     await rollbackQuote(quote as unknown as QuoteType)

@@ -25,7 +25,6 @@ export async function DELETE(req: NextRequest) {
     (item) => item.transactionType === "DISBURSEMENT",
   );
 
-
   if (!companyId) {
     return NextResponse.json({
       status: "error",
@@ -48,8 +47,27 @@ export async function DELETE(req: NextRequest) {
     }, { status: 400 })
   }
 
-
   if (session?.user.role !== "ADMIN") {
+    // Vérifier si des transactions sont déjà en attente de suppression
+    const allTransactionIds = [...receipts.map(r => r.id), ...disbursements.map(d => d.id)];
+
+    const existingDeletions = await prisma.deletion.findMany({
+      where: {
+        recordId: {
+          in: allTransactionIds
+        },
+        isValidate: false
+      }
+    });
+
+    if (existingDeletions.length > 0) {
+      return NextResponse.json({
+        state: "error",
+        message: "Suppression en attente de validation.",
+      }, { status: 200 })
+    }
+
+    // Traiter les encaissements
     for (const receipt of receipts) {
       await prisma.$transaction([
         prisma.receipt.update({
@@ -73,9 +91,9 @@ export async function DELETE(req: NextRequest) {
           }
         })
       ]);
-
     }
 
+    // Traiter les décaissements
     for (const disbursement of disbursements) {
       await prisma.$transaction([
         prisma.dibursement.update({
@@ -99,7 +117,6 @@ export async function DELETE(req: NextRequest) {
           }
         })
       ]);
-
     }
 
     return NextResponse.json({
@@ -107,7 +124,6 @@ export async function DELETE(req: NextRequest) {
       message: "Suppression en attente de validation.",
     }, { status: 200 })
   }
-
 
   try {
     await prisma.$transaction(async (tx) => {

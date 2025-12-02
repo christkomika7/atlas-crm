@@ -28,7 +28,7 @@ export default function Header({ title, back, children }: HeaderProps) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-x-2 pl-6 h-14 sticky -top-0.5 left-0 z-40 !w-(--left-sidebar-width) bg-white">
+    <div className="flex items-center justify-between gap-x-2 px-4 h-18  sticky -top-0.5 left-0 z-40 !w-(--left-sidebar-width) bg-white border-b border-neutral-200">
       <div
         className={clsx(
           "grid w-fit",

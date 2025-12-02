@@ -338,7 +338,14 @@ export async function DELETE(req: NextRequest) {
     }, { status: 400 });
 
 
-    await checkAccessDeletion($Enums.DeletionType.INVOICES, ids, companyId);
+    const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.INVOICES, ids, companyId);
+
+    if (hasAccessDeletion) {
+        return NextResponse.json({
+            state: "success",
+            message: "Suppression en attente de validation.",
+        }, { status: 200 })
+    }
 
     for (const invoice of invoices) {
         if (invoice.receipts.length > 0 || invoice.dibursements.length > 0) {

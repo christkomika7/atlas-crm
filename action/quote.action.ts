@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { toDateOnlyString } from "@/lib/date";
 import { QuoteSchemaType, QuoteUpdateSchemaType } from "@/lib/zod/quote.schema";
 import { RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
@@ -22,14 +23,26 @@ export async function quoteNumber({ companyId }: { companyId: string }) {
     }
 }
 
-export async function getAllQuotes({ companyId, filter }: { companyId: string, filter: "progress" | "complete" }) {
+export async function getAllQuotes(
+    { companyId, filter, search, skip = 0, take = DEFAULT_PAGE_SIZE, }:
+        { companyId: string, filter?: "progress" | "complete", search?: string, skip?: number; take?: number; }) {
+
+
+    const params = new URLSearchParams();
+    if (filter) params.append("type", filter);
+    if (search) params.append("search", search);
+
+    params.append("skip", String(skip));
+    params.append("take", String(take));
+
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/quote/${companyId}/all${queryString ? `?${queryString}` : ""
+        }`;
+
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/quote/${companyId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ data: filter }),
+        const response = await fetch(url, {
+            method: 'GET',
         });
 
         const res: RequestResponse<QuoteType[]> = await response.json()

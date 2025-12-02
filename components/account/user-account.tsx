@@ -17,7 +17,7 @@ export default function UserAccount() {
 
   const [image, setImage] = useState("");
 
-  const { mutate, isPending, data } = useQueryAction<
+  const { mutate, isPending } = useQueryAction<
     { companyId: string, userId: string },
     RequestResponse<ProfileType>
   >(getUserByCurrentCompany, () => { }, "user");
@@ -49,19 +49,20 @@ export default function UserAccount() {
       }
     }
   }
-
-
-  if (isPending && data) {
-    return <Skeleton className="rounded-full w-[46px] h-[46px]" />;
-  }
+  console.log({ isPending })
   return (
-    <Link href={`/overview/profile/${profile?.id}`}>
-      <User
-        user={{
-          image: image,
-          name: profile?.user?.name ? profile.user.name : profile?.firstname && profile.lastname ? `${profile?.firstname} ${profile?.lastname}` : "-",
-        }}
-      />
-    </Link>
+    <>
+      {isPending || !profile ? <Skeleton className="rounded-full w-[46px] h-[46px]" /> :
+
+        <Link href={`/overview/profile/${profile?.id}`}>
+          <User
+            user={{
+              image: image,
+              name: profile.user?.name ? profile.user.name : profile?.firstname && profile.lastname ? `${profile?.firstname} ${profile?.lastname}` : "-",
+            }}
+          />
+        </Link>
+      }
+    </>
   );
 }

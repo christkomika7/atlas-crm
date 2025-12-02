@@ -67,7 +67,7 @@ export default function UpdateProjectForm() {
     mutate: mutateCollaborators,
     isPending: isLoadingCollaborators,
     data,
-  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
+  } = useQueryAction<{ id: string, includeMe?: boolean }, RequestResponse<ProfileType[]>>(
     getCollaborators,
     () => { },
     "collaborators"
@@ -80,7 +80,7 @@ export default function UpdateProjectForm() {
 
   useEffect(() => {
     if (id && modifyAccess) {
-      mutateCollaborators({ id });
+      mutateCollaborators({ id, includeMe: true });
     }
   }, [id, modifyAccess]);
 
