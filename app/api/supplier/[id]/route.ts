@@ -151,7 +151,13 @@ export async function DELETE(req: NextRequest) {
 
   const supplier = await prisma.supplier.findUnique({
     where: { id },
-    include: { company: true }
+    include: {
+      company: true,
+      receipts: true,
+      dibursements: true,
+      contracts: true,
+      purchaseOrders: true
+    }
   });
 
   if (!supplier) {
@@ -169,6 +175,17 @@ export async function DELETE(req: NextRequest) {
       state: "success",
       message: "Suppression en attente de validation.",
     }, { status: 200 })
+  }
+
+  if (
+    supplier.receipts.length > 0 ||
+    supplier.dibursements.length > 0 ||
+    supplier.contracts.length > 0
+  ) {
+    return NextResponse.json({
+      state: "error",
+      message: "Supprimez d'abord les transactions, bon de commandes et contrats associés à ce fournisseur.",
+    }, { status: 409 });
   }
 
   await prisma.supplier.delete({ where: { id } });

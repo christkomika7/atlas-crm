@@ -17,14 +17,11 @@ import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 export default function ItemForm() {
   const companyId = useDataStore.use.currentCompany();
   const tab = useTabStore.use.tabs()["item-tab"];
-  const [currentTab, setCurrentTab] = useState<"billboard" | "product">();
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebounce(search, 500);
   const [billboards, setBillboards] = useState<BillboardType[]>([]);
   const [productServices, setProductServices] = useState<ProductServiceType[]>([])
 
-
-  // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [totalItems, setTotalItems] = useState<number>(0);
@@ -43,13 +40,10 @@ export default function ItemForm() {
     RequestResponse<ProductServiceType[]>
   >(getProductServices, () => { }, "product-services");
 
-  useEffect(() => {
-    setCurrentTab(tab === 0 ? "billboard" : "product")
-  }, [])
 
   useEffect(() => {
     if (companyId) {
-      if (currentTab === "billboard") {
+      if (tab === 0) {
         mutateGetBillboards({ companyId, search: "", skip, take: pageSize }, {
           onSuccess(data) {
             if (data.data) {
@@ -70,19 +64,18 @@ export default function ItemForm() {
       }
 
     }
-  }, [companyId, currentTab]);
+  }, [companyId, tab]);
 
 
   useEffect(() => {
     setSearch("");
     setCurrentPage(1);
     setTotalItems(0);
-    setCurrentTab(tab === 0 ? "billboard" : "product")
   }, [tab])
 
   useEffect(() => {
     if (companyId) {
-      if (currentTab === "billboard") {
+      if (tab === 0) {
         mutateGetBillboards({ companyId, search: debouncedSearch, skip, take: pageSize }, {
           onSuccess(data) {
             if (data.data) {

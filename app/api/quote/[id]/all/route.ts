@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
         }, { status: 200 });
     }
 
-    const id = getIdFromUrl(req.url, "last") as string;
+    const id = getIdFromUrl(req.url, 2) as string;
 
     if (!id) {
         return NextResponse.json({
@@ -23,11 +23,9 @@ export async function GET(req: NextRequest) {
         }, { status: 404 });
     }
 
-    // read params from query string
     const dataParam = req.nextUrl.searchParams.get("type") ?? undefined;
     const searchParam = req.nextUrl.searchParams.get("search") as string;
 
-    // pagination
     const MAX_TAKE = 200;
     const DEFAULT_TAKE = 50;
 
@@ -73,7 +71,7 @@ export async function GET(req: NextRequest) {
         }
 
         if (dataParam === "progress") {
-            where.isCompleted = true
+            where.isCompleted = false
         }
 
         const [total, quotes] = await prisma.$transaction([

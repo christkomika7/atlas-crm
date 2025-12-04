@@ -12,10 +12,7 @@ Product
 
 - Verifier que les fichiers sont detruit apres suppression
 - Supprimer les fonctions non utilisées
--  Au niveau du profil user verifier le probleme de rafraichissement
-revoir changepassword
--  Creer aussi le profile admin
--  Faire le backup des données
+- Faire le backup des données
 - Corriger le bug lors de la creation de l'entreprise
 - Donnée la possibilité de tout cocher ou l inverse
 - supplier et client infos pas de  scrollbar
@@ -24,3 +21,6 @@ revoir changepassword
 - Faire les notifications
 - lores de la suppression de la facture et billboard verifier que aucun contrat y est relié
 - revoir employee | user
+- si un sous element contient des elements qui ne font pas partie du courant je renvoi un message
+- dans la creation de l entreprise ajouter lessorType (Mairie, Personne physique, Personne morale)
+- suppression de la facture par un user

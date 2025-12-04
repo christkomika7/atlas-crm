@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { parseData } from "@/lib/parse";
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
+import { $Enums } from "@/lib/generated/prisma";
 
 export async function GET(req: NextRequest) {
     const result = await checkAccess("CLIENTS", "READ");
@@ -139,53 +140,54 @@ export async function POST(req: NextRequest) {
             })
         ]);
 
+
+        const categories = [
+            { name: "Transfert CaC", type: "RECEIPT" },
+            { name: "Règlement loyer", type: "DISBURSEMENT" },
+            { name: "Règlement salaire", type: "DISBURSEMENT" },
+            { name: "Règlement prestation de service", type: "DISBURSEMENT" },
+            { name: "Règlement fournisseur", type: "DISBURSEMENT" },
+            { name: "Règlement client", type: "RECEIPT" },
+        ];
+
+        const lessorTypes = [
+            { name: "Mairie", type: $Enums.LessorSpace.PUBLIC },
+            { name: "Personne morale", type: $Enums.LessorSpace.PUBLIC },
+            { name: "Personne physique", type: $Enums.LessorSpace.PUBLIC },
+        ]
+
         await prisma.$transaction([
-            prisma.transactionCategory.create({
-                data: {
-                    company: { connect: { id: company.id } },
-                    name: "Règlement loyer",
-                    type: "DISBURSEMENT"
-                }
+            prisma.transactionCategory.createMany({
+                data: categories.map(c => ({
+                    companyId: company.id,
+                    name: c.name,
+                    type: c.type as $Enums.TransactionType
+                }))
             }),
-            prisma.transactionCategory.create({
-                data: {
-                    company: { connect: { id: company.id } },
-                    name: "Règlement salaire",
-                    type: "DISBURSEMENT"
-                }
+
+            prisma.lessorType.createMany({
+                data: lessorTypes.map(l => ({
+                    companyId: company.id,
+                    name: l.name,
+                    type: l.type
+                }))
             }),
-            prisma.transactionCategory.create({
-                data: {
-                    company: { connect: { id: company.id } },
-                    name: "Règlement prestation de service",
-                    type: "DISBURSEMENT"
-                }
-            }),
+
             prisma.transactionCategory.create({
                 data: {
                     company: { connect: { id: company.id } },
                     name: "Administration",
                     type: "DISBURSEMENT",
                     natures: {
-                        create: { name: "Fiscal", company: { connect: { id: company.id } } }
+                        create: {
+                            name: "Fiscal",
+                            company: { connect: { id: company.id } }
+                        }
                     }
                 }
-            }),
-            prisma.transactionCategory.create({
-                data: {
-                    company: { connect: { id: company.id } },
-                    name: "Règlement fournisseur",
-                    type: "DISBURSEMENT"
-                }
-            }),
-            prisma.transactionCategory.create({
-                data: {
-                    company: { connect: { id: company.id } },
-                    name: "Règlement client",
-                    type: "RECEIPT"
-                }
-            }),
+            })
         ]);
+
 
         if (admin && !admin.currentCompany) {
             await prisma.user.update({

@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
     }) as CategorySchemaType;
 
 
-    const categoryExist = await prisma.transactionCategory.findUnique({
-        where: { name: data.name }
+    const categoryExist = await prisma.transactionCategory.findFirst({
+        where: { name: data.name, companyId: data.companyId }
     });
 
     if (categoryExist) {

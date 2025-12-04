@@ -1,6 +1,19 @@
 import { Decimal } from "decimal.js";
 import { z } from "zod";
 
+const isPrivate = (data: any) => data.lessorSpaceType === "private";
+const isPublic = (data: any) => data.lessorSpaceType === "public";
+const isPerson = (data: any) => data.lessorType === "Personne physique";
+
+function requiredForPrivate(value: any, data: any) {
+    return !isPrivate(data) || !!value;
+}
+
+function requiredForPublic(value: any, data: any) {
+    if (isPerson(data)) return true;
+    return !isPublic(data) || !!value;
+}
+
 export const billboardSchema = z.object({
     companyId: z.string().min(1, {
         message: "L'identifiant de l'entreprise est requis."
@@ -31,8 +44,6 @@ export const billboardSchema = z.object({
     gmaps: z.string({
         error: "Le lien Google Maps est requis.",
     }),
-
-
     photos: z
         .array(
             z.instanceof(File).refine((file) => file.type.startsWith("image/"), {
@@ -115,14 +126,18 @@ export const lessorSchemaBase = z.object({
     bicSwift: z.string().optional(),
     bankName: z.string().optional(),
 
+    identityCard: z.string().optional(),
+
     representativeFirstName: z.string().optional(),
     representativeLastName: z.string().optional(),
     representativeJob: z.string().optional(),
     representativePhone: z.string().optional(),
     representativeEmail: z.string().optional(),
 
-    locationPrice: z.string({ error: "Le prix du loyer lorsque le panneau est loué est obligatoire." }),
-    nonLocationPrice: z.string({ error: "Le prix du loyer lorsque le panneau n'est pas loué est obligatoire." }),
+    // NONE OPTIONAL IF LESSORTYPENAME !== MAIRIE
+    locationPrice: z.string().optional(),
+    nonLocationPrice: z.string().optional(),
+
     delayContract: z.object({
         from: z.date(),
         to: z.date(),
@@ -136,118 +151,40 @@ export const lessorSchemaBase = z.object({
 
 });
 
-// ensuite on rend conditionnellement obligatoire si espace public
 export const lessorSchema = lessorSchemaBase
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.lessorName,
-        { message: "Le nom du bailleur est requis.", path: ["lessorName"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.lessorAddress,
-        { message: "L'adresse est requise.", path: ["lessorAddress"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.lessorCity,
-        { message: "La ville est requise.", path: ["lessorCity"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.lessorPhone,
-        { message: "Le téléphone est requis.", path: ["lessorPhone"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.lessorEmail,
-        { message: "L'adresse e-mail est requise.", path: ["lessorEmail"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || data.capital !== undefined,
-        { message: "Le capital est requis pour un espace public.", path: ["capital"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.rccm,
-        { message: "Le RCCM est requis pour un espace public.", path: ["rccm"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.taxIdentificationNumber,
-        { message: "Le numéro d'identification fiscale est requis pour un espace public.", path: ["taxIdentificationNumber"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.legalForms,
-        { message: "Le statut juridique est requis pour un espace public.", path: ["legalForms"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.rib,
-        { message: "Le RIB est requis.", path: ["rib"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.lessorAddress,
-        { message: "L'adresse du bailleur est requise pour un espace public.", path: ["lessorAddress"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.iban,
-        { message: "L'IBAN est requise.", path: ["iban"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.bicSwift,
-        { message: "LE BIC/SWIFT est requise.", path: ["bicSwift"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.bankName,
-        { message: "Le nom de la banque est requis.", path: ["bankName"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.representativeLastName,
-        { message: "Le nom du représentant est requis.", path: ["representativeLastName"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.representativeFirstName,
-        { message: "Le prénom du représentant est requis.", path: ["representativeFirstName"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.representativeJob,
-        { message: "Le poste du représentant est requis.", path: ["representativeJob"] }
+    // ----- PRIVATE REQUIRED -----
+    .refine(d => requiredForPrivate(d.lessorName, d), { message: "Le nom du bailleur est requis.", path: ["lessorName"] })
+    .refine(d => requiredForPrivate(d.lessorAddress, d), { message: "L'adresse est requise.", path: ["lessorAddress"] })
+    .refine(d => requiredForPrivate(d.lessorCity, d), { message: "La ville est requise.", path: ["lessorCity"] })
+    .refine(d => requiredForPrivate(d.lessorPhone, d), { message: "Le téléphone est requis.", path: ["lessorPhone"] })
+    .refine(d => requiredForPrivate(d.lessorEmail, d), { message: "L'adresse e-mail est requise.", path: ["lessorEmail"] })
 
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.representativePhone,
-        { message: "Le numéro de téléphone du représentant est requis.", path: ["representativePhone"] }
+    // ----- PUBLIC REQUIRED (sauf Personne physique) -----
+    .refine(d => requiredForPublic(d.capital, d), { message: "Le capital est requis pour un espace public.", path: ["capital"] })
+    .refine(d => requiredForPublic(d.rccm, d), { message: "Le RCCM est requis.", path: ["rccm"] })
+    .refine(d => requiredForPublic(d.taxIdentificationNumber, d), { message: "Le numéro d'identification fiscale est requis.", path: ["taxIdentificationNumber"] })
+    .refine(d => requiredForPublic(d.legalForms, d), { message: "Le statut juridique est requis.", path: ["legalForms"] })
+    .refine(d => requiredForPublic(d.rib, d), { message: "Le RIB est requis.", path: ["rib"] })
+    .refine(d => requiredForPublic(d.iban, d), { message: "L'IBAN est requis.", path: ["iban"] })
+    .refine(d => requiredForPublic(d.bicSwift, d), { message: "Le BIC/SWIFT est requis.", path: ["bicSwift"] })
+    .refine(d => requiredForPublic(d.bankName, d), { message: "Le nom de la banque est requis.", path: ["bankName"] })
 
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.representativeEmail,
-        { message: "L'adresse mail du représentant est requis.", path: ["representativeEmail"] }
+    // Représentants
+    .refine(d => requiredForPublic(d.representativeLastName, d), { message: "Le nom du représentant est requis.", path: ["representativeLastName"] })
+    .refine(d => requiredForPublic(d.representativeFirstName, d), { message: "Le prénom du représentant est requis.", path: ["representativeFirstName"] })
+    .refine(d => requiredForPublic(d.representativeJob, d), { message: "Le poste du représentant est requis.", path: ["representativeJob"] })
+    .refine(d => requiredForPublic(d.representativePhone, d), { message: "Le numéro de téléphone du représentant est requis.", path: ["representativePhone"] })
+    .refine(d => requiredForPublic(d.representativeEmail, d), { message: "L'email du représentant est requis.", path: ["representativeEmail"] })
 
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.rentalStartDate,
-        { message: "La date de début de la location est requise.", path: ["rentalStartDate"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.rentalPeriod,
-        { message: "Les infos de contact du représentant sont requises pour un espace public.", path: ["rentalPeriod"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.rentalPeriod,
-        { message: "La durée de la location est requise.", path: ["rentalPeriod"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.paymentMode,
-        { message: "Le mode de paiement est requis.", path: ["paymentMode"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.paymentFrequency,
-        { message: "La fréquence de paiement est requise.", path: ["paymentFrequency"] }
-    )
-    .refine(
-        (data) => data.lessorSpaceType !== "private" || !!data.electricitySupply,
-        { message: "Fourniture du courant requis.", path: ["electricitySupply"] }
-    ).refine(
-        (data) => data.lessorSpaceType !== "public" || !!data.lessorCustomer,
-        { message: "Le bailleur est requis pour un espace public.", path: ["lessorCustomer"] }
-    ).refine(
-        (data) => data.lessorSpaceType !== "public" || !!data.delayContract,
-        { message: "Le durée du contrat est obligatoire.", path: ["delayContract"] }
-    )
+    // Contrat (public sauf personne physique)
+    .refine(d => requiredForPublic(d.delayContract, d), { message: "La durée du contrat est obligatoire.", path: ["delayContract"] })
+    .refine(d => requiredForPublic(d.rentalStartDate, d), { message: "La date de début est requise.", path: ["rentalStartDate"] })
 
+    // Champs public toujours obligatoires
+    .refine(d => !isPublic(d) || !!d.lessorCustomer, { message: "Le bailleur est requis pour un espace public.", path: ["lessorCustomer"] })
+    .refine(d => !isPublic(d) || !!d.paymentMode, { message: "Le mode de paiement est requis.", path: ["paymentMode"] })
+    .refine(d => !isPublic(d) || !!d.paymentFrequency, { message: "La fréquence de paiement est requise.", path: ["paymentFrequency"] })
+    .refine(d => !isPublic(d) || !!d.electricitySupply, { message: "Fourniture du courant requise.", path: ["electricitySupply"] });
 
 export const billboardFormSchema = z.object({
     billboard: billboardSchema,

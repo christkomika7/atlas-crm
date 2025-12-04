@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { SetStateAction, useState } from "react";
 import ReceiptForm from "./receipt-form";
 import DibursementForm from "./dibursement-form";
+import TransferForm from "./transfer-form";
 
 type HeaderMenuProps = {
   refreshTransaction: () => void;
@@ -20,6 +21,7 @@ export default function HeaderMenu({ refreshTransaction }: HeaderMenuProps) {
   const [open, setOpen] = useState({
     receipt: false,
     dibursement: false,
+    transfer: false
   });
   return (
     <Popover>
@@ -37,7 +39,7 @@ export default function HeaderMenu({ refreshTransaction }: HeaderMenuProps) {
               action={
                 <Button
                   variant="primary"
-                  className="bg-white hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                  className="bg-white justify-start hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
                 >
                   Ajouter un encaissement
                 </Button>
@@ -62,9 +64,9 @@ export default function HeaderMenu({ refreshTransaction }: HeaderMenuProps) {
               action={
                 <Button
                   variant="primary"
-                  className="bg-white hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                  className="bg-white justify-start hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
                 >
-                  Ajouter  un décaissements
+                  Ajouter  un décaissement
                 </Button>
               }
               title="Nouveau décaissement"
@@ -77,6 +79,31 @@ export default function HeaderMenu({ refreshTransaction }: HeaderMenuProps) {
                 refreshTransaction={refreshTransaction}
                 closeModal={() =>
                   setOpen((prev) => ({ ...prev, dibursement: false }))
+                }
+              />
+            </ModalContainer>
+          </li>
+          <li>
+            <ModalContainer
+              size="xl"
+              action={
+                <Button
+                  variant="primary"
+                  className="bg-white justify-start hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                >
+                  Réaliser un transfert
+                </Button>
+              }
+              title="Transfert CaC"
+              open={open.transfer}
+              setOpen={function (value: SetStateAction<boolean>): void {
+                setOpen((prev) => ({ ...prev, transfer: value as boolean }));
+              }}
+            >
+              <TransferForm
+                refreshTransaction={refreshTransaction}
+                closeModal={() =>
+                  setOpen((prev) => ({ ...prev, transfer: false }))
                 }
               />
             </ModalContainer>

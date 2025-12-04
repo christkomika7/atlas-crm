@@ -89,12 +89,14 @@ export default function TableActionButton({
   }, [companyId])
 
   function goTo(id: string, action: "update" | "infos" | "send" | "convert") {
+    console.log({ id, action })
     switch (action) {
       case "update":
         setTab("action-quote-tab", 0);
         router.push(`/quote/${id}`);
         break;
       case "convert":
+        console.log("CONVERTING")
         const hasBillboard = data.items.some((item) => item.itemType === "billboard");
 
         if (hasBillboard) {
@@ -201,6 +203,7 @@ export default function TableActionButton({
                       return (
                         <ModalContainer
                           size="sm"
+                          key={menu.id}
                           action={
                             <li key={menu.id}>
                               <button
@@ -215,7 +218,7 @@ export default function TableActionButton({
                           }
                           title="Dupliquer le devis"
                           open={open.duplicate}
-                          setOpen={(value) =>
+                          setOpen={() =>
                             setOpen({ ...open, duplicate: true })
                           }
                           onClose={() => setOpen({ ...open, duplicate: false })}
@@ -229,7 +232,7 @@ export default function TableActionButton({
                           <button
                             className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
                             onClick={() =>
-                              goTo(data.id, menu.id as "update" | "infos" | "send" | "convert")
+                              goTo(data.id, menu.action as "update" | "infos" | "send" | "convert")
                             }
                           >
                             <menu.icon className="w-4 h-4" />
@@ -237,7 +240,7 @@ export default function TableActionButton({
                               {menu.title}
 
                               <span>
-                                {menu.id === "convert" && isConvertingQuote && <Spinner size={15} />}
+                                {menu.action === "convert" && isConvertingQuote && <Spinner size={15} />}
                               </span>
 
                             </span>

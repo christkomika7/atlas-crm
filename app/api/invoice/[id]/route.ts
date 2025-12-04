@@ -461,7 +461,7 @@ export async function DELETE(req: NextRequest) {
       billboards: true,
       productsServices: true,
       receipts: true,
-      dibursements: true,
+      payments: true,
       company: true
     }
   });
@@ -482,10 +482,10 @@ export async function DELETE(req: NextRequest) {
     }, { status: 200 })
   }
 
-  if (invoice.receipts.length > 0 || invoice.dibursements.length > 0) {
+  if (invoice.receipts.length > 0 || invoice.payments.length > 0) {
     return NextResponse.json({
       state: "error",
-      message: "Supprimez d'abord les transactions associées à cette facture.",
+      message: "Supprimez d'abord les transactions et paiements associés à cette facture.",
     }, { status: 409 });
   }
 
@@ -523,7 +523,9 @@ export async function DELETE(req: NextRequest) {
         balance: new Decimal(0)
       }
     }),
-    prisma.invoice.delete({ where: { id } })
+    prisma.invoice.delete({ where: { id } }),
+    prisma.payment.deleteMany({ where: { invoiceId: invoice.id } }),
+    prisma.receipt.deleteMany({ where: { referenceInvoiceId: invoice.id } }),
   ]);
 
   await removePath([...invoice.pathFiles]);

@@ -7,6 +7,7 @@ import {
   NatureSchemaType,
   SourceSchemaType,
 } from "@/lib/zod/transaction.schema";
+import { TransferSchemaType } from "@/lib/zod/transfert.schema";
 import { RequestResponse } from "@/types/api.types";
 import {
   AllocationType,
@@ -163,7 +164,7 @@ export async function getSourcesByCompany({ companyId, filter }: { companyId: st
   }
 }
 
-export async function getSources({ companyId, type, filter }: { companyId: string, type?: "cash" | "check" | "bank-transfer", filter?: boolean }) {
+export async function getSources({ companyId, type, filter }: { companyId: string, type?: "cash" | "check" | "bank-transfer" | "all", filter?: boolean }) {
   const params = new URLSearchParams();
   if (type) params.append("type", type);
   if (filter) params.append("filter", JSON.stringify(filter));
@@ -476,6 +477,34 @@ export async function createDibursement(data: DibursementSchemaType) {
     if (!response.ok) {
       throw new Error(
         res.message || "Erreur lors de la création de décaissement",
+      );
+    }
+
+    return res;
+  } catch (error) {
+    console.error("Erreur dans la fonction create:", error);
+    throw error;
+  }
+}
+
+export async function createTransfer(data: TransferSchemaType) {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/transfer`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      },
+    );
+
+    const res: RequestResponse<TransactionType> = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        res.message || "Erreur lors de la réalisation du transfer",
       );
     }
 

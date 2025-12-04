@@ -1,23 +1,17 @@
 import { all } from "@/action/supplier.action";
+import { all as allCities } from "@/action/city.action";
+import { getBillboardLessorType } from "@/action/billboard.action";
 import LessorTypeModal from "@/components/modal/lessor-type-modal";
+import CityModal from "../../../_component/city-modal";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
-import { all as allCities } from "@/action/city.action";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import TextInput from "@/components/ui/text-input";
+import { MultipleSelect } from "@/components/ui/multi-select";
 import useQueryAction from "@/hook/useQueryAction";
 import { acceptPayment, electricitySupply, lessorSpaceType, paymentFrequency, rentalDurations } from "@/lib/data";
-import {
-  BillboardSchemaFormType,
-  lessorError,
-  LessorErrorType,
-} from "@/lib/zod/billboard.schema";
+import { BillboardSchemaFormType, lessorError, LessorErrorType } from "@/lib/zod/billboard.schema";
 import useBillboardStore from "@/stores/billboard.store";
 import useCityStore from "@/stores/city.store";
 import { useDataStore } from "@/stores/data.store";
@@ -28,9 +22,9 @@ import { SupplierType } from "@/types/supplier.types";
 import { Decimal } from "decimal.js";
 import { useEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import CityModal from "../../../_component/city-modal";
-import { MultipleSelect } from "@/components/ui/multi-select";
-import { getBillboardLessorType } from "@/action/billboard.action";
+import { MORAL_COMPANY, PHYSICAL_COMPANY } from "@/config/constant";
+import { Section } from "@/components/ui/section";
+import { TextField } from "@/components/ui/text-field";
 
 type LessorInfoTabProps = {
   form: UseFormReturn<BillboardSchemaFormType>;
@@ -48,60 +42,62 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
   const cities = useCityStore.use.cities();
 
   const [suppliers, setSupplier] = useState<SupplierType[]>([]);
+  const [lessorTypeName, setLessorTypeName] = useState("");
 
-  const {
-    mutate: mutateCity,
-    isPending: isPendingCity,
-  } = useQueryAction<{ companyId: string }, RequestResponse<CityType[]>>(
-    allCities,
-    () => { },
-    "cities"
-  );
+  const { mutate: mutateCity, isPending: isPendingCity } = useQueryAction<
+    { companyId: string },
+    RequestResponse<CityType[]>
+  >(allCities, () => { }, "cities");
 
   const { mutate: mutateGetSuppliers, isPending: isGettingSuppliers } = useQueryAction<
     { id: string },
     RequestResponse<SupplierType[]>
   >(all, () => { }, "suppliers");
 
-  const {
-    mutate: mutateGetElements,
-    isPending: isGettingElements,
-  } = useQueryAction<
-    { companyId: string },
+  const { mutate: mutateGetElements, isPending: isGettingElements } = useQueryAction<
+    { companyId: string; lessorSpace?: string },
     RequestResponse<BaseType[]>
   >(getBillboardLessorType, () => { }, "lessor-type");
 
   useEffect(() => {
-    if (companyId) {
-      mutateGetSuppliers({ id: companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setSupplier(data.data);
-          }
-        },
-      });
+    if (!companyId) return;
 
-      mutateGetElements({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setLessorType(data.data);
-          }
-        },
-      });
+    mutateGetSuppliers({ id: companyId }, {
+      onSuccess(data) {
+        if (data.data) setSupplier(data.data);
+      },
+    });
 
-      mutateCity({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setCities(data.data);
-          }
-        },
-      });
-    }
+    mutateCity({ companyId }, {
+      onSuccess(data) {
+        if (data.data) setCities(data.data);
+      },
+    });
   }, [companyId]);
+
+  useEffect(() => {
+    if (!currentSpaceType || !companyId) return;
+
+    mutateGetElements({ companyId, lessorSpace: currentSpaceType }, {
+      onSuccess(data) {
+        if (data.data) setLessorType(data.data);
+      },
+    });
+  }, [currentSpaceType, companyId]);
+
+  const handleLessorTypeChange = (id: string) => {
+    const name = lessorTypes.find((l) => l.id === id)?.name || "";
+    setLessorTypeName(name);
+  };
+
+  const isPrivate = currentSpaceType === "private";
+  const isPublic = currentSpaceType === "public";
+  const isPhysical = lessorTypeName === PHYSICAL_COMPANY;
+  const isMoral = lessorTypeName === MORAL_COMPANY;
 
   return (
     <ScrollArea className="pr-4 h-full">
-      <div className="space-y-4.5 mx-2 my-4 max-w-xl">
+      <div className="space-y-6 mx-2 my-4 max-w-xl">
         <FormField
           control={form.control}
           name="lessor"
@@ -110,15 +106,10 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
               <FormControl></FormControl>
               {fieldState.error && (
                 <ul className="bg-red/5 p-2 rounded-lg w-full text-red text-xs">
-                  La section bailleur présente des erreurs,{" "}
-                  {Object.entries(fieldState.error).length > 0 &&
-                    "veuiller faire une vérification des champs "}
-                  <br />
+                  La section bailleur présente des erreurs, veuillez vérifier les champs suivants :
                   {Object.entries(fieldState.error).map(([field], index) => (
-                    <li key={index}>
-                      <span className="font-medium">
-                        {lessorError[field as keyof LessorErrorType]}
-                      </span>
+                    <li key={index} className="mt-1">
+                      • <span className="font-medium">{lessorError[field as keyof LessorErrorType]}</span>
                     </li>
                   ))}
                 </ul>
@@ -126,524 +117,203 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
             </FormItem>
           )}
         />
-        <div className="space-y-2.5">
-          <h2 className="font-semibold text-sm">
-            Informations sur le bailleur
-          </h2>
-          <div className="space-y-4.5">
+
+        <Section title="Informations sur le bailleur">
+          <FormField
+            control={form.control}
+            name="lessor.lessorSpaceType"
+            render={({ field }) => (
+              <FormItem className="-space-y-2">
+                <FormControl>
+                  <Combobox
+                    datas={lessorSpaceType}
+                    value={currentSpaceType || ""}
+                    setValue={(e) => {
+                      setCurrentSpaceType(e as "private" | "public");
+                      field.onChange(String(e));
+                    }}
+                    placeholder="Type d'espace"
+                    searchMessage="Rechercher un type d'espace"
+                    noResultsMessage="Aucun type d'espace trouvé."
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="lessor.lessorType"
+            render={({ field }) => (
+              <FormItem className="-space-y-2">
+                <FormControl>
+                  <Combobox
+                    isLoading={isGettingElements}
+                    datas={lessorTypes.map((lessorType) => ({
+                      id: lessorType.id,
+                      label: lessorType.name,
+                      value: lessorType.id,
+                    }))}
+                    value={field.value as string}
+                    setValue={(e) => {
+                      handleLessorTypeChange(String(e));
+                      field.onChange(String(e));
+                    }}
+                    placeholder="Type de bailleur"
+                    searchMessage="Rechercher un type"
+                    noResultsMessage="Aucun type de bailleur trouvé."
+                    addElement={<LessorTypeModal lessorSpaceType={currentSpaceType} />}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {isPrivate && (
+            <>
+              <TextField control={form.control} name="lessor.locationPrice" label="Prix du panneau loué" type="number" />
+              <TextField control={form.control} name="lessor.nonLocationPrice" label="Prix du panneau non loué" type="number" />
+            </>
+          )}
+
+          {isPublic && (
             <FormField
               control={form.control}
-              name="lessor.lessorSpaceType"
+              name="lessor.lessorCustomer"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      datas={lessorSpaceType}
-                      value={currentSpaceType as string}
-                      setValue={e => {
-                        setCurrentSpaceType(e as "private" | "public");
-                        field.onChange(String(e));
-                      }}
-                      placeholder="Type d'espace"
-                      searchMessage="Rechercher un type d'espce"
-                      noResultsMessage="Aucun type d'espace trouvé."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="lessor.lessorType"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isGettingElements}
-                      datas={lessorTypes.map((lessorType) => ({
-                        id: lessorType.id,
-                        label: lessorType.name,
-                        value: lessorType.id,
+                      isLoading={isGettingSuppliers}
+                      datas={suppliers.map((supplier) => ({
+                        id: supplier.id,
+                        label: `${supplier.companyName} - ${supplier.firstname} ${supplier.lastname}`,
+                        value: supplier.id,
                       }))}
                       value={field.value as string}
-                      setValue={(e) => {
-                        field.onChange(String(e));
-                      }}
-                      placeholder="Type de bailleur"
-                      searchMessage="Rechercher un type"
-                      noResultsMessage="Aucun type de bailleur trouvé."
-                      addElement={<LessorTypeModal />}
+                      setValue={(e) => field.onChange(String(e))}
+                      placeholder="Bailleur"
+                      searchMessage="Rechercher un bailleur"
+                      noResultsMessage="Aucun bailleur trouvé."
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="lessor.locationPrice"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      type="number"
-                      design="float"
-                      label="Prix du panneau loué"
-                      value={field.value as string}
-                      handleChange={e => field.onChange(String(e))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+          )}
+
+          {isPrivate && (
+            <>
+              <TextField control={form.control} name="lessor.lessorName" label="Nom du bailleur" />
+              <TextField control={form.control} name="lessor.lessorAddress" label="Adresse complète du bailleur" />
+
+              <FormField
+                control={form.control}
+                name="lessor.lessorCity"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <Combobox
+                        isLoading={isPendingCity}
+                        datas={cities.map((city) => ({
+                          id: city.id,
+                          label: city.name,
+                          value: city.id,
+                        }))}
+                        value={field.value as string}
+                        setValue={e => field.onChange(String(e))}
+                        placeholder="Ville"
+                        searchMessage="Rechercher une ville"
+                        noResultsMessage="Aucune ville trouvée."
+                        addElement={<CityModal />}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <TextField control={form.control} name="lessor.lessorPhone" label="Numéro de téléphone du bailleur" />
+              <TextField control={form.control} name="lessor.lessorEmail" label="Adresse mail du bailleur" />
+
+              {isPhysical && (
+                <>
+                  <TextField control={form.control} name="lessor.identityCard" label="Numéro carte d'identité" required={false} />
+                </>
               )}
-            />
-            <FormField
-              control={form.control}
-              name="lessor.nonLocationPrice"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      type="number"
-                      required={currentSpaceType === "public"}
-                      design="float"
-                      label="Prix du panneau non loué"
-                      value={field.value as string}
-                      handleChange={e => field.onChange(String(e))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+
+              {isMoral && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="lessor.capital"
+                    render={({ field }) => (
+                      <FormItem className="-space-y-2">
+                        <FormControl>
+                          <TextInput
+                            type="number"
+                            design="float"
+                            label="Capital du bailleur"
+                            value={field.value?.toString() || "0"}
+                            handleChange={(e) => field.onChange(new Decimal(String(e)))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <TextField control={form.control} name="lessor.rccm" label="Registre du commerce (RCCM)" />
+                  <TextField control={form.control} name="lessor.taxIdentificationNumber" label="Numéro d'identification fiscale" />
+                  <TextField control={form.control} name="lessor.niu" label="NIU" required={false} />
+                  <TextField control={form.control} name="lessor.legalForms" label="Statut juridique" />
+                </>
               )}
-            />
-            {currentSpaceType === "public" &&
-              <>
-                <FormField
-                  control={form.control}
-                  name="lessor.lessorCustomer"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <Combobox
-                          isLoading={isGettingSuppliers}
-                          datas={suppliers.map(supplier => ({
-                            id: supplier.id,
-                            label: `${supplier.companyName} - ${supplier.firstname} ${supplier.lastname}`,
-                            value: supplier.id
-                          }))}
-                          value={field.value as string}
-                          setValue={e => field.onChange(String(e))}
-                          placeholder="Bailleur"
-                          searchMessage="Rechercher un bailleur"
-                          noResultsMessage="Aucun bailleur trouvé."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lessor.delayContract"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <DatePicker
-                          label="Durée du contrat"
-                          mode="range"
-                          value={
-                            field.value?.from && field.value.to
-                              ? {
-                                from: new Date(field.value.from),
-                                to: new Date(field.value.to),
-                              }
-                              : undefined
-                          }
-                          onChange={(e) => {
-                            const range = e as { from: Date; to: Date };
-                            field.onChange({ from: range.from, to: range.to });
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
+            </>
+          )}
+        </Section>
 
-            }
-            {currentSpaceType === "private" &&
-              <>
-                <FormField
-                  control={form.control}
-                  name="lessor.lessorName"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          design="float"
-                          label="Nom du bailleur"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lessor.lessorAddress"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          design="float"
-                          label="Adresse complète du bailleur"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lessor.lessorCity"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <Combobox
-                          isLoading={isPendingCity}
-                          datas={cities.map((city) => ({
-                            id: city.id,
-                            label: city.name,
-                            value: city.id,
-                          }))}
-                          value={field.value as string}
-                          setValue={(e) => {
-                            field.onChange(e);
-                          }}
-                          placeholder="Ville"
-                          searchMessage="Rechercher une ville"
-                          noResultsMessage="Aucune ville trouvée."
-                          addElement={<CityModal />}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lessor.lessorPhone"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          design="float"
-                          label="Numéro de téléphone du bailleur"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lessor.lessorEmail"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          design="float"
-                          label="Adresse mail du bailleur"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lessor.capital"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          type="number"
-                          design="float"
-                          label="Capital du bailleur"
-                          value={field.value?.toString()}
-                          handleChange={(e) => field.onChange(new Decimal(String(e)))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lessor.rccm"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          design="float"
-                          label="Registre du commerce (RCCM)"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        {isPrivate && (
+          <Section title="Information sur la banque">
+            <TextField control={form.control} name="lessor.bankName" label="Nom de la banque" />
+            <TextField control={form.control} name="lessor.rib" label="RIB" />
+            <TextField control={form.control} name="lessor.iban" label="IBAN" />
+            <TextField control={form.control} name="lessor.bicSwift" label="BIC/SWIFT" />
+          </Section>
+        )}
 
-                <FormField
-                  control={form.control}
-                  name="lessor.taxIdentificationNumber"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          design="float"
-                          label="Numéro d'identification fiscale"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        {isPrivate && isMoral && (
+          <Section title="Représentant légal (entreprise)">
+            <TextField control={form.control} name="lessor.representativeLastName" label="Nom du représentant légal" />
+            <TextField control={form.control} name="lessor.representativeFirstName" label="Prénom du représentant légal" />
+            <TextField control={form.control} name="lessor.representativeJob" label="Titre du représentant légal" />
+            <TextField control={form.control} name="lessor.representativePhone" label="Numéro de téléphone du représentant légal" />
+            <TextField control={form.control} name="lessor.representativeEmail" label="Adresse mail du représentant légal" />
+          </Section>
+        )}
 
-                <FormField
-                  control={form.control}
-                  name="lessor.niu"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          required={false}
-                          design="float"
-                          label="NIU"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="lessor.legalForms"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          design="float"
-                          label="Statut juridique"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="lessor.bankName"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          design="float"
-                          label="Nom de la banque"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="lessor.rib"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          design="float"
-                          label="RIB"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="lessor.iban"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          design="float"
-                          label="IBAN"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="lessor.bicSwift"
-                  render={({ field }) => (
-                    <FormItem className="-space-y-2">
-                      <FormControl>
-                        <TextInput
-                          design="float"
-                          label="BIC/SWIFT"
-                          value={field.value}
-                          handleChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
-            }
-          </div>
-        </div>
-        {currentSpaceType === "private" && <>
-          <div className="space-y-2.5">
-            <h2 className="font-semibold text-sm">
-              Représentant légal (entreprise)
-            </h2>
-            <div className="space-y-4.5">
+        {isPrivate && (
+          <Section title="Détails du contrat">
+            {isPhysical ? (
               <FormField
                 control={form.control}
-                name="lessor.representativeLastName"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <TextInput
-                        design="float"
-                        label="Nom du représentant légal"
-                        value={field.value}
-                        handleChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lessor.representativeFirstName"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <TextInput
-                        design="float"
-                        label="Prénom du représentant légal"
-                        value={field.value}
-                        handleChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lessor.representativeJob"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <TextInput
-                        design="float"
-                        label="Titre du représentant légal"
-                        value={field.value}
-                        handleChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lessor.representativePhone"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <TextInput
-                        design="float"
-                        label="Numéro de téléphone du représentant légal"
-                        value={field.value}
-                        handleChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lessor.representativeEmail"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <TextInput
-                        design="float"
-                        label="Adresse mail du représentant légal"
-                        value={field.value}
-                        handleChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-          <div className="space-y-2.5">
-            <h2 className="font-semibold text-sm">Détails du contrat</h2>
-            <div className="space-y-4.5">
-              <FormField
-                control={form.control}
-                name="lessor.rentalStartDate"
+                name="lessor.delayContract"
                 render={({ field }) => (
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <DatePicker
-                        label="Date de début de location"
-                        mode="single"
-                        value={field.value}
+                        label="Durée du contrat"
+                        mode="range"
+                        value={
+                          field.value?.from && field.value.to
+                            ? { from: new Date(field.value.from), to: new Date(field.value.to) }
+                            : undefined
+                        }
                         onChange={(e) => {
-                          field.onChange(e)
+                          const range = e as { from: Date; to: Date };
+                          field.onChange({ from: range.from, to: range.to });
                         }}
                       />
                     </FormControl>
@@ -651,118 +321,122 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="lessor.rentalPeriod"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <Combobox
-                        datas={rentalDurations}
-                        value={field.value as string}
-                        setValue={field.onChange}
-                        placeholder="Durée de la location"
-                        searchMessage="Rechercher une durée"
-                        noResultsMessage="Aucune durée trouvée."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lessor.paymentMode"
-                render={({ field }) => {
-                  const selectedOptions = acceptPayment.filter((opt) =>
-                    field.value?.includes(opt.value)
-                  );
-
-                  return (
+            ) : (
+              <>
+                <FormField
+                  control={form.control}
+                  name="lessor.rentalStartDate"
+                  render={({ field }) => (
                     <FormItem className="-space-y-2">
                       <FormControl>
-                        <MultipleSelect
-                          label={
-                            <span>
-                              Mode de paiement <span className="text-red-500">*</span>
-                            </span>
-                          }
-                          options={acceptPayment}
-                          value={selectedOptions}
-                          onChange={(options) => {
-                            field.onChange(options.map((opt) => opt.value))
-                          }
-                          }
-                          placeholder="Sélèctionner un ou plusieur mode de paiement"
+                        <DatePicker
+                          label="Date de début de location"
+                          mode="single"
+                          value={field.value}
+                          onChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
-                  )
-                }
-                }
-              />
-              <FormField
-                control={form.control}
-                name="lessor.paymentFrequency"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <Combobox
-                        datas={paymentFrequency}
-                        value={field.value as string}
-                        setValue={field.onChange}
-                        placeholder="Fréquence de paiement"
-                        searchMessage="Rechercher une fréquence de paiement"
-                        noResultsMessage="Aucune fréquence trouvée."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lessor.rentalPeriod"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <Combobox
+                          datas={rentalDurations}
+                          value={field.value || ""}
+                          setValue={e => field.onChange(String(e))}
+                          placeholder="Durée de la location"
+                          searchMessage="Rechercher une durée"
+                          noResultsMessage="Aucune durée trouvée."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
 
-              <FormField
-                control={form.control}
-                name="lessor.electricitySupply"
-                render={({ field }) => (
+            <FormField
+              control={form.control}
+              name="lessor.paymentMode"
+              render={({ field }) => {
+                const selectedOptions = acceptPayment.filter((opt) => field.value?.includes(opt.value));
+                return (
                   <FormItem className="-space-y-2">
                     <FormControl>
-                      <Combobox
-                        datas={electricitySupply}
-                        value={field.value as string}
-                        setValue={field.onChange}
-                        placeholder="Fourniture du courant"
-                        searchMessage="Rechercher une fourniture du courant"
-                        noResultsMessage="Aucune fourniture du courant trouvée."
+                      <MultipleSelect
+                        label={
+                          <span>
+                            Mode de paiement <span className="text-red-500">*</span>
+                          </span>
+                        }
+                        options={acceptPayment}
+                        value={selectedOptions}
+                        onChange={(options) => field.onChange(options.map((opt) => opt.value))}
+                        placeholder="Sélectionner un ou plusieurs modes de paiement"
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
-                )}
-              />
+                );
+              }}
+            />
 
-              <FormField
-                control={form.control}
-                name="lessor.specificCondition"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <TextInput
-                        required={false}
-                        design="text-area"
-                        label="Conditions spécifiques ou restriction"
-                        value={field.value}
-                        handleChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-        </>}
+            <FormField
+              control={form.control}
+              name="lessor.paymentFrequency"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      datas={paymentFrequency}
+                      value={field.value || ""}
+                      setValue={e => field.onChange(String(e))}
+                      placeholder="Fréquence de paiement"
+                      searchMessage="Rechercher une fréquence de paiement"
+                      noResultsMessage="Aucune fréquence trouvée."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="lessor.electricitySupply"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      datas={electricitySupply}
+                      value={field.value || ""}
+                      setValue={e => field.onChange(String(e))}
+                      placeholder="Fourniture du courant"
+                      searchMessage="Rechercher une fourniture du courant"
+                      noResultsMessage="Aucune fourniture du courant trouvée."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <TextField
+              control={form.control}
+              name="lessor.specificCondition"
+              label="Conditions spécifiques ou restriction"
+              design="text-area"
+              required={false}
+            />
+          </Section>
+        )}
       </div>
     </ScrollArea>
   );

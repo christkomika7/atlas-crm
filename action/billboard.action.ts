@@ -1,4 +1,4 @@
-import { DEFAULT_PAGE_SIZE } from "@/config/constant";
+import { DEFAULT_PAGE_SIZE, MORAL_COMPANY, PHYSICAL_COMPANY } from "@/config/constant";
 import { BaseSchemaType } from "@/lib/zod/base-type.schema";
 import { BillboardSchemaFormType, EditBillboardSchemaFormType } from "@/lib/zod/billboard.schema";
 import { ContractSchemaType } from "@/lib/zod/contract.schema";
@@ -117,6 +117,12 @@ export async function create(data: BillboardSchemaFormType) {
     try {
         const formData = new FormData();
 
+        const appendIfDefined = (key: string, value: any) => {
+            if (value !== undefined && value !== null && value !== "") {
+                formData.append(key, value);
+            }
+        };
+
         // BILLBOARD - Général
         formData.append("companyId", data.billboard.companyId);
         formData.append("reference", data.billboard.reference);
@@ -167,45 +173,54 @@ export async function create(data: BillboardSchemaFormType) {
         // LESSOR - Infos bailleur
         formData.append("lessorType", data.lessor.lessorType);
         formData.append("lessorSpaceType", data.lessor.lessorSpaceType);
-        formData.append("locationPrice", data.lessor.locationPrice as string);
-        formData.append("nonLocationPrice", data.lessor.nonLocationPrice as string);
+
         if (data.lessor.lessorSpaceType === "private") {
-            formData.append("lessorName", data.lessor.lessorName as string);
-            formData.append("lessorAddress", data.lessor.lessorAddress as string);
-            formData.append("lessorCity", data.lessor.lessorCity as string);
-            formData.append("lessorPhone", data.lessor.lessorPhone as string);
-            formData.append("lessorEmail", data.lessor.lessorEmail as string);
-            formData.append("capital", data.lessor.capital?.toString() || "0");
-            formData.append("rccm", data.lessor.rccm as string);
-            formData.append("taxIdentificationNumber", data.lessor.taxIdentificationNumber as string);
-            formData.append("niu", data.lessor.niu || "");
-            formData.append("legalForms", data.lessor.legalForms as string);
-            formData.append("bankName", data.lessor.bankName as string);
-            formData.append("rib", data.lessor.rib as string);
-            formData.append("iban", data.lessor.iban as string);
-            formData.append("bicSwift", data.lessor.bicSwift as string);
 
+            // --- PRICES --- //
+            appendIfDefined("locationPrice", data.lessor.locationPrice);
+            appendIfDefined("nonLocationPrice", data.lessor.nonLocationPrice);
 
-            // LESSOR - Représentant légal
-            formData.append("representativeFirstName", data.lessor.representativeFirstName as string);
-            formData.append("representativeLastName", data.lessor.representativeLastName as string);
-            formData.append("representativeJob", data.lessor.representativeJob as string);
-            formData.append("representativePhone", data.lessor.representativePhone as string);
-            formData.append("representativeEmail", data.lessor.representativeEmail as string);
+            // --- PHYSICAL PERSON --- //
+            appendIfDefined("identityCard", data.lessor.identityCard);
+            appendIfDefined("delayContract", JSON.stringify(data.lessor.delayContract));
 
+            // --- MORAL PERSON --- //
+            appendIfDefined("capital", data.lessor.capital?.toString());
+            appendIfDefined("rccm", data.lessor.rccm);
+            appendIfDefined("taxIdentificationNumber", data.lessor.taxIdentificationNumber);
+            appendIfDefined("niu", data.lessor.niu);
+            appendIfDefined("legalForms", data.lessor.legalForms);
 
-            // LESSOR - Contrat
-            formData.append("rentalStartDate", data.lessor.rentalStartDate?.toISOString() ?? "");
-            formData.append("rentalPeriod", data.lessor.rentalPeriod as string);
-            formData.append("paymentMode", JSON.stringify(data.lessor.paymentMode));
-            formData.append("paymentFrequency", data.lessor.paymentFrequency as string);
-            formData.append("electricitySupply", data.lessor.electricitySupply as string);
-            formData.append("specificCondition", data.lessor.specificCondition as string);
+            // --- REPRESENTATIVE --- //
+            appendIfDefined("representativeFirstName", data.lessor.representativeFirstName);
+            appendIfDefined("representativeLastName", data.lessor.representativeLastName);
+            appendIfDefined("representativeJob", data.lessor.representativeJob);
+            appendIfDefined("representativePhone", data.lessor.representativePhone);
+            appendIfDefined("representativeEmail", data.lessor.representativeEmail);
+
+            // --- CONTRACT DATES --- //
+            appendIfDefined("rentalStartDate", data.lessor.rentalStartDate?.toISOString() || undefined);
+            appendIfDefined("rentalPeriod", data.lessor.rentalPeriod);
+
+            // --- COMMON FIELDS --- //
+            appendIfDefined("lessorName", data.lessor.lessorName);
+            appendIfDefined("lessorAddress", data.lessor.lessorAddress);
+            appendIfDefined("lessorCity", data.lessor.lessorCity);
+            appendIfDefined("lessorPhone", data.lessor.lessorPhone);
+            appendIfDefined("lessorEmail", data.lessor.lessorEmail);
+            appendIfDefined("bankName", data.lessor.bankName);
+            appendIfDefined("rib", data.lessor.rib);
+            appendIfDefined("iban", data.lessor.iban);
+            appendIfDefined("bicSwift", data.lessor.bicSwift);
+
+            // --- CONTRACT --- //
+            appendIfDefined("paymentMode", JSON.stringify(data.lessor.paymentMode));
+            appendIfDefined("paymentFrequency", data.lessor.paymentFrequency);
+            appendIfDefined("electricitySupply", data.lessor.electricitySupply);
+            appendIfDefined("specificCondition", data.lessor.specificCondition);
 
         } else {
-            formData.append("lessorCustomer", data.lessor.lessorCustomer as string);
-            formData.append("delayContract", JSON.stringify(data.lessor.delayContract) as string);
-
+            appendIfDefined("lessorCustomer", data.lessor.lessorCustomer);
         }
 
         // Envoi de la requête
@@ -233,6 +248,12 @@ export async function create(data: BillboardSchemaFormType) {
 export async function update(data: EditBillboardSchemaFormType) {
     try {
         const formData = new FormData();
+
+        const appendIfDefined = (key: string, value: any) => {
+            if (value !== undefined && value !== null && value !== "") {
+                formData.append(key, value);
+            }
+        };
 
         // BILLBOARD - Général
         formData.append("id", data.billboard.id);
@@ -284,48 +305,55 @@ export async function update(data: EditBillboardSchemaFormType) {
 
         // LESSOR - Infos bailleur
         formData.append("lessorType", data.lessor.lessorType);
-        formData.append("lessorSpaceType", data.lessor.lessorSpaceType);
-        formData.append("locationPrice", data.lessor.locationPrice as string);
-        formData.append("nonLocationPrice", data.lessor.nonLocationPrice as string);
-
+        formData.append("lessorSpaceType", data.lessor.lessorSpaceType)
         if (data.lessor.lessorSpaceType === "private") {
-            formData.append("lessorName", data.lessor.lessorName as string);
-            formData.append("lessorAddress", data.lessor.lessorAddress as string);
-            formData.append("lessorCity", data.lessor.lessorCity as string);
-            formData.append("lessorPhone", data.lessor.lessorPhone as string);
-            formData.append("lessorEmail", data.lessor.lessorEmail as string);
-            formData.append("capital", data.lessor.capital?.toString() || "0");
-            formData.append("rccm", data.lessor.rccm as string);
-            formData.append("taxIdentificationNumber", data.lessor.taxIdentificationNumber as string);
-            formData.append("niu", data.lessor.niu || "");
-            formData.append("legalForms", data.lessor.legalForms as string);
-            formData.append("bankName", data.lessor.bankName as string);
-            formData.append("rib", data.lessor.rib as string);
-            formData.append("iban", data.lessor.iban as string);
-            formData.append("bicSwift", data.lessor.bicSwift as string);
 
+            // --- PRICES --- //
+            appendIfDefined("locationPrice", data.lessor.locationPrice);
+            appendIfDefined("nonLocationPrice", data.lessor.nonLocationPrice);
 
-            // LESSOR - Représentant légal
-            formData.append("representativeFirstName", data.lessor.representativeFirstName as string);
-            formData.append("representativeLastName", data.lessor.representativeLastName as string);
-            formData.append("representativeJob", data.lessor.representativeJob as string);
-            formData.append("representativePhone", data.lessor.representativePhone as string);
-            formData.append("representativeEmail", data.lessor.representativeEmail as string);
+            // --- PHYSICAL PERSON --- //
+            appendIfDefined("identityCard", data.lessor.identityCard);
+            appendIfDefined("delayContract", JSON.stringify(data.lessor.delayContract));
 
+            // --- MORAL PERSON --- //
+            appendIfDefined("capital", data.lessor.capital?.toString());
+            appendIfDefined("rccm", data.lessor.rccm);
+            appendIfDefined("taxIdentificationNumber", data.lessor.taxIdentificationNumber);
+            appendIfDefined("niu", data.lessor.niu);
+            appendIfDefined("legalForms", data.lessor.legalForms);
 
-            // LESSOR - Contrat
-            formData.append("rentalStartDate", data.lessor.rentalStartDate?.toISOString() ?? "");
-            formData.append("rentalPeriod", data.lessor.rentalPeriod as string);
-            formData.append("paymentMode", JSON.stringify(data.lessor.paymentMode));
-            formData.append("paymentFrequency", data.lessor.paymentFrequency as string);
-            formData.append("electricitySupply", data.lessor.electricitySupply as string);
-            formData.append("specificCondition", data.lessor.specificCondition as string);
+            // --- REPRESENTATIVE --- //
+            appendIfDefined("representativeFirstName", data.lessor.representativeFirstName);
+            appendIfDefined("representativeLastName", data.lessor.representativeLastName);
+            appendIfDefined("representativeJob", data.lessor.representativeJob);
+            appendIfDefined("representativePhone", data.lessor.representativePhone);
+            appendIfDefined("representativeEmail", data.lessor.representativeEmail);
+
+            // --- CONTRACT DATES --- //
+            appendIfDefined("rentalStartDate", data.lessor.rentalStartDate?.toISOString() || undefined);
+            appendIfDefined("rentalPeriod", data.lessor.rentalPeriod);
+
+            // --- COMMON FIELDS --- //
+            appendIfDefined("lessorName", data.lessor.lessorName);
+            appendIfDefined("lessorAddress", data.lessor.lessorAddress);
+            appendIfDefined("lessorCity", data.lessor.lessorCity);
+            appendIfDefined("lessorPhone", data.lessor.lessorPhone);
+            appendIfDefined("lessorEmail", data.lessor.lessorEmail);
+            appendIfDefined("bankName", data.lessor.bankName);
+            appendIfDefined("rib", data.lessor.rib);
+            appendIfDefined("iban", data.lessor.iban);
+            appendIfDefined("bicSwift", data.lessor.bicSwift);
+
+            // --- CONTRACT --- //
+            appendIfDefined("paymentMode", JSON.stringify(data.lessor.paymentMode));
+            appendIfDefined("paymentFrequency", data.lessor.paymentFrequency);
+            appendIfDefined("electricitySupply", data.lessor.electricitySupply);
+            appendIfDefined("specificCondition", data.lessor.specificCondition);
 
         } else {
-            formData.append("lessorCustomer", data.lessor.lessorCustomer as string);
-            formData.append("delayContract", JSON.stringify(data.lessor.delayContract) as string);
+            appendIfDefined("lessorCustomer", data.lessor.lessorCustomer);
         }
-
         // Envoi de la requête
         const response = await fetch(
             `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard/${data.billboard.id}`,
@@ -408,8 +436,13 @@ export async function getBillboardDisplayBoard({ companyId }: { companyId: strin
 }
 
 
-export async function getBillboardLessorType({ companyId }: { companyId: string }) {
-    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/lessor-type/${companyId}`;
+export async function getBillboardLessorType({ companyId, lessorSpace }: { companyId: string, lessorSpace?: string }) {
+    const params = new URLSearchParams();
+    if (lessorSpace) params.append("lessorSpace", lessorSpace);
+
+    const queryString = params.toString();
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/lessor-type/${companyId}${queryString ? `?${queryString}` : ""
+        }`;
 
     try {
         const response = await fetch(url, {
@@ -447,7 +480,7 @@ export async function getBillboardStructureType({ companyId }: { companyId: stri
     }
 }
 
-export async function createBillboardElement(data: BaseSchemaType & { type: "display-board" | "lessor-type" | "structure-type" }) {
+export async function createBillboardElement(data: BaseSchemaType & { type: "display-board" | "lessor-type" | "structure-type", lessorSpace?: "private" | "public" }) {
 
     let url = "";
 
@@ -470,7 +503,7 @@ export async function createBillboardElement(data: BaseSchemaType & { type: "dis
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ companyId: data.companyId, name: data.name }),
+            body: JSON.stringify({ companyId: data.companyId, name: data.name, lessorSpace: data.lessorSpace }),
         });
 
         const res: RequestResponse<BaseType> = await response.json();

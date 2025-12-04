@@ -1,4 +1,5 @@
 import { checkAccess } from "@/lib/access";
+import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { baseSchema, BaseSchemaType } from "@/lib/zod/base-type.schema";
@@ -21,6 +22,13 @@ export async function POST(req: NextRequest) {
         ...formData,
     }) as BaseSchemaType;
 
+    if (!data.lessorSpace) {
+        return NextResponse.json({
+            status: "error",
+            message: "Le type d'espace est requis.",
+        }, { status: 400 });
+    }
+
 
     const exist = await prisma.lessorType.findUnique({
         where: { name: data.name }
@@ -37,6 +45,7 @@ export async function POST(req: NextRequest) {
         const createdData = await prisma.lessorType.create({
             data: {
                 name: data.name,
+                type: data.lessorSpace === "private" ? $Enums.LessorSpace.PRIVATE : $Enums.LessorSpace.PUBLIC,
                 company: {
                     connect: {
                         id: data.companyId

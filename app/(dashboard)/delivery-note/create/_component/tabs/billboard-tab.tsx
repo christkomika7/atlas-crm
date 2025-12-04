@@ -135,7 +135,7 @@ export default function BillboardTab({ isGettingBillboards, billboards,
                     {billboard.reference}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {billboard.name}
+                    {billboard.name} {billboard.hasTax && <span className="text-blue">*</span>}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     <BillboardStatus items={billboard.items.map(item => [item.locationStart, item.locationEnd])} />

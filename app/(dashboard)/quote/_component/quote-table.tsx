@@ -56,7 +56,7 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
 
     const { access: readAccess, loading } = useAccess("QUOTES", "READ");
 
-    const { mutate, isPending, data } = useQueryAction<
+    const { mutate, isPending } = useQueryAction<
       { companyId: string; filter: "progress" | "complete", skip?: number; take?: number },
       RequestResponse<QuoteType[]>
     >(getAllQuotes, () => { }, "quotes");

@@ -37,6 +37,7 @@ enum DeletionType {
 enum SourceType {
   CASH
   BANK
+  WITHDRAWAL
 }
 
 enum Resource {
@@ -67,6 +68,11 @@ enum ItemState {
 enum TransactionType {
   RECEIPT
   DISBURSEMENT
+}
+
+enum LessorSpace {
+  PUBLIC
+  PRIVATE
 }
 
 enum Action {
@@ -268,8 +274,8 @@ model Supplier {
   billboards     Billboard[]
   purchaseOrders PurchaseOrder[]
   receipts       Receipt[]
-  ribursements   Dibursement[]
-  Contract       Contract[]
+  dibursements   Dibursement[]
+  contracts      Contract[]
 
   @@map("supplier")
 }
@@ -434,6 +440,7 @@ model Billboard {
   lessorCity              String?
   lessorPhone             String?
   lessorEmail             String?
+  identityCard            String?
   capital                 Decimal? @default(0) @db.Decimal(15, 2)
   niu                     String?  @default("")
   legalForms              String   @default("")
@@ -856,6 +863,7 @@ model StructureType {
 
 model LessorType {
   id         String      @id @default(uuid())
+  type       LessorSpace @default(PRIVATE)
   name       String      @unique
   billboards Billboard[]
 
@@ -1017,7 +1025,7 @@ model Source {
 
 model FiscalObject {
   id           String        @id @default(ulid())
-  name         String        @unique
+  name         String
   dibursements Dibursement[]
 
   companyId String
@@ -1031,7 +1039,7 @@ model FiscalObject {
 
 model TransactionCategory {
   id           String              @id @default(ulid())
-  name         String              @unique
+  name         String
   type         TransactionType     @default(RECEIPT)
   natures      TransactionNature[]
   receipts     Receipt[]
@@ -1065,7 +1073,7 @@ model TransactionNature {
 
 model Allocation {
   id   String @id @default(ulid())
-  name String @unique
+  name String
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)

@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     const id = getIdFromUrl(req.url, "last") as string;
 
-    const type = req.nextUrl.searchParams.get("type")?.trim() ?? "";
+    const type = req.nextUrl.searchParams.get("type")?.trim() as "cash" | "check" | "bank-transfer" | "all";
 
 
     if (!id) {
@@ -30,6 +30,20 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
             state: "success",
             data: [],
+        }, { status: 200 })
+    }
+
+
+    if (type === "all") {
+        const sources = await prisma.source.findMany({
+            where: {
+                companyId: id
+            },
+        });
+
+        return NextResponse.json({
+            state: "success",
+            data: sources,
         }, { status: 200 })
     }
 

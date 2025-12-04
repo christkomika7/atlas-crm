@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
     }) as FiscalObjectSchemaType;
 
 
-    const objectExist = await prisma.fiscalObject.findUnique({
-        where: { name: data.name }
+    const objectExist = await prisma.fiscalObject.findFirst({
+        where: { name: data.name, companyId: data.companyId }
     });
 
     if (objectExist) {

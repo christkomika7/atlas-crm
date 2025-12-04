@@ -26,7 +26,12 @@ export async function DELETE(req: NextRequest) {
 
     const suppliers = await prisma.supplier.findMany({
         where: { id: { in: ids } },
-        include: { company: true }
+        include: {
+            company: true,
+            receipts: true,
+            dibursements: true,
+            contracts: true
+        }
     })
 
     const companyId = getFirstValidCompanyId(suppliers);
@@ -46,15 +51,30 @@ export async function DELETE(req: NextRequest) {
         }, { status: 200 })
     }
 
+    for (const supplier of suppliers) {
+        if (
+            supplier.receipts.length > 0 ||
+            supplier.dibursements.length > 0 ||
+            supplier.contracts.length > 0
+        ) {
+            return NextResponse.json({
+                state: "error",
+                message: "Supprimez d'abord les transactions, bon de commandes et contrats associés à ce fournisseur.",
+            }, { status: 409 });
+        }
+
+    }
+
     await prisma.supplier.deleteMany({
         where: {
             id: { in: ids }
         },
     })
 
-    suppliers.map(async supplier => {
+    for (const supplier of suppliers) {
         await removePath(supplier.uploadDocuments)
-    })
+    }
+
     return NextResponse.json({
         state: "success",
         message: "Tous les fournisseurs sélectionnés ont été supprimés avec succès.",

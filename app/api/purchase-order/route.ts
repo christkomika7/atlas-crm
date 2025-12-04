@@ -248,6 +248,7 @@ export async function DELETE(req: NextRequest) {
         include: {
             items: true,
             dibursements: true,
+            payments: true,
             company: true
         }
     })
@@ -272,10 +273,10 @@ export async function DELETE(req: NextRequest) {
 
     for (const purchaseOrder of purchaseOrders) {
 
-        if (purchaseOrder.dibursements.length > 0) {
+        if (purchaseOrder.dibursements.length > 0 || purchaseOrder.payments.length > 0) {
             return NextResponse.json({
                 state: "error",
-                message: "Supprimez d'abord les transactions associées à ce bon de commande.",
+                message: "Supprimez d'abord les transactions et paiements associés à ce bon de commande.",
             }, { status: 409 });
         }
 
@@ -309,13 +310,15 @@ export async function DELETE(req: NextRequest) {
                     },
                 }
             }),
-            prisma.purchaseOrder.delete({ where: { id: purchaseOrder.id } })
+            prisma.purchaseOrder.delete({ where: { id: purchaseOrder.id } }),
+            prisma.payment.deleteMany({ where: { purchaseOrderId: purchaseOrder.id } }),
+            prisma.dibursement.deleteMany({ where: { referencePurchaseOrderId: purchaseOrder.id } })
         ]);
     }
 
-    purchaseOrders.map(async purchaseOrder => {
-        await removePath([...purchaseOrder.pathFiles])
-    })
+    const pathFiles = purchaseOrders.map(p => p.pathFiles);
+    await removePath([...pathFiles]);
+
     return NextResponse.json({
         state: "success",
         message: "Tous les bons de commande sélectionnés ont été supprimés avec succès.",

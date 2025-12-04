@@ -11,7 +11,6 @@ import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   const res = await checkAccess("DASHBOARD", ["READ"]);
-
   if (!res.authorized) {
     return Response.json(
       {
@@ -24,7 +23,6 @@ export async function GET(req: NextRequest) {
   }
 
   const companyId = req.nextUrl.searchParams.get("companyId") as string;
-
   if (!companyId) {
     return NextResponse.json(
       { status: "error", message: "Identifiant invalide." },
@@ -40,6 +38,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // Parse VAT rate
   const vats: TaxInput[] = Array.isArray(company.vatRates)
     ? (company.vatRates as any[])
     : typeof company.vatRates === "string"
@@ -61,17 +60,27 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const parsePercent = (s: string | number | undefined): Decimal => {
-    if (!s && s !== 0) return new Decimal(0);
+  const parsePercent = (value: string | number | undefined): Decimal => {
+    if (value === undefined || value === null) return new Decimal(0);
+
     try {
-      if (typeof s === "number") return new Decimal(s).div(100);
-      const cleaned = String(s).replace(/[%\s]/g, "");
-      if (cleaned === "") return new Decimal(0);
+      if (typeof value === "number") {
+        return new Decimal(value).div(100);
+      }
+
+      let cleaned = String(value)
+        .replace(/\s/g, "")
+        .replace("%", "")
+        .replace(",", ".");
+
+      if (!cleaned || cleaned === "") return new Decimal(0);
+
       return new Decimal(cleaned).div(100);
     } catch {
       return new Decimal(0);
     }
   };
+
 
   const tvaRate = parsePercent(tvaEntry.taxValue);
 
@@ -86,22 +95,33 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const invoicesSum = await prisma.invoice.aggregate({
-    _sum: { payee: true },
+  // Récupération des factures
+  const invoices = await prisma.invoice.findMany({
     where: {
       companyId,
       amountType: "TTC",
     },
+    select: {
+      payee: true,
+      totalHT: true,
+      totalTTC: true,
+    },
   });
 
-  const purchaseOrdersSum = await prisma.purchaseOrder.aggregate({
-    _sum: { payee: true },
+  // Récupération des bons de commande
+  const purchaseOrders = await prisma.purchaseOrder.findMany({
     where: {
       companyId,
       amountType: "TTC",
     },
+    select: {
+      payee: true,
+      totalHT: true,
+      totalTTC: true,
+    },
   });
 
+  // Paiements fiscaux déjà déposés
   const fiscalDisbursementsSum = await prisma.dibursement.aggregate({
     _sum: { amount: true },
     where: {
@@ -115,19 +135,46 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const totalInvoicesPayee = new Decimal(
-    invoicesSum._sum.payee?.toString() ?? 0,
-  );
-  const totalPurchaseOrdersPayee = new Decimal(
-    purchaseOrdersSum._sum.payee?.toString() ?? 0,
-  );
+
+  let tvaCollected = new Decimal(0);
+
+  for (const invoice of invoices) {
+    const payee = new Decimal(invoice.payee.toString() ?? 0);
+    const totalTTC = new Decimal(invoice.totalTTC.toString() ?? 0);
+
+    if (totalTTC.greaterThan(0)) {
+      const totalHT = totalTTC.div(tvaRate.add(1));
+      const invoiceTVA = totalTTC.sub(totalHT);
+
+      const proportionPaid = payee.div(totalTTC);
+
+      tvaCollected = tvaCollected.add(invoiceTVA.mul(proportionPaid));
+    }
+  }
+
+  let tvaDeductible = new Decimal(0);
+
+  for (const po of purchaseOrders) {
+    const payee = new Decimal(po.payee.toString() ?? 0);
+    const totalTTC = new Decimal(po.totalTTC.toString() ?? 0);
+
+    if (totalTTC.greaterThan(0)) {
+      const totalHT = totalTTC.div(tvaRate.add(1));
+      const purchaseOrderTVA = totalTTC.sub(totalHT);
+
+      const proportionPaid = payee.div(totalTTC);
+
+      tvaDeductible = tvaDeductible.add(purchaseOrderTVA.mul(proportionPaid));
+    }
+  }
+
   const totalFiscalPaid = new Decimal(
     fiscalDisbursementsSum._sum.amount?.toString() ?? 0,
   );
 
   if (
-    totalInvoicesPayee.equals(0) &&
-    totalPurchaseOrdersPayee.equals(0) &&
+    tvaCollected.equals(0) &&
+    tvaDeductible.equals(0) &&
     totalFiscalPaid.equals(0)
   ) {
     return NextResponse.json(
@@ -140,21 +187,14 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const tvaCollected = totalInvoicesPayee
-    .mul(tvaRate)
-    .div(new Decimal(1).add(tvaRate));
-
-  const tvaDeductible = totalPurchaseOrdersPayee
-    .mul(tvaRate)
-    .div(new Decimal(1).add(tvaRate));
-
   const tvaDue = tvaCollected.sub(tvaDeductible).sub(totalFiscalPaid);
+
 
   return NextResponse.json(
     {
       status: "success",
       message: "",
-      data: tvaDue.toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber(),
+      data: tvaDue.toNumber(),
     },
     { status: 200 },
   );

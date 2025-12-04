@@ -138,6 +138,7 @@ export async function DELETE(req: NextRequest) {
             deliveryNotes: true,
             purchaseOrders: true,
             dibursements: true,
+            tasks: true,
         }
     });
 
@@ -158,12 +159,18 @@ export async function DELETE(req: NextRequest) {
     }
 
     for (const project of projects) {
-        if (project.quotes || project.invoices || project.deliveryNotes || project.dibursements ||
-            project.purchaseOrders) {
+        if (
+            project.invoices.length > 0 ||
+            project.quotes.length > 0 ||
+            project.purchaseOrders.length > 0 ||
+            project.deliveryNotes.length > 0 ||
+            project.dibursements.length > 0 ||
+            project.tasks.length > 0
+        ) {
             return NextResponse.json({
-                message: "Veuillez supprimer toutes les données reliées au projet (devis, facture, bon de livraison etc.).",
                 state: "error",
-            }, { status: 400 });
+                message: "Supprimez d'abord les transactions, factures, devis, bon de livraisons, bon de commandes et tâches associés à ce projet.",
+            }, { status: 409 });
         }
     }
 

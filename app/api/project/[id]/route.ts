@@ -164,6 +164,11 @@ export async function DELETE(req: NextRequest) {
     const project = await prisma.project.findUnique({
         where: { id },
         include: {
+            invoices: true,
+            quotes: true,
+            purchaseOrders: true,
+            deliveryNotes: true,
+            dibursements: true,
             tasks: true,
             company: true
         }
@@ -183,6 +188,20 @@ export async function DELETE(req: NextRequest) {
             state: "success",
             message: "Suppression en attente de validation.",
         }, { status: 200 })
+    }
+
+    if (
+        project.invoices.length > 0 ||
+        project.quotes.length > 0 ||
+        project.purchaseOrders.length > 0 ||
+        project.deliveryNotes.length > 0 ||
+        project.dibursements.length > 0 ||
+        project.tasks.length > 0
+    ) {
+        return NextResponse.json({
+            state: "error",
+            message: "Supprimez d'abord les transactions, factures, devis, bon de livraisons, bon de commandes et tâches associés à ce projet.",
+        }, { status: 409 });
     }
 
     const deletedProject = await prisma.project.delete({ where: { id } });

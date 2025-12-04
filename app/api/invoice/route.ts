@@ -325,7 +325,7 @@ export async function DELETE(req: NextRequest) {
                 }
             },
             receipts: true,
-            dibursements: true,
+            payments: true,
             company: true
         }
     });
@@ -348,10 +348,10 @@ export async function DELETE(req: NextRequest) {
     }
 
     for (const invoice of invoices) {
-        if (invoice.receipts.length > 0 || invoice.dibursements.length > 0) {
+        if (invoice.receipts.length > 0 || invoice.payments.length > 0) {
             return NextResponse.json({
                 state: "error",
-                message: "Supprimez d'abord les transactions associées à cette facture.",
+                message: "Supprimez d'abord les transactions et paiements associés à cette facture.",
             }, { status: 409 });
         }
         if (invoice.items && invoice.items.length > 0) {
@@ -387,7 +387,9 @@ export async function DELETE(req: NextRequest) {
                     balance: new Decimal(0)
                 }
             }),
-            prisma.invoice.delete({ where: { id: invoice.id } })
+            prisma.invoice.delete({ where: { id: invoice.id } }),
+            prisma.payment.deleteMany({ where: { invoiceId: invoice.id } }),
+            prisma.receipt.deleteMany({ where: { referenceInvoiceId: invoice.id } }),
         ]);
     }
 

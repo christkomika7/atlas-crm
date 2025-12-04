@@ -21,7 +21,11 @@ import { PlusCircle, XIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export default function LessorTypeModal() {
+type LessorTypeModal = {
+    lessorSpaceType?: "private" | "public"
+}
+
+export default function LessorTypeModal({ lessorSpaceType }: LessorTypeModal) {
     const companyId = useDataStore.use.currentCompany();
 
     const datas = useBillboardStore.use.lessorTypes();
@@ -33,7 +37,7 @@ export default function LessorTypeModal() {
     const [currentId, setCurrentId] = useState("");
 
     const { mutate: muatateCreateElement, isPending: isCreatingElement } = useQueryAction<
-        BaseSchemaType & { type: "lessor-type" | "lessor-type" | "structure-type" },
+        BaseSchemaType & { type: "lessor-type" | "lessor-type" | "structure-type", lessorSpace?: "private" | "public" },
         RequestResponse<BaseType>
     >(createBillboardElement, () => { }, "element");
 
@@ -73,9 +77,10 @@ export default function LessorTypeModal() {
         e.preventDefault();
 
         if (!companyId) return toast.error("Aucune entreprise trouvée.");
+        if (!lessorSpaceType) return toast.error("Le type d'espace est requis.")
         if (!name) return toast.error("Aucune élément insérée.");
         muatateCreateElement(
-            { name, companyId, type: "lessor-type" },
+            { name, companyId, type: "lessor-type", lessorSpace: lessorSpaceType },
             {
                 onSuccess(data) {
                     if (data.data) {

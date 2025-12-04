@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
             sourceType: data.sourceType === "check" || data.sourceType === "bank-transfer" ?
                 $Enums.SourceType.BANK :
                 $Enums.SourceType.CASH,
+            companyId: data.companyId
         }
     });
 

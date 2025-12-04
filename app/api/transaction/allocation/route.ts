@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
     }) as AllocationSchemaType;
 
 
-    const allocationExist = await prisma.allocation.findUnique({
-        where: { name: data.name }
+    const allocationExist = await prisma.allocation.findFirst({
+        where: { name: data.name, companyId: data.companyId }
     });
 
     if (allocationExist) {

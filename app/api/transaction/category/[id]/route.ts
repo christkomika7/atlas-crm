@@ -16,7 +16,8 @@ export async function GET(req: NextRequest) {
 
     const id = getIdFromUrl(req.url, "last") as string;
     const type = req.nextUrl.searchParams.get("type")?.trim() ?? "";
-    const filter = JSON.parse(req.nextUrl.searchParams.get("filter")?.trim() as string) as boolean;
+    const filterParam = req.nextUrl.searchParams.get("filter")?.trim() as string;
+    const filter = filterParam ? JSON.parse(filterParam) as boolean : undefined;
 
     if (!id) {
         return NextResponse.json({

@@ -754,7 +754,7 @@ export async function PUT(req: NextRequest) {
                             billboards: true,
                             productsServices: true,
                             receipts: true,
-                            dibursements: true,
+                            payments: true,
                             company: true
                         }
                     });
@@ -766,10 +766,10 @@ export async function PUT(req: NextRequest) {
                         }, { status: 400 })
                     }
 
-                    if (invoice.receipts.length > 0 || invoice.dibursements.length > 0) {
+                    if (invoice.receipts.length > 0 || invoice.payments.length > 0) {
                         return NextResponse.json({
                             state: "error",
-                            message: "Supprimez d'abord les transactions associées à cette facture.",
+                            message: "Supprimez d'abord les transactions et paiements associés à cette facture.",
                         }, { status: 409 });
                     }
 
@@ -811,7 +811,11 @@ export async function PUT(req: NextRequest) {
                     ]);
 
                     await removePath([...invoice.pathFiles]);
-                    await prisma.deletion.delete({ where: { id } });
+                    await prisma.$transaction([
+                        prisma.deletion.delete({ where: { id } }),
+                        prisma.receipt.deleteMany({ where: { referenceInvoiceId: invoice.id } }),
+                        prisma.payment.deleteMany({ where: { invoiceId: invoice.id } }),
+                    ]);
 
                     break;
             }
@@ -908,6 +912,7 @@ export async function PUT(req: NextRequest) {
                         include: {
                             items: true,
                             productsServices: true,
+                            payments: true,
                             dibursements: true,
                             company: true
                         }
@@ -920,10 +925,10 @@ export async function PUT(req: NextRequest) {
                         }, { status: 400 })
                     }
 
-                    if (purchaseOrder.dibursements.length > 0) {
+                    if (purchaseOrder.dibursements.length > 0 || purchaseOrder.payments.length > 0) {
                         return NextResponse.json({
                             state: "error",
-                            message: "Supprimez d'abord les transactions associées à ce bon de commande.",
+                            message: "Supprimez d'abord les transactions et paiements associés à ce bon de commande.",
                         }, { status: 409 });
                     }
 
@@ -958,7 +963,9 @@ export async function PUT(req: NextRequest) {
                                 }
                             }
                         }),
-                        prisma.purchaseOrder.delete({ where: { id } })
+                        prisma.purchaseOrder.delete({ where: { id } }),
+                        prisma.payment.deleteMany({ where: { purchaseOrderId: id } }),
+                        prisma.dibursement.deleteMany({ where: { referencePurchaseOrderId: id } })
                     ]);
 
                     await removePath([...purchaseOrder.pathFiles]);
@@ -1183,7 +1190,33 @@ export async function PUT(req: NextRequest) {
                 case "delete":
                     const client = await prisma.client.delete({
                         where: { id: recordId },
+                        include: {
+                            invoices: true,
+                            projects: true,
+                            receipts: true,
+                            dibursements: true,
+                            contracts: true,
+                            deliveryNotes: true,
+                            quotes: true,
+                            appointments: true,
+                        }
                     });
+
+                    if (
+                        client.invoices.length > 0 ||
+                        client.projects.length > 0 ||
+                        client.receipts.length > 0 ||
+                        client.dibursements.length > 0 ||
+                        client.contracts.length > 0 ||
+                        client.quotes.length > 0 ||
+                        client.deliveryNotes.length > 0 ||
+                        client.appointments.length > 0
+                    ) {
+                        return NextResponse.json({
+                            state: "error",
+                            message: "Supprimez d'abord les transactions, factures, devis, bon de livraisons, contrats, projets et rendez-vous associés à ce client.",
+                        }, { status: 409 });
+                    }
                     await prisma.deletion.delete({ where: { id } });
                     await removePath(client.uploadDocuments);
                     break;
@@ -1231,7 +1264,25 @@ export async function PUT(req: NextRequest) {
                 case "delete":
                     const supplier = await prisma.supplier.delete({
                         where: { id: recordId },
+                        include: {
+                            receipts: true,
+                            dibursements: true,
+                            contracts: true,
+                            purchaseOrders: true
+                        }
                     });
+
+                    if (
+                        supplier.receipts.length > 0 ||
+                        supplier.dibursements.length > 0 ||
+                        supplier.contracts.length > 0
+                    ) {
+                        return NextResponse.json({
+                            state: "error",
+                            message: "Supprimez d'abord les transactions, bon de commandes et contrats associés à ce fournisseur.",
+                        }, { status: 409 });
+                    }
+
                     await prisma.deletion.delete({ where: { id } });
                     await removePath(supplier.uploadDocuments);
                     break;
@@ -1255,7 +1306,30 @@ export async function PUT(req: NextRequest) {
                 case "delete":
                     const project = await prisma.project.delete({
                         where: { id: recordId },
+                        include: {
+                            invoices: true,
+                            quotes: true,
+                            purchaseOrders: true,
+                            deliveryNotes: true,
+                            dibursements: true,
+                            tasks: true
+                        }
                     });
+
+                    if (
+                        project.invoices.length > 0 ||
+                        project.quotes.length > 0 ||
+                        project.purchaseOrders.length > 0 ||
+                        project.deliveryNotes.length > 0 ||
+                        project.dibursements.length > 0 ||
+                        project.tasks.length > 0
+                    ) {
+                        return NextResponse.json({
+                            state: "error",
+                            message: "Supprimez d'abord les transactions, factures, devis, bon de livraisons, bon de commandes et tâches associés à ce projet.",
+                        }, { status: 409 });
+                    }
+
                     await prisma.deletion.delete({ where: { id } });
                     await removePath([project.path]);
                     break;

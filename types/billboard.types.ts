@@ -41,6 +41,7 @@ export type BillboardType = {
     revenueGenerate: Decimal;
 
 
+
     width: number;
     height: number;
     lighting: string;
@@ -66,6 +67,8 @@ export type BillboardType = {
     lessorCity?: string;
     lessorPhone?: string;
     lessorEmail?: string;
+    identityCard?: string;
+    passport?: string;
     capital?: Decimal;
     rccm?: string;
     taxIdentificationNumber?: string;

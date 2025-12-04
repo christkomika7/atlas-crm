@@ -206,7 +206,6 @@ export async function POST(req: NextRequest) {
                     locationPrice: billboard.locationPrice,
                     nonLocationPrice: billboard.nonLocationPrice,
 
-
                     lessorName: billboard.lessorName,
                     lessorAddress: billboard.lessorAddress,
                     lessorCity: billboard.lessorCity,
@@ -229,6 +228,9 @@ export async function POST(req: NextRequest) {
                     representativePhone: billboard.representativePhone,
                     representativeEmail: billboard.representativeEmail,
 
+                    identityCard: billboard.identityCard,
+                    delayContractStart: billboard.delayContractStart,
+                    delayContractEnd: billboard.delayContractEnd,
                     rentalStartDate: billboard.rentalStartDate,
                     rentalPeriod: billboard.rentalPeriod,
                     paymentMode: billboard.paymentMode,
@@ -286,10 +288,6 @@ export async function POST(req: NextRequest) {
                             id: billboard.lessorSupplierId as string
                         }
                     },
-                    locationPrice: billboard.locationPrice,
-                    nonLocationPrice: billboard.nonLocationPrice,
-                    delayContractStart: billboard.delayContractStart,
-                    delayContractEnd: billboard.delayContractEnd,
                     company: { connect: { id: billboard.companyId } },
                 },
             });
@@ -355,7 +353,7 @@ export async function PUT(req: NextRequest) {
     const lessorFields = [
         "lessorSpaceType", "lessorType", "lessorCustomer", "lessorName", "lessorAddress", "lessorCity", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "rib", "iban", "bicSwift", "bankName",
         "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition",
-        'niu', "legalForms", "locationPrice", "nonLocationPrice", "delayContract"
+        'niu', "legalForms", "locationPrice", "nonLocationPrice", "delayContract", "identityCard"
     ];
 
     const billboardData: Record<string, any> = {};
@@ -476,8 +474,6 @@ export async function PUT(req: NextRequest) {
                 electricity: data.billboard.electricity,
                 framework: data.billboard.framework,
                 note: data.billboard.note,
-                locationPrice: data.lessor.locationPrice,
-                nonLocationPrice: data.lessor.nonLocationPrice,
                 lessorSpaceType: data.lessor.lessorSpaceType,
                 lessorType: { connect: { id: data.lessor.lessorType } },
 
@@ -488,14 +484,15 @@ export async function PUT(req: NextRequest) {
                                 id: data.lessor.lessorCustomer
                             }
                         },
-                        delayContractStart: data.lessor.delayContract?.from,
-                        delayContractEnd: data.lessor.delayContract?.to,
-
                         lessorName: null,
                         lessorAddress: null,
                         lessorCity: null,
                         lessorPhone: null,
                         lessorEmail: null,
+                        delayContractEnd: null,
+                        delayContractStart: null,
+                        locationPrice: null,
+                        nonLocationPrice: null,
 
                         capital: null,
                         rccm: null,
@@ -525,8 +522,10 @@ export async function PUT(req: NextRequest) {
                                 id: billboardExist.lessorTypeId as string
                             }
                         },
-                        delayContractStart: null,
-                        delayContractEnd: null,
+                        locationPrice: data.lessor.locationPrice,
+                        nonLocationPrice: data.lessor.nonLocationPrice,
+                        delayContractStart: data.lessor.delayContract?.from,
+                        delayContractEnd: data.lessor.delayContract?.to,
 
                         lessorName: data.lessor.lessorName,
                         lessorAddress: data.lessor.lessorAddress,

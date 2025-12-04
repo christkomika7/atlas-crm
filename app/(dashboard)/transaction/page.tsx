@@ -15,6 +15,8 @@ import { deleteTransactions } from "@/action/transaction.action";
 import { FilterXIcon } from "lucide-react";
 import { useDataStore } from "@/stores/data.store";
 import { useAccess } from "@/hook/useAccess";
+import AccessContainer from "@/components/errors/access-container";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function TransactionPage() {
   const companyId = useDataStore.use.currentCompany();
@@ -24,8 +26,9 @@ export default function TransactionPage() {
   >([]);
   const transactionTableRef = useRef<TransactionTableRef>(null);
 
-  const { access: createAccess } = useAccess("TRANSACTION", "CREATE");
-  const { access: modifyAcccess } = useAccess("TRANSACTION", "MODIFY");
+  const { access: createAccess, loading: loadingCreateAccess } = useAccess("TRANSACTION", "CREATE");
+  const { access: modifyAcccess, loading: loadingModifyAccess } = useAccess("TRANSACTION", "MODIFY");
+  const { access: readAccess, loading: loadingReadAccess } = useAccess("TRANSACTION", "READ");
 
   const { mutate: mutateDeleteTransactions, isPending } = useQueryAction<
     { data: DeletedTransactions[], companyId: string },
@@ -65,42 +68,56 @@ export default function TransactionPage() {
             </Button>
           )}
           <div className="grid grid-cols-[120px_120px_140px] gap-x-2">
-            <Button variant="inset-primary">Exporter</Button>
-            {modifyAcccess &&
-              <Button
-                variant="primary"
-                className="bg-red font-medium"
-                onClick={removeTransactions}
-              >
-                {isPending ? (
-                  <Spinner />
-                ) : (
-                  <>
-                    {selectedTransactionIds.length > 0 &&
-                      `(${selectedTransactionIds.length})`}{" "}
-                    Suppression
-                  </>
-                )}
-              </Button>
+            {loadingReadAccess ? <Skeleton className="w-[120px] h-[48px]" /> : <>
+              {readAccess &&
+                <Button variant="inset-primary">Exporter</Button>
+              }
+            </>
             }
+            {loadingModifyAccess ? <Skeleton className="w-[120px] h-[48px]" /> : <>
+              {modifyAcccess &&
+                <Button
+                  variant="primary"
+                  className="bg-red font-medium"
+                  onClick={removeTransactions}
+                >
+                  {isPending ? (
+                    <Spinner />
+                  ) : (
+                    <>
+                      {selectedTransactionIds.length > 0 &&
+                        `(${selectedTransactionIds.length})`}{" "}
+                      Suppression
+                    </>
+                  )}
+                </Button>
+              }
+            </>}
 
-            {createAccess &&
-              <HeaderMenu refreshTransaction={handleTransactionAdded} />
-            }
+            {loadingCreateAccess ? <Skeleton className="w-[140px] h-[48px]" /> : <>
+              {createAccess &&
+                <HeaderMenu refreshTransaction={handleTransactionAdded} />
+              }
+            </>}
           </div>
         </div>
       </Header>
+
       <div className="space-y-2 h-full w-(--left-sidebar-width)">
-        <div className="sticky top-[54px] bg-white z-20 left-0 pb-2">
-          <TransactionFilters filters={filters} setFilters={setFilters} />
-        </div>
-        <div className="p-2">
-          <TransactionTable
-            ref={transactionTableRef}
-            selectedTransactionIds={selectedTransactionIds}
-            setSelectedTransactionIds={setSelectedTransactionIds}
-          />
-        </div>
+        <AccessContainer hasAccess={readAccess} resource="TRANSACTION" loading={loadingReadAccess}>
+          <>
+            <div className="sticky top-[54px] bg-white z-20 left-0 pb-2">
+              <TransactionFilters filters={filters} setFilters={setFilters} />
+            </div>
+            <div className="p-2">
+              <TransactionTable
+                ref={transactionTableRef}
+                selectedTransactionIds={selectedTransactionIds}
+                setSelectedTransactionIds={setSelectedTransactionIds}
+              />
+            </div>
+          </>
+        </AccessContainer>
       </div>
     </div>
   );

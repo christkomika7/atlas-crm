@@ -104,6 +104,20 @@ export const priority = [
     },
 ];
 
+export const transactions = [
+    {
+        id: 1,
+        label: "Encaissement",
+        value: "RECEIPT"
+    },
+    {
+        id: 2,
+        label: "Décaissement",
+        value: "DISBURSEMENT"
+    },
+];
+
+
 
 export const status = [
     {

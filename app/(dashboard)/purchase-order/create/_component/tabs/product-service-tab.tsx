@@ -148,7 +148,7 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
                     {productService.type === "PRODUCT" ? "Produit" : "Service"}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
-                    {cutText(productService.designation)}
+                    {cutText(productService.designation)} {productService.hasTax && <span className="text-blue">*</span>}
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {getCurrentQuantity(productService.id, productService.quantity)}

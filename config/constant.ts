@@ -41,3 +41,9 @@ export const DELIVERY_NOTE_PREFIX = "BL";
 // CHART
 export const MS_PER_DAY = 1000 * 60 * 60 * 24;
 export const MAX_BARS = 12;
+
+
+// LESSOR TYPE
+export const CITY_ALL = "Mairie";
+export const MORAL_COMPANY = "Personne morale"
+export const PHYSICAL_COMPANY = "Personne physique"

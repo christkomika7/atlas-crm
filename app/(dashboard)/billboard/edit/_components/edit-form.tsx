@@ -22,6 +22,7 @@ import Spinner from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import useBillboardStore from "@/stores/billboard.store";
 import Decimal from "decimal.js";
+import { PHYSICAL_COMPANY } from "@/config/constant";
 
 export default function EditForm() {
   const [lastPhotos, setLastPhotos] = useState<string[]>([]);
@@ -108,44 +109,48 @@ export default function EditForm() {
         lessor: {
           lessorType: billboard.lessorTypeId,
           lessorSpaceType: billboard.lessorSpaceType,
-          locationPrice: billboard.locationPrice,
-          nonLocationPrice: billboard.nonLocationPrice,
           ...(billboard.lessorSpaceType === 'private' ? {
             lessorName: billboard.lessorName,
             lessorAddress: billboard.lessorAddress,
             lessorCity: billboard.lessorCity,
             lessorPhone: billboard.lessorPhone,
             lessorEmail: billboard.lessorEmail,
+            locationPrice: billboard.locationPrice,
+            nonLocationPrice: billboard.nonLocationPrice,
 
-            capital: new Decimal(billboard.capital || 0),
-            rccm: billboard.rccm,
-            taxIdentificationNumber: billboard.taxIdentificationNumber,
-            niu: billboard.niu,
-            legalForms: billboard.legalForms,
+            ...(billboard.lessorType.name === PHYSICAL_COMPANY ? {
+              identityCard: billboard.identityCard,
+              delayContract: billboard.delayContractStart && billboard.delayContractEnd ? {
+                from: new Date(billboard.delayContractStart),
+                to: new Date(billboard.delayContractEnd)
+              } : undefined
+
+            } : {
+              capital: new Decimal(billboard.capital || 0),
+              rccm: billboard.rccm,
+              taxIdentificationNumber: billboard.taxIdentificationNumber,
+              niu: billboard.niu,
+              legalForms: billboard.legalForms,
+              representativeFirstName: billboard.representativeFirstName,
+              representativeLastName: billboard.representativeLastName,
+              representativeJob: billboard.representativeJob,
+              representativePhone: billboard.representativePhone,
+              representativeEmail: billboard.representativeEmail,
+              rentalStartDate: billboard.rentalStartDate ? new Date(billboard.rentalStartDate) : undefined,
+              rentalPeriod: billboard.rentalPeriod,
+            }),
+
             bankName: billboard.bankName,
             rib: billboard.rib,
             iban: billboard.iban,
             bicSwift: billboard.bicSwift,
 
-            representativeFirstName: billboard.representativeFirstName,
-            representativeLastName: billboard.representativeLastName,
-            representativeJob: billboard.representativeJob,
-            representativePhone: billboard.representativePhone,
-            representativeEmail: billboard.representativeEmail,
-
-            rentalStartDate: billboard.rentalStartDate ? new Date(billboard.rentalStartDate) : undefined,
-            rentalPeriod: billboard.rentalPeriod,
             paymentMode: billboard.paymentMode ? JSON.parse(billboard.paymentMode) : [],
             paymentFrequency: billboard.paymentFrequency,
             electricitySupply: billboard.electricitySupply,
             specificCondition: billboard.specificCondition,
           } : {
             lessorCustomer: billboard.lessorSupplierId,
-            delayContract: billboard.delayContractStart && billboard.delayContractEnd ? {
-              from: new Date(billboard.delayContractStart),
-              to: new Date(billboard.delayContractEnd)
-            } : undefined
-
           })
 
         },
@@ -211,33 +216,41 @@ export default function EditForm() {
           lessor: {
             lessorType: validateData.data.lessor.lessorType,
             lessorSpaceType: validateData.data.lessor.lessorSpaceType,
-            locationPrice: validateData.data.lessor.locationPrice,
-            nonLocationPrice: validateData.data.lessor.nonLocationPrice,
+
             ...(validateData.data.lessor.lessorSpaceType === "private" ? {
               lessorName: validateData.data.lessor.lessorName,
               lessorAddress: validateData.data.lessor.lessorAddress,
               lessorCity: validateData.data.lessor.lessorCity,
               lessorPhone: validateData.data.lessor.lessorPhone,
               lessorEmail: validateData.data.lessor.lessorEmail,
+              locationPrice: validateData.data.lessor.locationPrice,
+              nonLocationPrice: validateData.data.lessor.nonLocationPrice,
 
-              capital: new Decimal(validateData.data.lessor.capital || 0),
-              rccm: validateData.data.lessor.rccm,
-              taxIdentificationNumber: validateData.data.lessor.taxIdentificationNumber,
-              niu: validateData.data.lessor.niu,
-              legalForms: validateData.data.lessor.legalForms,
+              ...(validateData.data.lessor.lessorCity === PHYSICAL_COMPANY ? {
+                identityCard: validateData.data.lessor.identityCard,
+                delayContract: validateData.data.lessor.delayContract
+              } : {
+                capital: new Decimal(validateData.data.lessor.capital || 0),
+                rccm: validateData.data.lessor.rccm,
+                taxIdentificationNumber: validateData.data.lessor.taxIdentificationNumber,
+                niu: validateData.data.lessor.niu,
+                legalForms: validateData.data.lessor.legalForms,
+                representativeFirstName: validateData.data.lessor.representativeFirstName,
+                representativeLastName: validateData.data.lessor.representativeLastName,
+                representativeJob: validateData.data.lessor.representativeJob,
+                representativePhone: validateData.data.lessor.representativePhone,
+                representativeEmail: validateData.data.lessor.representativeEmail,
+
+                rentalStartDate: validateData.data.lessor.rentalStartDate ? new Date(validateData.data.lessor.rentalStartDate) : undefined,
+                rentalPeriod: validateData.data.lessor.rentalPeriod,
+              }
+              ),
+
               bankName: validateData.data.lessor.bankName,
               rib: validateData.data.lessor.rib,
               iban: validateData.data.lessor.iban,
               bicSwift: validateData.data.lessor.bicSwift,
 
-              representativeFirstName: validateData.data.lessor.representativeFirstName,
-              representativeLastName: validateData.data.lessor.representativeLastName,
-              representativeJob: validateData.data.lessor.representativeJob,
-              representativePhone: validateData.data.lessor.representativePhone,
-              representativeEmail: validateData.data.lessor.representativeEmail,
-
-              rentalStartDate: validateData.data.lessor.rentalStartDate ? new Date(validateData.data.lessor.rentalStartDate) : undefined,
-              rentalPeriod: validateData.data.lessor.rentalPeriod,
               paymentMode: validateData.data.lessor.paymentMode || [],
               paymentFrequency: validateData.data.lessor.paymentFrequency,
               electricitySupply: validateData.data.lessor.electricitySupply,
@@ -245,7 +258,6 @@ export default function EditForm() {
 
             } : {
               lessorCustomer: validateData.data.lessor.lessorCustomer,
-              delayContract: validateData.data.lessor.delayContract
             })
           },
         },

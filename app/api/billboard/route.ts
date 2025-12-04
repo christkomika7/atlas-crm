@@ -9,7 +9,6 @@ import { billboardFormSchema, BillboardSchemaFormType } from "@/lib/zod/billboar
 import { Decimal } from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
-
 export async function POST(req: NextRequest) {
     const result = await checkAccess("BILLBOARDS", "CREATE");
 
@@ -19,7 +18,6 @@ export async function POST(req: NextRequest) {
             message: result.message,
         }, { status: 403 });
     }
-
 
     const formData = await req.formData();
 
@@ -54,7 +52,7 @@ export async function POST(req: NextRequest) {
     const lessorFields = [
         "lessorSpaceType", "lessorType", "lessorCustomer", "lessorName", "lessorAddress", "lessorCity", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "rib", "iban", "bicSwift", "bankName",
         "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition",
-        "niu", "legalForms", "locationPrice", "nonLocationPrice", "delayContract"
+        "niu", "legalForms", "locationPrice", "nonLocationPrice", "delayContract", "identityCard"
     ];
 
     const rentalStartDate = rawData["rentalStartDate"];
@@ -77,7 +75,6 @@ export async function POST(req: NextRequest) {
     billboardData.photos = filesMap["photos"] ?? [];
     billboardData.brochures = filesMap["brochures"] ?? [];
 
-
     const dataToValidate = {
         billboard: {
             ...billboardData,
@@ -96,7 +93,6 @@ export async function POST(req: NextRequest) {
             } : undefined,
             capital: new Decimal(lessorData.capital || 0),
             paymentMode: lessorData.paymentMode ? JSON.parse(lessorData.paymentMode) : []
-
         },
     };
 
@@ -131,6 +127,19 @@ export async function POST(req: NextRequest) {
     let savedPathsPhoto: string[] = [];
     let savedPathsBrochure: string[] = [];
 
+    // Fonction helper pour filtrer les valeurs vides
+    const isEmptyValue = (value: any): boolean => {
+        return value === undefined ||
+            value === null ||
+            value === 'undefined' ||
+            value === 'null' ||
+            value === '';
+    };
+
+    // Fonction pour obtenir une valeur ou undefined si vide
+    const getValueOrUndefined = <T>(value: T): T | undefined => {
+        return isEmptyValue(value) ? undefined : value;
+    };
 
     try {
         // Sauvegarde des photos
@@ -150,30 +159,22 @@ export async function POST(req: NextRequest) {
                 data: {
                     reference: data.billboard.reference,
                     hasTax: data.billboard.hasTax,
-                    type: {
-                        connect: {
-                            id: data.billboard.type
-                        }
-                    },
+                    type: { connect: { id: data.billboard.type } },
                     name: data.billboard.name,
                     locality: data.billboard.locality,
                     area: { connect: { id: data.billboard.area } },
                     visualMarker: data.billboard.visualMarker,
                     displayBoard: { connect: { id: data.billboard.displayBoard } },
-
                     city: { connect: { id: data.billboard.city } },
                     orientation: data.billboard.orientation,
                     gmaps: data.billboard.gmaps,
-
                     pathPhoto: folderPhoto,
                     pathBrochure: folderBrochure,
                     photos: savedPathsPhoto,
                     brochures: savedPathsBrochure,
-
                     rentalPrice: data.billboard.rentalPrice,
                     installationCost: data.billboard.installationCost,
                     maintenance: data.billboard.maintenance,
-
                     width: data.billboard.width,
                     height: data.billboard.height,
                     lighting: data.billboard.lighting,
@@ -184,43 +185,42 @@ export async function POST(req: NextRequest) {
                     electricity: data.billboard.electricity,
                     framework: data.billboard.framework,
                     note: data.billboard.note,
-
                     lessorSpaceType: data.lessor.lessorSpaceType,
                     lessorType: { connect: { id: data.lessor.lessorType } },
-                    locationPrice: data.lessor.locationPrice,
-                    nonLocationPrice: data.lessor.nonLocationPrice,
-
-                    lessorName: data.lessor.lessorName,
-                    lessorAddress: data.lessor.lessorAddress,
-                    lessorCity: data.lessor.lessorCity,
-                    lessorPhone: data.lessor.lessorPhone,
-                    lessorEmail: data.lessor.lessorEmail,
-
-                    capital: data.lessor.capital,
-                    rccm: data.lessor.rccm,
-                    taxIdentificationNumber: data.lessor.taxIdentificationNumber,
-                    legalForms: data.lessor.legalForms,
-                    niu: data.lessor.niu,
-                    bankName: data.lessor.bankName,
-                    rib: data.lessor.rib,
-                    iban: data.lessor.iban,
-                    bicSwift: data.lessor.bicSwift,
-
-                    representativeFirstName: data.lessor.representativeFirstName,
-                    representativeLastName: data.lessor.representativeLastName,
-                    representativeJob: data.lessor.representativeJob,
-                    representativePhone: data.lessor.representativePhone,
-                    representativeEmail: data.lessor.representativeEmail,
-
-                    rentalStartDate: data.lessor.rentalStartDate ?? null,
-                    rentalPeriod: data.lessor.rentalPeriod,
-                    paymentMode: JSON.stringify(data.lessor.paymentMode),
-                    paymentFrequency: data.lessor.paymentFrequency,
-                    electricitySupply: data.lessor.electricitySupply,
-                    specificCondition: data.lessor.specificCondition,
+                    locationPrice: getValueOrUndefined(data.lessor.locationPrice),
+                    nonLocationPrice: getValueOrUndefined(data.lessor.nonLocationPrice),
+                    lessorName: getValueOrUndefined(data.lessor.lessorName),
+                    lessorAddress: getValueOrUndefined(data.lessor.lessorAddress),
+                    lessorCity: getValueOrUndefined(data.lessor.lessorCity),
+                    lessorPhone: getValueOrUndefined(data.lessor.lessorPhone),
+                    lessorEmail: getValueOrUndefined(data.lessor.lessorEmail),
+                    identityCard: getValueOrUndefined(data.lessor.identityCard),
+                    capital: getValueOrUndefined(data.lessor.capital),
+                    rccm: getValueOrUndefined(data.lessor.rccm),
+                    taxIdentificationNumber: getValueOrUndefined(data.lessor.taxIdentificationNumber),
+                    legalForms: getValueOrUndefined(data.lessor.legalForms),
+                    niu: getValueOrUndefined(data.lessor.niu),
+                    bankName: getValueOrUndefined(data.lessor.bankName),
+                    rib: getValueOrUndefined(data.lessor.rib),
+                    iban: getValueOrUndefined(data.lessor.iban),
+                    bicSwift: getValueOrUndefined(data.lessor.bicSwift),
+                    representativeFirstName: getValueOrUndefined(data.lessor.representativeFirstName),
+                    representativeLastName: getValueOrUndefined(data.lessor.representativeLastName),
+                    representativeJob: getValueOrUndefined(data.lessor.representativeJob),
+                    representativePhone: getValueOrUndefined(data.lessor.representativePhone),
+                    representativeEmail: getValueOrUndefined(data.lessor.representativeEmail),
+                    delayContractStart: getValueOrUndefined(data.lessor.delayContract?.from),
+                    delayContractEnd: getValueOrUndefined(data.lessor.delayContract?.to),
+                    rentalStartDate: getValueOrUndefined(data.lessor.rentalStartDate),
+                    rentalPeriod: getValueOrUndefined(data.lessor.rentalPeriod),
+                    paymentMode: data.lessor.paymentMode ? JSON.stringify(data.lessor.paymentMode) : undefined,
+                    paymentFrequency: getValueOrUndefined(data.lessor.paymentFrequency),
+                    electricitySupply: getValueOrUndefined(data.lessor.electricitySupply),
+                    specificCondition: getValueOrUndefined(data.lessor.specificCondition),
                     company: { connect: { id: data.billboard.companyId } },
                 },
             });
+
             return NextResponse.json({
                 status: "success",
                 message: "Panneau ajouté avec succès.",
@@ -229,36 +229,27 @@ export async function POST(req: NextRequest) {
                 },
             });
 
-        }
-        else {
+        } else {
             const createdBillboard = await prisma.billboard.create({
                 data: {
                     reference: data.billboard.reference,
                     hasTax: data.billboard.hasTax,
-                    type: {
-                        connect: {
-                            id: data.billboard.type
-                        }
-                    },
+                    type: { connect: { id: data.billboard.type } },
                     name: data.billboard.name,
                     locality: data.billboard.locality,
                     area: { connect: { id: data.billboard.area } },
                     visualMarker: data.billboard.visualMarker,
                     displayBoard: { connect: { id: data.billboard.displayBoard } },
-
                     city: { connect: { id: data.billboard.city } },
                     orientation: data.billboard.orientation,
                     gmaps: data.billboard.gmaps,
-
                     pathPhoto: folderPhoto,
                     pathBrochure: folderBrochure,
                     photos: savedPathsPhoto,
                     brochures: savedPathsBrochure,
-
                     rentalPrice: data.billboard.rentalPrice,
                     installationCost: data.billboard.installationCost,
                     maintenance: data.billboard.maintenance,
-
                     width: data.billboard.width,
                     height: data.billboard.height,
                     lighting: data.billboard.lighting,
@@ -269,18 +260,11 @@ export async function POST(req: NextRequest) {
                     electricity: data.billboard.electricity,
                     framework: data.billboard.framework,
                     note: data.billboard.note,
-
                     lessorType: { connect: { id: data.lessor.lessorType } },
                     lessorSpaceType: data.lessor.lessorSpaceType,
-                    locationPrice: data.lessor.locationPrice,
-                    nonLocationPrice: data.lessor.nonLocationPrice,
-                    lessorSupplier: {
-                        connect: {
-                            id: data.lessor.lessorCustomer as string
-                        }
-                    },
-                    delayContractStart: data.lessor.delayContract?.from,
-                    delayContractEnd: data.lessor.delayContract?.to,
+                    ...(data.lessor.lessorCustomer && !isEmptyValue(data.lessor.lessorCustomer) && {
+                        lessorSupplier: { connect: { id: data.lessor.lessorCustomer as string } }
+                    }),
                     company: { connect: { id: data.billboard.companyId } },
                 },
             });

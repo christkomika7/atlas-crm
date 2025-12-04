@@ -407,8 +407,9 @@ export async function DELETE(req: NextRequest) {
     include: {
       items: true,
       productsServices: true,
+      payments: true,
       dibursements: true,
-      company: true
+      company: true,
     }
   });
 
@@ -419,10 +420,10 @@ export async function DELETE(req: NextRequest) {
     }, { status: 400 })
   }
 
-  if (purchaseOrder.dibursements.length > 0) {
+  if (purchaseOrder.dibursements.length > 0 || purchaseOrder.payments.length > 0) {
     return NextResponse.json({
       state: "error",
-      message: "Supprimez d'abord les transactions associées à ce bon de commande.",
+      message: "Supprimez d'abord les transactions et paiements associés à ce bon de commande.",
     }, { status: 409 });
   }
 
@@ -466,7 +467,9 @@ export async function DELETE(req: NextRequest) {
         }
       }
     }),
-    prisma.purchaseOrder.delete({ where: { id } })
+    prisma.purchaseOrder.delete({ where: { id } }),
+    prisma.payment.deleteMany({ where: { purchaseOrderId: id } }),
+    prisma.dibursement.deleteMany({ where: { referencePurchaseOrderId: id } })
   ]);
 
   await removePath([...purchaseOrder.pathFiles]);

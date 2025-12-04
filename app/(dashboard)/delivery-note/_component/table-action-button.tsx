@@ -214,6 +214,7 @@ export default function TableActionButton({
                       return (
                         <ModalContainer
                           size="sm"
+                          key={menu.id}
                           action={
                             <li key={menu.id}>
                               <button

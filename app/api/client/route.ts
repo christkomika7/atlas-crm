@@ -36,6 +36,7 @@ export async function DELETE(req: NextRequest) {
             appointments: true,
             projects: true,
             billboards: true,
+            contracts: true,
         }
     });
 
@@ -56,12 +57,20 @@ export async function DELETE(req: NextRequest) {
     }
 
     for (const client of clients) {
-        if (client.quotes || client.invoices || client.deliveryNotes || client.dibursements ||
-            client.receipts || client.appointments || client.billboards || client.projects) {
+        if (
+            client.invoices.length > 0 ||
+            client.projects.length > 0 ||
+            client.receipts.length > 0 ||
+            client.dibursements.length > 0 ||
+            client.contracts.length > 0 ||
+            client.quotes.length > 0 ||
+            client.deliveryNotes.length > 0 ||
+            client.appointments.length > 0
+        ) {
             return NextResponse.json({
-                message: "Veuillez supprimer toutes les données reliées au client (devis, facture, bon de livraison etc.).",
                 state: "error",
-            }, { status: 400 });
+                message: "Supprimez d'abord les transactions, factures, devis, bon de livraisons, contrats, projets et rendez-vous associés à ce client.",
+            }, { status: 409 });
         }
     }
 
