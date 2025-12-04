@@ -33,7 +33,7 @@ export default function StructureTypeModal() {
     const [currentId, setCurrentId] = useState("");
 
     const { mutate: muatateCreateElement, isPending: isCreatingElement } = useQueryAction<
-        BaseSchemaType & { type: "structure-type" | "structure-type" | "structure-type" },
+        BaseSchemaType & { type: "structure-type" | "structure-type" | "structure-type", lessorSpace?: "private" | "public" },
         RequestResponse<BaseType>
     >(createBillboardElement, () => { }, "element");
 
