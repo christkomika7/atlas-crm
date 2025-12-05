@@ -29,17 +29,222 @@ export default function CreateForm() {
     resolver: zodResolver(billboardFormSchema),
   });
 
+  const spaceType = form.watch("lessor.lessorSpaceType");
+  const lessorTypeName = form.watch("lessor.lessorTypeName");
+
   const { mutate, isPending } = useQueryAction<
     BillboardSchemaFormType,
     RequestResponse<BillboardType>
   >(create, () => { }, "billboards");
 
+  // ========================================
+  // NETTOYER LES CHAMPS QUAND LE SPACE TYPE CHANGE
+  // ========================================
+  useEffect(() => {
+    if (!spaceType) return;
+
+    // Nettoyer toutes les erreurs
+    form.clearErrors([
+      "lessor.delayContractStart",
+      "lessor.delayContractEnd",
+      "lessor.rentalStartDate",
+      "lessor.rentalPeriod",
+      "lessor.capital",
+      "lessor.rccm",
+      "lessor.taxIdentificationNumber",
+      "lessor.legalForms",
+      "lessor.representativeFirstName",
+      "lessor.representativeLastName",
+      "lessor.representativeJob",
+      "lessor.representativePhone",
+      "lessor.representativeEmail",
+      "lessor.locationPrice",
+      "lessor.nonLocationPrice",
+      "lessor.lessorName",
+      "lessor.lessorAddress",
+      "lessor.lessorCity",
+      "lessor.lessorEmail",
+      "lessor.lessorPhone",
+      "lessor.niu",
+      "lessor.rib",
+      "lessor.iban",
+      "lessor.bicSwift",
+      "lessor.bankName",
+      "lessor.paymentMode",
+      "lessor.paymentFrequency",
+      "lessor.electricitySupply",
+      "lessor.specificCondition",
+      "lessor.identityCard",
+      "lessor.lessorCustomer"
+    ]);
+
+    if (spaceType === "public") {
+      // RESET pour PUBLIC : vider tous les champs PRIVATE
+      form.setValue("lessor.delayContractStart", undefined);
+      form.setValue("lessor.delayContractStart", undefined);
+      form.setValue("lessor.rentalStartDate", undefined);
+      form.setValue("lessor.rentalPeriod", undefined);
+      form.setValue("lessor.capital", undefined);
+      form.setValue("lessor.rccm", undefined);
+      form.setValue("lessor.taxIdentificationNumber", undefined);
+      form.setValue("lessor.legalForms", undefined);
+      form.setValue("lessor.representativeFirstName", undefined);
+      form.setValue("lessor.representativeLastName", undefined);
+      form.setValue("lessor.representativeJob", undefined);
+      form.setValue("lessor.representativePhone", undefined);
+      form.setValue("lessor.representativeEmail", undefined);
+      form.setValue("lessor.locationPrice", undefined);
+      form.setValue("lessor.nonLocationPrice", undefined);
+      form.setValue("lessor.lessorName", undefined);
+      form.setValue("lessor.lessorAddress", undefined);
+      form.setValue("lessor.lessorCity", undefined);
+      form.setValue("lessor.lessorEmail", undefined);
+      form.setValue("lessor.lessorPhone", undefined);
+      form.setValue("lessor.niu", undefined);
+      form.setValue("lessor.rib", undefined);
+      form.setValue("lessor.iban", undefined);
+      form.setValue("lessor.bicSwift", undefined);
+      form.setValue("lessor.bankName", undefined);
+      form.setValue("lessor.paymentMode", undefined);
+      form.setValue("lessor.paymentFrequency", undefined);
+      form.setValue("lessor.electricitySupply", undefined);
+      form.setValue("lessor.specificCondition", undefined);
+      form.setValue("lessor.identityCard", undefined);
+
+      // Désenregistrer
+      form.unregister("lessor.delayContractStart");
+      form.unregister("lessor.delayContractEnd");
+      form.unregister("lessor.rentalStartDate");
+      form.unregister("lessor.rentalPeriod");
+      form.unregister("lessor.capital");
+      form.unregister("lessor.rccm");
+      form.unregister("lessor.taxIdentificationNumber");
+      form.unregister("lessor.legalForms");
+      form.unregister("lessor.representativeFirstName");
+      form.unregister("lessor.representativeLastName");
+      form.unregister("lessor.representativeJob");
+      form.unregister("lessor.representativePhone");
+      form.unregister("lessor.representativeEmail");
+      form.unregister("lessor.locationPrice");
+      form.unregister("lessor.nonLocationPrice");
+      form.unregister("lessor.lessorName");
+      form.unregister("lessor.lessorAddress");
+      form.unregister("lessor.lessorCity");
+      form.unregister("lessor.lessorEmail");
+      form.unregister("lessor.lessorPhone");
+      form.unregister("lessor.niu");
+      form.unregister("lessor.rib");
+      form.unregister("lessor.iban");
+      form.unregister("lessor.bicSwift");
+      form.unregister("lessor.bankName");
+      form.unregister("lessor.paymentMode");
+      form.unregister("lessor.paymentFrequency");
+      form.unregister("lessor.electricitySupply");
+      form.unregister("lessor.specificCondition");
+      form.unregister("lessor.identityCard");
+    }
+
+    if (spaceType === "private") {
+      // RESET pour PRIVATE : vider les champs PUBLIC
+      form.setValue("lessor.lessorCustomer", undefined);
+      form.unregister("lessor.lessorCustomer");
+
+      // Reset aussi lessorTypeName et lessorType pour forcer un nouveau choix
+      form.setValue("lessor.lessorTypeName", undefined);
+      form.setValue("lessor.lessorType", '');
+    }
+
+    if (spaceType === "public") {
+      // RESET pour PUBLIC : vider aussi lessorType et lessorTypeName
+      form.setValue("lessor.lessorType", '');
+      form.setValue("lessor.lessorTypeName", undefined);
+    }
+  }, [spaceType, form]);
+
+  // ========================================
+  // NETTOYER LES CHAMPS QUAND LE LESSOR TYPE CHANGE
+  // ========================================
+  useEffect(() => {
+    if (!lessorTypeName) return;
+
+    // Nettoyer les erreurs pour tous les champs conditionnels
+    form.clearErrors([
+      "lessor.delayContractStart",
+      "lessor.delayContractEnd",
+      "lessor.rentalPeriod",
+      "lessor.capital",
+      "lessor.rccm",
+      "lessor.taxIdentificationNumber",
+      "lessor.legalForms",
+      "lessor.niu",
+      "lessor.representativeFirstName",
+      "lessor.representativeLastName",
+      "lessor.representativeJob",
+      "lessor.representativePhone",
+      "lessor.representativeEmail",
+      "lessor.identityCard"
+    ]);
+
+    // Si c'est Personne physique
+    if (lessorTypeName === "Personne physique") {
+      // Vider les champs personne morale
+      form.setValue("lessor.capital", undefined);
+      form.setValue("lessor.rccm", undefined);
+      form.setValue("lessor.taxIdentificationNumber", undefined);
+      form.setValue("lessor.legalForms", undefined);
+      form.setValue("lessor.niu", undefined);
+      form.setValue("lessor.representativeFirstName", undefined);
+      form.setValue("lessor.representativeLastName", undefined);
+      form.setValue("lessor.representativeJob", undefined);
+      form.setValue("lessor.representativePhone", undefined);
+      form.setValue("lessor.representativeEmail", undefined);
+      form.setValue("lessor.rentalStartDate", undefined);
+      form.setValue("lessor.rentalPeriod", undefined);
+
+      // Désenregistrer
+      form.unregister("lessor.capital");
+      form.unregister("lessor.rccm");
+      form.unregister("lessor.taxIdentificationNumber");
+      form.unregister("lessor.legalForms");
+      form.unregister("lessor.niu");
+      form.unregister("lessor.representativeFirstName");
+      form.unregister("lessor.representativeLastName");
+      form.unregister("lessor.representativeJob");
+      form.unregister("lessor.representativePhone");
+      form.unregister("lessor.representativeEmail");
+      form.unregister("lessor.rentalStartDate");
+      form.unregister("lessor.rentalPeriod");
+    }
+
+    // Si c'est Personne morale
+    if (lessorTypeName === "Personne moral") {
+      // Vider les champs personne physique
+      form.setValue("lessor.identityCard", undefined);
+      form.setValue("lessor.delayContractStart", undefined);
+      form.setValue("lessor.delayContractEnd", undefined);
+
+
+      // Désenregistrer
+      form.unregister("lessor.identityCard");
+      form.unregister("lessor.delayContractStart");
+      form.unregister("lessor.delayContractEnd");
+    }
+  }, [lessorTypeName, form]);
+
+  // ========================================
+  // INITIALISATION
+  // ========================================
   useEffect(() => {
     if (companyId) {
       form.reset({
         billboard: {
           companyId,
-          hasTax: false
+          hasTax: false,
+        },
+        lessor: {
+          delayContractEnd: undefined,
+          delayContractStart: undefined,
+          rentalStartDate: undefined
         }
       });
     }
@@ -55,6 +260,7 @@ export default function CreateForm() {
         },
       });
     }
+
   }
 
   return (

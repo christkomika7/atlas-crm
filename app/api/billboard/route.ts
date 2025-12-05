@@ -1,294 +1,214 @@
 import { checkAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { $Enums } from "@/lib/generated/prisma";
-import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { checkAccessDeletion } from "@/lib/server";
-import { generateId, getFirstValidCompanyId } from "@/lib/utils";
-import { billboardFormSchema, BillboardSchemaFormType } from "@/lib/zod/billboard.schema";
+import { getFirstValidCompanyId } from "@/lib/utils";
 import { Decimal } from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
+
+const getValue = (value: any) =>
+    value === undefined || value === null || value === "" ? undefined : value;
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess("BILLBOARDS", "CREATE");
 
     if (!result.authorized) {
-        return Response.json({
-            state: "error",
-            message: result.message,
-        }, { status: 403 });
+        return NextResponse.json(
+            { state: "error", message: result.message },
+            { status: 403 }
+        );
     }
 
     const formData = await req.formData();
-
     const filesMap: Record<string, File[]> = {};
     const rawData: Record<string, any> = {};
 
-    // Organisation des données et fichiers
     formData.forEach((value, key) => {
         if (value instanceof File) {
             if (!filesMap[key]) filesMap[key] = [];
             filesMap[key].push(value);
         } else {
-            if (rawData[key] !== undefined) {
-                if (Array.isArray(rawData[key])) {
-                    rawData[key].push(value);
-                } else {
-                    rawData[key] = [rawData[key], value];
-                }
-            } else {
-                rawData[key] = value;
-            }
+            rawData[key] = rawData[key] !== undefined
+                ? Array.isArray(rawData[key])
+                    ? [...rawData[key], value]
+                    : [rawData[key], value]
+                : value;
         }
     });
 
-    const billboardFields = [
-        "companyId", "reference", "hasTax", "type", "name", "locality", "area", "visualMarker",
-        "displayBoard", "city", "gmaps", "orientation",
-        "rentalPrice", "installationCost", "maintenance", "width", "height", "lighting",
-        "structureType", "panelCondition", "decorativeElement", "foundations", "electricity", "framework", "note"
-    ];
-
-    const lessorFields = [
-        "lessorSpaceType", "lessorType", "lessorCustomer", "lessorName", "lessorAddress", "lessorCity", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "rib", "iban", "bicSwift", "bankName",
-        "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition",
-        "niu", "legalForms", "locationPrice", "nonLocationPrice", "delayContract", "identityCard"
-    ];
-
-    const rentalStartDate = rawData["rentalStartDate"];
-    const delayContract = rawData["delayContract"];
-
-    const billboardData: Record<string, any> = {};
-    const lessorData: Record<string, any> = {};
-
-    for (const key in rawData) {
-        if (billboardFields.includes(key)) {
-            billboardData[key] = rawData[key];
-        } else if (lessorFields.includes(key)) {
-            lessorData[key] = rawData[key];
-        }
-    }
-
-    lessorData.rentalStartDate = rentalStartDate ? new Date(rentalStartDate) : undefined;
-    lessorData.delayContract = delayContract ? JSON.parse(lessorData.delayContract) : undefined;
-
-    billboardData.photos = filesMap["photos"] ?? [];
-    billboardData.brochures = filesMap["brochures"] ?? [];
-
-    const dataToValidate = {
-        billboard: {
-            ...billboardData,
-            width: Number(billboardData.width),
-            height: Number(billboardData.height),
-            hasTax: JSON.parse(billboardData.hasTax),
-            rentalPrice: new Decimal(billboardData.rentalPrice),
-            installationCost: new Decimal(billboardData.installationCost),
-            maintenance: new Decimal(billboardData.maintenance),
-        },
-        lessor: {
-            ...lessorData,
-            delayContract: lessorData.delayContract?.from && lessorData.delayContract?.to ? {
-                from: new Date(lessorData.delayContract.from),
-                to: new Date(lessorData.delayContract.to)
-            } : undefined,
-            capital: new Decimal(lessorData.capital || 0),
-            paymentMode: lessorData.paymentMode ? JSON.parse(lessorData.paymentMode) : []
-        },
+    const billboardData = {
+        companyId: getValue(rawData.companyId),
+        reference: getValue(rawData.reference),
+        hasTax: rawData.hasTax ? JSON.parse(rawData.hasTax) : false,
+        type: getValue(rawData.type),
+        name: getValue(rawData.name),
+        locality: getValue(rawData.locality),
+        area: getValue(rawData.area),
+        visualMarker: getValue(rawData.visualMarker),
+        displayBoard: getValue(rawData.displayBoard),
+        city: getValue(rawData.city),
+        orientation: getValue(rawData.orientation),
+        gmaps: getValue(rawData.gmaps),
+        rentalPrice: rawData.rentalPrice ? new Decimal(rawData.rentalPrice) : undefined,
+        installationCost: rawData.installationCost ? new Decimal(rawData.installationCost) : new Decimal(0),
+        maintenance: rawData.maintenance ? new Decimal(rawData.maintenance) : new Decimal(0),
+        width: rawData.width ? Number(rawData.width) : undefined,
+        height: rawData.height ? Number(rawData.height) : undefined,
+        lighting: getValue(rawData.lighting),
+        structureType: getValue(rawData.structureType),
+        panelCondition: getValue(rawData.panelCondition),
+        decorativeElement: getValue(rawData.decorativeElement),
+        foundations: getValue(rawData.foundations),
+        electricity: getValue(rawData.electricity),
+        framework: getValue(rawData.framework),
+        note: getValue(rawData.note),
+        photos: filesMap["photos"] ?? [],
+        brochures: filesMap["brochures"] ?? [],
     };
 
-    const data = parseData<BillboardSchemaFormType>(
-        billboardFormSchema,
-        dataToValidate as BillboardSchemaFormType
-    ) as BillboardSchemaFormType;
+    const lessorData: any = {
+        lessorType: getValue(rawData.lessorType),
+        lessorSpaceType: getValue(rawData.lessorSpaceType),
+    };
 
-    const [companyExist, billboardReferenceExist] = await prisma.$transaction([
-        prisma.company.findUnique({ where: { id: data.billboard.companyId } }),
-        prisma.billboard.findUnique({ where: { reference: data.billboard.reference } }),
-    ]);
+    if (lessorData.lessorSpaceType === "private") {
+        lessorData.lessorName = getValue(rawData.lessorName);
+        lessorData.lessorAddress = getValue(rawData.lessorAddress);
+        lessorData.lessorCity = getValue(rawData.lessorCity);
+        lessorData.lessorPhone = getValue(rawData.lessorPhone);
+        lessorData.lessorEmail = getValue(rawData.lessorEmail);
+        lessorData.bankName = getValue(rawData.bankName);
+        lessorData.rib = getValue(rawData.rib);
+        lessorData.iban = getValue(rawData.iban);
+        lessorData.bicSwift = getValue(rawData.bicSwift);
 
-    if (!companyExist) {
-        return NextResponse.json({
-            status: "error",
-            message: "Aucun élément trouvé pour cet identifiant.",
-        }, { status: 404 });
+        lessorData.identityCard = getValue(rawData.identityCard);
+        lessorData.delayContractStart = rawData.delayContractStart ? new Date(rawData.delayContractStart) : undefined;
+        lessorData.delayContractEnd = rawData.delayContractEnd ? new Date(rawData.delayContractEnd) : undefined;
+
+
+        lessorData.capital = rawData.capital ? new Decimal(rawData.capital) : undefined;
+        lessorData.rccm = getValue(rawData.rccm);
+        lessorData.taxIdentificationNumber = getValue(rawData.taxIdentificationNumber);
+        lessorData.niu = getValue(rawData.niu);
+        lessorData.legalForms = getValue(rawData.legalForms);
+
+        lessorData.representativeFirstName = getValue(rawData.representativeFirstName);
+        lessorData.representativeLastName = getValue(rawData.representativeLastName);
+        lessorData.representativeJob = getValue(rawData.representativeJob);
+        lessorData.representativeEmail = getValue(rawData.representativeEmail);
+        lessorData.representativePhone = getValue(rawData.representativePhone);
+
+        lessorData.rentalStartDate = rawData.rentalStartDate ? new Date(rawData.rentalStartDate) : undefined;
+        lessorData.rentalPeriod = getValue(rawData.rentalPeriod);
+        lessorData.paymentMode = rawData.paymentMode ? JSON.parse(rawData.paymentMode) : [];
+        lessorData.paymentFrequency = getValue(rawData.paymentFrequency);
+        lessorData.electricitySupply = getValue(rawData.electricitySupply);
+        lessorData.specificCondition = getValue(rawData.specificCondition);
+
+        lessorData.locationPrice = getValue(rawData.locationPrice);
+        lessorData.nonLocationPrice = getValue(rawData.nonLocationPrice);
+    } else {
+        lessorData.lessorCustomer = getValue(rawData.lessorCustomer);
     }
 
-    if (billboardReferenceExist) {
-        return NextResponse.json({
-            status: "error",
-            message: "La référence du panneau est déjà utilisée.",
-        }, { status: 404 });
-    }
-
-    const key = generateId();
-    const folderPhoto = createFolder([companyExist.companyName, "billboard", "photo", `${data.billboard.name}_----${key}`]);
-    const folderBrochure = createFolder([companyExist.companyName, "billboard", "brochure", `${data.billboard.name}_----${key}`]);
+    const key = crypto.randomUUID();
+    const folderPhoto = createFolder(["billboard", "photo", `${billboardData.name}_----${key}`]);
+    const folderBrochure = createFolder(["billboard", "brochure", `${billboardData.name}_----${key}`]);
 
     let savedPathsPhoto: string[] = [];
     let savedPathsBrochure: string[] = [];
 
-    // Fonction helper pour filtrer les valeurs vides
-    const isEmptyValue = (value: any): boolean => {
-        return value === undefined ||
-            value === null ||
-            value === 'undefined' ||
-            value === 'null' ||
-            value === '';
-    };
-
-    // Fonction pour obtenir une valeur ou undefined si vide
-    const getValueOrUndefined = <T>(value: T): T | undefined => {
-        return isEmptyValue(value) ? undefined : value;
-    };
-
     try {
-        // Sauvegarde des photos
-        for (const file of billboardData.photos) {
-            const upload = await createFile(file, folderPhoto);
-            savedPathsPhoto.push(upload);
-        }
+        for (const file of billboardData.photos) savedPathsPhoto.push(await createFile(file, folderPhoto));
+        for (const file of billboardData.brochures) savedPathsBrochure.push(await createFile(file, folderBrochure));
 
-        // Sauvegarde des brochures
-        for (const file of billboardData.brochures) {
-            const upload = await createFile(file, folderBrochure);
-            savedPathsBrochure.push(upload);
-        }
+        const createData: any = {
+            reference: billboardData.reference,
+            hasTax: billboardData.hasTax,
+            type: { connect: { id: billboardData.type } },
+            name: billboardData.name,
+            locality: billboardData.locality,
+            area: { connect: { id: billboardData.area } },
+            visualMarker: billboardData.visualMarker,
+            displayBoard: { connect: { id: billboardData.displayBoard } },
+            city: { connect: { id: billboardData.city } },
+            orientation: billboardData.orientation,
+            gmaps: billboardData.gmaps,
+            pathPhoto: folderPhoto,
+            pathBrochure: folderBrochure,
+            photos: savedPathsPhoto,
+            brochures: savedPathsBrochure,
+            rentalPrice: billboardData.rentalPrice,
+            installationCost: billboardData.installationCost,
+            maintenance: billboardData.maintenance,
+            width: billboardData.width,
+            height: billboardData.height,
+            lighting: billboardData.lighting,
+            structureType: { connect: { id: billboardData.structureType } },
+            panelCondition: billboardData.panelCondition,
+            decorativeElement: billboardData.decorativeElement,
+            foundations: billboardData.foundations,
+            electricity: billboardData.electricity,
+            framework: billboardData.framework,
+            note: billboardData.note,
+            company: { connect: { id: billboardData.companyId } },
+            lessorSpaceType: lessorData.lessorSpaceType,
+            lessorType: { connect: { id: lessorData.lessorType } },
+        };
 
-        if (data.lessor.lessorSpaceType === "private") {
-            const createdBillboard = await prisma.billboard.create({
-                data: {
-                    reference: data.billboard.reference,
-                    hasTax: data.billboard.hasTax,
-                    type: { connect: { id: data.billboard.type } },
-                    name: data.billboard.name,
-                    locality: data.billboard.locality,
-                    area: { connect: { id: data.billboard.area } },
-                    visualMarker: data.billboard.visualMarker,
-                    displayBoard: { connect: { id: data.billboard.displayBoard } },
-                    city: { connect: { id: data.billboard.city } },
-                    orientation: data.billboard.orientation,
-                    gmaps: data.billboard.gmaps,
-                    pathPhoto: folderPhoto,
-                    pathBrochure: folderBrochure,
-                    photos: savedPathsPhoto,
-                    brochures: savedPathsBrochure,
-                    rentalPrice: data.billboard.rentalPrice,
-                    installationCost: data.billboard.installationCost,
-                    maintenance: data.billboard.maintenance,
-                    width: data.billboard.width,
-                    height: data.billboard.height,
-                    lighting: data.billboard.lighting,
-                    structureType: { connect: { id: data.billboard.structureType } },
-                    panelCondition: data.billboard.panelCondition,
-                    decorativeElement: data.billboard.decorativeElement,
-                    foundations: data.billboard.foundations,
-                    electricity: data.billboard.electricity,
-                    framework: data.billboard.framework,
-                    note: data.billboard.note,
-                    lessorSpaceType: data.lessor.lessorSpaceType,
-                    lessorType: { connect: { id: data.lessor.lessorType } },
-                    locationPrice: getValueOrUndefined(data.lessor.locationPrice),
-                    nonLocationPrice: getValueOrUndefined(data.lessor.nonLocationPrice),
-                    lessorName: getValueOrUndefined(data.lessor.lessorName),
-                    lessorAddress: getValueOrUndefined(data.lessor.lessorAddress),
-                    lessorCity: getValueOrUndefined(data.lessor.lessorCity),
-                    lessorPhone: getValueOrUndefined(data.lessor.lessorPhone),
-                    lessorEmail: getValueOrUndefined(data.lessor.lessorEmail),
-                    identityCard: getValueOrUndefined(data.lessor.identityCard),
-                    capital: getValueOrUndefined(data.lessor.capital),
-                    rccm: getValueOrUndefined(data.lessor.rccm),
-                    taxIdentificationNumber: getValueOrUndefined(data.lessor.taxIdentificationNumber),
-                    legalForms: getValueOrUndefined(data.lessor.legalForms),
-                    niu: getValueOrUndefined(data.lessor.niu),
-                    bankName: getValueOrUndefined(data.lessor.bankName),
-                    rib: getValueOrUndefined(data.lessor.rib),
-                    iban: getValueOrUndefined(data.lessor.iban),
-                    bicSwift: getValueOrUndefined(data.lessor.bicSwift),
-                    representativeFirstName: getValueOrUndefined(data.lessor.representativeFirstName),
-                    representativeLastName: getValueOrUndefined(data.lessor.representativeLastName),
-                    representativeJob: getValueOrUndefined(data.lessor.representativeJob),
-                    representativePhone: getValueOrUndefined(data.lessor.representativePhone),
-                    representativeEmail: getValueOrUndefined(data.lessor.representativeEmail),
-                    delayContractStart: getValueOrUndefined(data.lessor.delayContract?.from),
-                    delayContractEnd: getValueOrUndefined(data.lessor.delayContract?.to),
-                    rentalStartDate: getValueOrUndefined(data.lessor.rentalStartDate),
-                    rentalPeriod: getValueOrUndefined(data.lessor.rentalPeriod),
-                    paymentMode: data.lessor.paymentMode ? JSON.stringify(data.lessor.paymentMode) : undefined,
-                    paymentFrequency: getValueOrUndefined(data.lessor.paymentFrequency),
-                    electricitySupply: getValueOrUndefined(data.lessor.electricitySupply),
-                    specificCondition: getValueOrUndefined(data.lessor.specificCondition),
-                    company: { connect: { id: data.billboard.companyId } },
-                },
+        if (lessorData.lessorSpaceType === "private") {
+            Object.assign(createData, {
+                lessorName: lessorData.lessorName,
+                lessorAddress: lessorData.lessorAddress,
+                lessorCity: lessorData.lessorCity,
+                lessorPhone: lessorData.lessorPhone,
+                lessorEmail: lessorData.lessorEmail,
+                bankName: lessorData.bankName,
+                rib: lessorData.rib,
+                iban: lessorData.iban,
+                bicSwift: lessorData.bicSwift,
+                identityCard: lessorData.identityCard,
+                capital: lessorData.capital,
+                rccm: lessorData.rccm,
+                taxIdentificationNumber: lessorData.taxIdentificationNumber,
+                niu: lessorData.niu,
+                legalForms: lessorData.legalForms,
+                representativeFirstName: lessorData.representativeFirstName,
+                representativeLastName: lessorData.representativeLastName,
+                representativeJob: lessorData.representativeJob,
+                representativeEmail: lessorData.representativeEmail,
+                representativePhone: lessorData.representativePhone,
+                delayContractStart: lessorData.delayContractStart,
+                delayContractEnd: lessorData.delayContractEnd,
+                rentalStartDate: lessorData.rentalStartDate,
+                rentalPeriod: lessorData.rentalPeriod,
+                paymentMode: lessorData.paymentMode.length > 0 ? JSON.stringify(lessorData.paymentMode) : undefined,
+                paymentFrequency: lessorData.paymentFrequency,
+                electricitySupply: lessorData.electricitySupply,
+                specificCondition: lessorData.specificCondition,
+                locationPrice: lessorData.locationPrice,
+                nonLocationPrice: lessorData.nonLocationPrice,
             });
-
-            return NextResponse.json({
-                status: "success",
-                message: "Panneau ajouté avec succès.",
-                data: {
-                    ...createdBillboard,
-                },
-            });
-
         } else {
-            const createdBillboard = await prisma.billboard.create({
-                data: {
-                    reference: data.billboard.reference,
-                    hasTax: data.billboard.hasTax,
-                    type: { connect: { id: data.billboard.type } },
-                    name: data.billboard.name,
-                    locality: data.billboard.locality,
-                    area: { connect: { id: data.billboard.area } },
-                    visualMarker: data.billboard.visualMarker,
-                    displayBoard: { connect: { id: data.billboard.displayBoard } },
-                    city: { connect: { id: data.billboard.city } },
-                    orientation: data.billboard.orientation,
-                    gmaps: data.billboard.gmaps,
-                    pathPhoto: folderPhoto,
-                    pathBrochure: folderBrochure,
-                    photos: savedPathsPhoto,
-                    brochures: savedPathsBrochure,
-                    rentalPrice: data.billboard.rentalPrice,
-                    installationCost: data.billboard.installationCost,
-                    maintenance: data.billboard.maintenance,
-                    width: data.billboard.width,
-                    height: data.billboard.height,
-                    lighting: data.billboard.lighting,
-                    structureType: { connect: { id: data.billboard.structureType } },
-                    panelCondition: data.billboard.panelCondition,
-                    decorativeElement: data.billboard.decorativeElement,
-                    foundations: data.billboard.foundations,
-                    electricity: data.billboard.electricity,
-                    framework: data.billboard.framework,
-                    note: data.billboard.note,
-                    lessorType: { connect: { id: data.lessor.lessorType } },
-                    lessorSpaceType: data.lessor.lessorSpaceType,
-                    ...(data.lessor.lessorCustomer && !isEmptyValue(data.lessor.lessorCustomer) && {
-                        lessorSupplier: { connect: { id: data.lessor.lessorCustomer as string } }
-                    }),
-                    company: { connect: { id: data.billboard.companyId } },
-                },
-            });
-
-            return NextResponse.json({
-                status: "success",
-                message: "Panneau ajouté avec succès.",
-                data: {
-                    ...createdBillboard,
-                },
-            });
+            if (lessorData.lessorCustomer) createData.lessorSupplier = { connect: { id: lessorData.lessorCustomer } };
         }
 
-    } catch (error) {
-        console.log({ error })
-        await removePath([
-            ...savedPathsPhoto,
-            ...savedPathsBrochure,
-        ]);
+        const createdBillboard = await prisma.billboard.create({ data: createData });
 
         return NextResponse.json({
-            status: "error",
-            message: "Erreur lors de l'ajout du panneau.",
-        }, { status: 500 });
+            status: "success",
+            message: "Panneau ajouté avec succès.",
+            data: createdBillboard,
+        });
+    } catch (error) {
+        console.error("Erreur lors de l'ajout du panneau:", error);
+        await removePath([...savedPathsPhoto, ...savedPathsBrochure]);
+        return NextResponse.json(
+            { status: "error", message: "Erreur lors de l'ajout du panneau." },
+            { status: 500 }
+        );
     }
 }
 

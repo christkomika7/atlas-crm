@@ -123,114 +123,108 @@ export async function create(data: BillboardSchemaFormType) {
             }
         };
 
-        // BILLBOARD - Général
-        formData.append("companyId", data.billboard.companyId);
-        formData.append("reference", data.billboard.reference);
-        formData.append("hasTax", JSON.stringify(data.billboard.hasTax));
-        formData.append("type", data.billboard.type);
-        formData.append("name", data.billboard.name);
-        formData.append("locality", data.billboard.locality);
-        formData.append("area", data.billboard.area);
-        formData.append("visualMarker", data.billboard.visualMarker);
-        formData.append("displayBoard", data.billboard.displayBoard);
+        // -------------------- BILLBOARD - Général --------------------
+        const billboard = data.billboard;
+        appendIfDefined("companyId", billboard.companyId);
+        appendIfDefined("reference", billboard.reference);
+        appendIfDefined("hasTax", JSON.stringify(billboard.hasTax));
+        appendIfDefined("type", billboard.type);
+        appendIfDefined("name", billboard.name);
+        appendIfDefined("locality", billboard.locality);
+        appendIfDefined("area", billboard.area);
+        appendIfDefined("visualMarker", billboard.visualMarker);
+        appendIfDefined("displayBoard", billboard.displayBoard);
+        appendIfDefined("orientation", billboard.orientation);
+        appendIfDefined("city", billboard.city);
+        appendIfDefined("gmaps", billboard.gmaps);
 
-
-        formData.append("orientation", data.billboard.orientation);
-        formData.append("city", data.billboard.city);
-        formData.append("gmaps", data.billboard.gmaps);
-
-        // BILLBOARD - Photos
-        data.billboard.photos?.forEach((file) => {
-            if (file instanceof File) {
-                formData.append("photos", file);
-            }
+        // -------------------- BILLBOARD - Photos/Brochures --------------------
+        billboard.photos?.forEach((file) => {
+            if (file instanceof File) appendIfDefined("photos", file);
         });
 
-        // BILLBOARD - Brochure
-        data.billboard.brochures?.forEach((file) => {
-            if (file instanceof File) {
-                formData.append("brochures", file);
-            }
+        billboard.brochures?.forEach((file) => {
+            if (file instanceof File) appendIfDefined("brochures", file);
         });
 
-        // BILLBOARD - Prix
-        formData.append("rentalPrice", data.billboard.rentalPrice.toString());
-        formData.append("installationCost", data.billboard.installationCost ? data.billboard.installationCost.toString() : "0");
-        formData.append("maintenance", data.billboard.maintenance ? data.billboard.maintenance.toString() : "0");
+        // -------------------- BILLBOARD - Prix --------------------
+        appendIfDefined("rentalPrice", billboard.rentalPrice?.toString());
+        appendIfDefined("installationCost", billboard.installationCost?.toString() || "0");
+        appendIfDefined("maintenance", billboard.maintenance?.toString() || "0");
 
-        // BILLBOARD - Infos techniques
-        formData.append("width", data.billboard.width.toString());
-        formData.append("height", data.billboard.height.toString());
-        formData.append("lighting", data.billboard.lighting);
-        formData.append("structureType", data.billboard.structureType);
-        formData.append("panelCondition", data.billboard.panelCondition);
-        formData.append("decorativeElement", data.billboard.decorativeElement);
-        formData.append("foundations", data.billboard.foundations);
-        formData.append("electricity", data.billboard.electricity);
-        formData.append("framework", data.billboard.framework);
-        formData.append("note", data.billboard.note);
+        // -------------------- BILLBOARD - Infos techniques --------------------
+        appendIfDefined("width", billboard.width?.toString());
+        appendIfDefined("height", billboard.height?.toString());
+        appendIfDefined("lighting", billboard.lighting);
+        appendIfDefined("structureType", billboard.structureType);
+        appendIfDefined("panelCondition", billboard.panelCondition);
+        appendIfDefined("decorativeElement", billboard.decorativeElement);
+        appendIfDefined("foundations", billboard.foundations);
+        appendIfDefined("electricity", billboard.electricity);
+        appendIfDefined("framework", billboard.framework);
+        appendIfDefined("note", billboard.note);
 
-        // LESSOR - Infos bailleur
-        formData.append("lessorType", data.lessor.lessorType);
-        formData.append("lessorSpaceType", data.lessor.lessorSpaceType);
+        // -------------------- LESSOR - Informations --------------------
+        const lessor = data.lessor;
+        appendIfDefined("lessorType", lessor.lessorType);
+        appendIfDefined("lessorSpaceType", lessor.lessorSpaceType);
 
-        if (data.lessor.lessorSpaceType === "private") {
+        if (lessor.lessorSpaceType === "private") {
+            // ----- Prix -----
+            appendIfDefined("locationPrice", lessor.locationPrice);
+            appendIfDefined("nonLocationPrice", lessor.nonLocationPrice);
 
-            // --- PRICES --- //
-            appendIfDefined("locationPrice", data.lessor.locationPrice);
-            appendIfDefined("nonLocationPrice", data.lessor.nonLocationPrice);
+            // ----- Personne physique -----
+            if (lessor.lessorType === PHYSICAL_COMPANY) {
+                appendIfDefined("identityCard", lessor.identityCard);
+                appendIfDefined("delayContractStart", JSON.stringify(lessor.delayContractStart));
+                appendIfDefined("delayContractEnd", JSON.stringify(lessor.delayContractEnd));
+            }
 
-            // --- PHYSICAL PERSON --- //
-            appendIfDefined("identityCard", data.lessor.identityCard);
-            appendIfDefined("delayContract", JSON.stringify(data.lessor.delayContract));
+            // ----- Personne morale -----
+            if (lessor.lessorType === MORAL_COMPANY) {
+                appendIfDefined("capital", lessor.capital?.toString());
+                appendIfDefined("rccm", lessor.rccm);
+                appendIfDefined("taxIdentificationNumber", lessor.taxIdentificationNumber);
+                appendIfDefined("niu", lessor.niu);
+                appendIfDefined("legalForms", lessor.legalForms);
+            }
 
-            // --- MORAL PERSON --- //
-            appendIfDefined("capital", data.lessor.capital?.toString());
-            appendIfDefined("rccm", data.lessor.rccm);
-            appendIfDefined("taxIdentificationNumber", data.lessor.taxIdentificationNumber);
-            appendIfDefined("niu", data.lessor.niu);
-            appendIfDefined("legalForms", data.lessor.legalForms);
+            // ----- Représentant -----
+            appendIfDefined("representativeFirstName", lessor.representativeFirstName);
+            appendIfDefined("representativeLastName", lessor.representativeLastName);
+            appendIfDefined("representativeJob", lessor.representativeJob);
+            appendIfDefined("representativePhone", lessor.representativePhone);
+            appendIfDefined("representativeEmail", lessor.representativeEmail);
 
-            // --- REPRESENTATIVE --- //
-            appendIfDefined("representativeFirstName", data.lessor.representativeFirstName);
-            appendIfDefined("representativeLastName", data.lessor.representativeLastName);
-            appendIfDefined("representativeJob", data.lessor.representativeJob);
-            appendIfDefined("representativePhone", data.lessor.representativePhone);
-            appendIfDefined("representativeEmail", data.lessor.representativeEmail);
+            // ----- Contrat -----
+            appendIfDefined("rentalStartDate", lessor.rentalStartDate);
+            appendIfDefined("rentalPeriod", lessor.rentalPeriod);
+            appendIfDefined("paymentMode", JSON.stringify(lessor.paymentMode));
+            appendIfDefined("paymentFrequency", lessor.paymentFrequency);
+            appendIfDefined("electricitySupply", lessor.electricitySupply);
+            appendIfDefined("specificCondition", lessor.specificCondition);
 
-            // --- CONTRACT DATES --- //
-            appendIfDefined("rentalStartDate", data.lessor.rentalStartDate?.toISOString() || undefined);
-            appendIfDefined("rentalPeriod", data.lessor.rentalPeriod);
-
-            // --- COMMON FIELDS --- //
-            appendIfDefined("lessorName", data.lessor.lessorName);
-            appendIfDefined("lessorAddress", data.lessor.lessorAddress);
-            appendIfDefined("lessorCity", data.lessor.lessorCity);
-            appendIfDefined("lessorPhone", data.lessor.lessorPhone);
-            appendIfDefined("lessorEmail", data.lessor.lessorEmail);
-            appendIfDefined("bankName", data.lessor.bankName);
-            appendIfDefined("rib", data.lessor.rib);
-            appendIfDefined("iban", data.lessor.iban);
-            appendIfDefined("bicSwift", data.lessor.bicSwift);
-
-            // --- CONTRACT --- //
-            appendIfDefined("paymentMode", JSON.stringify(data.lessor.paymentMode));
-            appendIfDefined("paymentFrequency", data.lessor.paymentFrequency);
-            appendIfDefined("electricitySupply", data.lessor.electricitySupply);
-            appendIfDefined("specificCondition", data.lessor.specificCondition);
-
+            // ----- Champs communs -----
+            appendIfDefined("lessorName", lessor.lessorName);
+            appendIfDefined("lessorAddress", lessor.lessorAddress);
+            appendIfDefined("lessorCity", lessor.lessorCity);
+            appendIfDefined("lessorPhone", lessor.lessorPhone);
+            appendIfDefined("lessorEmail", lessor.lessorEmail);
+            appendIfDefined("bankName", lessor.bankName);
+            appendIfDefined("rib", lessor.rib);
+            appendIfDefined("iban", lessor.iban);
+            appendIfDefined("bicSwift", lessor.bicSwift);
         } else {
-            appendIfDefined("lessorCustomer", data.lessor.lessorCustomer);
+            // Public -> bailleur client
+            appendIfDefined("lessorCustomer", lessor.lessorCustomer);
         }
 
-        // Envoi de la requête
-        const response = await fetch(
-            `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard`,
-            {
-                method: "POST",
-                body: formData,
-            }
-        );
+        // -------------------- Envoi de la requête --------------------
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard`, {
+            method: "POST",
+            body: formData,
+        });
 
         const res: RequestResponse<BillboardType> = await response.json();
 
@@ -255,108 +249,110 @@ export async function update(data: EditBillboardSchemaFormType) {
             }
         };
 
-        // BILLBOARD - Général
-        formData.append("id", data.billboard.id);
-        formData.append("companyId", data.billboard.companyId);
-        formData.append("reference", data.billboard.reference);
-        formData.append("hasTax", JSON.stringify(data.billboard.hasTax));
-        formData.append("type", data.billboard.type);
-        formData.append("name", data.billboard.name);
-        formData.append("locality", data.billboard.locality);
-        formData.append("area", data.billboard.area);
-        formData.append("visualMarker", data.billboard.visualMarker);
-        formData.append("displayBoard", data.billboard.displayBoard);
+        const billboard = data.billboard;
+        const lessor = data.lessor;
 
+        // -------------------- BILLBOARD - Général --------------------
+        appendIfDefined("id", billboard.id);
+        appendIfDefined("companyId", billboard.companyId);
+        appendIfDefined("reference", billboard.reference);
+        appendIfDefined("hasTax", JSON.stringify(billboard.hasTax));
+        appendIfDefined("type", billboard.type);
+        appendIfDefined("name", billboard.name);
+        appendIfDefined("locality", billboard.locality);
+        appendIfDefined("area", billboard.area);
+        appendIfDefined("visualMarker", billboard.visualMarker);
+        appendIfDefined("displayBoard", billboard.displayBoard);
+        appendIfDefined("orientation", billboard.orientation);
+        appendIfDefined("city", billboard.city);
+        appendIfDefined("gmaps", billboard.gmaps);
 
-        formData.append("orientation", data.billboard.orientation);
-        formData.append("city", data.billboard.city);
-        formData.append("gmaps", data.billboard.gmaps);
+        // -------------------- BILLBOARD - Photos/Brochures --------------------
+        appendIfDefined("lastPhotos", billboard.lastPhotos?.join(";"));
+        appendIfDefined("lastBrochures", billboard.lastBrochures?.join(";"));
 
-
-        formData.append("lastPhotos", data.billboard.lastPhotos?.join(";") as string)
-        formData.append("lastBrochures", data.billboard.lastBrochures?.join(";") as string)
-        data.billboard.photos?.forEach((file) => {
-            if (file instanceof File) {
-                formData.append("photos", file);
-            }
+        billboard.photos?.forEach((file) => {
+            if (file instanceof File) appendIfDefined("photos", file);
         });
-        data.billboard.brochures?.forEach((file) => {
-            if (file instanceof File) {
-                formData.append("brochures", file);
-            }
+        billboard.brochures?.forEach((file) => {
+            if (file instanceof File) appendIfDefined("brochures", file);
         });
 
-        // BILLBOARD - Prix
-        formData.append("rentalPrice", data.billboard.rentalPrice.toString());
-        formData.append("installationCost", data.billboard.installationCost ? data.billboard.installationCost.toString() : "0");
-        formData.append("maintenance", data.billboard.maintenance ? data.billboard.maintenance.toString() : "0");
+        // -------------------- BILLBOARD - Prix --------------------
+        appendIfDefined("rentalPrice", billboard.rentalPrice?.toString());
+        appendIfDefined("installationCost", billboard.installationCost?.toString() || "0");
+        appendIfDefined("maintenance", billboard.maintenance?.toString() || "0");
 
-        // BILLBOARD - Infos techniques
-        formData.append("width", data.billboard.width.toString());
-        formData.append("height", data.billboard.height.toString());
-        formData.append("lighting", data.billboard.lighting);
-        formData.append("structureType", data.billboard.structureType);
-        formData.append("panelCondition", data.billboard.panelCondition);
-        formData.append("decorativeElement", data.billboard.decorativeElement);
-        formData.append("foundations", data.billboard.foundations);
-        formData.append("electricity", data.billboard.electricity);
-        formData.append("framework", data.billboard.framework);
-        formData.append("note", data.billboard.note);
+        // -------------------- BILLBOARD - Infos techniques --------------------
+        appendIfDefined("width", billboard.width?.toString());
+        appendIfDefined("height", billboard.height?.toString());
+        appendIfDefined("lighting", billboard.lighting);
+        appendIfDefined("structureType", billboard.structureType);
+        appendIfDefined("panelCondition", billboard.panelCondition);
+        appendIfDefined("decorativeElement", billboard.decorativeElement);
+        appendIfDefined("foundations", billboard.foundations);
+        appendIfDefined("electricity", billboard.electricity);
+        appendIfDefined("framework", billboard.framework);
+        appendIfDefined("note", billboard.note);
 
-        // LESSOR - Infos bailleur
-        formData.append("lessorType", data.lessor.lessorType);
-        formData.append("lessorSpaceType", data.lessor.lessorSpaceType)
-        if (data.lessor.lessorSpaceType === "private") {
+        // -------------------- LESSOR - Infos bailleur --------------------
+        appendIfDefined("lessorType", lessor.lessorType);
+        appendIfDefined("lessorSpaceType", lessor.lessorSpaceType);
 
-            // --- PRICES --- //
-            appendIfDefined("locationPrice", data.lessor.locationPrice);
-            appendIfDefined("nonLocationPrice", data.lessor.nonLocationPrice);
+        if (lessor.lessorSpaceType === "private") {
+            // ----- Prix -----
+            appendIfDefined("locationPrice", lessor.locationPrice);
+            appendIfDefined("nonLocationPrice", lessor.nonLocationPrice);
 
-            // --- PHYSICAL PERSON --- //
-            appendIfDefined("identityCard", data.lessor.identityCard);
-            appendIfDefined("delayContract", JSON.stringify(data.lessor.delayContract));
+            // ----- Personne physique -----
+            if (lessor.lessorType === PHYSICAL_COMPANY) {
+                appendIfDefined("identityCard", lessor.identityCard);
+                appendIfDefined("delayContractStart", JSON.stringify(lessor.delayContractStart));
+                appendIfDefined("delayContractEnd", JSON.stringify(lessor.delayContractEnd));
+            }
 
-            // --- MORAL PERSON --- //
-            appendIfDefined("capital", data.lessor.capital?.toString());
-            appendIfDefined("rccm", data.lessor.rccm);
-            appendIfDefined("taxIdentificationNumber", data.lessor.taxIdentificationNumber);
-            appendIfDefined("niu", data.lessor.niu);
-            appendIfDefined("legalForms", data.lessor.legalForms);
+            // ----- Personne morale -----
+            if (lessor.lessorType === MORAL_COMPANY) {
+                appendIfDefined("capital", lessor.capital?.toString());
+                appendIfDefined("rccm", lessor.rccm);
+                appendIfDefined("taxIdentificationNumber", lessor.taxIdentificationNumber);
+                appendIfDefined("niu", lessor.niu);
+                appendIfDefined("legalForms", lessor.legalForms);
+            }
 
-            // --- REPRESENTATIVE --- //
-            appendIfDefined("representativeFirstName", data.lessor.representativeFirstName);
-            appendIfDefined("representativeLastName", data.lessor.representativeLastName);
-            appendIfDefined("representativeJob", data.lessor.representativeJob);
-            appendIfDefined("representativePhone", data.lessor.representativePhone);
-            appendIfDefined("representativeEmail", data.lessor.representativeEmail);
+            // ----- Représentant -----
+            appendIfDefined("representativeFirstName", lessor.representativeFirstName);
+            appendIfDefined("representativeLastName", lessor.representativeLastName);
+            appendIfDefined("representativeJob", lessor.representativeJob);
+            appendIfDefined("representativePhone", lessor.representativePhone);
+            appendIfDefined("representativeEmail", lessor.representativeEmail);
 
-            // --- CONTRACT DATES --- //
-            appendIfDefined("rentalStartDate", data.lessor.rentalStartDate?.toISOString() || undefined);
-            appendIfDefined("rentalPeriod", data.lessor.rentalPeriod);
+            // ----- Contrat -----
+            appendIfDefined("rentalStartDate", lessor.rentalStartDate);
+            appendIfDefined("rentalPeriod", lessor.rentalPeriod);
+            appendIfDefined("paymentMode", JSON.stringify(lessor.paymentMode));
+            appendIfDefined("paymentFrequency", lessor.paymentFrequency);
+            appendIfDefined("electricitySupply", lessor.electricitySupply);
+            appendIfDefined("specificCondition", lessor.specificCondition);
 
-            // --- COMMON FIELDS --- //
-            appendIfDefined("lessorName", data.lessor.lessorName);
-            appendIfDefined("lessorAddress", data.lessor.lessorAddress);
-            appendIfDefined("lessorCity", data.lessor.lessorCity);
-            appendIfDefined("lessorPhone", data.lessor.lessorPhone);
-            appendIfDefined("lessorEmail", data.lessor.lessorEmail);
-            appendIfDefined("bankName", data.lessor.bankName);
-            appendIfDefined("rib", data.lessor.rib);
-            appendIfDefined("iban", data.lessor.iban);
-            appendIfDefined("bicSwift", data.lessor.bicSwift);
-
-            // --- CONTRACT --- //
-            appendIfDefined("paymentMode", JSON.stringify(data.lessor.paymentMode));
-            appendIfDefined("paymentFrequency", data.lessor.paymentFrequency);
-            appendIfDefined("electricitySupply", data.lessor.electricitySupply);
-            appendIfDefined("specificCondition", data.lessor.specificCondition);
-
+            // ----- Champs communs -----
+            appendIfDefined("lessorName", lessor.lessorName);
+            appendIfDefined("lessorAddress", lessor.lessorAddress);
+            appendIfDefined("lessorCity", lessor.lessorCity);
+            appendIfDefined("lessorPhone", lessor.lessorPhone);
+            appendIfDefined("lessorEmail", lessor.lessorEmail);
+            appendIfDefined("bankName", lessor.bankName);
+            appendIfDefined("rib", lessor.rib);
+            appendIfDefined("iban", lessor.iban);
+            appendIfDefined("bicSwift", lessor.bicSwift);
         } else {
-            appendIfDefined("lessorCustomer", data.lessor.lessorCustomer);
+            // Public -> bailleur client
+            appendIfDefined("lessorCustomer", lessor.lessorCustomer);
         }
-        // Envoi de la requête
+
+        // -------------------- Envoi de la requête --------------------
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard/${data.billboard.id}`,
+            `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard/${billboard.id}`,
             {
                 method: "PUT",
                 body: formData,
@@ -366,15 +362,16 @@ export async function update(data: EditBillboardSchemaFormType) {
         const res: RequestResponse<BillboardType> = await response.json();
 
         if (!response.ok) {
-            throw new Error(res.message || "Erreur lors de la création du panneau");
+            throw new Error(res.message || "Erreur lors de la mise à jour du panneau");
         }
 
         return res;
     } catch (error) {
-        console.error("Erreur dans la fonction create:", error);
+        console.error("Erreur dans la fonction update:", error);
         throw error;
     }
 }
+
 
 export async function remove({ id }: { id: string }) {
     try {

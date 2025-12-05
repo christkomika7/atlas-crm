@@ -1,18 +1,10 @@
 import { Decimal } from "decimal.js";
-import { z } from "zod";
+import { string, z } from "zod";
 
-const isPrivate = (data: any) => data.lessorSpaceType === "private";
-const isPublic = (data: any) => data.lessorSpaceType === "public";
-const isPerson = (data: any) => data.lessorType === "Personne physique";
-
-function requiredForPrivate(value: any, data: any) {
-    return !isPrivate(data) || !!value;
-}
-
-function requiredForPublic(value: any, data: any) {
-    if (isPerson(data)) return true;
-    return !isPublic(data) || !!value;
-}
+const isPublic = (d: any) => d.lessorSpaceType === "public";
+const isPrivate = (d: any) => d.lessorSpaceType === "private";
+const isPersonMoral = (d: any) => d.lessorTypeName === "Personne moral";
+const isPersonPhysique = (d: any) => d.lessorTypeName === "Personne physique";
 
 export const billboardSchema = z.object({
     companyId: z.string().min(1, {
@@ -109,17 +101,21 @@ export const lessorSchemaBase = z.object({
     lessorType: z.string().min(1, {
         error: "Le type de bailleur est requis.",
     }),
+
     lessorCustomer: z.string().optional(),
+    lessorTypeName: z.string().optional(),
 
     lessorName: z.string().optional(),
     lessorAddress: z.string().optional(),
     lessorCity: z.string().optional(),
     lessorPhone: z.string().optional(),
     lessorEmail: z.string().optional(),
-    capital: z.instanceof(Decimal, { error: "La valeur inserer est invalide" }).optional(),
+
+    capital: z.string().optional(),
     rccm: z.string().optional(),
     taxIdentificationNumber: z.string().optional(),
     legalForms: z.string().optional(),
+
     niu: z.string().optional(),
     rib: z.string().optional(),
     iban: z.string().optional(),
@@ -134,15 +130,15 @@ export const lessorSchemaBase = z.object({
     representativePhone: z.string().optional(),
     representativeEmail: z.string().optional(),
 
-    // NONE OPTIONAL IF LESSORTYPENAME !== MAIRIE
     locationPrice: z.string().optional(),
     nonLocationPrice: z.string().optional(),
 
-    delayContract: z.object({
-        from: z.date(),
-        to: z.date(),
-    }).optional(),
-    rentalStartDate: z.date().optional(),
+
+    delayContractStart: z.string().optional(),
+    delayContractEnd: z.string().optional(),
+
+    rentalStartDate: z.string().optional(),
+
     rentalPeriod: z.string().optional(),
     paymentMode: z.array(z.string()).optional(),
     paymentFrequency: z.string().optional(),
@@ -152,39 +148,133 @@ export const lessorSchemaBase = z.object({
 });
 
 export const lessorSchema = lessorSchemaBase
-    // ----- PRIVATE REQUIRED -----
-    .refine(d => requiredForPrivate(d.lessorName, d), { message: "Le nom du bailleur est requis.", path: ["lessorName"] })
-    .refine(d => requiredForPrivate(d.lessorAddress, d), { message: "L'adresse est requise.", path: ["lessorAddress"] })
-    .refine(d => requiredForPrivate(d.lessorCity, d), { message: "La ville est requise.", path: ["lessorCity"] })
-    .refine(d => requiredForPrivate(d.lessorPhone, d), { message: "Le téléphone est requis.", path: ["lessorPhone"] })
-    .refine(d => requiredForPrivate(d.lessorEmail, d), { message: "L'adresse e-mail est requise.", path: ["lessorEmail"] })
+    // ========================================
+    // VALIDATIONS PUBLIC
+    // ========================================
+    .refine(d => !isPublic(d) || !!d.lessorCustomer, {
+        path: ["lessorCustomer"],
+        message: "Le bailleur est requis pour un espace public."
+    })
 
-    // ----- PUBLIC REQUIRED (sauf Personne physique) -----
-    .refine(d => requiredForPublic(d.capital, d), { message: "Le capital est requis pour un espace public.", path: ["capital"] })
-    .refine(d => requiredForPublic(d.rccm, d), { message: "Le RCCM est requis.", path: ["rccm"] })
-    .refine(d => requiredForPublic(d.taxIdentificationNumber, d), { message: "Le numéro d'identification fiscale est requis.", path: ["taxIdentificationNumber"] })
-    .refine(d => requiredForPublic(d.legalForms, d), { message: "Le statut juridique est requis.", path: ["legalForms"] })
-    .refine(d => requiredForPublic(d.rib, d), { message: "Le RIB est requis.", path: ["rib"] })
-    .refine(d => requiredForPublic(d.iban, d), { message: "L'IBAN est requis.", path: ["iban"] })
-    .refine(d => requiredForPublic(d.bicSwift, d), { message: "Le BIC/SWIFT est requis.", path: ["bicSwift"] })
-    .refine(d => requiredForPublic(d.bankName, d), { message: "Le nom de la banque est requis.", path: ["bankName"] })
+    // ========================================
+    // VALIDATIONS PRIVATE (tous les types)
+    // ========================================
+    .refine(d => !isPrivate(d) || !!d.locationPrice, {
+        path: ["locationPrice"],
+        message: "Prix requis."
+    })
+    .refine(d => !isPrivate(d) || !!d.nonLocationPrice, {
+        path: ["nonLocationPrice"],
+        message: "Prix non loué requis."
+    })
+    .refine(d => !isPrivate(d) || !!d.lessorName, {
+        path: ["lessorName"],
+        message: "Nom requis."
+    })
+    .refine(d => !isPrivate(d) || !!d.lessorAddress, {
+        path: ["lessorAddress"],
+        message: "Adresse requise."
+    })
+    .refine(d => !isPrivate(d) || !!d.lessorCity, {
+        path: ["lessorCity"],
+        message: "Ville requise."
+    })
+    .refine(d => !isPrivate(d) || !!d.lessorPhone, {
+        path: ["lessorPhone"],
+        message: "Téléphone requis."
+    })
+    .refine(d => !isPrivate(d) || !!d.lessorEmail, {
+        path: ["lessorEmail"],
+        message: "Email requis."
+    })
+    .refine(d => !isPrivate(d) || !!d.rib, {
+        path: ["rib"],
+        message: "RIB requis."
+    })
+    .refine(d => !isPrivate(d) || !!d.iban, {
+        path: ["iban"],
+        message: "IBAN requis."
+    })
+    .refine(d => !isPrivate(d) || !!d.bicSwift, {
+        path: ["bicSwift"],
+        message: "BIC requis."
+    })
+    .refine(d => !isPrivate(d) || !!d.bankName, {
+        path: ["bankName"],
+        message: "Nom banque requis."
+    })
+    .refine(d => !isPrivate(d) || !!d.paymentMode, {
+        path: ["paymentMode"],
+        message: "Mode paiement requis."
+    })
+    .refine(d => !isPrivate(d) || !!d.paymentFrequency, {
+        path: ["paymentFrequency"],
+        message: "Fréquence paiement requise."
+    })
+    .refine(d => !isPrivate(d) || !!d.electricitySupply, {
+        path: ["electricitySupply"],
+        message: "Fourniture courant requise."
+    })
 
-    // Représentants
-    .refine(d => requiredForPublic(d.representativeLastName, d), { message: "Le nom du représentant est requis.", path: ["representativeLastName"] })
-    .refine(d => requiredForPublic(d.representativeFirstName, d), { message: "Le prénom du représentant est requis.", path: ["representativeFirstName"] })
-    .refine(d => requiredForPublic(d.representativeJob, d), { message: "Le poste du représentant est requis.", path: ["representativeJob"] })
-    .refine(d => requiredForPublic(d.representativePhone, d), { message: "Le numéro de téléphone du représentant est requis.", path: ["representativePhone"] })
-    .refine(d => requiredForPublic(d.representativeEmail, d), { message: "L'email du représentant est requis.", path: ["representativeEmail"] })
+    // ========================================
+    // VALIDATIONS PRIVATE + PERSONNE MORALE
+    // ========================================
+    .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.capital, {
+        path: ["capital"],
+        message: "Capital requis."
+    })
+    .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.rccm, {
+        path: ["rccm"],
+        message: "RCCM requis."
+    })
+    .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.taxIdentificationNumber, {
+        path: ["taxIdentificationNumber"],
+        message: "Numéro fiscal requis."
+    })
+    .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.legalForms, {
+        path: ["legalForms"],
+        message: "Statut juridique requis."
+    })
+    .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.representativeFirstName, {
+        path: ["representativeFirstName"],
+        message: "Prénom représentant requis."
+    })
+    .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.representativeLastName, {
+        path: ["representativeLastName"],
+        message: "Nom représentant requis."
+    })
+    .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.representativeJob, {
+        path: ["representativeJob"],
+        message: "Poste représentant requis."
+    })
+    .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.representativePhone, {
+        path: ["representativePhone"],
+        message: "Téléphone représentant requis."
+    })
+    .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.representativeEmail, {
+        path: ["representativeEmail"],
+        message: "Email représentant requis."
+    })
+    .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.rentalStartDate, {
+        path: ["rentalStartDate"],
+        message: "Date début requise."
+    })
+    .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.rentalPeriod, {
+        path: ["rentalPeriod"],
+        message: "Durée requise."
+    })
 
-    // Contrat (public sauf personne physique)
-    .refine(d => requiredForPublic(d.delayContract, d), { message: "La durée du contrat est obligatoire.", path: ["delayContract"] })
-    .refine(d => requiredForPublic(d.rentalStartDate, d), { message: "La date de début est requise.", path: ["rentalStartDate"] })
-
-    // Champs public toujours obligatoires
-    .refine(d => !isPublic(d) || !!d.lessorCustomer, { message: "Le bailleur est requis pour un espace public.", path: ["lessorCustomer"] })
-    .refine(d => !isPublic(d) || !!d.paymentMode, { message: "Le mode de paiement est requis.", path: ["paymentMode"] })
-    .refine(d => !isPublic(d) || !!d.paymentFrequency, { message: "La fréquence de paiement est requise.", path: ["paymentFrequency"] })
-    .refine(d => !isPublic(d) || !!d.electricitySupply, { message: "Fourniture du courant requise.", path: ["electricitySupply"] });
+    // ========================================
+    // VALIDATIONS PRIVATE + PERSONNE PHYSIQUE
+    // ========================================
+    .refine(d => !isPrivate(d) || !isPersonPhysique(d) || !!d.delayContractStart, {
+        path: ["delayContractStart"],
+        message: "Date du début du contrat requise."
+    })
+    .refine(d => !isPrivate(d) || !isPersonPhysique(d) || !!d.delayContractEnd, {
+        path: ["delayContractEnd"],
+        message: "Date de fin du contrat requise."
+    });
 
 export const billboardFormSchema = z.object({
     billboard: billboardSchema,
@@ -346,6 +436,8 @@ export const lessorError = {
     iban: "IBAN",
     bicSwift: "BIC/SWIFT",
     bankName: "Nom de la banque",
+    delayContractStart: "Date du début du contrat",
+    delayContractEnd: "Date de fin du contrat",
     rentalStartDate: "Date de début de la location",
     rentalPeriod: "Durée de la location",
     paymentMode: "Mode de paiement",

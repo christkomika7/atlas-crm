@@ -22,14 +22,16 @@ import Spinner from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import useBillboardStore from "@/stores/billboard.store";
 import Decimal from "decimal.js";
-import { PHYSICAL_COMPANY } from "@/config/constant";
 
 export default function EditForm() {
   const [lastPhotos, setLastPhotos] = useState<string[]>([]);
   const [lastBrochures, setLastBrochures] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cityId, setCityId] = useState("");
+  const isInitialized = useRef(false);
+
   const setCurrentSpaceType = useBillboardStore.use.setCurrentSpaceType();
+
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
 
@@ -54,223 +56,392 @@ export default function EditForm() {
     "billboard"
   );
 
+  // ========================================
+  // FETCH BILLBOARD
+  // ========================================
   useEffect(() => {
     if (param.id) {
       mutateBillboard({ id: param.id as string });
     }
   }, [param]);
 
+  // ========================================
+  // INITIALISATION DU FORMULAIRE
+  // ========================================
   useEffect(() => {
-    if (data?.data) {
-      const billboard = data.data;
-      setLastPhotos(billboard.photos);
-      setLastBrochures(billboard.brochures);
-      setCityId(billboard.cityId);
-      setCurrentSpaceType(billboard.lessorSpaceType as "private" | "public");
-      setWidth(billboard.width);
-      setHeight(billboard.height);
-      form.reset({
-        billboard: {
-          id: billboard.id,
-          companyId: billboard.companyId,
-          reference: billboard.reference,
-          hasTax: billboard.hasTax,
-          type: billboard.typeId,
-          name: billboard.name,
-          locality: billboard.locality,
-          area: billboard.areaId,
-          visualMarker: billboard.visualMarker,
-          displayBoard: billboard.displayBoardId,
+    if (!data?.data) return;
 
-          city: billboard.cityId,
-          orientation: billboard.orientation,
-          gmaps: billboard.gmaps,
+    const billboard = data.data;
 
-          photos: undefined,
-          brochures: undefined,
-          lastPhotos: billboard.photos,
-          lastBrochures: billboard.brochures,
+    setLastPhotos(billboard.photos);
+    setLastBrochures(billboard.brochures);
+    setCityId(billboard.cityId);
+    setCurrentSpaceType(billboard.lessorSpaceType as "private" | "public");
 
-          rentalPrice: new Decimal(billboard.rentalPrice),
-          installationCost: new Decimal(billboard.installationCost),
-          maintenance: new Decimal(billboard.maintenance),
+    setWidth(billboard.width);
+    setHeight(billboard.height);
+    console.log({ nonLocationPrice: billboard.nonLocationPrice });
+    console.log({ locationPrice: billboard.locationPrice });
+    form.reset({
+      billboard: {
+        id: billboard.id,
+        companyId: billboard.companyId,
+        reference: billboard.reference,
+        hasTax: billboard.hasTax,
+        type: billboard.typeId,
+        name: billboard.name,
+        locality: billboard.locality,
+        area: billboard.areaId,
+        visualMarker: billboard.visualMarker,
+        displayBoard: billboard.displayBoardId,
+        city: billboard.cityId,
+        orientation: billboard.orientation,
+        gmaps: billboard.gmaps,
 
-          width: billboard.width,
-          height: billboard.height,
-          lighting: billboard.lighting,
-          structureType: billboard.structureTypeId,
-          panelCondition: billboard.panelCondition,
-          decorativeElement: billboard.decorativeElement,
-          foundations: billboard.foundations,
-          electricity: billboard.electricity,
-          framework: billboard.framework,
-          note: billboard.note,
-        },
-        lessor: {
-          lessorType: billboard.lessorTypeId,
-          lessorSpaceType: billboard.lessorSpaceType,
-          ...(billboard.lessorSpaceType === 'private' ? {
-            lessorName: billboard.lessorName,
-            lessorAddress: billboard.lessorAddress,
-            lessorCity: billboard.lessorCity,
-            lessorPhone: billboard.lessorPhone,
-            lessorEmail: billboard.lessorEmail,
-            locationPrice: billboard.locationPrice,
-            nonLocationPrice: billboard.nonLocationPrice,
+        photos: undefined,
+        brochures: undefined,
+        lastPhotos: billboard.photos,
+        lastBrochures: billboard.brochures,
 
-            ...(billboard.lessorType.name === PHYSICAL_COMPANY ? {
-              identityCard: billboard.identityCard,
-              delayContract: billboard.delayContractStart && billboard.delayContractEnd ? {
-                from: new Date(billboard.delayContractStart),
-                to: new Date(billboard.delayContractEnd)
-              } : undefined
+        rentalPrice: new Decimal(billboard.rentalPrice),
+        installationCost: new Decimal(billboard.installationCost),
+        maintenance: new Decimal(billboard.maintenance),
 
-            } : {
-              capital: new Decimal(billboard.capital || 0),
-              rccm: billboard.rccm,
-              taxIdentificationNumber: billboard.taxIdentificationNumber,
-              niu: billboard.niu,
-              legalForms: billboard.legalForms,
-              representativeFirstName: billboard.representativeFirstName,
-              representativeLastName: billboard.representativeLastName,
-              representativeJob: billboard.representativeJob,
-              representativePhone: billboard.representativePhone,
-              representativeEmail: billboard.representativeEmail,
-              rentalStartDate: billboard.rentalStartDate ? new Date(billboard.rentalStartDate) : undefined,
-              rentalPeriod: billboard.rentalPeriod,
-            }),
+        width: billboard.width,
+        height: billboard.height,
+        lighting: billboard.lighting,
+        structureType: billboard.structureTypeId,
+        panelCondition: billboard.panelCondition,
+        decorativeElement: billboard.decorativeElement,
+        foundations: billboard.foundations,
+        electricity: billboard.electricity,
+        framework: billboard.framework,
+        note: billboard.note,
+      },
+      lessor: {
+        lessorSpaceType: billboard.lessorSpaceType,
+        lessorType: billboard.lessorTypeId,
+        lessorTypeName: billboard.lessorType?.name,
 
-            bankName: billboard.bankName,
-            rib: billboard.rib,
-            iban: billboard.iban,
-            bicSwift: billboard.bicSwift,
+        ...(billboard.lessorSpaceType === "private"
+          ? {
+            lessorName: billboard.lessorName || undefined,
+            lessorAddress: billboard.lessorAddress || undefined,
+            lessorCity: billboard.lessorCity || undefined,
+            lessorPhone: billboard.lessorPhone || undefined,
+            lessorEmail: billboard.lessorEmail || undefined,
+            locationPrice: billboard.locationPrice || undefined,
+            nonLocationPrice: billboard.nonLocationPrice || undefined,
 
-            paymentMode: billboard.paymentMode ? JSON.parse(billboard.paymentMode) : [],
-            paymentFrequency: billboard.paymentFrequency,
-            electricitySupply: billboard.electricitySupply,
-            specificCondition: billboard.specificCondition,
-          } : {
-            lessorCustomer: billboard.lessorSupplierId,
-          })
+            ...(billboard.lessorType?.name === "Personne physique"
+              ? {
+                identityCard: billboard.identityCard,
+                delayContractStart: billboard.delayContractStart
+                  ? new Date(billboard.delayContractStart).toISOString()
+                  : undefined,
+                delayContractEnd: billboard.delayContractEnd
+                  ? new Date(billboard.delayContractEnd).toISOString()
+                  : undefined,
+              }
+              : {
+                capital: new Decimal(billboard.capital || 0).toString(),
+                rccm: billboard.rccm || undefined,
+                taxIdentificationNumber: billboard.taxIdentificationNumber || undefined,
+                niu: billboard.niu || undefined,
+                legalForms: billboard.legalForms || undefined,
+                representativeFirstName: billboard.representativeFirstName || undefined,
+                representativeLastName: billboard.representativeLastName || undefined,
+                representativeJob: billboard.representativeJob || undefined,
+                representativePhone: billboard.representativePhone || undefined,
+                representativeEmail: billboard.representativeEmail || undefined,
+                rentalStartDate: billboard.rentalStartDate
+                  ? new Date(billboard.rentalStartDate).toISOString()
+                  : undefined,
+                rentalPeriod: billboard.rentalPeriod || undefined,
+              }),
 
-        },
-      });
-    }
+            bankName: billboard.bankName || undefined,
+            rib: billboard.rib || undefined,
+            iban: billboard.iban || undefined,
+            bicSwift: billboard.bicSwift || undefined,
+            paymentMode: billboard.paymentMode ? JSON.parse(billboard.paymentMode) : undefined,
+            paymentFrequency: billboard.paymentFrequency || undefined,
+            electricitySupply: billboard.electricitySupply || undefined,
+            specificCondition: billboard.specificCondition || undefined,
+          }
+          : {
+            lessorCustomer: billboard.lessorSupplierId || undefined,
+          }),
+      },
+    });
   }, [data, form]);
 
-  useEffect(() => {
-    form.watch(() => console.log({ errors: form.formState.errors }))
-  }, [form.watch])
-
+  // ========================================
+  // RESET FICHIERS
+  // ========================================
   const handleReset = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.files = null;
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // ========================================
+  // DEBUG ERREURS
+  // ========================================
+  useEffect(() => {
+    form.watch(() => console.log({ errors: form.formState.errors }));
+  }, [form.watch]);
 
+  // ========================================
+  // RESET CHAMPS SELON LESSOR SPACE TYPE
+  // ========================================
+  const spaceType = form.watch("lessor.lessorSpaceType");
+  useEffect(() => {
+    if (!spaceType) return;
 
+    if (!isInitialized.current) {
+      isInitialized.current = true;
+      return;
+    }
+
+    form.clearErrors([
+      "lessor.delayContractStart",
+      "lessor.delayContractEnd",
+      "lessor.rentalStartDate",
+      "lessor.rentalPeriod",
+      "lessor.capital",
+      "lessor.rccm",
+      "lessor.taxIdentificationNumber",
+      "lessor.legalForms",
+      "lessor.representativeFirstName",
+      "lessor.representativeLastName",
+      "lessor.representativeJob",
+      "lessor.representativePhone",
+      "lessor.representativeEmail",
+      "lessor.locationPrice",
+      "lessor.nonLocationPrice",
+      "lessor.lessorName",
+      "lessor.lessorAddress",
+      "lessor.lessorCity",
+      "lessor.lessorEmail",
+      "lessor.lessorPhone",
+      "lessor.niu",
+      "lessor.rib",
+      "lessor.iban",
+      "lessor.bicSwift",
+      "lessor.bankName",
+      "lessor.paymentMode",
+      "lessor.paymentFrequency",
+      "lessor.electricitySupply",
+      "lessor.specificCondition",
+      "lessor.identityCard",
+      "lessor.lessorCustomer",
+    ]);
+
+    if (spaceType === "public") {
+      const privateFields = [
+        "lessor.delayContractStart",
+        "lessor.delayContractEnd",
+        "lessor.rentalStartDate",
+        "lessor.rentalPeriod",
+        "lessor.capital",
+        "lessor.rccm",
+        "lessor.taxIdentificationNumber",
+        "lessor.legalForms",
+        "lessor.representativeFirstName",
+        "lessor.representativeLastName",
+        "lessor.representativeJob",
+        "lessor.representativePhone",
+        "lessor.representativeEmail",
+        "lessor.locationPrice",
+        "lessor.nonLocationPrice",
+        "lessor.lessorName",
+        "lessor.lessorAddress",
+        "lessor.lessorCity",
+        "lessor.lessorEmail",
+        "lessor.lessorPhone",
+        "lessor.niu",
+        "lessor.rib",
+        "lessor.iban",
+        "lessor.bicSwift",
+        "lessor.bankName",
+        "lessor.paymentMode",
+        "lessor.paymentFrequency",
+        "lessor.electricitySupply",
+        "lessor.specificCondition",
+        "lessor.identityCard",
+      ];
+      privateFields.forEach((field) => {
+        form.setValue(field as any, undefined);
+        form.unregister(field as any);
+      });
+      form.setValue("lessor.lessorType", "");
+      form.setValue("lessor.lessorTypeName", undefined);
+    }
+
+    if (spaceType === "private") {
+      form.setValue("lessor.lessorCustomer", undefined);
+      form.unregister("lessor.lessorCustomer");
+      form.setValue("lessor.lessorType", "");
+      form.setValue("lessor.lessorTypeName", undefined);
+    }
+  }, [spaceType, form]);
+
+  // ========================================
+  // RESET CHAMPS SELON LESSOR TYPE
+  // ========================================
+  const lessorTypeName = form.watch("lessor.lessorTypeName");
+  useEffect(() => {
+    if (!lessorTypeName) return;
+
+    form.clearErrors([
+      "lessor.delayContractStart",
+      "lessor.delayContractEnd",
+      "lessor.rentalPeriod",
+      "lessor.capital",
+      "lessor.rccm",
+      "lessor.taxIdentificationNumber",
+      "lessor.legalForms",
+      "lessor.niu",
+      "lessor.representativeFirstName",
+      "lessor.representativeLastName",
+      "lessor.representativeJob",
+      "lessor.representativePhone",
+      "lessor.representativeEmail",
+      "lessor.identityCard",
+    ]);
+
+    if (lessorTypeName === "Personne physique") {
+      const moralFields = [
+        "lessor.capital",
+        "lessor.rccm",
+        "lessor.taxIdentificationNumber",
+        "lessor.legalForms",
+        "lessor.niu",
+        "lessor.representativeFirstName",
+        "lessor.representativeLastName",
+        "lessor.representativeJob",
+        "lessor.representativePhone",
+        "lessor.representativeEmail",
+        "lessor.rentalStartDate",
+        "lessor.rentalPeriod",
+      ];
+      moralFields.forEach((field) => {
+        form.setValue(field as any, undefined);
+        form.unregister(field as any);
+      });
+    }
+
+    if (lessorTypeName === "Personne moral") {
+      const physicalFields = [
+        "lessor.identityCard",
+        "lessor.delayContractStart",
+        "lessor.delayContractEnd",
+      ];
+      physicalFields.forEach((field) => {
+        form.setValue(field as any, undefined);
+        form.unregister(field as any);
+      });
+    }
+  }, [lessorTypeName, form]);
+
+  // ========================================
+  // SUBMIT
+  // ========================================
   function submit(formData: EditBillboardSchemaFormType) {
     const validateData = editBillboardFormSchema.safeParse(formData);
-    if (validateData.success) {
+    if (!validateData.success) return;
 
-      mutate(
-        {
-          billboard: {
-            id: validateData.data.billboard.id,
-            companyId: validateData.data.billboard.companyId,
-            reference: validateData.data.billboard.reference,
-            hasTax: validateData.data.billboard.hasTax,
-            type: validateData.data.billboard.type,
-            name: validateData.data.billboard.name,
-            locality: validateData.data.billboard.locality,
-            area: validateData.data.billboard.area,
-            visualMarker: validateData.data.billboard.visualMarker,
-            displayBoard: validateData.data.billboard.displayBoard,
-
-            city: validateData.data.billboard.city,
-            orientation: validateData.data.billboard.orientation,
-            gmaps: validateData.data.billboard.gmaps,
-
-            photos: validateData.data.billboard.photos,
-            brochures: validateData.data.billboard.brochures,
-            lastPhotos: lastPhotos,
-            lastBrochures: lastBrochures,
-
-            rentalPrice: new Decimal(validateData.data.billboard.rentalPrice),
-            installationCost: new Decimal(validateData.data.billboard.installationCost || "0"),
-            maintenance: new Decimal(validateData.data.billboard.maintenance || "0"),
-
-            width: validateData.data.billboard.width,
-            height: validateData.data.billboard.height,
-            lighting: validateData.data.billboard.lighting,
-            structureType: validateData.data.billboard.structureType,
-            panelCondition: validateData.data.billboard.panelCondition,
-            decorativeElement: validateData.data.billboard.decorativeElement,
-            foundations: validateData.data.billboard.foundations,
-            electricity: validateData.data.billboard.electricity,
-            framework: validateData.data.billboard.framework,
-            note: validateData.data.billboard.note,
-          },
-          lessor: {
-            lessorType: validateData.data.lessor.lessorType,
-            lessorSpaceType: validateData.data.lessor.lessorSpaceType,
-
-            ...(validateData.data.lessor.lessorSpaceType === "private" ? {
-              lessorName: validateData.data.lessor.lessorName,
-              lessorAddress: validateData.data.lessor.lessorAddress,
-              lessorCity: validateData.data.lessor.lessorCity,
-              lessorPhone: validateData.data.lessor.lessorPhone,
-              lessorEmail: validateData.data.lessor.lessorEmail,
-              locationPrice: validateData.data.lessor.locationPrice,
-              nonLocationPrice: validateData.data.lessor.nonLocationPrice,
-
-              ...(validateData.data.lessor.lessorCity === PHYSICAL_COMPANY ? {
-                identityCard: validateData.data.lessor.identityCard,
-                delayContract: validateData.data.lessor.delayContract
-              } : {
-                capital: new Decimal(validateData.data.lessor.capital || 0),
-                rccm: validateData.data.lessor.rccm,
-                taxIdentificationNumber: validateData.data.lessor.taxIdentificationNumber,
-                niu: validateData.data.lessor.niu,
-                legalForms: validateData.data.lessor.legalForms,
-                representativeFirstName: validateData.data.lessor.representativeFirstName,
-                representativeLastName: validateData.data.lessor.representativeLastName,
-                representativeJob: validateData.data.lessor.representativeJob,
-                representativePhone: validateData.data.lessor.representativePhone,
-                representativeEmail: validateData.data.lessor.representativeEmail,
-
-                rentalStartDate: validateData.data.lessor.rentalStartDate ? new Date(validateData.data.lessor.rentalStartDate) : undefined,
-                rentalPeriod: validateData.data.lessor.rentalPeriod,
-              }
-              ),
-
-              bankName: validateData.data.lessor.bankName,
-              rib: validateData.data.lessor.rib,
-              iban: validateData.data.lessor.iban,
-              bicSwift: validateData.data.lessor.bicSwift,
-
-              paymentMode: validateData.data.lessor.paymentMode || [],
-              paymentFrequency: validateData.data.lessor.paymentFrequency,
-              electricitySupply: validateData.data.lessor.electricitySupply,
-              specificCondition: validateData.data.lessor.specificCondition,
-
-            } : {
-              lessorCustomer: validateData.data.lessor.lessorCustomer,
-            })
-          },
+    const d = validateData.data;
+    mutate(
+      {
+        billboard: {
+          id: d.billboard.id,
+          companyId: d.billboard.companyId,
+          reference: d.billboard.reference,
+          hasTax: d.billboard.hasTax,
+          type: d.billboard.type,
+          name: d.billboard.name,
+          locality: d.billboard.locality,
+          area: d.billboard.area,
+          visualMarker: d.billboard.visualMarker,
+          displayBoard: d.billboard.displayBoard,
+          city: d.billboard.city,
+          orientation: d.billboard.orientation,
+          gmaps: d.billboard.gmaps,
+          photos: d.billboard.photos,
+          brochures: d.billboard.brochures,
+          lastPhotos,
+          lastBrochures,
+          rentalPrice: new Decimal(d.billboard.rentalPrice),
+          installationCost: new Decimal(d.billboard.installationCost || "0"),
+          maintenance: new Decimal(d.billboard.maintenance || "0"),
+          width: d.billboard.width,
+          height: d.billboard.height,
+          lighting: d.billboard.lighting,
+          structureType: d.billboard.structureType,
+          panelCondition: d.billboard.panelCondition,
+          decorativeElement: d.billboard.decorativeElement,
+          foundations: d.billboard.foundations,
+          electricity: d.billboard.electricity,
+          framework: d.billboard.framework,
+          note: d.billboard.note,
         },
-        {
-          onSuccess() {
-            handleReset();
-            form.reset();
-            mutateBillboard({ id: param.id as string });
-          },
-        }
-      );
-    }
+        lessor: {
+          lessorType: d.lessor.lessorType,
+          lessorTypeName: d.lessor.lessorTypeName,
+          lessorSpaceType: d.lessor.lessorSpaceType,
+          ...(d.lessor.lessorSpaceType === "private"
+            ? {
+              lessorName: d.lessor.lessorName,
+              lessorAddress: d.lessor.lessorAddress,
+              lessorCity: d.lessor.lessorCity,
+              lessorPhone: d.lessor.lessorPhone,
+              lessorEmail: d.lessor.lessorEmail,
+              locationPrice: d.lessor.locationPrice,
+              nonLocationPrice: d.lessor.nonLocationPrice,
+              ...(d.lessor.lessorTypeName === "Personne physique"
+                ? {
+                  identityCard: d.lessor.identityCard,
+                  delayContractStart: d.lessor.delayContractStart,
+                  delayContractEnd: d.lessor.delayContractEnd,
+                }
+                : {
+                  capital: d.lessor.capital || "0",
+                  rccm: d.lessor.rccm,
+                  taxIdentificationNumber: d.lessor.taxIdentificationNumber,
+                  niu: d.lessor.niu,
+                  legalForms: d.lessor.legalForms,
+                  representativeFirstName: d.lessor.representativeFirstName,
+                  representativeLastName: d.lessor.representativeLastName,
+                  representativeJob: d.lessor.representativeJob,
+                  representativePhone: d.lessor.representativePhone,
+                  representativeEmail: d.lessor.representativeEmail,
+                  rentalStartDate: d.lessor.rentalStartDate,
+                  rentalPeriod: d.lessor.rentalPeriod,
+                }),
+              bankName: d.lessor.bankName,
+              rib: d.lessor.rib,
+              iban: d.lessor.iban,
+              bicSwift: d.lessor.bicSwift,
+              paymentMode: d.lessor.paymentMode || [],
+              paymentFrequency: d.lessor.paymentFrequency,
+              electricitySupply: d.lessor.electricitySupply,
+              specificCondition: d.lessor.specificCondition,
+            }
+            : {
+              lessorCustomer: d.lessor.lessorCustomer,
+            }),
+        },
+      },
+      {
+        onSuccess() {
+          handleReset();
+          form.reset();
+          mutateBillboard({ id: param.id as string });
+        },
+      }
+    );
   }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
@@ -304,11 +475,7 @@ export default function EditForm() {
               {
                 id: 2,
                 title: "Infos bailleur",
-                content: (
-                  <LessorInfoTab
-                    form={form}
-                  />
-                ),
+                content: <LessorInfoTab form={form} />,
               },
             ]}
             tabId="billboard-tab"

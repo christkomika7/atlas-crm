@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     const result = await checkAccess("BILLBOARDS", "CREATE");
 
     if (!result.authorized) {
-        return Response.json({
+        return NextResponse.json({
             state: "error",
             message: result.message,
         }, { status: 403 });
@@ -146,160 +146,128 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             state: "error",
             message: "Aucun panneau d'affichage trouvé."
-        }, {
-            status: 400
-        })
+        }, { status: 400 });
     }
 
+    // Nouveau key et nouveaux dossiers
     const key = generateId();
 
-    const folderPhoto = createFolder([billboard.company.companyName, "billboard", "photo", `${billboard.name}_----${key}`]);
-    const folderBrochure = createFolder([billboard.company.companyName, "billboard", "brochure", `${billboard.name}_----${key}`]);
+    const folderPhoto = createFolder([
+        "billboard",
+        "photo",
+        `${billboard.name}_----${key}`
+    ]);
 
-    let savedPathsPhoto: string[] = await copyTo(billboard.photos, folderPhoto);
-    let savedPathsBrochure: string[] = await copyTo(billboard.brochures, folderBrochure);
+    const folderBrochure = createFolder([
+        "billboard",
+        "brochure",
+        `${billboard.name}_----${key}`
+    ]);
+
+    let savedPathsPhoto: string[] = [];
+    let savedPathsBrochure: string[] = [];
 
     try {
+        // Copier toutes les images existantes
+        savedPathsPhoto = await copyTo(billboard.photos ?? [], folderPhoto);
+        savedPathsBrochure = await copyTo(billboard.brochures ?? [], folderBrochure);
 
+        const baseData: any = {
+            reference: key,
+            hasTax: billboard.hasTax,
+            type: { connect: { id: billboard.typeId } },
+            name: billboard.name,
+            locality: billboard.locality,
+            area: { connect: { id: billboard.areaId } },
+            visualMarker: billboard.visualMarker,
+            displayBoard: { connect: { id: billboard.displayBoardId } },
+
+            city: { connect: { id: billboard.cityId } },
+            orientation: billboard.orientation,
+            gmaps: billboard.gmaps,
+
+            pathPhoto: folderPhoto,
+            pathBrochure: folderBrochure,
+            photos: savedPathsPhoto,
+            brochures: savedPathsBrochure,
+
+            rentalPrice: billboard.rentalPrice,
+            installationCost: billboard.installationCost,
+            maintenance: billboard.maintenance,
+
+            width: billboard.width,
+            height: billboard.height,
+            lighting: billboard.lighting,
+            structureType: { connect: { id: billboard.structureTypeId } },
+            panelCondition: billboard.panelCondition,
+            decorativeElement: billboard.decorativeElement,
+            foundations: billboard.foundations,
+            electricity: billboard.electricity,
+            framework: billboard.framework,
+            note: billboard.note,
+
+            lessorSpaceType: billboard.lessorSpaceType,
+            lessorType: { connect: { id: billboard.lessorTypeId } },
+
+            company: { connect: { id: billboard.companyId } },
+        };
+
+        // Cas des privés
         if (billboard.lessorSpaceType === "private") {
-            await prisma.billboard.create({
-                data: {
-                    reference: key,
-                    hasTax: billboard.hasTax,
-                    type: {
-                        connect: {
-                            id: billboard.typeId
-                        }
-                    },
-                    name: billboard.name,
-                    locality: billboard.locality,
-                    area: { connect: { id: billboard.areaId } },
-                    visualMarker: billboard.visualMarker,
-                    displayBoard: { connect: { id: billboard.displayBoardId } },
+            Object.assign(baseData, {
+                locationPrice: billboard.locationPrice,
+                nonLocationPrice: billboard.nonLocationPrice,
 
-                    city: { connect: { id: billboard.cityId } },
-                    orientation: billboard.orientation,
-                    gmaps: billboard.gmaps,
+                lessorName: billboard.lessorName,
+                lessorAddress: billboard.lessorAddress,
+                lessorCity: billboard.lessorCity,
+                lessorPhone: billboard.lessorPhone,
+                lessorEmail: billboard.lessorEmail,
 
-                    pathPhoto: folderPhoto,
-                    pathBrochure: folderBrochure,
-                    photos: savedPathsPhoto,
-                    brochures: savedPathsBrochure,
+                capital: billboard.capital,
+                rccm: billboard.rccm,
+                taxIdentificationNumber: billboard.taxIdentificationNumber,
+                niu: billboard.niu,
+                legalForms: billboard.legalForms,
+                bankName: billboard.bankName,
+                rib: billboard.rib,
+                iban: billboard.iban,
+                bicSwift: billboard.bicSwift,
 
-                    rentalPrice: billboard.rentalPrice,
-                    installationCost: billboard.installationCost,
-                    maintenance: billboard.maintenance,
+                representativeFirstName: billboard.representativeFirstName,
+                representativeLastName: billboard.representativeLastName,
+                representativeJob: billboard.representativeJob,
+                representativePhone: billboard.representativePhone,
+                representativeEmail: billboard.representativeEmail,
 
-                    width: billboard.width,
-                    height: billboard.height,
-                    lighting: billboard.lighting,
-                    structureType: { connect: { id: billboard.structureTypeId } },
-                    panelCondition: billboard.panelCondition,
-                    decorativeElement: billboard.decorativeElement,
-                    foundations: billboard.foundations,
-                    electricity: billboard.electricity,
-                    framework: billboard.framework,
-                    note: billboard.note,
-
-                    lessorSpaceType: billboard.lessorSpaceType,
-                    lessorType: { connect: { id: billboard.lessorTypeId } },
-                    locationPrice: billboard.locationPrice,
-                    nonLocationPrice: billboard.nonLocationPrice,
-
-                    lessorName: billboard.lessorName,
-                    lessorAddress: billboard.lessorAddress,
-                    lessorCity: billboard.lessorCity,
-                    lessorPhone: billboard.lessorPhone,
-                    lessorEmail: billboard.lessorEmail,
-
-                    capital: billboard.capital,
-                    rccm: billboard.rccm,
-                    taxIdentificationNumber: billboard.taxIdentificationNumber,
-                    niu: billboard.niu,
-                    legalForms: billboard.legalForms,
-                    bankName: billboard.bankName,
-                    rib: billboard.rib,
-                    iban: billboard.iban,
-                    bicSwift: billboard.bicSwift,
-
-                    representativeFirstName: billboard.representativeFirstName,
-                    representativeLastName: billboard.representativeLastName,
-                    representativeJob: billboard.representativeJob,
-                    representativePhone: billboard.representativePhone,
-                    representativeEmail: billboard.representativeEmail,
-
-                    identityCard: billboard.identityCard,
-                    delayContractStart: billboard.delayContractStart,
-                    delayContractEnd: billboard.delayContractEnd,
-                    rentalStartDate: billboard.rentalStartDate,
-                    rentalPeriod: billboard.rentalPeriod,
-                    paymentMode: billboard.paymentMode,
-                    paymentFrequency: billboard.paymentFrequency,
-                    electricitySupply: billboard.electricitySupply,
-                    specificCondition: billboard.specificCondition,
-                    company: { connect: { id: billboard.companyId } },
-                },
+                identityCard: billboard.identityCard,
+                delayContractStart: billboard.delayContractStart,
+                delayContractEnd: billboard.delayContractEnd,
+                rentalStartDate: billboard.rentalStartDate,
+                rentalPeriod: billboard.rentalPeriod,
+                paymentMode: billboard.paymentMode,
+                paymentFrequency: billboard.paymentFrequency,
+                electricitySupply: billboard.electricitySupply,
+                specificCondition: billboard.specificCondition,
             });
-
         } else {
-            await prisma.billboard.create({
-                data: {
-                    reference: key,
-                    hasTax: billboard.hasTax,
-                    type: {
-                        connect: {
-                            id: billboard.typeId
-                        }
-                    },
-                    name: billboard.name,
-                    locality: billboard.locality,
-                    area: { connect: { id: billboard.areaId } },
-                    visualMarker: billboard.visualMarker,
-                    displayBoard: { connect: { id: billboard.displayBoardId } },
-
-                    city: { connect: { id: billboard.cityId } },
-                    orientation: billboard.orientation,
-                    gmaps: billboard.gmaps,
-
-                    pathPhoto: folderPhoto,
-                    pathBrochure: folderBrochure,
-                    photos: savedPathsPhoto,
-                    brochures: savedPathsBrochure,
-
-                    rentalPrice: billboard.rentalPrice,
-                    installationCost: billboard.installationCost,
-                    maintenance: billboard.maintenance,
-
-                    width: billboard.width,
-                    height: billboard.height,
-                    lighting: billboard.lighting,
-                    structureType: { connect: { id: billboard.structureTypeId } },
-                    panelCondition: billboard.panelCondition,
-                    decorativeElement: billboard.decorativeElement,
-                    foundations: billboard.foundations,
-                    electricity: billboard.electricity,
-                    framework: billboard.framework,
-                    note: billboard.note,
-
-                    lessorSpaceType: billboard.lessorSpaceType,
-                    lessorType: { connect: { id: billboard.lessorTypeId } },
-                    lessorSupplier: {
-                        connect: {
-                            id: billboard.lessorSupplierId as string
-                        }
-                    },
-                    company: { connect: { id: billboard.companyId } },
-                },
-            });
+            // Cas des lessors corporate
+            if (billboard.lessorSupplierId) {
+                baseData.lessorSupplier = {
+                    connect: { id: billboard.lessorSupplierId }
+                };
+            }
         }
+
+        await prisma.billboard.create({ data: baseData });
 
         return NextResponse.json({
             status: "success",
-            message: "Panneau a été dupliqué avec succès.",
+            message: "Panneau dupliqué avec succès.",
         });
 
-    }
-    catch (error) {
+    } catch (error) {
+        console.error("Erreur de duplication:", error);
 
         await removePath([
             ...savedPathsPhoto,
@@ -308,11 +276,9 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             status: "error",
-            message: "Erreur lors de le la duplication du panneau.",
+            message: "Erreur lors de la duplication du panneau.",
         }, { status: 500 });
-
     }
-
 }
 
 export async function PUT(req: NextRequest) {
@@ -353,7 +319,7 @@ export async function PUT(req: NextRequest) {
     const lessorFields = [
         "lessorSpaceType", "lessorType", "lessorCustomer", "lessorName", "lessorAddress", "lessorCity", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "rib", "iban", "bicSwift", "bankName",
         "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition",
-        'niu', "legalForms", "locationPrice", "nonLocationPrice", "delayContract", "identityCard"
+        'niu', "legalForms", "locationPrice", "nonLocationPrice", "delayContractStart", "delayContractEnd", "identityCard"
     ];
 
     const billboardData: Record<string, any> = {};
@@ -368,8 +334,10 @@ export async function PUT(req: NextRequest) {
     }
 
     // Conversion des dates
-    lessorData.rentalStartDate = rawData["rentalStartDate"] ? new Date(rawData["rentalStartDate"]) : undefined;
-    lessorData.delayContract = rawData["delayContract"] ? JSON.parse(lessorData.delayContract) : undefined;
+    lessorData.rentalStartDate = rawData["rentalStartDate"] ? rawData["rentalStartDate"] : undefined;
+    lessorData.delayContractStart = rawData["delayContractStart"] ? rawData["delayContractStart"] : undefined;
+    lessorData.delayContractEnd = rawData["delayContractEnd"] ? rawData["delayContractEnd"] : undefined;
+
 
     // Fichiers uploadés
     billboardData.photos = filesMap["photos"] ?? [];
@@ -390,11 +358,10 @@ export async function PUT(req: NextRequest) {
         },
         lessor: {
             ...(lessorData as EditLessorSchemaType),
-            capital: new Decimal(lessorData.capital || 0),
-            delayContract: lessorData.delayContract?.from && lessorData.delayContract?.to ? {
-                from: new Date(lessorData.delayContract.from),
-                to: new Date(lessorData.delayContract.to)
-            } : undefined,
+            capital: lessorData.capital,
+            delayContractStart: lessorData.delayContractStart ? lessorData.delayContractStart : undefined,
+            delayContractEnd: lessorData.delayContractEnd ? lessorData.delayContractEnd : undefined,
+            rentalStartDate: lessorData.rentalStartDate ? lessorData.rentalStartDate : undefined,
             paymentMode: lessorData.paymentMode ? JSON.parse(lessorData.paymentMode) : []
         }
     };
@@ -404,6 +371,9 @@ export async function PUT(req: NextRequest) {
         editBillboardFormSchema,
         dataToValidate as EditBillboardSchemaFormType
     ) as EditBillboardSchemaFormType;
+
+
+    console.log({ data });
 
     // Vérifications préalables
     const [companyExist, refExist, billboardExist] = await prisma.$transaction([
@@ -522,39 +492,39 @@ export async function PUT(req: NextRequest) {
                                 id: billboardExist.lessorTypeId as string
                             }
                         },
-                        locationPrice: data.lessor.locationPrice,
-                        nonLocationPrice: data.lessor.nonLocationPrice,
-                        delayContractStart: data.lessor.delayContract?.from,
-                        delayContractEnd: data.lessor.delayContract?.to,
+                        locationPrice: data.lessor.locationPrice || null,
+                        nonLocationPrice: data.lessor.nonLocationPrice || null,
+                        delayContractStart: data.lessor.delayContractStart ? new Date(data.lessor.delayContractStart) : null,
+                        delayContractEnd: data.lessor.delayContractEnd ? new Date(data.lessor.delayContractEnd) : null,
 
-                        lessorName: data.lessor.lessorName,
-                        lessorAddress: data.lessor.lessorAddress,
-                        lessorCity: data.lessor.lessorCity,
-                        lessorPhone: data.lessor.lessorPhone,
-                        lessorEmail: data.lessor.lessorEmail,
+                        lessorName: data.lessor.lessorName || null,
+                        lessorAddress: data.lessor.lessorAddress || null,
+                        lessorCity: data.lessor.lessorCity || null,
+                        lessorPhone: data.lessor.lessorPhone || null,
+                        lessorEmail: data.lessor.lessorEmail || null,
 
-                        capital: data.lessor.capital,
-                        rccm: data.lessor.rccm,
-                        taxIdentificationNumber: data.lessor.taxIdentificationNumber,
-                        niu: data.lessor.niu,
-                        legalForms: data.lessor.legalForms,
-                        bankName: data.lessor.bankName,
-                        rib: data.lessor.rib,
-                        iban: data.lessor.iban,
-                        bicSwift: data.lessor.bicSwift,
+                        capital: data.lessor.capital ? new Decimal(data.lessor.capital) : null,
+                        rccm: data.lessor.rccm || null,
+                        taxIdentificationNumber: data.lessor.taxIdentificationNumber || null,
+                        niu: data.lessor.niu || null,
+                        legalForms: data.lessor.legalForms || undefined,
+                        bankName: data.lessor.bankName || null,
+                        rib: data.lessor.rib || null,
+                        iban: data.lessor.iban || null,
+                        bicSwift: data.lessor.bicSwift || null,
 
-                        representativeFirstName: data.lessor.representativeFirstName,
-                        representativeLastName: data.lessor.representativeLastName,
-                        representativeJob: data.lessor.representativeJob,
-                        representativePhone: data.lessor.representativePhone,
-                        representativeEmail: data.lessor.representativeEmail,
+                        representativeFirstName: data.lessor.representativeFirstName || null,
+                        representativeLastName: data.lessor.representativeLastName || null,
+                        representativeJob: data.lessor.representativeJob || null,
+                        representativePhone: data.lessor.representativePhone || null,
+                        representativeEmail: data.lessor.representativeEmail || null,
 
-                        rentalStartDate: data.lessor.rentalStartDate ?? null,
-                        rentalPeriod: data.lessor.rentalPeriod,
-                        paymentMode: JSON.stringify(data.lessor.paymentMode),
-                        paymentFrequency: data.lessor.paymentFrequency,
-                        electricitySupply: data.lessor.electricitySupply,
-                        specificCondition: data.lessor.specificCondition,
+                        rentalStartDate: data.lessor.rentalStartDate ? new Date(data.lessor.rentalStartDate) : null,
+                        rentalPeriod: data.lessor.rentalPeriod || null,
+                        paymentMode: data.lessor.paymentMode ? JSON.stringify(data.lessor.paymentMode) : null,
+                        paymentFrequency: data.lessor.paymentFrequency || null,
+                        electricitySupply: data.lessor.electricitySupply || null,
+                        specificCondition: data.lessor.specificCondition || null,
                     }),
                 company: { connect: { id: data.billboard.companyId } },
             },

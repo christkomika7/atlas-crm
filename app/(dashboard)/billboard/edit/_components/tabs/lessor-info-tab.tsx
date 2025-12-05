@@ -8,13 +8,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import TextInput from "@/components/ui/text-input";
 import useQueryAction from "@/hook/useQueryAction";
 import { acceptPayment, electricitySupply, lessorSpaceType, paymentFrequency, rentalDurations } from "@/lib/data";
 import {
   EditBillboardSchemaFormType,
-  lessorError,
-  LessorErrorType,
 } from "@/lib/zod/billboard.schema";
 import useBillboardStore from "@/stores/billboard.store";
 import { useDataStore } from "@/stores/data.store";
@@ -23,7 +20,6 @@ import { SupplierType } from "@/types/supplier.types";
 import { all as allCities } from "@/action/city.action";
 import { useEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { Decimal } from "decimal.js"
 import useCityStore from "@/stores/city.store";
 import { getBillboardLessorType } from "@/action/billboard.action";
 import { BaseType } from "@/types/base.types";
@@ -42,108 +38,88 @@ type LessorInfoTabProps = {
 export default function LessorInfoTab({
   form,
 }: LessorInfoTabProps) {
-  const companyId = useDataStore.use.currentCompany()
+  const companyId = useDataStore.use.currentCompany();
   const setCurrentSpaceType = useBillboardStore.use.setCurrentSpaceType();
   const currentSpaceType = useBillboardStore.use.currentSpaceType?.();
 
   const lessorTypes = useBillboardStore.use.lessorTypes();
   const setLessorType = useBillboardStore.use.setLessorType();
 
-  const setCities = useCityStore.use.setCity();
   const cities = useCityStore.use.cities();
+  const setCities = useCityStore.use.setCity();
 
-  const [suppliers, setSupplier] = useState<SupplierType[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierType[]>([]);
   const [lessorTypeName, setLessorTypeName] = useState("");
 
+  // Queries
+  const { mutate: mutateCity, isPending: isPendingCity } = useQueryAction<{ companyId: string },
+    RequestResponse<CityType[]>>(allCities, () => { }, "cities");
 
-  const { mutate: mutateGetSuppliers, isPending: isGettingSuppliers } = useQueryAction<
-    { id: string },
-    RequestResponse<SupplierType[]>
-  >(all, () => { }, "suppliers");
+  const { mutate: mutateGetSuppliers, isPending: isGettingSuppliers } = useQueryAction<{ id: string },
+    RequestResponse<SupplierType[]>>(all, () => { }, "suppliers");
 
-
-  const {
-    mutate: mutateCity,
-    isPending: isPendingCity,
-    data: dataCities,
-  } = useQueryAction<{ companyId: string }, RequestResponse<CityType[]>>(
-    allCities,
-    () => { },
-    "cities"
-  );
-
-  const {
-    mutate: mutateGetElements,
-    isPending: isGettingElements,
-  } = useQueryAction<
-    { companyId: string },
+  const { mutate: mutateGetElements, isPending: isGettingElements } = useQueryAction<
+    { companyId: string; lessorSpace?: string },
     RequestResponse<BaseType[]>
   >(getBillboardLessorType, () => { }, "lessor-type");
 
 
+  // Load suppliers + cities
   useEffect(() => {
-    if (companyId) {
-      mutateGetSuppliers({ id: companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setSupplier(data.data);
-          }
-        },
-      });
+    if (!companyId) return;
 
-      mutateGetElements({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setLessorType(data.data);
-          }
-        },
-      });
+    mutateGetSuppliers({ id: companyId }, {
+      onSuccess(data) {
+        if (data.data) setSuppliers(data.data);
+      },
+    });
 
-      mutateCity({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setCities(data.data);
-          }
-        },
-      });
-    }
+    mutateCity({ companyId }, {
+      onSuccess(data) {
+        if (data.data) setCities(data.data);
+      },
+    });
   }, [companyId]);
+
+
+  // Load lessor types based on spaceType
+  useEffect(() => {
+    if (!currentSpaceType || !companyId) return;
+    mutateGetElements(
+      { companyId, lessorSpace: currentSpaceType },
+      {
+        onSuccess(data) {
+          if (data.data) setLessorType(data.data);
+        },
+      }
+    );
+  }, [currentSpaceType, companyId]);
 
   const handleLessorTypeChange = (id: string) => {
     const name = lessorTypes.find((l) => l.id === id)?.name || "";
     setLessorTypeName(name);
+    form.setValue("lessor.lessorTypeName", name);
   };
 
+  console.log({ lessorType: form.getValues('lessor.lessorType') })
+
+  // DISPLAY LOGIC
   const isPrivate = currentSpaceType === "private";
   const isPublic = currentSpaceType === "public";
+
   const isPhysical = lessorTypeName === PHYSICAL_COMPANY;
   const isMoral = lessorTypeName === MORAL_COMPANY;
-
 
   return (
     <ScrollArea className="pr-4 h-full">
       <div className="space-y-6 mx-2 my-4 max-w-xl">
-        <FormField
-          control={form.control}
-          name="lessor"
-          render={({ fieldState }) => (
-            <FormItem className="w-full">
-              <FormControl></FormControl>
-              {fieldState.error && (
-                <ul className="bg-red/5 p-2 rounded-lg w-full text-red text-xs">
-                  La section bailleur présente des erreurs, veuillez vérifier les champs suivants :
-                  {Object.entries(fieldState.error).map(([field], index) => (
-                    <li key={index} className="mt-1">
-                      • <span className="font-medium">{lessorError[field as keyof LessorErrorType]}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </FormItem>
-          )}
-        />
 
+        {/* ==========================
+            SECTION: INFO BAILLEUR
+        ========================== */}
         <Section title="Informations sur le bailleur">
+
+          {/* Type d'espace */}
           <FormField
             control={form.control}
             name="lessor.lessorSpaceType"
@@ -158,8 +134,6 @@ export default function LessorInfoTab({
                       field.onChange(String(e));
                     }}
                     placeholder="Type d'espace"
-                    searchMessage="Rechercher un type d'espace"
-                    noResultsMessage="Aucun type d'espace trouvé."
                   />
                 </FormControl>
                 <FormMessage />
@@ -167,6 +141,7 @@ export default function LessorInfoTab({
             )}
           />
 
+          {/* Type bailleur */}
           <FormField
             control={form.control}
             name="lessor.lessorType"
@@ -175,19 +150,17 @@ export default function LessorInfoTab({
                 <FormControl>
                   <Combobox
                     isLoading={isGettingElements}
-                    datas={lessorTypes.map((lessorType) => ({
-                      id: lessorType.id,
-                      label: lessorType.name,
-                      value: lessorType.id,
+                    datas={lessorTypes.map((lt) => ({
+                      id: lt.id,
+                      label: lt.name,
+                      value: lt.id,
                     }))}
-                    value={field.value as string}
+                    value={field.value || ""}
                     setValue={(e) => {
                       handleLessorTypeChange(String(e));
                       field.onChange(String(e));
                     }}
                     placeholder="Type de bailleur"
-                    searchMessage="Rechercher un type"
-                    noResultsMessage="Aucun type de bailleur trouvé."
                     addElement={<LessorTypeModal lessorSpaceType={currentSpaceType} />}
                   />
                 </FormControl>
@@ -196,6 +169,9 @@ export default function LessorInfoTab({
             )}
           />
 
+          {/* ==========================
+              PRIVATE CASE
+          ========================== */}
           {isPrivate && (
             <>
               <TextField control={form.control} name="lessor.locationPrice" label="Prix du panneau loué" type="number" />
@@ -203,6 +179,9 @@ export default function LessorInfoTab({
             </>
           )}
 
+          {/* ==========================
+              PUBLIC CASE
+          ========================== */}
           {isPublic && (
             <FormField
               control={form.control}
@@ -212,16 +191,14 @@ export default function LessorInfoTab({
                   <FormControl>
                     <Combobox
                       isLoading={isGettingSuppliers}
-                      datas={suppliers.map((supplier) => ({
-                        id: supplier.id,
-                        label: `${supplier.companyName} - ${supplier.firstname} ${supplier.lastname}`,
-                        value: supplier.id,
+                      datas={suppliers.map((s) => ({
+                        id: s.id,
+                        label: `${s.companyName} - ${s.firstname} ${s.lastname}`,
+                        value: s.id,
                       }))}
-                      value={field.value as string}
+                      value={field.value || ""}
                       setValue={(e) => field.onChange(String(e))}
                       placeholder="Bailleur"
-                      searchMessage="Rechercher un bailleur"
-                      noResultsMessage="Aucun bailleur trouvé."
                     />
                   </FormControl>
                   <FormMessage />
@@ -230,11 +207,15 @@ export default function LessorInfoTab({
             />
           )}
 
+          {/* ==========================
+              PRIVATE DETAILS
+          ========================== */}
           {isPrivate && (
             <>
               <TextField control={form.control} name="lessor.lessorName" label="Nom du bailleur" />
               <TextField control={form.control} name="lessor.lessorAddress" label="Adresse complète du bailleur" />
 
+              {/* City */}
               <FormField
                 control={form.control}
                 name="lessor.lessorCity"
@@ -248,11 +229,9 @@ export default function LessorInfoTab({
                           label: city.name,
                           value: city.id,
                         }))}
-                        value={field.value as string}
-                        setValue={e => field.onChange(String(e))}
+                        value={field.value || ""}
+                        setValue={(e) => field.onChange(String(e))}
                         placeholder="Ville"
-                        searchMessage="Rechercher une ville"
-                        noResultsMessage="Aucune ville trouvée."
                         addElement={<CityModal />}
                       />
                     </FormControl>
@@ -261,45 +240,31 @@ export default function LessorInfoTab({
                 )}
               />
 
-              <TextField control={form.control} name="lessor.lessorPhone" label="Numéro de téléphone du bailleur" />
-              <TextField control={form.control} name="lessor.lessorEmail" label="Adresse mail du bailleur" />
+              <TextField control={form.control} name="lessor.lessorPhone" label="Téléphone" />
+              <TextField control={form.control} name="lessor.lessorEmail" label="Email" />
 
+              {/* PHYSICAL ONLY */}
               {isPhysical && (
-                <>
-                  <TextField control={form.control} name="lessor.identityCard" label="Numéro carte d'identité" required={false} />
-                </>
+                <TextField control={form.control} name="lessor.identityCard" label="Numéro carte d'identité" required={false} />
               )}
 
+              {/* MORAL ONLY */}
               {isMoral && (
                 <>
-                  <FormField
-                    control={form.control}
-                    name="lessor.capital"
-                    render={({ field }) => (
-                      <FormItem className="-space-y-2">
-                        <FormControl>
-                          <TextInput
-                            type="number"
-                            design="float"
-                            label="Capital du bailleur"
-                            value={field.value?.toString() || "0"}
-                            handleChange={(e) => field.onChange(new Decimal(String(e)))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <TextField control={form.control} name="lessor.rccm" label="Registre du commerce (RCCM)" />
-                  <TextField control={form.control} name="lessor.taxIdentificationNumber" label="Numéro d'identification fiscale" />
+                  <TextField control={form.control} name="lessor.capital" label="Capital" type="number" />
+                  <TextField control={form.control} name="lessor.rccm" label="RCCM" />
+                  <TextField control={form.control} name="lessor.taxIdentificationNumber" label="NIF" />
                   <TextField control={form.control} name="lessor.niu" label="NIU" required={false} />
-                  <TextField control={form.control} name="lessor.legalForms" label="Statut juridique" />
+                  <TextField control={form.control} name="lessor.legalForms" label="Forme juridique" />
                 </>
               )}
             </>
           )}
         </Section>
 
+        {/* ==========================
+            SECTION: BANQUE
+        ========================== */}
         {isPrivate && (
           <Section title="Information sur la banque">
             <TextField control={form.control} name="lessor.bankName" label="Nom de la banque" />
@@ -309,45 +274,81 @@ export default function LessorInfoTab({
           </Section>
         )}
 
+        {/* ==========================
+            SECTION: REPRESENTANT LEGAL
+        ========================== */}
         {isPrivate && isMoral && (
-          <Section title="Représentant légal (entreprise)">
-            <TextField control={form.control} name="lessor.representativeLastName" label="Nom du représentant légal" />
-            <TextField control={form.control} name="lessor.representativeFirstName" label="Prénom du représentant légal" />
-            <TextField control={form.control} name="lessor.representativeJob" label="Titre du représentant légal" />
-            <TextField control={form.control} name="lessor.representativePhone" label="Numéro de téléphone du représentant légal" />
-            <TextField control={form.control} name="lessor.representativeEmail" label="Adresse mail du représentant légal" />
+          <Section title="Représentant légal">
+            <TextField control={form.control} name="lessor.representativeLastName" label="Nom" />
+            <TextField control={form.control} name="lessor.representativeFirstName" label="Prénom" />
+            <TextField control={form.control} name="lessor.representativeJob" label="Fonction" />
+            <TextField control={form.control} name="lessor.representativePhone" label="Téléphone" />
+            <TextField control={form.control} name="lessor.representativeEmail" label="Email" />
           </Section>
         )}
 
+        {/* ==========================
+            SECTION: CONTRAT
+        ========================== */}
         {isPrivate && (
           <Section title="Détails du contrat">
+
             {isPhysical ? (
-              <FormField
-                control={form.control}
-                name="lessor.delayContract"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <DatePicker
-                        label="Durée du contrat"
-                        mode="range"
-                        value={
-                          field.value?.from && field.value.to
-                            ? { from: new Date(field.value.from), to: new Date(field.value.to) }
-                            : undefined
-                        }
-                        onChange={(e) => {
-                          const range = e as { from: Date; to: Date };
-                          field.onChange({ from: range.from, to: range.to });
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <>
+                <FormField
+                  control={form.control}
+                  name="lessor.delayContractStart"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <DatePicker
+                          label="Date début du contrat"
+                          mode="single"
+                          value={field.value ? new Date(field.value) : undefined}
+                          onChange={(e) => {
+                            if (e) {
+                              const date = e as Date
+                              field.onChange(date.toISOString())
+                              return
+                            }
+                            field.onChange(undefined)
+                          }
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lessor.delayContractEnd"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <DatePicker
+                          label="Date fin du contrat"
+                          mode="single"
+                          value={field.value ? new Date(field.value) : undefined}
+                          onChange={(e) => {
+                            if (e) {
+                              const date = e as Date
+                              field.onChange(date.toISOString())
+                              return
+                            }
+                            field.onChange(undefined)
+                          }
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             ) : (
               <>
+                {/* START DATE */}
                 <FormField
                   control={form.control}
                   name="lessor.rentalStartDate"
@@ -355,16 +356,26 @@ export default function LessorInfoTab({
                     <FormItem className="-space-y-2">
                       <FormControl>
                         <DatePicker
-                          label="Date de début de location"
+                          label="Date début location"
                           mode="single"
-                          value={field.value}
-                          onChange={field.onChange}
+                          value={field.value ? new Date(field.value) : undefined}
+                          onChange={(e) => {
+                            if (e) {
+                              const date = e as Date
+                              field.onChange(date.toISOString())
+                              return
+                            }
+                            field.onChange(undefined)
+                          }
+                          }
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {/* DURATION */}
                 <FormField
                   control={form.control}
                   name="lessor.rentalPeriod"
@@ -374,10 +385,8 @@ export default function LessorInfoTab({
                         <Combobox
                           datas={rentalDurations}
                           value={field.value || ""}
-                          setValue={e => field.onChange(String(e))}
-                          placeholder="Durée de la location"
-                          searchMessage="Rechercher une durée"
-                          noResultsMessage="Aucune durée trouvée."
+                          setValue={(e) => field.onChange(String(e))}
+                          placeholder="Durée du contrat"
                         />
                       </FormControl>
                       <FormMessage />
@@ -387,24 +396,21 @@ export default function LessorInfoTab({
               </>
             )}
 
+            {/* PAYMENT MODE */}
             <FormField
               control={form.control}
               name="lessor.paymentMode"
               render={({ field }) => {
-                const selectedOptions = acceptPayment.filter((opt) => field.value?.includes(opt.value));
+                const selected = acceptPayment.filter((opt) => field.value?.includes(opt.value));
                 return (
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <MultipleSelect
-                        label={
-                          <span>
-                            Mode de paiement <span className="text-red-500">*</span>
-                          </span>
-                        }
+                        label="Mode de paiement *"
                         options={acceptPayment}
-                        value={selectedOptions}
-                        onChange={(options) => field.onChange(options.map((opt) => opt.value))}
-                        placeholder="Sélectionner un ou plusieurs modes de paiement"
+                        value={selected}
+                        onChange={(opt) => field.onChange(opt.map((o) => o.value))}
+                        placeholder="Sélectionner un ou plusieurs modes"
                       />
                     </FormControl>
                     <FormMessage />
@@ -413,6 +419,7 @@ export default function LessorInfoTab({
               }}
             />
 
+            {/* PAYMENT FREQUENCY */}
             <FormField
               control={form.control}
               name="lessor.paymentFrequency"
@@ -422,10 +429,8 @@ export default function LessorInfoTab({
                     <Combobox
                       datas={paymentFrequency}
                       value={field.value || ""}
-                      setValue={e => field.onChange(String(e))}
+                      setValue={(e) => field.onChange(String(e))}
                       placeholder="Fréquence de paiement"
-                      searchMessage="Rechercher une fréquence de paiement"
-                      noResultsMessage="Aucune fréquence trouvée."
                     />
                   </FormControl>
                   <FormMessage />
@@ -433,6 +438,7 @@ export default function LessorInfoTab({
               )}
             />
 
+            {/* ELECTRICITY */}
             <FormField
               control={form.control}
               name="lessor.electricitySupply"
@@ -442,10 +448,8 @@ export default function LessorInfoTab({
                     <Combobox
                       datas={electricitySupply}
                       value={field.value || ""}
-                      setValue={e => field.onChange(String(e))}
+                      setValue={(e) => field.onChange(String(e))}
                       placeholder="Fourniture du courant"
-                      searchMessage="Rechercher une fourniture du courant"
-                      noResultsMessage="Aucune fourniture du courant trouvée."
                     />
                   </FormControl>
                   <FormMessage />
@@ -453,15 +457,17 @@ export default function LessorInfoTab({
               )}
             />
 
+            {/* SPECIFIC CONDITION */}
             <TextField
               control={form.control}
               name="lessor.specificCondition"
-              label="Conditions spécifiques ou restriction"
+              label="Conditions particulières"
               design="text-area"
               required={false}
             />
           </Section>
         )}
+
       </div>
     </ScrollArea>
   );

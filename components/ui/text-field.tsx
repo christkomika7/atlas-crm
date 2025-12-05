@@ -20,7 +20,6 @@ export function TextField<T extends FieldValues>({
     design = "float",
     required = true,
 }: TextFieldProps<T>) {
-
     if (!name) {
         console.error("TextField: name is undefined for label:", label);
         return null;
@@ -48,3 +47,4 @@ export function TextField<T extends FieldValues>({
         />
     );
 }
+

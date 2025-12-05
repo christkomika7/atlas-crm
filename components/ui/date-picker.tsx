@@ -4,14 +4,11 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState, useEffect } from "react";
 import { FloatingInput, FloatingLabel } from "./floating-input";
 import { cutText } from "@/lib/utils";
+import { RefCallBack } from "react-hook-form";
 
 type DateRange = [Date, Date];
 
@@ -26,6 +23,7 @@ type DatePickerProps = {
   disabled?: boolean;
   disabledRanges?: DateRange[];
   className?: string;
+  ref?: RefCallBack
 };
 
 export function DatePicker({
@@ -39,18 +37,16 @@ export function DatePicker({
   disabledRanges = [],
   className,
   cut,
+  ref,
 }: DatePickerProps) {
   const isSingle = mode === "single";
 
   const [singleDate, setSingleDate] = useState<Date | undefined>(undefined);
   const [multipleDates, setMultipleDates] = useState<Date[]>([]);
-  const [rangeDates, setRangeDates] = useState<
-    { from: Date; to: Date } | undefined
-  >(undefined);
+  const [rangeDates, setRangeDates] = useState<{ from: Date; to: Date } | undefined>(undefined);
 
-  // Sync internal state with incoming prop (controlled usage)
   useEffect(() => {
-    if (value === undefined || value === null) {
+    if (!value) {
       setSingleDate(undefined);
       setMultipleDates([]);
       setRangeDates(undefined);
@@ -61,39 +57,36 @@ export function DatePicker({
       setSingleDate(value);
     } else if (mode === "multiple" && Array.isArray(value)) {
       setMultipleDates(value);
-    } else if (
-      mode === "range" &&
-      value &&
-      typeof value === "object" &&
-      "from" in value &&
-      "to" in value
-    ) {
-      setRangeDates(value as { from: Date; to: Date });
+    } else if (mode === "range") {
+      if (
+        value &&
+        typeof value === "object" &&
+        "from" in value &&
+        "to" in value &&
+        value.from instanceof Date &&
+        value.to instanceof Date
+      ) {
+        setRangeDates({ from: value.from, to: value.to });
+      } else {
+        setRangeDates(undefined);
+      }
     }
   }, [value, mode, isSingle]);
 
-  let displayValue: string = "";
+  let displayValue = "";
 
   if (isSingle) {
     displayValue = singleDate ? format(singleDate, "PPP", { locale: fr }) : "";
   } else if (mode === "range") {
     displayValue =
       rangeDates && rangeDates.from && rangeDates.to
-        ? `${format(rangeDates.from, "PPP", { locale: fr })} - ${format(
-          rangeDates.to,
-          "PPP",
-          { locale: fr }
-        )}`
+        ? `${format(rangeDates.from, "PPP", { locale: fr })} - ${format(rangeDates.to, "PPP", { locale: fr })}`
         : "";
   } else {
-    displayValue =
-      multipleDates.length > 0
-        ? multipleDates.map((d) => format(d, "PPP", { locale: fr })).join(", ")
-        : "";
+    displayValue = multipleDates.length > 0 ? multipleDates.map((d) => format(d, "PPP", { locale: fr })).join(", ") : "";
   }
 
-  const normalizeDate = (date: Date) =>
-    new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const normalizeDate = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
   const isDateDisabled = (date: Date) => {
     if (disabled) return true;
@@ -112,7 +105,7 @@ export function DatePicker({
   };
 
   const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
-    if (range?.from && range?.to) {
+    if (range?.from instanceof Date && range?.to instanceof Date) {
       setRangeDates({ from: range.from, to: range.to });
       onChange?.({ from: range.from, to: range.to });
     } else {
@@ -121,11 +114,11 @@ export function DatePicker({
     }
   };
 
-
   return (
     <Popover>
       <PopoverTrigger className="relative" disabled={disabled} onClick={onOpenCalendar}>
         <FloatingInput
+          ref={ref}
           type="text"
           disabled={true}
           id={label.toLowerCase().replaceAll(" ", "-")}
@@ -133,10 +126,7 @@ export function DatePicker({
           required={required}
           className={className}
         />
-        <FloatingLabel
-          htmlFor={label.toLowerCase().replaceAll(" ", "-")}
-          className="!gap-x-0 text-sm !cursor-default"
-        >
+        <FloatingLabel htmlFor={label.toLowerCase().replaceAll(" ", "-")} className="!gap-x-0 text-sm !cursor-default">
           {label && <CalendarIcon className="mr-2 w-4 h-4" />}
           {label}
           {label && required && <span className="text-red-500">*</span>}
@@ -145,6 +135,7 @@ export function DatePicker({
       <PopoverContent className="p-0 w-auto" side="bottom" align="end">
         {isSingle ? (
           <Calendar
+
             mode="single"
             locale={fr}
             selected={singleDate}
@@ -155,13 +146,7 @@ export function DatePicker({
             disabled={isDateDisabled}
           />
         ) : mode === "range" ? (
-          <Calendar
-            mode="range"
-            locale={fr}
-            selected={rangeDates}
-            onSelect={handleRangeSelect}
-            disabled={isDateDisabled}
-          />
+          <Calendar mode="range" locale={fr} selected={rangeDates} onSelect={handleRangeSelect} disabled={isDateDisabled} />
         ) : (
           <Calendar
             mode="multiple"

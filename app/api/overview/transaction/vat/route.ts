@@ -194,7 +194,7 @@ export async function GET(req: NextRequest) {
     {
       status: "success",
       message: "",
-      data: tvaDue.toNumber(),
+      data: tvaDue.toNumber().toFixed(2),
     },
     { status: 200 },
   );
