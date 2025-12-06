@@ -1,10 +1,11 @@
+import { MORAL_COMPANY, PHYSICAL_COMPANY } from "@/config/constant";
 import { Decimal } from "decimal.js";
-import { string, z } from "zod";
+import { z } from "zod";
 
 const isPublic = (d: any) => d.lessorSpaceType === "public";
 const isPrivate = (d: any) => d.lessorSpaceType === "private";
-const isPersonMoral = (d: any) => d.lessorTypeName === "Personne moral";
-const isPersonPhysique = (d: any) => d.lessorTypeName === "Personne physique";
+const isPersonMoral = (d: any) => d.lessorTypeName === MORAL_COMPANY;
+const isPersonPhysique = (d: any) => d.lessorTypeName === PHYSICAL_COMPANY;
 
 export const billboardSchema = z.object({
     companyId: z.string().min(1, {
@@ -102,48 +103,48 @@ export const lessorSchemaBase = z.object({
         error: "Le type de bailleur est requis.",
     }),
 
-    lessorCustomer: z.string().optional(),
-    lessorTypeName: z.string().optional(),
+    lessorCustomer: z.string().optional().nullable(),
+    lessorTypeName: z.string().optional().nullable(),
 
-    lessorName: z.string().optional(),
-    lessorAddress: z.string().optional(),
-    lessorCity: z.string().optional(),
-    lessorPhone: z.string().optional(),
-    lessorEmail: z.string().optional(),
+    lessorName: z.string().optional().nullable(),
+    lessorAddress: z.string().optional().nullable(),
+    lessorCity: z.string().optional().nullable(),
+    lessorPhone: z.string().optional().nullable(),
+    lessorEmail: z.string().optional().nullable(),
 
-    capital: z.string().optional(),
-    rccm: z.string().optional(),
-    taxIdentificationNumber: z.string().optional(),
-    legalForms: z.string().optional(),
+    capital: z.string().optional().nullable(),
+    rccm: z.string().optional().nullable(),
+    taxIdentificationNumber: z.string().optional().nullable(),
+    legalForms: z.string().optional().nullable(),
 
-    niu: z.string().optional(),
-    rib: z.string().optional(),
-    iban: z.string().optional(),
-    bicSwift: z.string().optional(),
-    bankName: z.string().optional(),
+    niu: z.string().optional().nullable(),
+    rib: z.string().optional().nullable(),
+    iban: z.string().optional().nullable(),
+    bicSwift: z.string().optional().nullable(),
+    bankName: z.string().optional().nullable(),
 
-    identityCard: z.string().optional(),
+    identityCard: z.string().optional().nullable(),
 
-    representativeFirstName: z.string().optional(),
-    representativeLastName: z.string().optional(),
-    representativeJob: z.string().optional(),
-    representativePhone: z.string().optional(),
-    representativeEmail: z.string().optional(),
+    representativeFirstName: z.string().optional().nullable(),
+    representativeLastName: z.string().optional().nullable(),
+    representativeJob: z.string().optional().nullable(),
+    representativePhone: z.string().optional().nullable(),
+    representativeEmail: z.string().optional().nullable(),
 
-    locationPrice: z.string().optional(),
-    nonLocationPrice: z.string().optional(),
+    locationPrice: z.string().optional().nullable(),
+    nonLocationPrice: z.string().optional().nullable(),
 
 
-    delayContractStart: z.string().optional(),
-    delayContractEnd: z.string().optional(),
+    delayContractStart: z.string().optional().nullable(),
+    delayContractEnd: z.string().optional().nullable(),
 
-    rentalStartDate: z.string().optional(),
+    rentalStartDate: z.string().optional().nullable(),
 
-    rentalPeriod: z.string().optional(),
-    paymentMode: z.array(z.string()).optional(),
-    paymentFrequency: z.string().optional(),
-    electricitySupply: z.string().optional(),
-    specificCondition: z.string().optional(),
+    rentalPeriod: z.string().optional().nullable(),
+    paymentMode: z.array(z.string()).optional().nullable(),
+    paymentFrequency: z.string().optional().nullable(),
+    electricitySupply: z.string().optional().nullable(),
+    specificCondition: z.string().optional().nullable(),
 
 });
 

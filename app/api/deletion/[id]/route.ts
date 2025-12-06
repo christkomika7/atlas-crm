@@ -674,7 +674,7 @@ export async function PUT(req: NextRequest) {
                     break
                 case "delete":
                     const quote = await prisma.quote.findUnique({
-                        where: { id },
+                        where: { id: recordId },
                         include: {
                             items: {
                                 where: {
@@ -719,7 +719,7 @@ export async function PUT(req: NextRequest) {
                                 }
                             }
                         }),
-                        prisma.quote.delete({ where: { id } })
+                        prisma.quote.delete({ where: { id: recordId } })
                     ]);
 
                     await removePath([...quote.pathFiles]);
@@ -744,7 +744,7 @@ export async function PUT(req: NextRequest) {
                     break
                 case "delete":
                     const invoice = await prisma.invoice.findUnique({
-                        where: { id },
+                        where: { id: recordId },
                         include: {
                             items: {
                                 where: {
@@ -807,7 +807,7 @@ export async function PUT(req: NextRequest) {
                                 balance: new Decimal(0)
                             }
                         }),
-                        prisma.invoice.delete({ where: { id } })
+                        prisma.invoice.delete({ where: { id: recordId } })
                     ]);
 
                     await removePath([...invoice.pathFiles]);
@@ -837,7 +837,7 @@ export async function PUT(req: NextRequest) {
                     break
                 case "delete":
                     const deliveryNote = await prisma.deliveryNote.findUnique({
-                        where: { id },
+                        where: { id: recordId },
                         include: {
                             items: {
                                 where: {
@@ -882,7 +882,7 @@ export async function PUT(req: NextRequest) {
                                 }
                             }
                         }),
-                        prisma.deliveryNote.delete({ where: { id } })
+                        prisma.deliveryNote.delete({ where: { id: recordId } })
                     ]);
 
                     await removePath([...deliveryNote.pathFiles]);
@@ -908,7 +908,7 @@ export async function PUT(req: NextRequest) {
                     break
                 case "delete":
                     const purchaseOrder = await prisma.purchaseOrder.findUnique({
-                        where: { id },
+                        where: { id: recordId },
                         include: {
                             items: true,
                             productsServices: true,
@@ -963,9 +963,9 @@ export async function PUT(req: NextRequest) {
                                 }
                             }
                         }),
-                        prisma.purchaseOrder.delete({ where: { id } }),
-                        prisma.payment.deleteMany({ where: { purchaseOrderId: id } }),
-                        prisma.dibursement.deleteMany({ where: { referencePurchaseOrderId: id } })
+                        prisma.purchaseOrder.delete({ where: { id: recordId } }),
+                        prisma.payment.deleteMany({ where: { purchaseOrderId: recordId } }),
+                        prisma.dibursement.deleteMany({ where: { referencePurchaseOrderId: recordId } })
                     ]);
 
                     await removePath([...purchaseOrder.pathFiles]);
@@ -1142,7 +1142,6 @@ export async function PUT(req: NextRequest) {
                         where: { id: recordId },
                     });
                     await prisma.deletion.delete({ where: { id } });
-
                     break;
             }
             break;

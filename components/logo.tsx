@@ -18,7 +18,7 @@ export default function Logo({
         height,
       }}
     >
-      <Image fill alt="Logo" src="/logo.png" priority className=" w-full h-full object-cover object-center" />
+      <Image width={width} height={height} alt="Logo" src="/logo.png" priority className=" w-full h-full object-cover object-center" />
     </span>
   );
 }

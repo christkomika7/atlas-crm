@@ -175,31 +175,33 @@ export async function create(data: BillboardSchemaFormType) {
             appendIfDefined("nonLocationPrice", lessor.nonLocationPrice);
 
             // ----- Personne physique -----
-            if (lessor.lessorType === PHYSICAL_COMPANY) {
+            if (lessor.lessorTypeName === PHYSICAL_COMPANY) {
                 appendIfDefined("identityCard", lessor.identityCard);
-                appendIfDefined("delayContractStart", JSON.stringify(lessor.delayContractStart));
-                appendIfDefined("delayContractEnd", JSON.stringify(lessor.delayContractEnd));
+                appendIfDefined("delayContractStart", lessor.delayContractStart);
+                appendIfDefined("delayContractEnd", lessor.delayContractEnd);
             }
 
             // ----- Personne morale -----
-            if (lessor.lessorType === MORAL_COMPANY) {
-                appendIfDefined("capital", lessor.capital?.toString());
+            if (lessor.lessorTypeName === MORAL_COMPANY) {
+                appendIfDefined("capital", lessor.capital);
                 appendIfDefined("rccm", lessor.rccm);
                 appendIfDefined("taxIdentificationNumber", lessor.taxIdentificationNumber);
                 appendIfDefined("niu", lessor.niu);
                 appendIfDefined("legalForms", lessor.legalForms);
+
+                // ----- Représentant -----
+                appendIfDefined("representativeFirstName", lessor.representativeFirstName);
+                appendIfDefined("representativeLastName", lessor.representativeLastName);
+                appendIfDefined("representativeJob", lessor.representativeJob);
+                appendIfDefined("representativePhone", lessor.representativePhone);
+                appendIfDefined("representativeEmail", lessor.representativeEmail);
+
+                appendIfDefined("rentalStartDate", lessor.rentalStartDate);
+                appendIfDefined("rentalPeriod", lessor.rentalPeriod);
             }
 
-            // ----- Représentant -----
-            appendIfDefined("representativeFirstName", lessor.representativeFirstName);
-            appendIfDefined("representativeLastName", lessor.representativeLastName);
-            appendIfDefined("representativeJob", lessor.representativeJob);
-            appendIfDefined("representativePhone", lessor.representativePhone);
-            appendIfDefined("representativeEmail", lessor.representativeEmail);
 
             // ----- Contrat -----
-            appendIfDefined("rentalStartDate", lessor.rentalStartDate);
-            appendIfDefined("rentalPeriod", lessor.rentalPeriod);
             appendIfDefined("paymentMode", JSON.stringify(lessor.paymentMode));
             appendIfDefined("paymentFrequency", lessor.paymentFrequency);
             appendIfDefined("electricitySupply", lessor.electricitySupply);
@@ -219,7 +221,6 @@ export async function create(data: BillboardSchemaFormType) {
             // Public -> bailleur client
             appendIfDefined("lessorCustomer", lessor.lessorCustomer);
         }
-
         // -------------------- Envoi de la requête --------------------
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard`, {
             method: "POST",
@@ -251,6 +252,8 @@ export async function update(data: EditBillboardSchemaFormType) {
 
         const billboard = data.billboard;
         const lessor = data.lessor;
+        console.log({ lessor })
+
 
         // -------------------- BILLBOARD - Général --------------------
         appendIfDefined("id", billboard.id);
@@ -296,6 +299,7 @@ export async function update(data: EditBillboardSchemaFormType) {
         appendIfDefined("note", billboard.note);
 
         // -------------------- LESSOR - Infos bailleur --------------------
+
         appendIfDefined("lessorType", lessor.lessorType);
         appendIfDefined("lessorSpaceType", lessor.lessorSpaceType);
 
@@ -305,31 +309,33 @@ export async function update(data: EditBillboardSchemaFormType) {
             appendIfDefined("nonLocationPrice", lessor.nonLocationPrice);
 
             // ----- Personne physique -----
-            if (lessor.lessorType === PHYSICAL_COMPANY) {
+            if (lessor.lessorTypeName === PHYSICAL_COMPANY) {
                 appendIfDefined("identityCard", lessor.identityCard);
-                appendIfDefined("delayContractStart", JSON.stringify(lessor.delayContractStart));
-                appendIfDefined("delayContractEnd", JSON.stringify(lessor.delayContractEnd));
+                appendIfDefined("delayContractStart", lessor.delayContractStart);
+                appendIfDefined("delayContractEnd", lessor.delayContractEnd);
             }
 
             // ----- Personne morale -----
-            if (lessor.lessorType === MORAL_COMPANY) {
-                appendIfDefined("capital", lessor.capital?.toString());
+            if (lessor.lessorTypeName === MORAL_COMPANY) {
+                appendIfDefined("capital", lessor.capital);
                 appendIfDefined("rccm", lessor.rccm);
                 appendIfDefined("taxIdentificationNumber", lessor.taxIdentificationNumber);
                 appendIfDefined("niu", lessor.niu);
                 appendIfDefined("legalForms", lessor.legalForms);
+
+                // ----- Représentant -----
+                appendIfDefined("representativeFirstName", lessor.representativeFirstName);
+                appendIfDefined("representativeLastName", lessor.representativeLastName);
+                appendIfDefined("representativeJob", lessor.representativeJob);
+                appendIfDefined("representativePhone", lessor.representativePhone);
+                appendIfDefined("representativeEmail", lessor.representativeEmail);
+
+                appendIfDefined("rentalStartDate", lessor.rentalStartDate);
+                appendIfDefined("rentalPeriod", lessor.rentalPeriod);
             }
 
-            // ----- Représentant -----
-            appendIfDefined("representativeFirstName", lessor.representativeFirstName);
-            appendIfDefined("representativeLastName", lessor.representativeLastName);
-            appendIfDefined("representativeJob", lessor.representativeJob);
-            appendIfDefined("representativePhone", lessor.representativePhone);
-            appendIfDefined("representativeEmail", lessor.representativeEmail);
 
             // ----- Contrat -----
-            appendIfDefined("rentalStartDate", lessor.rentalStartDate);
-            appendIfDefined("rentalPeriod", lessor.rentalPeriod);
             appendIfDefined("paymentMode", JSON.stringify(lessor.paymentMode));
             appendIfDefined("paymentFrequency", lessor.paymentFrequency);
             appendIfDefined("electricitySupply", lessor.electricitySupply);

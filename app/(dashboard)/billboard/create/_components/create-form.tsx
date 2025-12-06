@@ -20,6 +20,9 @@ import Spinner from "@/components/ui/spinner";
 import BillboardInfoTab from "./tabs/billboard-info-tab";
 import LessorInfoTab from "./tabs/lessor-info-tab";
 import useQueryAction from "@/hook/useQueryAction";
+import { toast } from "sonner";
+import Decimal from "decimal.js";
+import { PHYSICAL_COMPANY } from "@/config/constant";
 
 export default function CreateForm() {
   const companyId = useDataStore.use.currentCompany();
@@ -252,14 +255,94 @@ export default function CreateForm() {
 
   function submit(formData: BillboardSchemaFormType) {
     const validateData = billboardFormSchema.safeParse(formData);
+    if (!validateData.success) return toast.error("Certains champs présentent des erreurs.");
 
-    if (validateData.success) {
-      mutate(validateData.data, {
+    const d = validateData.data;
+
+    mutate(
+      {
+        billboard: {
+          companyId: d.billboard.companyId,
+          reference: d.billboard.reference,
+          hasTax: d.billboard.hasTax,
+          type: d.billboard.type,
+          name: d.billboard.name,
+          locality: d.billboard.locality,
+          area: d.billboard.area,
+          visualMarker: d.billboard.visualMarker,
+          displayBoard: d.billboard.displayBoard,
+          city: d.billboard.city,
+          orientation: d.billboard.orientation,
+          gmaps: d.billboard.gmaps,
+          photos: d.billboard.photos,
+          brochures: d.billboard.brochures,
+          rentalPrice: new Decimal(d.billboard.rentalPrice),
+          installationCost: new Decimal(d.billboard.installationCost || "0"),
+          maintenance: new Decimal(d.billboard.maintenance || "0"),
+          width: d.billboard.width,
+          height: d.billboard.height,
+          lighting: d.billboard.lighting,
+          structureType: d.billboard.structureType,
+          panelCondition: d.billboard.panelCondition,
+          decorativeElement: d.billboard.decorativeElement,
+          foundations: d.billboard.foundations,
+          electricity: d.billboard.electricity,
+          framework: d.billboard.framework,
+          note: d.billboard.note,
+        },
+        lessor: {
+          lessorType: d.lessor.lessorType,
+          lessorSpaceType: d.lessor.lessorSpaceType,
+          ...(d.lessor.lessorSpaceType === "private"
+            ? {
+              lessorTypeName: d.lessor.lessorTypeName,
+              lessorName: d.lessor.lessorName,
+              lessorAddress: d.lessor.lessorAddress,
+              lessorCity: d.lessor.lessorCity,
+              lessorPhone: d.lessor.lessorPhone,
+              lessorEmail: d.lessor.lessorEmail,
+              locationPrice: d.lessor.locationPrice,
+              nonLocationPrice: d.lessor.nonLocationPrice,
+              ...(d.lessor.lessorTypeName === PHYSICAL_COMPANY
+                ? {
+                  identityCard: d.lessor.identityCard,
+                  delayContractStart: d.lessor.delayContractStart,
+                  delayContractEnd: d.lessor.delayContractEnd,
+                }
+                : {
+                  capital: d.lessor.capital,
+                  rccm: d.lessor.rccm,
+                  taxIdentificationNumber: d.lessor.taxIdentificationNumber,
+                  niu: d.lessor.niu,
+                  legalForms: d.lessor.legalForms,
+                  representativeFirstName: d.lessor.representativeFirstName,
+                  representativeLastName: d.lessor.representativeLastName,
+                  representativeJob: d.lessor.representativeJob,
+                  representativePhone: d.lessor.representativePhone,
+                  representativeEmail: d.lessor.representativeEmail,
+                  rentalStartDate: d.lessor.rentalStartDate,
+                  rentalPeriod: d.lessor.rentalPeriod,
+                }),
+              bankName: d.lessor.bankName,
+              rib: d.lessor.rib,
+              iban: d.lessor.iban,
+              bicSwift: d.lessor.bicSwift,
+              paymentMode: d.lessor.paymentMode,
+              paymentFrequency: d.lessor.paymentFrequency,
+              electricitySupply: d.lessor.electricitySupply,
+              specificCondition: d.lessor.specificCondition,
+            }
+            : {
+              lessorCustomer: d.lessor.lessorCustomer,
+            }),
+        },
+      },
+      {
         onSuccess() {
           router.push("/billboard");
         },
-      });
-    }
+      }
+    );
 
   }
 

@@ -25,6 +25,8 @@ export async function GET(req: NextRequest) {
             city: true,
             area: true,
             items: true,
+            lessorSupplier: true,
+            lessorType: true
         }
     });
 

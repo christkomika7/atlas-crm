@@ -97,6 +97,8 @@ export async function GET(req: NextRequest) {
                 company: true,
                 type: true,
                 items: { where: { state: "APPROVED" } },
+                lessorSupplier: true,
+                lessorType: true
             },
             skip,
             take,
@@ -319,7 +321,7 @@ export async function PUT(req: NextRequest) {
     const lessorFields = [
         "lessorSpaceType", "lessorType", "lessorCustomer", "lessorName", "lessorAddress", "lessorCity", "lessorEmail", "lessorPhone", "capital", "rccm", "taxIdentificationNumber", "rib", "iban", "bicSwift", "bankName",
         "representativeFirstName", "representativeLastName", "representativeJob", "representativeEmail", "representativePhone", "rentalStartDate", "rentalPeriod", "paymentMode", "paymentFrequency", "electricitySupply", "specificCondition",
-        'niu', "legalForms", "locationPrice", "nonLocationPrice", "delayContractStart", "delayContractEnd", "identityCard"
+        'niu', "legalForms", "locationPrice", "nonLocationPrice", "delayContractStart", "delayContractEnd", "identityCard", "lessorTypeName"
     ];
 
     const billboardData: Record<string, any> = {};
@@ -333,10 +335,16 @@ export async function PUT(req: NextRequest) {
         }
     }
 
-    // Conversion des dates
-    lessorData.rentalStartDate = rawData["rentalStartDate"] ? rawData["rentalStartDate"] : undefined;
-    lessorData.delayContractStart = rawData["delayContractStart"] ? rawData["delayContractStart"] : undefined;
-    lessorData.delayContractEnd = rawData["delayContractEnd"] ? rawData["delayContractEnd"] : undefined;
+    if (rawData["rentalStartDate"]) {
+        lessorData.rentalStartDate = rawData["rentalStartDate"]
+    }
+    if (rawData["delayContractStart"]) {
+        lessorData.delayContractStart = rawData["delayContractStart"]
+    }
+
+    if (rawData["delayContractEnd"]) {
+        lessorData.delayContractEnd = rawData["delayContractEnd"]
+    }
 
 
     // Fichiers uploadés
@@ -358,13 +366,37 @@ export async function PUT(req: NextRequest) {
         },
         lessor: {
             ...(lessorData as EditLessorSchemaType),
-            capital: lessorData.capital,
-            delayContractStart: lessorData.delayContractStart ? lessorData.delayContractStart : undefined,
-            delayContractEnd: lessorData.delayContractEnd ? lessorData.delayContractEnd : undefined,
-            rentalStartDate: lessorData.rentalStartDate ? lessorData.rentalStartDate : undefined,
-            paymentMode: lessorData.paymentMode ? JSON.parse(lessorData.paymentMode) : []
         }
     };
+
+    if (lessorData.rentalStartDate) {
+        Object.assign(dataToValidate.lessor, {
+            rentalStartDate: lessorData.rentalStartDate
+        })
+    }
+
+    if (lessorData.delayContractStart) {
+        Object.assign(dataToValidate.lessor, {
+            delayContractStart: lessorData.delayContractStart
+        })
+    }
+
+    if (lessorData.delayContractEnd) {
+        Object.assign(dataToValidate.lessor, {
+            delayContractEnd: lessorData.delayContractEnd
+        })
+    }
+    if (lessorData.capital) {
+        Object.assign(dataToValidate.lessor, {
+            capital: lessorData.capital
+        })
+    }
+
+    if (lessorData.paymentMode) {
+        Object.assign(dataToValidate.lessor, {
+            paymentMode: JSON.parse(lessorData.paymentMode)
+        })
+    }
 
 
     const data = parseData<EditBillboardSchemaFormType>(
@@ -372,10 +404,6 @@ export async function PUT(req: NextRequest) {
         dataToValidate as EditBillboardSchemaFormType
     ) as EditBillboardSchemaFormType;
 
-
-    console.log({ data });
-
-    // Vérifications préalables
     const [companyExist, refExist, billboardExist] = await prisma.$transaction([
         prisma.company.findUnique({ where: { id: data.billboard.companyId } }),
         prisma.billboard.findUnique({ where: { reference: data.billboard.reference } }),
@@ -451,7 +479,7 @@ export async function PUT(req: NextRequest) {
                     {
                         lessorSupplier: {
                             connect: {
-                                id: data.lessor.lessorCustomer
+                                id: data.lessor.lessorCustomer as string
                             }
                         },
                         lessorName: null,
@@ -463,6 +491,7 @@ export async function PUT(req: NextRequest) {
                         delayContractStart: null,
                         locationPrice: null,
                         nonLocationPrice: null,
+                        identityCard: null,
 
                         capital: null,
                         rccm: null,
@@ -539,6 +568,7 @@ export async function PUT(req: NextRequest) {
         });
 
     } catch (error) {
+        console.log({ error });
         await removePath([...savedPathsPhoto, ...savedPathsBrochure,]);
         return NextResponse.json({ status: "error", message: "Erreur lors de la modification." }, { status: 500 });
     }

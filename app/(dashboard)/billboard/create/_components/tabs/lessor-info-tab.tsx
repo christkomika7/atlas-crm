@@ -1,7 +1,3 @@
-// =========================================
-// LessorInfoTab.tsx — VERSION COMPLÈTE CORRIGÉE
-// =========================================
-
 import { all } from "@/action/supplier.action";
 import { all as allCities } from "@/action/city.action";
 import { getBillboardLessorType } from "@/action/billboard.action";
@@ -11,7 +7,6 @@ import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import TextInput from "@/components/ui/text-input";
 import { MultipleSelect } from "@/components/ui/multi-select";
 import useQueryAction from "@/hook/useQueryAction";
 import { acceptPayment, electricitySupply, lessorSpaceType, paymentFrequency, rentalDurations } from "@/lib/data";
@@ -47,7 +42,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
   const [suppliers, setSuppliers] = useState<SupplierType[]>([]);
   const [lessorTypeName, setLessorTypeName] = useState("");
 
-  // Queries
   const { mutate: mutateCity, isPending: isPendingCity } = useQueryAction<{ companyId: string },
     RequestResponse<CityType[]>>(allCities, () => { }, "cities");
 
@@ -60,7 +54,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
   >(getBillboardLessorType, () => { }, "lessor-type");
 
 
-  // Load suppliers + cities
   useEffect(() => {
     if (!companyId) return;
 
@@ -77,7 +70,7 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
     });
   }, [companyId]);
 
-  // Load lessor types based on spaceType
+
   useEffect(() => {
     if (!currentSpaceType || !companyId) return;
 
@@ -97,7 +90,7 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
     form.setValue("lessor.lessorTypeName", name);
   };
 
-  // DISPLAY LOGIC
+
   const isPrivate = currentSpaceType === "private";
   const isPublic = currentSpaceType === "public";
 
@@ -107,13 +100,7 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
   return (
     <ScrollArea className="pr-4 h-full">
       <div className="space-y-6 mx-2 my-4 max-w-xl">
-
-        {/* ==========================
-            SECTION: INFO BAILLEUR
-        ========================== */}
         <Section title="Informations sur le bailleur">
-
-          {/* Type d'espace */}
           <FormField
             control={form.control}
             name="lessor.lessorSpaceType"
@@ -134,8 +121,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
               </FormItem>
             )}
           />
-
-          {/* Type bailleur */}
           <FormField
             control={form.control}
             name="lessor.lessorType"
@@ -162,10 +147,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
               </FormItem>
             )}
           />
-
-          {/* ==========================
-              PRIVATE CASE
-          ========================== */}
           {isPrivate && (
             <>
               <TextField control={form.control} name="lessor.locationPrice" label="Prix du panneau loué" type="number" />
@@ -173,9 +154,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
             </>
           )}
 
-          {/* ==========================
-              PUBLIC CASE
-          ========================== */}
           {isPublic && (
             <FormField
               control={form.control}
@@ -201,15 +179,11 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
             />
           )}
 
-          {/* ==========================
-              PRIVATE DETAILS
-          ========================== */}
           {isPrivate && (
             <>
               <TextField control={form.control} name="lessor.lessorName" label="Nom du bailleur" />
               <TextField control={form.control} name="lessor.lessorAddress" label="Adresse complète du bailleur" />
 
-              {/* City */}
               <FormField
                 control={form.control}
                 name="lessor.lessorCity"
@@ -237,12 +211,9 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
               <TextField control={form.control} name="lessor.lessorPhone" label="Téléphone" />
               <TextField control={form.control} name="lessor.lessorEmail" label="Email" />
 
-              {/* PHYSICAL ONLY */}
               {isPhysical && (
                 <TextField control={form.control} name="lessor.identityCard" label="Numéro carte d'identité" required={false} />
               )}
-
-              {/* MORAL ONLY */}
               {isMoral && (
                 <>
                   <TextField control={form.control} name="lessor.capital" label="Capital" type="number" />
@@ -256,9 +227,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
           )}
         </Section>
 
-        {/* ==========================
-            SECTION: BANQUE
-        ========================== */}
         {isPrivate && (
           <Section title="Information sur la banque">
             <TextField control={form.control} name="lessor.bankName" label="Nom de la banque" />
@@ -268,9 +236,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
           </Section>
         )}
 
-        {/* ==========================
-            SECTION: REPRESENTANT LEGAL
-        ========================== */}
         {isPrivate && isMoral && (
           <Section title="Représentant légal">
             <TextField control={form.control} name="lessor.representativeLastName" label="Nom" />
@@ -281,9 +246,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
           </Section>
         )}
 
-        {/* ==========================
-            SECTION: CONTRAT
-        ========================== */}
         {isPrivate && (
           <Section title="Détails du contrat">
 
@@ -342,7 +304,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
               </>
             ) : (
               <>
-                {/* START DATE */}
                 <FormField
                   control={form.control}
                   name="lessor.rentalStartDate"
@@ -369,7 +330,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
                   )}
                 />
 
-                {/* DURATION */}
                 <FormField
                   control={form.control}
                   name="lessor.rentalPeriod"
@@ -390,7 +350,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
               </>
             )}
 
-            {/* PAYMENT MODE */}
             <FormField
               control={form.control}
               name="lessor.paymentMode"
@@ -413,7 +372,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
               }}
             />
 
-            {/* PAYMENT FREQUENCY */}
             <FormField
               control={form.control}
               name="lessor.paymentFrequency"
@@ -432,7 +390,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
               )}
             />
 
-            {/* ELECTRICITY */}
             <FormField
               control={form.control}
               name="lessor.electricitySupply"
@@ -451,7 +408,6 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
               )}
             />
 
-            {/* SPECIFIC CONDITION */}
             <TextField
               control={form.control}
               name="lessor.specificCondition"
