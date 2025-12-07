@@ -145,28 +145,16 @@ export function generateAmaId(id: number, withText: boolean = true) {
 
 export async function urlToFile(path: string): Promise<File> {
   try {
-    // 1. Vérification basique du path
     if (!path || typeof path !== "string" || path.trim() === "") {
       throw new Error("Chemin de fichier invalide ou vide.");
     }
 
-    // 2. Nettoyage du path
     const cleanedPath = path.trim();
 
-    // 3. Vérifications de sécurité (pas de path traversal, ni de doublons de slash)
     if (cleanedPath.includes("..") || cleanedPath.includes("//")) {
       throw new Error("Chemin de fichier non autorisé.");
     }
 
-    // 4. (Facultatif) Vérification de l’extension (ici un exemple basique)
-    // const allowedExtensions = [".jpg", ".jpeg", ".png", ".pdf", ".txt", ".docx"];
-    // const hasAllowedExtension = allowedExtensions.some(ext => cleanedPath.toLowerCase().endsWith(ext));
-
-    // if (!hasAllowedExtension) {
-    //   throw new Error("Extension de fichier non autorisée.");
-    // }
-
-    // 5. Construction de l’URL et requête
     const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/upload?path=${encodeURIComponent(cleanedPath)}`;
     const res = await fetch(url);
 

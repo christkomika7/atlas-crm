@@ -45,8 +45,8 @@ export function calculateTaxes(input: CalculateTaxesInput): CalculateTaxesResult
   }
 
   const taxResults = new Map<string, TaxResult>();
-  let totalHT = new Decimal(0); // total HT de tous les articles
-  let totalHTWithTaxable = new Decimal(0); // total des articles taxable
+  let totalHT = new Decimal(0);
+  let totalHTWithTaxable = new Decimal(0);
   let globalDiscountAmount = new Decimal(0);
 
   for (const tax of taxes) {

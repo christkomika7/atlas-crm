@@ -81,7 +81,6 @@ export async function GET(req: NextRequest) {
     }
   };
 
-
   const tvaRate = parsePercent(tvaEntry.taxValue);
 
   if (tvaRate.equals(0)) {
@@ -94,6 +93,52 @@ export async function GET(req: NextRequest) {
       { status: 200 },
     );
   }
+
+  // Calculer le taux total de toutes les taxes (TVA + non-cumulées + cumulées)
+  const calculateTotalTaxRate = (vatRates: TaxInput[]): Decimal => {
+    let totalRate = new Decimal(0);
+    const taxResults = new Map<string, Decimal>();
+
+    // D'abord, calculer les taxes non-cumulées
+    for (const tax of vatRates) {
+      const rate = parsePercent(tax.taxValue);
+      const hasCumulChecked = Boolean(
+        Array.isArray(tax.cumul) && tax.cumul.some((c) => c.check)
+      );
+
+      if (!hasCumulChecked) {
+        totalRate = totalRate.add(rate);
+        taxResults.set(tax.taxName, rate);
+      } else {
+        taxResults.set(tax.taxName, new Decimal(0));
+      }
+    }
+
+    // Ensuite, calculer les taxes cumulées
+    for (const tax of vatRates) {
+      if (!tax.cumul || tax.cumul.length === 0) continue;
+
+      const rate = parsePercent(tax.taxValue);
+      let cumulatedAmount = new Decimal(0);
+
+      for (const c of tax.cumul) {
+        if (!c.check) continue;
+        const targetTaxRate = taxResults.get(c.name);
+        if (!targetTaxRate) continue;
+
+        cumulatedAmount = cumulatedAmount.add(targetTaxRate.mul(rate));
+      }
+
+      if (cumulatedAmount.greaterThan(0)) {
+        totalRate = totalRate.add(cumulatedAmount);
+        taxResults.set(tax.taxName, cumulatedAmount);
+      }
+    }
+
+    return totalRate;
+  };
+
+  const totalTaxRate = calculateTotalTaxRate(vats);
 
   // Récupération des factures
   const invoices = await prisma.invoice.findMany({
@@ -135,7 +180,6 @@ export async function GET(req: NextRequest) {
     },
   });
 
-
   let tvaCollected = new Decimal(0);
 
   for (const invoice of invoices) {
@@ -143,11 +187,16 @@ export async function GET(req: NextRequest) {
     const totalTTC = new Decimal(invoice.totalTTC.toString() ?? 0);
 
     if (totalTTC.greaterThan(0)) {
-      const totalHT = totalTTC.div(tvaRate.add(1));
-      const invoiceTVA = totalTTC.sub(totalHT);
+      // Calculer le HT à partir du TTC
+      const totalHT = totalTTC.div(totalTaxRate.add(1));
 
+      // Calculer uniquement la TVA (sans les taxes cumulées)
+      const invoiceTVA = totalHT.mul(tvaRate);
+
+      // Calculer la proportion payée par rapport au TTC
       const proportionPaid = payee.div(totalTTC);
 
+      // Appliquer la proportion à la TVA
       tvaCollected = tvaCollected.add(invoiceTVA.mul(proportionPaid));
     }
   }
@@ -159,11 +208,16 @@ export async function GET(req: NextRequest) {
     const totalTTC = new Decimal(po.totalTTC.toString() ?? 0);
 
     if (totalTTC.greaterThan(0)) {
-      const totalHT = totalTTC.div(tvaRate.add(1));
-      const purchaseOrderTVA = totalTTC.sub(totalHT);
+      // Calculer le HT à partir du TTC
+      const totalHT = totalTTC.div(totalTaxRate.add(1));
 
+      // Calculer uniquement la TVA (sans les taxes cumulées)
+      const purchaseOrderTVA = totalHT.mul(tvaRate);
+
+      // Calculer la proportion payée par rapport au TTC
       const proportionPaid = payee.div(totalTTC);
 
+      // Appliquer la proportion à la TVA
       tvaDeductible = tvaDeductible.add(purchaseOrderTVA.mul(proportionPaid));
     }
   }
@@ -188,7 +242,6 @@ export async function GET(req: NextRequest) {
   }
 
   const tvaDue = tvaCollected.sub(tvaDeductible).sub(totalFiscalPaid);
-
 
   return NextResponse.json(
     {
