@@ -76,11 +76,6 @@ export default function TransferForm({ refreshTransaction, closeModal }: Transfe
         }
     }, [companyId]);
 
-    useEffect(() => {
-        form.watch(() => console.log({ errors: form.formState.errors }));
-    }, [form.watch])
-
-
     async function submit(transferData: TransferSchemaType) {
         const { success, data } = transferSchema.safeParse(transferData);
         if (!success) return;

@@ -668,12 +668,12 @@ export async function generateLessorContractDocument(contract: ContractLessorTyp
 
                     createTitle({ text: "D'une part,", bold: true, size: 12 }),
                     createTitleContent({ title: 'Nom', content: contract.lessor.company }),
-                    createTitleContent({ title: 'Type', content: contract.lessor.legalForm }),
-                    createTitleContent({ title: 'Capital', content: `${formatNumber(contract.lessor.capital)} ${contract.company.currency}` }),
-                    createTitleContent({ title: 'Registre du Commerce et du Crédit Mobilier (RCCM)', content: contract.lessor.rccm }),
-                    createTitleContent({ title: 'Numéro fiscal', content: contract.lessor.nif ?? "" }),
+                    createTitleContent({ title: 'Type', content: contract.lessor.legalForm || "xxxxxxxxxxxxx" }),
+                    createTitleContent({ title: 'Capital', content: ` ${Number(contract.lessor.capital) > 0 ? formatNumber(contract.lessor.capital) : 'xxxxxxxxxxxxx'} ${Number(contract.lessor.capital) > 0 ? contract.company.currency : ''}` }),
+                    createTitleContent({ title: 'Registre du Commerce et du Crédit Mobilier (RCCM)', content: contract.lessor.rccm || "xxxxxxxxxxxxx" }),
+                    createTitleContent({ title: 'Numéro fiscal', content: contract.lessor.nif || "xxxxxxxxxxxxx" }),
                     createTitleContent({ title: 'Siège social', content: contract.lessor.address }),
-                    lessorContractOwner(`${contract.lessor.representativeName}`, `${contract.lessor.representativeJob || "-"}`),
+                    lessorContractOwner(`${contract.lessor.representativeName}`, `${contract.lessor.representativeJob || "xxxxxxxxxxxxx"}`),
 
                     createTitle({ text: "Et d'autre part,", bold: true, size: 12 }),
                     createTitleContent({ title: 'Nom', content: contract.company.name }),

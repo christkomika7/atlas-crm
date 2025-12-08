@@ -46,9 +46,6 @@ export async function PUT(req: NextRequest) {
             }
         });
 
-
-        console.log("HELLO WORLD");
-
         const project = await prisma.project.findUnique({
             where: { id: updateTask.projectId },
             include: {

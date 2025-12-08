@@ -3,6 +3,7 @@ import { getIdFromUrl } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 import { checkAccess } from "@/lib/access";
 import Decimal from "decimal.js";
+import { CITY_ALL } from "@/config/constant";
 
 export async function GET(req: NextRequest) {
     const result = await checkAccess("CONTRACT", ["MODIFY", "CREATE"]);
@@ -29,6 +30,15 @@ export async function GET(req: NextRequest) {
         prisma.supplier.findMany({
             where: {
                 companyId: id,
+                billboards: {
+                    every: {
+                        lessorType: {
+                            name: {
+                                not: CITY_ALL
+                            }
+                        }
+                    }
+                }
             },
             include: {
                 company: true
@@ -39,6 +49,7 @@ export async function GET(req: NextRequest) {
                 companyId: id,
                 lessorSpaceType: 'private'
             },
+
             include: {
                 company: true
             }

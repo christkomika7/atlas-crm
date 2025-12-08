@@ -252,8 +252,6 @@ export async function update(data: EditBillboardSchemaFormType) {
 
         const billboard = data.billboard;
         const lessor = data.lessor;
-        console.log({ lessor })
-
 
         // -------------------- BILLBOARD - Général --------------------
         appendIfDefined("id", billboard.id);

@@ -18,6 +18,24 @@ enum ContractType {
   LESSOR
 }
 
+enum NotificationType {
+  ALERT
+  CONFIRM
+}
+
+enum NotificationKindOf {
+  INVOICE
+  PURCHASE_ORDER
+  QUOTE
+  PAYMENT
+  DELIVERY_NOTE
+  RECEIPT
+  DISBURSEMENT
+  APPOINTMENT
+  PROJECT
+  TASK
+}
+
 enum DeletionType {
   QUOTES
   INVOICES
@@ -169,6 +187,7 @@ model Company {
   contracts                  Contract[]
   fiscalObjects              FiscalObject[]
   profiles                   Profile[]
+  notifications              Notification[]
 
   @@unique([email])
   @@map("company")
@@ -199,6 +218,7 @@ model User {
   purchaseOrders PurchaseOrder[]
   quotes         Quote[]
   deliveryNotes  DeliveryNote[]
+  notifications  Notification[]
 
   @@map("user")
 }
@@ -336,6 +356,8 @@ model Appointment {
   path           String
   documents      String[]
   teamMemberName String
+
+  notifications Notification[]
 
   clientId String
   client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -521,6 +543,7 @@ model Invoice {
   payments         Payment[]
   recurrences      Recurrence[]
   contracts        Contract[]
+  notifications    Notification[]
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -561,6 +584,7 @@ model PurchaseOrder {
   dibursements     Dibursement[]
   payments         Payment[]
   recurrences      Recurrence[]
+  notifications    Notification[]
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -602,6 +626,7 @@ model Quote {
   productsServices ProductService[]
   billboards       Billboard[]
   items            Item[]
+  notifications    Notification[]
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -643,6 +668,7 @@ model DeliveryNote {
   productsServices ProductService[]
   billboards       Billboard[]
   items            Item[]
+  notifications    Notification[]
 
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -762,6 +788,7 @@ model Project {
   purchaseOrders     PurchaseOrder[]
   deliveryNotes      DeliveryNote[]
   dibursements       Dibursement[]
+  notifications      Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -770,19 +797,20 @@ model Project {
 }
 
 model Task {
-  id        String        @id @default(uuid())
-  taskName  String
-  desc      String
-  path      String?
-  time      DateTime
-  priority  Priority      @default(NORMAL)
-  comment   String
-  file      String[]
-  status    ProjectStatus @default(TODO)
-  projectId String
-  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  users     Profile[]     @relation("task_users")
-  steps     TaskStep[]
+  id            String         @id @default(uuid())
+  taskName      String
+  desc          String
+  path          String?
+  time          DateTime
+  priority      Priority       @default(NORMAL)
+  comment       String
+  file          String[]
+  status        ProjectStatus  @default(TODO)
+  projectId     String
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  users         Profile[]      @relation("task_users")
+  steps         TaskStep[]
+  notifications Notification[]
 
   @@map("task")
 }
@@ -1102,6 +1130,116 @@ model Deletion {
   createdAt DateTime @default(now())
 
   @@map("deletion")
+}
+
+model Notification {
+  id     String             @id @default(uuid())
+  type   NotificationType   @default(ALERT)
+  active Boolean            @default(true)
+  for    NotificationKindOf
+
+  paymentId String?
+  payment   PaymentData? @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  receiptId String?
+  receipt   ReceiptData? @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+
+  dibursementId String?
+  dibursement   DibursementData? @relation(fields: [dibursementId], references: [id], onDelete: Cascade)
+
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  quoteId String?
+  quote   Quote?  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  deliveryNoteId String?
+  deliveryNote   DeliveryNote? @relation(fields: [deliveryNoteId], references: [id], onDelete: Cascade)
+
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("notification")
+}
+
+model PaymentData {
+  id            String         @id @default(uuid())
+  amount        Decimal        @default(0) @db.Decimal(15, 2)
+  paymentMode   String
+  infos         String?
+  invoice       String?
+  purchaseOrder String?
+  notifications Notification[]
+
+  @@map("payment_data")
+}
+
+model ReceiptData {
+  id          String     @id @default(uuid())
+  date        DateTime
+  category    String
+  nature      String
+  amount      Decimal    @default(0) @db.Decimal(15, 2)
+  amountType  AmountType @default(HT)
+  paymentType String
+  checkNumber String?
+  invoice     String?
+  source      String?
+  description String?
+  comment     String?
+  client      String?
+  supplier    String?
+
+  notifications Notification[]
+
+  @@map("receipt_data")
+}
+
+model DibursementData {
+  id          String     @id @default(uuid())
+  date        DateTime
+  category    String
+  nature      String
+  amount      Decimal    @default(0) @db.Decimal(15, 2)
+  amountType  AmountType @default(HT)
+  periodStart DateTime?
+  periodEnd   DateTime?
+
+  paymentType   String
+  checkNumber   String?
+  purchaseOrder String?
+
+  allocation    String?
+  source        String?
+  payOnBehalfOf String?
+  description   String?
+  comment       String?
+  client        String?
+  supplier      String?
+  project       String?
+  fiscalObject  String?
+
+  notifications Notification[]
+
+  @@map("dibursement_data")
 }
 
 model Permission {

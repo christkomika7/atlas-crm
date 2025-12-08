@@ -70,13 +70,6 @@ export default function CreateEmployeeForm() {
     getUsers();
   }, [param])
 
-
-  useEffect(() => {
-    form.watch(() => console.log({ errors: form.formState.errors }))
-  }, [form.watch])
-
-
-
   function getUsers() {
     if (param.id) {
       mutateGetUsers(null, {

@@ -82,7 +82,6 @@ export default function CreateForm() {
     ]);
 
     if (spaceType === "public") {
-      // RESET pour PUBLIC : vider tous les champs PRIVATE
       form.setValue("lessor.delayContractStart", undefined);
       form.setValue("lessor.delayContractStart", undefined);
       form.setValue("lessor.rentalStartDate", undefined);
@@ -148,29 +147,22 @@ export default function CreateForm() {
     }
 
     if (spaceType === "private") {
-      // RESET pour PRIVATE : vider les champs PUBLIC
       form.setValue("lessor.lessorCustomer", undefined);
       form.unregister("lessor.lessorCustomer");
 
-      // Reset aussi lessorTypeName et lessorType pour forcer un nouveau choix
       form.setValue("lessor.lessorTypeName", undefined);
       form.setValue("lessor.lessorType", '');
     }
 
     if (spaceType === "public") {
-      // RESET pour PUBLIC : vider aussi lessorType et lessorTypeName
       form.setValue("lessor.lessorType", '');
       form.setValue("lessor.lessorTypeName", undefined);
     }
   }, [spaceType, form]);
 
-  // ========================================
-  // NETTOYER LES CHAMPS QUAND LE LESSOR TYPE CHANGE
-  // ========================================
   useEffect(() => {
     if (!lessorTypeName) return;
 
-    // Nettoyer les erreurs pour tous les champs conditionnels
     form.clearErrors([
       "lessor.delayContractStart",
       "lessor.delayContractEnd",
@@ -188,9 +180,7 @@ export default function CreateForm() {
       "lessor.identityCard"
     ]);
 
-    // Si c'est Personne physique
     if (lessorTypeName === "Personne physique") {
-      // Vider les champs personne morale
       form.setValue("lessor.capital", undefined);
       form.setValue("lessor.rccm", undefined);
       form.setValue("lessor.taxIdentificationNumber", undefined);
@@ -204,7 +194,6 @@ export default function CreateForm() {
       form.setValue("lessor.rentalStartDate", undefined);
       form.setValue("lessor.rentalPeriod", undefined);
 
-      // Désenregistrer
       form.unregister("lessor.capital");
       form.unregister("lessor.rccm");
       form.unregister("lessor.taxIdentificationNumber");
@@ -219,24 +208,18 @@ export default function CreateForm() {
       form.unregister("lessor.rentalPeriod");
     }
 
-    // Si c'est Personne morale
     if (lessorTypeName === "Personne moral") {
-      // Vider les champs personne physique
       form.setValue("lessor.identityCard", undefined);
       form.setValue("lessor.delayContractStart", undefined);
       form.setValue("lessor.delayContractEnd", undefined);
 
 
-      // Désenregistrer
       form.unregister("lessor.identityCard");
       form.unregister("lessor.delayContractStart");
       form.unregister("lessor.delayContractEnd");
     }
   }, [lessorTypeName, form]);
 
-  // ========================================
-  // INITIALISATION
-  // ========================================
   useEffect(() => {
     if (companyId) {
       form.reset({

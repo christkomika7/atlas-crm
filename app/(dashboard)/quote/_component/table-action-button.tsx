@@ -89,14 +89,12 @@ export default function TableActionButton({
   }, [companyId])
 
   function goTo(id: string, action: "update" | "infos" | "send" | "convert") {
-    console.log({ id, action })
     switch (action) {
       case "update":
         setTab("action-quote-tab", 0);
         router.push(`/quote/${id}`);
         break;
       case "convert":
-        console.log("CONVERTING")
         const hasBillboard = data.items.some((item) => item.itemType === "billboard");
 
         if (hasBillboard) {

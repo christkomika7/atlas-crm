@@ -49,7 +49,6 @@ export default function UserAccount() {
       }
     }
   }
-  console.log({ isPending })
   return (
     <>
       {isPending || !profile ? <Skeleton className="rounded-full w-[46px] h-[46px]" /> :

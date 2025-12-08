@@ -42,7 +42,6 @@ export default function ItemForm() {
   useEffect(() => {
     if (companyId) {
       if (tab === 0) {
-        console.log("billboard")
         mutateGetBillboards({ companyId, search: "", skip, take: pageSize }, {
           onSuccess(data) {
             if (data.data) {

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { generateLessorContractDocument } from "@/lib/word";
 import { RentalPeriodType } from "@/types/data.type";
+import { MORAL_COMPANY } from "@/config/constant";
 
 export async function GET(req: NextRequest) {
     const result = await checkAccess("CONTRACT", "CREATE");
@@ -34,7 +35,10 @@ export async function GET(req: NextRequest) {
             },
             billboard: {
                 include: {
-                    type: true
+                    type: true,
+                    lessorType: true,
+                    lessorSupplier: true
+
                 }
             },
             lessor: true
@@ -55,6 +59,62 @@ export async function GET(req: NextRequest) {
 
     const type = contract.lessorType;
 
+    const legalForm = type === "supplier" ?
+        contract.lessor?.legalForms :
+        type !== "supplier" && contract.billboard?.lessorType.name === MORAL_COMPANY ?
+            contract.billboard.legalForms :
+            '';
+
+    const capital = type === "supplier" ?
+        formatNumber(contract.lessor?.capital || 0) :
+        type !== "supplier" && contract.billboard?.lessorType.name === MORAL_COMPANY ?
+            formatNumber(contract.billboard?.capital?.toString() || 0) :
+            0;
+
+    const rccm = type === "supplier" ?
+        contract.lessor?.businessRegistrationNumber :
+        type !== "supplier" && contract.billboard?.lessorType.name === MORAL_COMPANY ?
+            contract.billboard?.rccm :
+            '';
+
+    const representativeName = type === "supplier" ?
+        `${contract.lessor?.firstname} ${contract.lessor?.lastname}` :
+        type !== "supplier" && contract.billboard?.lessorType.name === MORAL_COMPANY ?
+            `${contract.billboard?.representativeFirstName} ${contract.billboard?.representativeLastName}` :
+            contract.billboard?.lessorName;
+
+    const representativeJob = type === "supplier" ?
+        contract.lessor?.job :
+        type !== "supplier" && contract.billboard?.lessorType.name === MORAL_COMPANY ?
+            contract.billboard?.representativeJob :
+            '';
+
+    const email = type === "supplier" ?
+        contract.lessor?.email :
+        type !== "supplier" && contract.billboard?.lessorType.name === MORAL_COMPANY ?
+            contract.billboard?.representativeEmail :
+            contract.billboard?.lessorEmail;
+
+    const phone = type === "supplier" ?
+        contract.lessor?.phone :
+        type !== "supplier" && contract.billboard?.lessorType.name === MORAL_COMPANY ?
+            contract.billboard?.representativePhone :
+            contract.billboard?.lessorPhone;
+
+    const nif = type === "supplier" ?
+        contract.lessor?.taxIdentificationNumber :
+        type !== "supplier" && contract.billboard?.lessorType.name === MORAL_COMPANY ?
+            contract.billboard?.taxIdentificationNumber :
+            '';
+
+    const startLocation = contract.billboard?.lessorType.name === MORAL_COMPANY ?
+        new Date(contract.billboard?.rentalStartDate || new Date()) :
+        new Date(contract.billboard?.delayContractStart || new Date());
+
+    const endLocation = contract.billboard?.lessorType.name === MORAL_COMPANY ?
+        getEndDate(contract.billboard?.rentalStartDate || new Date(), contract.billboard?.rentalPeriod as RentalPeriodType) :
+        new Date(contract.billboard?.delayContractEnd || new Date());
+
     Object.assign(formatContract, {
         id: contract.id,
         type: contract.type,
@@ -62,18 +122,18 @@ export async function GET(req: NextRequest) {
         lessor: {
             id: `${type === 'supplier' ? contract.lessorId : contract.billboardId}`,
             company: `${type === 'supplier' ? contract.lessor?.companyName : contract.billboard?.lessorName}`,
-            legalForm: `${type === 'supplier' ? contract.lessor?.legalForms : contract.billboard?.legalForms}`,
-            capital: type === 'supplier' ? formatNumber(contract.lessor?.capital || 0) : formatNumber(contract.billboard?.capital?.toString() || 0),
-            rccm: `${type === 'supplier' ? contract.lessor?.businessRegistrationNumber : contract.billboard?.rccm}`,
-            nif: `${type === 'supplier' ? contract.lessor?.taxIdentificationNumber : contract.billboard?.taxIdentificationNumber}`,
+            legalForm,
+            capital,
+            rccm,
+            nif,
             address: `${type === 'supplier' ? contract.lessor?.address : contract.billboard?.lessorAddress}`,
-            representativeName: type === 'supplier' ? `${contract.lessor?.firstname} ${contract.lessor?.lastname}` : `${contract.billboard?.representativeFirstName} ${contract.billboard?.representativeLastName}`,
-            representativeJob: `${type === 'supplier' ? contract.lessor?.job : contract.billboard?.representativeJob}`,
-            email: `${type === 'supplier' ? contract.lessor?.email : contract.billboard?.representativeEmail}`,
-            phone: `${type === 'supplier' ? contract.lessor?.phone : contract.billboard?.representativePhone}`,
+            representativeName,
+            representativeJob,
+            email,
+            phone,
             country: getCountryFrenchName(contract.company.country),
-            startLocation: type === "supplier" ? (new Date(contract.billboard?.delayContractStart || new Date())) : new Date(contract.billboard?.rentalStartDate || new Date()),
-            endLocation: type === "supplier" ? (new Date(contract.billboard?.delayContractEnd || new Date())) : (getEndDate(contract.billboard?.rentalStartDate || new Date(), contract.billboard?.rentalPeriod as RentalPeriodType)),
+            startLocation,
+            endLocation,
             images: contract.billboard?.photos || [],
             gmaps: `${contract.billboard?.gmaps}`,
             locationPrice: `${formatNumber(contract.billboard?.locationPrice || 0)} ${contract.company.currency}`,

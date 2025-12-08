@@ -79,11 +79,6 @@ export default function EditForm() {
   };
 
 
-  useEffect(() => {
-    form.watch(() => console.log({ errors: form.formState.errors }));
-  }, [form.watch]);
-
-
   const spaceType = form.watch("lessor.lessorSpaceType");
   useEffect(() => {
     if (!spaceType) return;
@@ -445,7 +440,7 @@ export default function EditForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)}>
-        <div className="flex-1 px-6 py-4 h-[calc(100vh-136px)] overflow-auto">
+        <div className="flex-1 px-6 py-4 h-[calc(100vh-180px)] overflow-auto">
           {isPendingBillboard && (
             <Badge variant="secondary" className="text-sm">
               Chargement des données <Spinner size={12} />
