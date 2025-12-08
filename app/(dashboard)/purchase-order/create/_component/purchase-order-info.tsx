@@ -76,7 +76,7 @@ export default function PurchaseOrderInfo({ isGettingDocument, disabled, isGetti
                     <h2>Condition</h2>
                     <p>
                         <Combobox
-                            disabled={isPaid || disabled}
+                            disabled={amountPaid?.gt(0) || disabled}
                             datas={paymentTerms}
                             value={paymentLimit}
                             setValue={setPaymentLimit}

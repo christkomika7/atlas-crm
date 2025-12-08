@@ -8,7 +8,7 @@ import QuoteTab from "./_component/tabs/quote-tab";
 export default function CreateInvoice() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header back={1} title="Créer un devis" />
+      <Header back={1} title="Modifier le devis" />
       <div className="flex-1 px-6 py-4 overflow-auto">
         <Tabs
           tabs={[

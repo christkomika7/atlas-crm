@@ -208,7 +208,7 @@ export default function QuoteTab() {
               discount: Number(quote.discount),
               discountType: quote.discountType as "purcent" | "money"
             });
-            setIsCompleted(quote.isComplete);
+            setIsCompleted(quote.isCompleted);
 
             const mappedItems = [...quote.items.map(item => ({
               id: item.id,
@@ -330,13 +330,14 @@ export default function QuoteTab() {
                 isFirstLoadingDiscount.current = false;
                 return;
               }
-              // updateDiscount(data.data.discount);
             }
           },
         }
       );
     }
   }, [clientId]);
+
+  console.log({ isCompleted })
 
   useEffect(() => {
     if (clientDatas?.data && clientId) {
@@ -481,7 +482,7 @@ export default function QuoteTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <Combobox
-                        disabled={isCompleted || !modifyAccess}
+                        disabled={!(modifyAccess && !isCompleted)}
                         isLoading={isGettingClients}
                         datas={
                           clientDatas?.data?.map((client) => ({
@@ -519,7 +520,7 @@ export default function QuoteTab() {
                         <div className={cn("text-sm font-medium", field.value === "HT" ? "text-foreground" : "text-muted-foreground")}>
                           HT
                         </div>
-                        <Switch disabled={isCompleted || !modifyAccess} checked={field.value === "TTC"} onCheckedChange={e => {
+                        <Switch disabled={!(modifyAccess && !isCompleted)} checked={field.value === "TTC"} onCheckedChange={e => {
                           const updatedAmountType = e ? "TTC" : "HT";
                           setAmountType(updatedAmountType);
                           field.onChange(updatedAmountType);
@@ -568,7 +569,7 @@ export default function QuoteTab() {
                     <FormItem className="-space-y-2">
                       <FormControl>
                         <TextInput
-                          disabled={isCompleted || !modifyAccess}
+                          disabled={!(modifyAccess && !isCompleted)}
                           type="file"
                           multiple={true}
                           design="float"
@@ -646,7 +647,7 @@ export default function QuoteTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <Combobox
-                        disabled={isCompleted && !modifyAccess}
+                        disabled={!(modifyAccess && !isCompleted)}
                         isLoading={isGettingProject}
                         datas={projects.map(({ id, name, status }) => ({
                           id: id,
@@ -686,7 +687,7 @@ export default function QuoteTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <TextInput
-                        disabled={isCompleted || !modifyAccess}
+                        disabled={!(modifyAccess && !isCompleted)}
                         design="text-area"
                         required={false}
                         label="Note"

@@ -11,7 +11,7 @@ export type DeliveryNoteType = {
     id: string,
     deliveryNoteNumber: number,
     note: string,
-    isComplete: boolean;
+    isCompleted: boolean;
     amountType: $Enums.AmountType;
     photos: string[],
     files: string[],

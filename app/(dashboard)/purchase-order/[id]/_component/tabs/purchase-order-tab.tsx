@@ -435,7 +435,7 @@ export default function PurchaseOrderTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <Combobox
-                        disabled={(amountPaid.gt(0) && isPaid) || !modifyAccess}
+                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
                         isLoading={isGettingSuppliers}
                         datas={
                           supplierDatas?.data?.map((supplier) => ({
@@ -530,7 +530,7 @@ export default function PurchaseOrderTab() {
                     <FormItem className="-space-y-2">
                       <FormControl>
                         <TextInput
-                          disabled={(amountPaid.gt(0) && isPaid) || !modifyAccess}
+                          disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
                           type="file"
                           multiple={true}
                           design="float"
@@ -608,7 +608,7 @@ export default function PurchaseOrderTab() {
                     <FormControl>
                       <Combobox
                         isLoading={isGettingProject}
-                        disabled={(amountPaid.gt(0) && isPaid) || modifyAccess}
+                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
                         datas={projects.map(({ id, name, status }) => ({
                           id: id,
                           label: name,
@@ -645,7 +645,7 @@ export default function PurchaseOrderTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <TextInput
-                        disabled={(amountPaid.gt(0) && isPaid) || modifyAccess}
+                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
                         design="text-area"
                         required={false}
                         label="Note"

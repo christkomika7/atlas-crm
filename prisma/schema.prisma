@@ -264,7 +264,7 @@ model Profile {
 
 model Supplier {
   id                         String   @id @default(uuid())
-  companyName                String   @unique
+  companyName                String
   firstname                  String
   hasDelete                  Boolean  @default(false)
   lastname                   String
@@ -405,7 +405,7 @@ model Contract {
 model Billboard {
   id String @id @default(uuid())
 
-  reference      String        @unique
+  reference      String
   hasTax         Boolean       @default(false)
   typeId         String
   hasDelete      Boolean       @default(false)
@@ -768,7 +768,7 @@ model Item {
 
 model Project {
   id                 String          @id @default(uuid())
-  name               String          @unique
+  name               String
   deadline           DateTime
   hasDelete          Boolean         @default(false)
   projectInformation String?
@@ -831,7 +831,7 @@ model TaskStep {
 
 model City {
   id   String @id @default(uuid())
-  name String @unique
+  name String
 
   billboards Billboard[]
 
@@ -844,7 +844,7 @@ model City {
 
 model Area {
   id         String      @id @default(uuid())
-  name       String      @unique
+  name       String
   billboards Billboard[]
 
   companyId String
@@ -858,7 +858,7 @@ model Area {
 
 model BillboardType {
   id         String      @id @default(uuid())
-  name       String      @unique
+  name       String
   billboards Billboard[]
 
   companyId String
@@ -869,7 +869,7 @@ model BillboardType {
 
 model DisplayBoard {
   id         String      @id @default(uuid())
-  name       String      @unique
+  name       String
   billboards Billboard[]
 
   companyId String
@@ -880,7 +880,7 @@ model DisplayBoard {
 
 model StructureType {
   id         String      @id @default(uuid())
-  name       String      @unique
+  name       String
   billboards Billboard[]
 
   companyId String
@@ -892,7 +892,7 @@ model StructureType {
 model LessorType {
   id         String      @id @default(uuid())
   type       LessorSpace @default(PRIVATE)
-  name       String      @unique
+  name       String
   billboards Billboard[]
 
   companyId String

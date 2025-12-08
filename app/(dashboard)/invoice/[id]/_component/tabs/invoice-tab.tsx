@@ -73,14 +73,11 @@ export default function InvoiceTab() {
   const setClientId = useClientIdStore.use.setClientId();
 
   const items = useItemStore.use.items();
-  // const updateDiscount = useItemStore.use.updateDiscount();
   const clearItem = useItemStore.use.clearItem();
   const setItems = useItemStore.use.setItems();
   const setItemQuantities = useItemStore.use.setItemQuantity();
 
-  const locationBillboardDate = useItemStore.use.locationBillboardDate();
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
-
 
   const setProject = useProjectStore.use.setProject();
   const projects = useProjectStore.use.projects();
@@ -510,7 +507,7 @@ export default function InvoiceTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <Combobox
-                        disabled={(amountPaid.gt(0) && isPaid) || !modifyAccess}
+                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
                         isLoading={isGettingClients}
                         datas={
                           clientDatas?.data?.map((client) => ({
@@ -597,7 +594,7 @@ export default function InvoiceTab() {
                     <FormItem className="-space-y-2">
                       <FormControl>
                         <TextInput
-                          disabled={(amountPaid.gt(0) && isPaid) || !modifyAccess}
+                          disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
                           type="file"
                           multiple={true}
                           design="float"
@@ -675,7 +672,7 @@ export default function InvoiceTab() {
                     <FormControl>
                       <Combobox
                         isLoading={isGettingProject}
-                        disabled={(amountPaid.gt(0) && isPaid) || !modifyAccess}
+                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
                         datas={projects.map(({ id, name, status }) => ({
                           id: id,
                           label: name,
@@ -714,7 +711,7 @@ export default function InvoiceTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <TextInput
-                        disabled={(amountPaid.gt(0) && isPaid) || !modifyAccess}
+                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
                         design="text-area"
                         required={false}
                         label="Note"

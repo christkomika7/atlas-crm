@@ -70,7 +70,7 @@ export default function CountrySelect() {
           const selected = companies.find((c) => c.id === companyId);
           setCurrency(selected?.currency ?? "");
 
-          router.refresh()
+          window.location.reload();
         },
       }
     );

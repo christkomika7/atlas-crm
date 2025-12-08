@@ -3,7 +3,6 @@ import InvoiceInfos from "./_components/invoice-infos";
 import SalesChart from "./_components/sales-chart";
 import RecentActivities from "./_components/recent-activities";
 import SalesIndicator from "./_components/sales-indicator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import InvoiceTable from "./_components/invoice-table";
 import SourceInfos from "./_components/source-infos";
 import RecentActivitiesBc from "./_components/recent-activities-bc";

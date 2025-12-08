@@ -1,3 +1,4 @@
+import { compressString } from "@/lib/utils";
 import { DibursementSchemaType } from "@/lib/zod/dibursement.schema";
 import { ReceiptSchemaType } from "@/lib/zod/receipt.schema";
 import {
@@ -212,9 +213,14 @@ export async function getAllocations({ companyId }: { companyId: string }) {
   }
 }
 
-export async function getNaturesByCompanyId({ companyId, filter }: { companyId: string, filter?: boolean }) {
+export async function getNaturesByCompanyId({ companyId, filter, categories }: { companyId: string, filter?: boolean, categories?: string[] }) {
   const params = new URLSearchParams();
+
   if (filter) params.append("filter", JSON.stringify(filter));
+  if (categories && categories.length > 0) {
+    const compressed = await compressString(JSON.stringify(categories));
+    params.append('categories', compressed)
+  }
 
   const queryString = params.toString();
   const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/nature/${companyId}/company${queryString ? `?${queryString}` : ""

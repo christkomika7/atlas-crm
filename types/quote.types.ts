@@ -14,7 +14,7 @@ export type QuoteType = {
     photos: string[],
     files: string[],
     amountType: $Enums.AmountType;
-    isComplete: boolean;
+    isCompleted: boolean;
     totalHT: Decimal,
     paymentLimit: string;
     discount: string,

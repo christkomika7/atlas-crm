@@ -55,7 +55,7 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
     );
 
   const { mutate: mutateGetNatures, isPending: isGettingNatures } =
-    useQueryAction<{ companyId: string; filter?: boolean }, RequestResponse<TransactionNatureType[]>>(
+    useQueryAction<{ companyId: string; filter?: boolean, categories?: string[] }, RequestResponse<TransactionNatureType[]>>(
       getNaturesByCompanyId,
       () => { },
       "natures"
@@ -83,6 +83,11 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
       mutateGetCollaborators({ id: companyId }, { onSuccess: data => data.data && setCollaborators(data.data) });
     }
   }, [companyId]);
+
+
+  useEffect(() => {
+    mutateGetNatures({ companyId, filter: true, categories: categoryValue }, { onSuccess: data => data.data && setNatures(data.data) });
+  }, [categoryValue])
 
   useEffect(() => {
     if (filters === "reset") {

@@ -14,9 +14,20 @@ import { PurchaseItemType } from "@/stores/purchase-item.store";
 import { INVOICE_PREFIX, PURCHASE_ORDER_PREFIX } from "@/config/constant";
 import { website } from "@/config/website";
 import { notFound } from "next/navigation";
+import { compressToUTF16, decompressFromUTF16, } from "async-lz-string";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+
+export async function compressString(value: string) {
+  return await compressToUTF16(value)
+}
+
+
+export async function decompressString(value: string) {
+  return await decompressFromUTF16(value)
 }
 
 export function formatList(items: string[]) {

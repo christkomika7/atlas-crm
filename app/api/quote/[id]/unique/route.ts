@@ -33,7 +33,6 @@ export async function GET(req: NextRequest) {
             },
         }
     });
-
     return NextResponse.json({
         state: "success",
         data: quote,

@@ -211,7 +211,7 @@ export default function DeliveryNoteTab() {
               discount: Number(deliveryNote.discount),
               discountType: deliveryNote.discountType as "purcent" | "money"
             });
-            setIsCompleted(deliveryNote.isComplete);
+            setIsCompleted(deliveryNote.isCompleted);
 
             const mappedItems = [...deliveryNote.items.map(item => ({
               id: item.id,
@@ -482,7 +482,7 @@ export default function DeliveryNoteTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <Combobox
-                        disabled={isCompleted || !modifyAccess}
+                        disabled={!(modifyAccess && !isCompleted)}
                         isLoading={isGettingClients}
                         datas={
                           clientDatas?.data?.map((client) => ({
@@ -520,7 +520,7 @@ export default function DeliveryNoteTab() {
                         <div className={cn("text-sm font-medium", field.value === "HT" ? "text-foreground" : "text-muted-foreground")}>
                           HT
                         </div>
-                        <Switch disabled={isCompleted || !modifyAccess} checked={field.value === "TTC"} onCheckedChange={e => {
+                        <Switch disabled={!(modifyAccess && !isCompleted)} checked={field.value === "TTC"} onCheckedChange={e => {
                           const updatedAmountType = e ? "TTC" : "HT";
                           setAmountType(updatedAmountType);
                           field.onChange(updatedAmountType);
@@ -569,7 +569,7 @@ export default function DeliveryNoteTab() {
                     <FormItem className="-space-y-2">
                       <FormControl>
                         <TextInput
-                          disabled={isCompleted || !modifyAccess}
+                          disabled={!(modifyAccess && !isCompleted)}
                           type="file"
                           multiple={true}
                           design="float"
@@ -647,7 +647,7 @@ export default function DeliveryNoteTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <Combobox
-                        disabled={isCompleted || !modifyAccess}
+                        disabled={!(modifyAccess && !isCompleted)}
                         isLoading={isGettingProject}
                         datas={projects.map(({ id, name, status }) => ({
                           id: id,
@@ -687,7 +687,7 @@ export default function DeliveryNoteTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <TextInput
-                        disabled={isCompleted || !modifyAccess}
+                        disabled={!(modifyAccess && !isCompleted)}
                         design="text-area"
                         required={false}
                         label="Note"
