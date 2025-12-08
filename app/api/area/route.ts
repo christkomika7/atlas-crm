@@ -20,8 +20,8 @@ export async function POST(req: NextRequest) {
         ...formData,
     }) as AreaSchemaType;
 
-    const areaExist = await prisma.area.findUnique({
-        where: { name: data.name }
+    const areaExist = await prisma.area.findFirst({
+        where: { name: data.name, companyId: data.companyId }
     });
 
     if (areaExist) {

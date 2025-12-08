@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
     }
 
 
-    const exist = await prisma.lessorType.findUnique({
-        where: { name: data.name }
+    const exist = await prisma.lessorType.findFirst({
+        where: { name: data.name, companyId: data.companyId }
     });
 
     if (exist) {

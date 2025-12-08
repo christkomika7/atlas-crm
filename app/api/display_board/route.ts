@@ -20,8 +20,8 @@ export async function POST(req: NextRequest) {
     }) as BaseSchemaType;
 
 
-    const exist = await prisma.displayBoard.findUnique({
-        where: { name: data.name }
+    const exist = await prisma.displayBoard.findFirst({
+        where: { name: data.name, companyId: data.companyId }
     });
 
     if (exist) {

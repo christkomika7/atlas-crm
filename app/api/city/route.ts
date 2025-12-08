@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
     }) as CitySchemaType;
 
 
-    const cityExist = await prisma.city.findUnique({
-        where: { name: data.name }
+    const cityExist = await prisma.city.findFirst({
+        where: { name: data.name, companyId: data.companyId }
     });
 
     if (cityExist) {

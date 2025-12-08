@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
     }) as BaseSchemaType;
 
 
-    const exist = await prisma.structureType.findUnique({
-        where: { name: data.name }
+    const exist = await prisma.structureType.findFirst({
+        where: { name: data.name, companyId: data.companyId }
     });
 
     if (exist) {

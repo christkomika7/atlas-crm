@@ -406,7 +406,7 @@ export async function PUT(req: NextRequest) {
 
     const [companyExist, refExist, billboardExist] = await prisma.$transaction([
         prisma.company.findUnique({ where: { id: data.billboard.companyId } }),
-        prisma.billboard.findUnique({ where: { reference: data.billboard.reference } }),
+        prisma.billboard.findFirst({ where: { reference: data.billboard.reference, companyId: data.billboard.companyId } }),
         prisma.billboard.findUnique({ where: { id: data.billboard.id } })
     ]);
 

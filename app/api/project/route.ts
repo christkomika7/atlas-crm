@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     const [companyExist, clientExist, projectExist] = await prisma.$transaction([
         prisma.company.findUnique({ where: { id: data.company } }),
         prisma.client.findUnique({ where: { id: data.client } }),
-        prisma.project.findUnique({ where: { name: data.projectName } }),
+        prisma.project.findFirst({ where: { name: data.projectName, companyId: data.company } }),
     ]);
 
     if (!companyExist || !clientExist) {

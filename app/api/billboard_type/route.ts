@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
     }) as BaseSchemaType;
 
 
-    const billboardTypeExist = await prisma.billboardType.findUnique({
-        where: { name: data.name }
+    const billboardTypeExist = await prisma.billboardType.findFirst({
+        where: { name: data.name, companyId: data.companyId }
     });
 
     if (billboardTypeExist) {
