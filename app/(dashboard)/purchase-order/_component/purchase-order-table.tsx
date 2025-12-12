@@ -15,6 +15,7 @@ import {
   useEffect,
   forwardRef,
   useImperativeHandle,
+  useState,
 } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
@@ -28,9 +29,10 @@ import { paymentTerms } from "@/lib/data";
 import { addDays } from "date-fns";
 import { checkDeadline, formatDateToDashModel } from "@/lib/date";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
-import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
+import { DEFAULT_PAGE_SIZE, PURCHASE_ORDER_PREFIX } from "@/config/constant";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
+import Paginations from "@/components/paginations";
 
 type PurchaseOrderTableProps = {
   filter: "unpaid" | "paid";
@@ -44,13 +46,21 @@ export interface PurchaseOrderTableRef {
 
 const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableProps>(
   ({ selectedPurchaseOrderIds, setSelectedPurchaseOrderIds, filter }, ref) => {
+    const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrderType[]>([]);
     const id = useDataStore.use.currentCompany();
     const currency = useDataStore.use.currency();
+
+
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+    const [totalItems, setTotalItems] = useState<number>(0);
+
+    const skip = (currentPage - 1) * pageSize;
 
     const { access: readAccess, loading } = useAccess("PURCHASE_ORDER", "READ");
 
     const { mutate, isPending, data } = useQueryAction<
-      { companyId: string; filter: "unpaid" | "paid" },
+      { companyId: string; filter: "unpaid" | "paid", skip?: number; take?: number },
       RequestResponse<PurchaseOrderType[]>
     >(all, () => { }, "purchase-order");
 
@@ -62,7 +72,14 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
 
     const refreshPurchaseOrder = () => {
       if (id && readAccess) {
-        mutate({ companyId: id, filter });
+        mutate({ companyId: id, filter, skip, take: pageSize }, {
+          onSuccess(data) {
+            if (data.data) {
+              setPurchaseOrders(data.data);
+              setTotalItems(data.total);
+            }
+          },
+        });
       }
     };
 
@@ -72,7 +89,7 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
 
     useEffect(() => {
       refreshPurchaseOrder();
-    }, [id, readAccess]);
+    }, [id, readAccess, currentPage]);
 
     const isSelected = (id: string) => selectedPurchaseOrderIds.includes(id);
 
@@ -91,10 +108,8 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
       }
     }
 
-    if (loading) return <Spinner />
-
     return (
-      <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER">
+      <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER" loading={loading}>
         <div className="border border-neutral-200 rounded-xl">
           <Table>
             <TableHeader>
@@ -117,8 +132,8 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : data?.data && data.data.length > 0 ? (
-                data.data.map((purchaseOrder) => (
+              ) : purchaseOrders.length > 0 ? (
+                purchaseOrders.map((purchaseOrder) => (
                   <TableRow
                     key={purchaseOrder.id}
                     className={`h-16 transition-colors ${isSelected(purchaseOrder.id) ? "bg-neutral-100" : ""
@@ -195,6 +210,15 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
               )}
             </TableBody>
           </Table>
+          <div className="flex justify-end p-4">
+            <Paginations
+              totalItems={totalItems}
+              pageSize={pageSize}
+              controlledPage={currentPage}
+              onPageChange={(page) => setCurrentPage(page)}
+              maxVisiblePages={DEFAULT_PAGE_SIZE}
+            />
+          </div>
         </div>
       </AccessContainer>
     );

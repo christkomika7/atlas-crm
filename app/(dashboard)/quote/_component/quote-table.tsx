@@ -101,7 +101,6 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
                 <TableHead className="font-medium text-center">Client</TableHead>
                 <TableHead className="font-medium text-center">Date</TableHead>
                 <TableHead className="font-medium text-center">Montant</TableHead>
-                <TableHead className="font-medium text-center">Mises à jour</TableHead>
                 <TableHead className="font-medium text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -147,9 +146,6 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
                       {formatNumber(quote.amountType === "TTC" ? quote.totalTTC : quote.totalHT)} {currency}
-                    </TableCell>
-                    <TableCell className="text-neutral-600 text-center">
-                      <span>-</span>
                     </TableCell>
                     <TableCell className="text-center">
                       <TableActionButton

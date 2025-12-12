@@ -8,55 +8,69 @@ import { parseData } from "@/lib/parse";
 import { checkAccessDeletion } from "@/lib/server";
 import { $Enums } from "@/lib/generated/prisma";
 
+
 export async function GET(req: NextRequest) {
   const result = await checkAccess("CLIENTS", "READ");
 
   if (!result.authorized) {
-    return Response.json(
-      {
-        status: "error",
-        message: result.message,
-      },
-      { status: 403 },
-    );
+    return Response.json({
+      status: "error",
+      message: result.message,
+      data: []
+    }, { status: 200 });
   }
-  const id = getIdFromUrl(req.url, "last") as string;
-  const filter = req.nextUrl.searchParams.get("filter")?.trim() ?? "";
 
-  const companyExist = await prisma.company.findUnique({ where: { id } });
-  if (!companyExist) {
-    return NextResponse.json(
-      {
+  const id = getIdFromUrl(req.url, 2) as string;
+
+  if (!id) {
+    return NextResponse.json({
+      status: "error",
+      message: "Aucun client trouvé.",
+    }, { status: 404 });
+  }
+
+  const filterParam = req.nextUrl.searchParams.get("filter") ?? undefined;
+  const searchParam = req.nextUrl.searchParams.get("search") as string;
+
+  const MAX_TAKE = 200;
+  const DEFAULT_TAKE = 50;
+
+  const rawSkip = req.nextUrl.searchParams.get("skip");
+  const rawTake = req.nextUrl.searchParams.get("take");
+
+  const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
+
+  let take = DEFAULT_TAKE;
+  if (rawTake) {
+    const parsed = parseInt(rawTake, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      take = Math.min(parsed, MAX_TAKE);
+    }
+  }
+
+  try {
+    const companyExist = await prisma.company.findUnique({ where: { id } });
+    if (!companyExist) {
+      return NextResponse.json({
         status: "error",
         message: "Aucun élément trouvé pour cet identifiant.",
-      },
-      { status: 404 },
-    );
-  }
+      }, { status: 404 });
+    }
 
-  if (!filter) {
-    const clients = await prisma.client.findMany({
-      where: {
-        companyId: id,
-      },
-      include: {
-        company: true,
-      },
-    });
+    let where: any = { companyId: id };
 
-    return NextResponse.json(
-      {
-        state: "success",
-        data: clients,
-      },
-      { status: 200 },
-    );
-  }
+    if (searchParam) {
+      const searchTerms = searchParam.split(/\s+/).filter(Boolean);
 
-  const clients = await prisma.client.findMany({
-    where: {
-      companyId: id,
-      invoices: {
+      where.OR = searchTerms.flatMap((term: string) => [
+        { companyName: { contains: term, mode: "insensitive" } },
+        { firstname: { contains: term, mode: "insensitive" } },
+        { lastname: { contains: term, mode: "insensitive" } },
+      ]);
+    }
+
+    if (filterParam === "billboard") {
+      where.invoices = {
         some: {
           items: {
             some: {
@@ -64,20 +78,39 @@ export async function GET(req: NextRequest) {
             },
           },
         },
+      };
+    }
+
+    const [total, clients] = await prisma.$transaction([
+      prisma.client.count({ where }),
+      prisma.client.findMany({
+        where,
+        include: {
+          company: true,
+        },
+        skip,
+        take,
+        orderBy: { createdAt: "desc" }
+      })
+    ]);
+
+    return NextResponse.json(
+      {
+        state: "success",
+        data: clients,
+        total
       },
-    },
-    include: { company: true },
-  });
+      { status: 200 }
+    );
 
-  return NextResponse.json(
-    {
-      state: "success",
-      data: clients,
-    },
-    { status: 200 },
-  );
+  } catch (error) {
+    console.error("Erreur GET /api/clients:", error);
+    return NextResponse.json(
+      { status: "error", message: "Erreur lors de la récupération des clients." },
+      { status: 500 }
+    );
+  }
 }
-
 export async function POST(req: NextRequest) {
   const result = await checkAccess("CLIENTS", "CREATE");
 

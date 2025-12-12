@@ -21,6 +21,7 @@ Product
 - Ajouter contrat dans la mise a jour du profile
 - Faire les notifications
 - Modifier la fonction delete image pour quel ne supprime que les images et le dossiers parent dans le cas ou celui ci est vide pas de recursion
+- Bloquer les pages dont le user n'a pas access
 
 
 // Notification

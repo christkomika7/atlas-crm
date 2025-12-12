@@ -19,6 +19,7 @@ import { getUniqueDeliveryNote } from "@/action/delivery-note.action";
 import { DELIVERY_NOTE_PREFIX } from "@/config/constant";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
+import { formatDateToDashModel } from "@/lib/date";
 
 export default function PreviewTab() {
   const param = useParams();
@@ -83,10 +84,9 @@ export default function PreviewTab() {
     router.push("/delivery-note");
   }
 
-  if ((isGettingDocument && isGettingDeliveryNote) || loading) return <Spinner />;
 
   return (
-    <AccessContainer hasAccess={readAccess} resource="DELIVERY_NOTES">
+    <AccessContainer hasAccess={readAccess} resource="DELIVERY_NOTES" loading={(isGettingDocument && isGettingDeliveryNote) || loading}>
       <ScrollArea className="pr-4 h-full">
         <div className="gap-8 grid grid-cols-[1.5fr_1fr] pt-4 h-full">
           <div className="space-y-4">
@@ -100,7 +100,8 @@ export default function PreviewTab() {
                       padding: 0,
                       margin: 0,
                       quality: 0.98,
-                      scale: 4
+                      scale: 4,
+                      headerText: `- ${filename.split(".pdf")[0]} - ${formatDateToDashModel(new Date(deliveryNote?.createdAt || new Date()))}`
                     })}
                   >
                     Télécharger

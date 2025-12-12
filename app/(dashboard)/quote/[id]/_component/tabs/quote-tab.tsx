@@ -12,46 +12,43 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RequestResponse } from "@/types/api.types";
 import { Button } from "@/components/ui/button";
-
-import useQueryAction from "@/hook/useQueryAction";
-import Spinner from "@/components/ui/spinner";
-import TextInput from "@/components/ui/text-input";
 import { Combobox } from "@/components/ui/combobox";
 import { useDataStore } from "@/stores/data.store";
 import { ClientType } from "@/types/client.types";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { ProjectType } from "@/types/project.types";
 import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
-import useProjectStore from "@/stores/project.store";
-import useClientIdStore from "@/stores/client-id.store";
-
-
 import { ModelDocumentType } from "@/types/document.types";
 import { useParams } from "next/navigation";
 import { CompanyType } from "@/types/company.types";
-
 import { all as getClients, unique as getClient } from "@/action/client.action";
 import { allByClient } from "@/action/project.action";
 import { unique as getDocument } from "@/action/document.action";
-import ProjectModal from "../../../_component/project-modal";
 import { DownloadIcon, XIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalculateTaxe } from "@/hook/useCalculateTaxe";
-import ItemList from "../../../create/_component/item-list";
 import { cn, downloadFile, generateAmaId, parseItem, parseItems } from "@/lib/utils";
 import { DiscountType } from "@/types/tax.type";
-import ItemModal from "../../../create/_component/item-modal";
 import { getAllProductServices } from "@/action/product-service.action";
 import { ProductServiceType } from "@/types/product-service.types";
-import Decimal from "decimal.js";
 import { quoteUpdateSchema, QuoteUpdateSchemaType } from "@/lib/zod/quote.schema";
 import { QuoteType } from "@/types/quote.types";
 import { getBillboardItemLocations, getUniqueQuote, updateQuote } from "@/action/quote.action";
-import QuoteInfo from "../../../create/_component/quote-info";
 import { QUOTE_PREFIX } from "@/config/constant";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAccess } from "@/hook/useAccess";
+
+import useQueryAction from "@/hook/useQueryAction";
+import Spinner from "@/components/ui/spinner";
+import TextInput from "@/components/ui/text-input";
+import useProjectStore from "@/stores/project.store";
+import useClientIdStore from "@/stores/client-id.store";
+import ProjectModal from "../../../_component/project-modal";
+import ItemList from "../../../create/_component/item-list";
+import ItemModal from "../../../create/_component/item-modal";
+import Decimal from "decimal.js";
+import QuoteInfo from "../../../create/_component/quote-info";
 import AccessContainer from "@/components/errors/access-container";
 
 
@@ -337,8 +334,6 @@ export default function QuoteTab() {
     }
   }, [clientId]);
 
-  console.log({ isCompleted })
-
   useEffect(() => {
     if (clientDatas?.data && clientId) {
       const clients = clientDatas.data;
@@ -463,10 +458,8 @@ export default function QuoteTab() {
     [mutateUpdateQuote, form, lastUploadFiles]
   );
 
-  if (loading) return <Spinner />
-
   return (
-    <AccessContainer hasAccess={readAccess} resource="QUOTES">
+    <AccessContainer hasAccess={readAccess} resource="QUOTES" loading={loading}>
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(submit)}
@@ -482,7 +475,7 @@ export default function QuoteTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <Combobox
-                        disabled={!(modifyAccess && !isCompleted)}
+                        disabled={isCompleted || !modifyAccess}
                         isLoading={isGettingClients}
                         datas={
                           clientDatas?.data?.map((client) => ({
@@ -569,7 +562,7 @@ export default function QuoteTab() {
                     <FormItem className="-space-y-2">
                       <FormControl>
                         <TextInput
-                          disabled={!(modifyAccess && !isCompleted)}
+                          disabled={isCompleted || !modifyAccess}
                           type="file"
                           multiple={true}
                           design="float"
@@ -647,7 +640,7 @@ export default function QuoteTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <Combobox
-                        disabled={!(modifyAccess && !isCompleted)}
+                        disabled={isCompleted || !modifyAccess}
                         isLoading={isGettingProject}
                         datas={projects.map(({ id, name, status }) => ({
                           id: id,
@@ -687,7 +680,7 @@ export default function QuoteTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <TextInput
-                        disabled={!(modifyAccess && !isCompleted)}
+                        disabled={isCompleted || !modifyAccess}
                         design="text-area"
                         required={false}
                         label="Note"

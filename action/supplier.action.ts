@@ -1,11 +1,22 @@
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { SupplierSchemaType, EditSupplierSchemaType } from "@/lib/zod/supplier.schema";
 import { RequestResponse } from "@/types/api.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { BillboardSupplier, SupplierType } from "@/types/supplier.types";
 
-export async function all({ id }: { id: string }) {
+export async function all({ id, search, skip = 0, take = DEFAULT_PAGE_SIZE, }: { id: string, search?: string, skip?: number; take?: number; }) {
+    const params = new URLSearchParams();
+    if (search) params.append("search", search);
+
+    params.append("skip", String(skip));
+    params.append("take", String(take));
+
+    const queryString = params.toString();
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/supplier/${id}${queryString ? `?${queryString}` : ""
+        }`;
+
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/supplier/${id}`, {
+        const response = await fetch(url, {
             method: 'GET',
         });
 

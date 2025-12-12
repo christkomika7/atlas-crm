@@ -1,10 +1,15 @@
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { EditProjectSchemaType, ProjectSchemaType } from "@/lib/zod/project.schema";
 import { RequestResponse } from "@/types/api.types";
 import { ProjectType } from "@/types/project.types";
 
-export async function getallByCompany({ companyId, projectStatus }: { companyId: string, projectStatus?: "loading" | "stop" }) {
+export async function getallByCompany({ companyId, projectStatus, search, skip = 0, take = DEFAULT_PAGE_SIZE, }: { companyId: string, projectStatus?: "loading" | "stop", search?: string, skip?: number; take?: number; }) {
     const params = new URLSearchParams();
     if (projectStatus) params.append("filter", projectStatus);
+    if (search) params.append("search", search);
+
+    params.append("skip", String(skip));
+    params.append("take", String(take));
 
     const queryString = params.toString();
     const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/project/${companyId}/company${queryString ? `?${queryString}` : ""

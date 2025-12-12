@@ -435,7 +435,7 @@ export default function PurchaseOrderTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <Combobox
-                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
+                        disabled={amountPaid.gt(0) || !modifyAccess}
                         isLoading={isGettingSuppliers}
                         datas={
                           supplierDatas?.data?.map((supplier) => ({
@@ -530,7 +530,7 @@ export default function PurchaseOrderTab() {
                     <FormItem className="-space-y-2">
                       <FormControl>
                         <TextInput
-                          disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
+                          disabled={amountPaid.gt(0) || !modifyAccess}
                           type="file"
                           multiple={true}
                           design="float"
@@ -572,7 +572,7 @@ export default function PurchaseOrderTab() {
                                       >
                                         <DownloadIcon className="w-4 h-4" />
                                       </span>{" "}
-                                      {!isPaid && modifyAccess &&
+                                      {(!amountPaid.gt(0) || !modifyAccess) &&
                                         <span
                                           onClick={() =>
                                             removeLastUpload(file)
@@ -608,7 +608,7 @@ export default function PurchaseOrderTab() {
                     <FormControl>
                       <Combobox
                         isLoading={isGettingProject}
-                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
+                        disabled={amountPaid.gt(0) || !modifyAccess}
                         datas={projects.map(({ id, name, status }) => ({
                           id: id,
                           label: name,
@@ -645,7 +645,7 @@ export default function PurchaseOrderTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <TextInput
-                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
+                        disabled={amountPaid.gt(0) || !modifyAccess}
                         design="text-area"
                         required={false}
                         label="Note"

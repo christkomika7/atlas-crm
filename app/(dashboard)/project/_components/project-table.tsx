@@ -16,6 +16,7 @@ import {
   useImperativeHandle,
   useState,
 } from "react";
+
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
 import { useDataStore } from "@/stores/data.store";
@@ -29,6 +30,8 @@ import { Badge } from "@/components/ui/badge";
 import { useAccess } from "@/hook/useAccess";
 import { Checkbox } from "@/components/ui/checkbox";
 import AccessContainer from "@/components/errors/access-container";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
+import Paginations from "@/components/paginations";
 
 type ProjectTableProps = {
   filter: "stop" | "loading";
@@ -45,10 +48,17 @@ const ProjectTable = forwardRef<ProjectTableRef, ProjectTableProps>(
     const id = useDataStore.use.currentCompany();
     const [projects, setProjects] = useState<ProjectType[]>([]);
 
+
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+    const [totalItems, setTotalItems] = useState<number>(0);
+
+    const skip = (currentPage - 1) * pageSize;
+
     const { access: readAccess, loading } = useAccess("PROJECTS", "READ");
 
     const { mutate: mutateGetProjects, isPending: isGettingProjects } = useQueryAction<
-      { companyId: string, projectStatus: "stop" | "loading" },
+      { companyId: string, projectStatus?: "stop" | "loading", skip?: number; take?: number },
       RequestResponse<ProjectType[]>
     >(getallByCompany, () => { }, "projects");
 
@@ -63,10 +73,11 @@ const ProjectTable = forwardRef<ProjectTableRef, ProjectTableProps>(
 
     const refreshData = () => {
       if (id && readAccess) {
-        mutateGetProjects({ companyId: id, projectStatus: filter }, {
+        mutateGetProjects({ companyId: id, projectStatus: filter, skip, take: pageSize }, {
           onSuccess(data) {
             if (data.data) {
               setProjects(data.data);
+              setTotalItems(data.total);
             }
           },
         });
@@ -79,14 +90,12 @@ const ProjectTable = forwardRef<ProjectTableRef, ProjectTableProps>(
 
     useEffect(() => {
       refreshData();
-    }, [id, readAccess]);
+    }, [id, readAccess, currentPage]);
 
     const isSelected = (id: string) => selectedProjectIds.includes(id);
 
-    if (loading) return <Spinner />
-
     return (
-      <AccessContainer hasAccess={readAccess} resource="PROJECTS">
+      <AccessContainer hasAccess={readAccess} resource="PROJECTS" loading={loading}>
         <div className="border border-neutral-200 rounded-xl">
           <Table>
             <TableHeader>
@@ -182,6 +191,15 @@ const ProjectTable = forwardRef<ProjectTableRef, ProjectTableProps>(
               )}
             </TableBody>
           </Table>
+          <div className="flex justify-end p-4">
+            <Paginations
+              totalItems={totalItems}
+              pageSize={pageSize}
+              controlledPage={currentPage}
+              onPageChange={(page) => setCurrentPage(page)}
+              maxVisiblePages={DEFAULT_PAGE_SIZE}
+            />
+          </div>
         </div>
       </AccessContainer>
     );

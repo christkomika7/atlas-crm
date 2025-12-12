@@ -8,6 +8,7 @@ import { parseData } from "@/lib/parse";
 import { $Enums } from "@/lib/generated/prisma";
 import { checkAccessDeletion } from "@/lib/server";
 
+
 export async function GET(req: NextRequest) {
   const result = await checkAccess("SUPPLIERS", "READ");
 
@@ -19,29 +20,83 @@ export async function GET(req: NextRequest) {
     }, { status: 200 });
   }
 
-  const id = getIdFromUrl(req.url, "last") as string;
+  const id = getIdFromUrl(req.url, 2) as string;
 
-  const companyExist = await prisma.company.findUnique({ where: { id } });
-  if (!companyExist) {
+  if (!id) {
     return NextResponse.json({
       status: "error",
-      message: "Aucun élément trouvé pour cet identifiant.",
+      message: "Aucun fournisseur trouvé.",
     }, { status: 404 });
   }
 
-  const suppliers = await prisma.supplier.findMany({
-    where: {
-      companyId: id
-    },
-    include: {
-      company: true
-    }
-  })
+  const searchParam = req.nextUrl.searchParams.get("search") as string;
 
-  return NextResponse.json({
-    state: "success",
-    data: suppliers,
-  }, { status: 200 })
+  const MAX_TAKE = 200;
+  const DEFAULT_TAKE = 50;
+
+  const rawSkip = req.nextUrl.searchParams.get("skip");
+  const rawTake = req.nextUrl.searchParams.get("take");
+
+  const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
+
+  let take = DEFAULT_TAKE;
+  if (rawTake) {
+    const parsed = parseInt(rawTake, 10);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      take = Math.min(parsed, MAX_TAKE);
+    }
+  }
+
+  try {
+    const companyExist = await prisma.company.findUnique({ where: { id } });
+    if (!companyExist) {
+      return NextResponse.json({
+        status: "error",
+        message: "Aucun élément trouvé pour cet identifiant.",
+      }, { status: 404 });
+    }
+
+    let where: any = { companyId: id };
+
+    if (searchParam) {
+      const searchTerms = searchParam.split(/\s+/).filter(Boolean);
+
+      where.OR = searchTerms.flatMap((term: string) => [
+        { companyName: { contains: term, mode: "insensitive" } },
+        { firstname: { contains: term, mode: "insensitive" } },
+        { lastname: { contains: term, mode: "insensitive" } },
+      ]);
+    }
+
+    const [total, suppliers] = await prisma.$transaction([
+      prisma.supplier.count({ where }),
+      prisma.supplier.findMany({
+        where,
+        include: {
+          company: true,
+        },
+        skip,
+        take,
+        orderBy: { createdAt: "desc" }
+      })
+    ]);
+
+    return NextResponse.json(
+      {
+        state: "success",
+        data: suppliers,
+        total
+      },
+      { status: 200 }
+    );
+
+  } catch (error) {
+    console.error("Erreur GET /api/suppliers:", error);
+    return NextResponse.json(
+      { status: "error", message: "Erreur lors de la récupération des fournisseurs." },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {

@@ -11,7 +11,7 @@ type DateRange = {
 
 
 export function formatDateToDashModel(date: Date): string {
-    return new Date(date).toLocaleDateString().replaceAll("/", "-");
+    return new Date(date).toLocaleDateString();
 }
 
 export function addDays(

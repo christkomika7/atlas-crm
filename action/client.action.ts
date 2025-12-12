@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { ClientSchemaType, EditClientSchemaType } from "@/lib/zod/client.schema";
 import { RequestResponse } from "@/types/api.types";
 import { ClientType } from "@/types/client.types";
@@ -5,13 +6,18 @@ import { DeliveryNoteType } from "@/types/delivery-note.types";
 import { InvoiceType } from "@/types/invoice.types";
 import { QuoteType } from "@/types/quote.types";
 
-export async function all({ id, filter }: { id: string, filter?: string }) {
+export async function all({ id, filter, search, skip = 0, take = DEFAULT_PAGE_SIZE, }: { id: string, filter?: string, search?: string, skip?: number; take?: number; }) {
     const params = new URLSearchParams();
     if (filter) params.append("filter", filter);
+    if (search) params.append("search", search);
+
+    params.append("skip", String(skip));
+    params.append("take", String(take));
 
     const queryString = params.toString();
     const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/client/${id}${queryString ? `?${queryString}` : ""
         }`;
+
     try {
         const response = await fetch(url, {
             method: 'GET',

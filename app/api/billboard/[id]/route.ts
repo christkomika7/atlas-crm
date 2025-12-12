@@ -11,118 +11,121 @@ import { BillboardType } from "@/types/billboard.types";
 import { Decimal } from "decimal.js";
 import { NextResponse, type NextRequest } from "next/server";
 
+
 export async function GET(req: NextRequest) {
     const result = await checkAccess("BILLBOARDS", "READ");
 
     if (!result.authorized) {
         return Response.json({
-            state: "error",
+            status: "error",
             message: result.message,
-        }, { status: 403 });
+            data: []
+        }, { status: 200 });
+    }
+
+    const id = getIdFromUrl(req.url, 2) as string;
+
+    if (!id) {
+        return NextResponse.json({
+            status: "error",
+            message: "Aucun panneau publicitaire trouvé.",
+        }, { status: 404 });
+    }
+
+    const searchParam = req.nextUrl.searchParams.get("search") as string;
+    const lessorParam = req.nextUrl.searchParams.get("lessor") ?? "";
+    const lessorTypeParam = req.nextUrl.searchParams.get("lessorType") ?? "";
+
+    const MAX_TAKE = 200;
+    const DEFAULT_TAKE = 50;
+
+    const rawSkip = req.nextUrl.searchParams.get("skip");
+    const rawTake = req.nextUrl.searchParams.get("take");
+
+    const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
+
+    let take = DEFAULT_TAKE;
+    if (rawTake) {
+        const parsed = parseInt(rawTake, 10);
+        if (!Number.isNaN(parsed) && parsed > 0) {
+            take = Math.min(parsed, MAX_TAKE);
+        }
     }
 
     try {
-        const id = getIdFromUrl(req.url, "last") as string;
+        let where: any = { companyId: id };
 
-        const search = req.nextUrl.searchParams.get("search")?.trim() ?? "";
-        const lessor = req.nextUrl.searchParams.get("lessor") ?? "";
-        const lessorType = req.nextUrl.searchParams.get("lessorType") ?? "";
+        if (searchParam) {
+            const searchTerms = searchParam.split(/\s+/).filter(Boolean);
 
-        //pagination
-        const MAX_TAKE = 200;
-        const DEFAULT_TAKE = 50;
-
-        const rawSkip = req.nextUrl.searchParams.get("skip");
-        const rawTake = req.nextUrl.searchParams.get("take");
-
-        const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
-
-        let take = DEFAULT_TAKE;
-        if (rawTake) {
-            const parsed = parseInt(rawTake, 10);
-            if (!Number.isNaN(parsed) && parsed > 0) {
-                take = Math.min(parsed, MAX_TAKE);
-            }
+            where.OR = searchTerms.flatMap((term: string) => [
+                { name: { contains: term, mode: "insensitive" } },
+                { reference: { contains: term, mode: "insensitive" } },
+                { locality: { contains: term, mode: "insensitive" } },
+                { orientation: { contains: term, mode: "insensitive" } },
+                { visualMarker: { contains: term, mode: "insensitive" } },
+                { city: { name: { contains: term, mode: "insensitive" } } },
+                { type: { name: { contains: term, mode: "insensitive" } } },
+                { displayBoard: { name: { contains: term, mode: "insensitive" } } },
+                { area: { name: { contains: term, mode: "insensitive" } } },
+            ]);
         }
 
-        // Build where clause
-        const baseWhere: any = { companyId: id };
-
-        if (search) {
-            const searchTerms = search.split(/\s+/).filter(Boolean);
-            baseWhere.OR = [
-                {
-                    name: {
-                        contains: search,
-                        mode: "insensitive",
-                    },
-                },
-                {
-                    OR: searchTerms.map((term: string) => ({
-                        information: {
-                            contains: term,
-                            mode: "insensitive",
-                        },
-                    })),
-                },
-            ];
-        }
-
-        if (lessor && lessorType) {
-            if (lessorType === "lessor") {
-                baseWhere.id = lessor;
+        if (lessorParam && lessorTypeParam) {
+            if (lessorTypeParam === "lessor") {
+                where.id = lessorParam;
             } else {
                 const supplier = await prisma.supplier.findUnique({
-                    where: { id: lessor },
+                    where: { id: lessorParam },
                     include: { billboards: { select: { id: true } } },
                 });
 
                 const billboardIds = supplier?.billboards.map(b => b.id).filter(Boolean) || [];
 
-                baseWhere.id = billboardIds.length
+                where.id = billboardIds.length
                     ? { in: billboardIds }
                     : { in: ["__NONE__"] };
             }
         }
 
-        // total count
-        const total = await prisma.billboard.count({
-            where: baseWhere,
-        });
-
-        // fetch paginated results
-        const billboards = await prisma.billboard.findMany({
-            where: baseWhere,
-            include: {
-                company: true,
-                type: true,
-                items: { where: { state: "APPROVED" } },
-                lessorSupplier: true,
-                lessorType: true
-            },
-            skip,
-            take,
-            orderBy: { createdAt: "desc" },
-        });
+        const [total, billboards] = await prisma.$transaction([
+            prisma.billboard.count({ where }),
+            prisma.billboard.findMany({
+                where,
+                include: {
+                    company: true,
+                    type: true,
+                    city: true,
+                    area: true,
+                    displayBoard: true,
+                    structureType: true,
+                    lessorType: true,
+                    lessorSupplier: true,
+                    items: { where: { state: "APPROVED" } }
+                },
+                skip,
+                take,
+                orderBy: { createdAt: "desc" }
+            })
+        ]);
 
         return NextResponse.json(
             {
                 status: "success",
                 data: billboards,
-                total,
+                total
             },
             { status: 200 }
         );
 
     } catch (error) {
-        console.error("Erreur GET /api/billboard:", error);
+        console.error("Erreur GET /api/billboards:", error);
         return NextResponse.json(
             { status: "error", message: "Erreur lors de la récupération des panneaux publicitaires." },
             { status: 500 }
         );
     }
 }
-
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess("BILLBOARDS", "CREATE");

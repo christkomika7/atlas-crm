@@ -9,9 +9,10 @@ export const downloadComponentAsPDF = async (
         scale?: number;
         margin?: number;
         padding?: number;
+        headerText?: string; // Nouveau: texte du header
     } = {}
 ): Promise<void> => {
-    const { quality = 0.98, scale = 4, margin = 0, padding = 20 } = options;
+    const { quality = 0.98, scale = 4, margin = 0, padding = 20, headerText = '' } = options;
 
     try {
         const element = document.getElementById(elementId);
@@ -28,6 +29,7 @@ export const downloadComponentAsPDF = async (
         wrapper.style.width = `${A4_WIDTH_PX}px`;
         wrapper.style.minHeight = `${A4_HEIGHT_PX}px`;
         wrapper.style.padding = `${padding}px`;
+        wrapper.style.paddingBottom = '40px'; // Padding bottom ajouté
         wrapper.style.backgroundColor = '#ffffff';
         wrapper.style.boxSizing = 'border-box';
 
@@ -126,14 +128,38 @@ export const downloadComponentAsPDF = async (
 
         const imgWidth = A4_WIDTH_MM - (2 * margin);
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        const availableHeight = A4_HEIGHT_MM - (2 * margin);
+
+        // Hauteur disponible avec padding bottom de 40px (≈14mm) et espace pour footer (≈10mm)
+        const paddingBottomMM = 14;
+        const footerHeightMM = 10;
+        const headerHeightMM = 10; // Espace pour le header sur pages suivantes
+        const availableHeightFirstPage = A4_HEIGHT_MM - (2 * margin) - paddingBottomMM - footerHeightMM;
+        const availableHeightOtherPages = A4_HEIGHT_MM - (2 * margin) - paddingBottomMM - footerHeightMM - headerHeightMM;
 
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true, precision: 16 });
         const imgData = canvas.toDataURL('image/jpeg', quality);
 
-        if (imgHeight <= availableHeight) {
+        // Calculer le nombre total de pages
+        let totalPages = 1;
+        if (imgHeight > availableHeightFirstPage) {
+            let remainingAfterFirstPage = imgHeight - availableHeightFirstPage;
+            totalPages = 1 + Math.ceil(remainingAfterFirstPage / availableHeightOtherPages);
+        }
+
+        if (imgHeight <= availableHeightFirstPage) {
+            // Une seule page
             pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight, undefined, 'FAST');
+
+            // Footer centré
+            pdf.setFontSize(10);
+            pdf.setTextColor(100);
+            const footerText = `1/${totalPages}`;
+            const footerX = A4_WIDTH_MM / 2;
+            const footerY = A4_HEIGHT_MM - margin - 5;
+            pdf.text(footerText, footerX, footerY, { align: 'center' });
+
         } else {
+            // Plusieurs pages
             let remainingHeight = imgHeight;
             let currentPosition = 0;
             let pageNumber = 0;
@@ -141,9 +167,11 @@ export const downloadComponentAsPDF = async (
             while (remainingHeight > 0.5) {
                 if (pageNumber > 0) pdf.addPage();
 
-                const heightForThisPage = pageNumber === Math.floor(imgHeight / availableHeight)
-                    ? remainingHeight
-                    : availableHeight;
+                const isFirstPage = pageNumber === 0;
+                const availableHeight = isFirstPage ? availableHeightFirstPage : availableHeightOtherPages;
+                const contentStartY = isFirstPage ? margin : margin + headerHeightMM;
+
+                const heightForThisPage = Math.min(remainingHeight, availableHeight);
 
                 const sourceY = (currentPosition / imgHeight) * canvas.height;
                 const sourceHeight = Math.min((heightForThisPage / imgHeight) * canvas.height, canvas.height - sourceY);
@@ -156,8 +184,25 @@ export const downloadComponentAsPDF = async (
                 if (ctx) {
                     ctx.drawImage(canvas, 0, Math.floor(sourceY), canvas.width, Math.ceil(sourceHeight), 0, 0, canvas.width, Math.ceil(sourceHeight));
                     const pageImgData = pageCanvas.toDataURL('image/jpeg', quality);
-                    pdf.addImage(pageImgData, 'JPEG', margin, margin, imgWidth, heightForThisPage, undefined, 'FAST');
+                    pdf.addImage(pageImgData, 'JPEG', margin, contentStartY, imgWidth, heightForThisPage, undefined, 'FAST');
                 }
+
+                // Header (seulement à partir de la page 2)
+                if (!isFirstPage && headerText) {
+                    pdf.setFontSize(10);
+                    pdf.setTextColor(100);
+                    const headerX = A4_WIDTH_MM / 2;
+                    const headerY = margin + 5;
+                    pdf.text(headerText, headerX, headerY, { align: 'center' });
+                }
+
+                // Footer centré avec numéro de page
+                pdf.setFontSize(10);
+                pdf.setTextColor(100);
+                const footerText = `${pageNumber + 1}/${totalPages}`;
+                const footerX = A4_WIDTH_MM / 2;
+                const footerY = A4_HEIGHT_MM - margin - 5;
+                pdf.text(footerText, footerX, footerY, { align: 'center' });
 
                 currentPosition += heightForThisPage;
                 remainingHeight -= heightForThisPage;
@@ -183,9 +228,10 @@ export const downloadInvisibleComponentAsPDF = async (
         scale?: number;
         margin?: number;
         padding?: number;
+        headerText?: string; // Nouveau: texte du header
     } = {}
 ): Promise<void> => {
-    const { quality = 0.98, scale = 4, margin = 0, padding = 20 } = options;
+    const { quality = 0.98, scale = 4, margin = 0, padding = 20, headerText = '' } = options;
 
     // Import dynamique de ReactDOM (nécessaire pour le rendu)
     const ReactDOM = await import('react-dom/client');
@@ -202,6 +248,7 @@ export const downloadInvisibleComponentAsPDF = async (
         container.style.width = `${A4_WIDTH_PX}px`;
         container.style.minHeight = `${A4_HEIGHT_PX}px`;
         container.style.padding = `${padding}px`;
+        container.style.paddingBottom = '40px'; // Padding bottom ajouté
         container.style.backgroundColor = '#ffffff';
         container.style.boxSizing = 'border-box';
 
@@ -303,14 +350,38 @@ export const downloadInvisibleComponentAsPDF = async (
 
         const imgWidth = A4_WIDTH_MM - (2 * margin);
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        const availableHeight = A4_HEIGHT_MM - (2 * margin);
+
+        // Hauteur disponible avec padding bottom de 40px (≈14mm) et espace pour footer (≈10mm)
+        const paddingBottomMM = 14;
+        const footerHeightMM = 10;
+        const headerHeightMM = 10; // Espace pour le header sur pages suivantes
+        const availableHeightFirstPage = A4_HEIGHT_MM - (2 * margin) - paddingBottomMM - footerHeightMM;
+        const availableHeightOtherPages = A4_HEIGHT_MM - (2 * margin) - paddingBottomMM - footerHeightMM - headerHeightMM;
 
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true, precision: 16 });
         const imgData = canvas.toDataURL('image/jpeg', quality);
 
-        if (imgHeight <= availableHeight) {
+        // Calculer le nombre total de pages
+        let totalPages = 1;
+        if (imgHeight > availableHeightFirstPage) {
+            let remainingAfterFirstPage = imgHeight - availableHeightFirstPage;
+            totalPages = 1 + Math.ceil(remainingAfterFirstPage / availableHeightOtherPages);
+        }
+
+        if (imgHeight <= availableHeightFirstPage) {
+            // Une seule page
             pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight, undefined, 'FAST');
+
+            // Footer centré
+            pdf.setFontSize(10);
+            pdf.setTextColor(100);
+            const footerText = `1/${totalPages}`;
+            const footerX = A4_WIDTH_MM / 2;
+            const footerY = A4_HEIGHT_MM - margin - 5;
+            pdf.text(footerText, footerX, footerY, { align: 'center' });
+
         } else {
+            // Plusieurs pages
             let remainingHeight = imgHeight;
             let currentPosition = 0;
             let pageNumber = 0;
@@ -318,9 +389,11 @@ export const downloadInvisibleComponentAsPDF = async (
             while (remainingHeight > 0.5) {
                 if (pageNumber > 0) pdf.addPage();
 
-                const heightForThisPage = pageNumber === Math.floor(imgHeight / availableHeight)
-                    ? remainingHeight
-                    : availableHeight;
+                const isFirstPage = pageNumber === 0;
+                const availableHeight = isFirstPage ? availableHeightFirstPage : availableHeightOtherPages;
+                const contentStartY = isFirstPage ? margin : margin + headerHeightMM;
+
+                const heightForThisPage = Math.min(remainingHeight, availableHeight);
 
                 const sourceY = (currentPosition / imgHeight) * canvas.height;
                 const sourceHeight = Math.min((heightForThisPage / imgHeight) * canvas.height, canvas.height - sourceY);
@@ -333,14 +406,31 @@ export const downloadInvisibleComponentAsPDF = async (
                 if (ctx) {
                     ctx.drawImage(canvas, 0, Math.floor(sourceY), canvas.width, Math.ceil(sourceHeight), 0, 0, canvas.width, Math.ceil(sourceHeight));
                     const pageImgData = pageCanvas.toDataURL('image/jpeg', quality);
-                    pdf.addImage(pageImgData, 'JPEG', margin, margin, imgWidth, heightForThisPage, undefined, 'FAST');
+                    pdf.addImage(pageImgData, 'JPEG', margin, contentStartY, imgWidth, heightForThisPage, undefined, 'FAST');
                 }
+
+                // Header (seulement à partir de la page 2)
+                if (!isFirstPage && headerText) {
+                    pdf.setFontSize(10);
+                    pdf.setTextColor(100);
+                    const headerX = A4_WIDTH_MM / 2;
+                    const headerY = margin + 5;
+                    pdf.text(headerText, headerX, headerY, { align: 'center' });
+                }
+
+                // Footer centré avec numéro de page
+                pdf.setFontSize(10);
+                pdf.setTextColor(100);
+                const footerText = `${pageNumber + 1}/${totalPages}`;
+                const footerX = A4_WIDTH_MM / 2;
+                const footerY = A4_HEIGHT_MM - margin - 5;
+                pdf.text(footerText, footerX, footerY, { align: 'center' });
 
                 currentPosition += heightForThisPage;
                 remainingHeight -= heightForThisPage;
                 pageNumber++;
 
-                if (pageNumber > 100) break;
+                if (pageNumber > 100) break; // sécurité
             }
         }
 
@@ -359,102 +449,224 @@ export const renderComponentToPDF = async (
         scale?: number;
         margin?: number;
         padding?: number;
+        headerText?: string; // Nouveau: texte du header
     } = {}
 ): Promise<ArrayBuffer> => {
-    const { quality = 0.98, scale = 4, margin = 0, padding = 20 } = options;
+    const { quality = 0.98, scale = 4, margin = 0, padding = 20, headerText = '' } = options;
     const ReactDOM = await import("react-dom/client");
 
-    const A4_WIDTH_PX = 794;
-    const A4_HEIGHT_PX = 1123;
+    try {
+        const A4_WIDTH_PX = 794;
+        const A4_HEIGHT_PX = 1123;
 
-    const container = document.createElement("div");
-    container.style.position = "absolute";
-    container.style.left = "-9999px";
-    container.style.width = `${A4_WIDTH_PX}px`;
-    container.style.minHeight = `${A4_HEIGHT_PX}px`;
-    container.style.padding = `${padding}px`;
-    container.style.backgroundColor = "#fff";
-    container.style.boxSizing = "border-box";
-    document.body.appendChild(container);
+        const container = document.createElement("div");
+        container.style.position = "absolute";
+        container.style.left = "-9999px";
+        container.style.top = "0";
+        container.style.width = `${A4_WIDTH_PX}px`;
+        container.style.minHeight = `${A4_HEIGHT_PX}px`;
+        container.style.padding = `${padding}px`;
+        container.style.paddingBottom = '40px'; // Padding bottom ajouté
+        container.style.backgroundColor = "#ffffff";
+        container.style.boxSizing = "border-box";
+        document.body.appendChild(container);
 
-    const root = ReactDOM.createRoot(container);
-    await new Promise<void>((resolve) => {
-        root.render(component as React.ReactElement);
-        setTimeout(resolve, 500);
-    });
+        const root = ReactDOM.createRoot(container);
+        await new Promise<void>((resolve) => {
+            root.render(component as React.ReactElement);
+            setTimeout(resolve, 500);
+        });
 
-    await document.fonts.ready;
-    await new Promise((res) => setTimeout(res, 200));
+        await document.fonts.ready;
+        await new Promise((res) => setTimeout(res, 300));
 
-    const canvas = await html2canvas(container, {
-        scale,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        width: A4_WIDTH_PX,
-        height: container.scrollHeight,
-        windowWidth: A4_WIDTH_PX,
-        windowHeight: container.scrollHeight,
-    });
+        // Fonction pour forcer recalcul des styles
+        const forceStyleRecalculation = (el: HTMLElement) => {
+            const allElements = [el, ...Array.from(el.querySelectorAll('*'))] as HTMLElement[];
 
-    root.unmount();
-    document.body.removeChild(container);
+            allElements.forEach((element) => {
+                const computed = window.getComputedStyle(element);
 
-    const A4_WIDTH_MM = 210;
-    const A4_HEIGHT_MM = 297;
-    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+                // Espacements négatifs Tailwind
+                const classList = Array.from(element.parentElement?.classList || []);
+                const hasNegativeSpaceY = classList.some(cls => cls.startsWith('-space-y-'));
+                const hasNegativeSpaceX = classList.some(cls => cls.startsWith('-space-x-'));
 
-    const imgWidth = A4_WIDTH_MM - 2 * margin;
-    const ratio = imgWidth / canvas.width;
-    const availableHeight = A4_HEIGHT_MM - 2 * margin;
-    const imgHeight = canvas.height * ratio;
+                if (hasNegativeSpaceY || hasNegativeSpaceX) {
+                    const children = Array.from(element.parentElement?.children || []) as HTMLElement[];
+                    children.forEach((child, index) => {
+                        if (index === children.length - 1) return;
 
-    const imgData = canvas.toDataURL("image/jpeg", quality);
+                        if (hasNegativeSpaceY) {
+                            const marginTop = window.getComputedStyle(child).marginTop;
+                            if (marginTop) child.style.marginTop = marginTop;
+                            const marginBottom = window.getComputedStyle(child).marginBottom;
+                            if (marginBottom) child.style.marginBottom = marginBottom;
+                        }
+                        if (hasNegativeSpaceX) {
+                            const marginLeft = window.getComputedStyle(child).marginLeft;
+                            if (marginLeft) child.style.marginLeft = marginLeft;
+                            const marginRight = window.getComputedStyle(child).marginRight;
+                            if (marginRight) child.style.marginRight = marginRight;
+                        }
+                    });
+                }
 
-    if (imgHeight <= availableHeight) {
-        pdf.addImage(imgData, "JPEG", margin, margin, imgWidth, imgHeight);
-    } else {
-        // Pagination améliorée
-        const pageHeightPx = Math.floor(availableHeight / ratio);
-        const totalPages = Math.ceil(canvas.height / pageHeightPx);
+                // Transformations
+                if (computed.transform && computed.transform !== 'none') {
+                    element.style.transform = computed.transform;
+                    element.style.willChange = 'transform';
+                }
 
-        for (let page = 0; page < totalPages; page++) {
-            const yOffset = page * pageHeightPx;
-            const remainingHeight = canvas.height - yOffset;
+                // Styles généraux
+                ['marginTop', 'marginBottom', 'marginLeft', 'marginRight',
+                    'position', 'top', 'right', 'bottom', 'left', 'display',
+                    'flexDirection', 'flexWrap', 'justifyContent', 'alignItems',
+                    'backgroundColor', 'overflow', 'opacity', 'width', 'height',
+                    'gap', 'rowGap', 'columnGap', 'zIndex'].forEach((prop) => {
+                        const val = (computed as any)[prop];
+                        if (val && val !== 'auto' && val !== '0px' && val !== '1' && val !== 'normal') {
+                            (element.style as any)[prop] = val;
+                        }
+                    });
+            });
+        };
 
-            // Ne créer une page que s'il y a du contenu
-            if (remainingHeight <= 0) break;
+        forceStyleRecalculation(container);
+        await new Promise(res => setTimeout(res, 200));
 
-            const currentPageHeight = Math.min(pageHeightPx, remainingHeight);
-
-            // Éviter les pages avec très peu de contenu (moins de 5% de la hauteur)
-            if (currentPageHeight < pageHeightPx * 0.05 && page > 0) break;
-
-            const pageCanvas = document.createElement("canvas");
-            pageCanvas.width = canvas.width;
-            pageCanvas.height = currentPageHeight;
-
-            const ctx = pageCanvas.getContext("2d");
-            if (ctx) {
-                ctx.drawImage(
-                    canvas,
-                    0,
-                    yOffset,
-                    canvas.width,
-                    currentPageHeight,
-                    0,
-                    0,
-                    canvas.width,
-                    currentPageHeight
-                );
+        const canvas = await html2canvas(container, {
+            scale,
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: "#ffffff",
+            logging: false,
+            imageTimeout: 0,
+            removeContainer: false,
+            width: A4_WIDTH_PX,
+            height: container.scrollHeight,
+            windowWidth: A4_WIDTH_PX,
+            windowHeight: container.scrollHeight,
+            foreignObjectRendering: false,
+            onclone: (clonedDoc, clonedWrapper) => {
+                const clonedInner = clonedWrapper as HTMLElement;
+                if (clonedInner) forceStyleRecalculation(clonedInner);
             }
+        });
 
-            const pageImg = pageCanvas.toDataURL("image/jpeg", quality);
-            const pageImgHeightMM = currentPageHeight * ratio;
+        root.unmount();
+        document.body.removeChild(container);
 
-            if (page > 0) pdf.addPage();
-            pdf.addImage(pageImg, "JPEG", margin, margin, imgWidth, pageImgHeightMM);
+        const A4_WIDTH_MM = 210;
+        const A4_HEIGHT_MM = 297;
+
+        const imgWidth = A4_WIDTH_MM - (2 * margin);
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        // Hauteur disponible avec padding bottom de 40px (≈14mm) et espace pour footer (≈10mm)
+        const paddingBottomMM = 14;
+        const footerHeightMM = 10;
+        const headerHeightMM = 10; // Espace pour le header sur pages suivantes
+        const availableHeightFirstPage = A4_HEIGHT_MM - (2 * margin) - paddingBottomMM - footerHeightMM;
+        const availableHeightOtherPages = A4_HEIGHT_MM - (2 * margin) - paddingBottomMM - footerHeightMM - headerHeightMM;
+
+        const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4",
+            compress: true,
+            precision: 16
+        });
+
+        const imgData = canvas.toDataURL("image/jpeg", quality);
+
+        // Calculer le nombre total de pages
+        let totalPages = 1;
+        if (imgHeight > availableHeightFirstPage) {
+            let remainingAfterFirstPage = imgHeight - availableHeightFirstPage;
+            totalPages = 1 + Math.ceil(remainingAfterFirstPage / availableHeightOtherPages);
         }
-    }
 
-    return pdf.output("arraybuffer");
+        if (imgHeight <= availableHeightFirstPage) {
+            // Une seule page
+            pdf.addImage(imgData, "JPEG", margin, margin, imgWidth, imgHeight, undefined, 'FAST');
+
+            // Footer centré
+            pdf.setFontSize(10);
+            pdf.setTextColor(100);
+            const footerText = `1/${totalPages}`;
+            const footerX = A4_WIDTH_MM / 2;
+            const footerY = A4_HEIGHT_MM - margin - 5;
+            pdf.text(footerText, footerX, footerY, { align: 'center' });
+
+        } else {
+            // Plusieurs pages
+            let remainingHeight = imgHeight;
+            let currentPosition = 0;
+            let pageNumber = 0;
+
+            while (remainingHeight > 0.5) {
+                if (pageNumber > 0) pdf.addPage();
+
+                const isFirstPage = pageNumber === 0;
+                const availableHeight = isFirstPage ? availableHeightFirstPage : availableHeightOtherPages;
+                const contentStartY = isFirstPage ? margin : margin + headerHeightMM;
+
+                const heightForThisPage = Math.min(remainingHeight, availableHeight);
+
+                const sourceY = (currentPosition / imgHeight) * canvas.height;
+                const sourceHeight = Math.min((heightForThisPage / imgHeight) * canvas.height, canvas.height - sourceY);
+
+                const pageCanvas = document.createElement("canvas");
+                pageCanvas.width = canvas.width;
+                pageCanvas.height = Math.ceil(sourceHeight);
+
+                const ctx = pageCanvas.getContext("2d");
+                if (ctx) {
+                    ctx.drawImage(
+                        canvas,
+                        0,
+                        Math.floor(sourceY),
+                        canvas.width,
+                        Math.ceil(sourceHeight),
+                        0,
+                        0,
+                        canvas.width,
+                        Math.ceil(sourceHeight)
+                    );
+                    const pageImgData = pageCanvas.toDataURL("image/jpeg", quality);
+                    pdf.addImage(pageImgData, "JPEG", margin, contentStartY, imgWidth, heightForThisPage, undefined, 'FAST');
+                }
+
+                // Header (seulement à partir de la page 2)
+                if (!isFirstPage && headerText) {
+                    pdf.setFontSize(10);
+                    pdf.setTextColor(100);
+                    const headerX = A4_WIDTH_MM / 2;
+                    const headerY = margin + 5;
+                    pdf.text(headerText, headerX, headerY, { align: 'center' });
+                }
+
+                // Footer centré avec numéro de page
+                pdf.setFontSize(10);
+                pdf.setTextColor(100);
+                const footerText = `${pageNumber + 1}/${totalPages}`;
+                const footerX = A4_WIDTH_MM / 2;
+                const footerY = A4_HEIGHT_MM - margin - 5;
+                pdf.text(footerText, footerX, footerY, { align: 'center' });
+
+                currentPosition += heightForThisPage;
+                remainingHeight -= heightForThisPage;
+                pageNumber++;
+
+                if (pageNumber > 100) break; // sécurité
+            }
+        }
+
+        return pdf.output("arraybuffer");
+
+    } catch (error) {
+        console.error('Erreur lors de la génération du PDF:', error);
+        throw error;
+    }
 };

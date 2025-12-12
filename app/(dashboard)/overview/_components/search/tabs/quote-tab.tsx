@@ -43,7 +43,7 @@ export default function QuoteTab() {
   const { access: readAccess, loading } = useAccess("QUOTES", "READ");
 
   const { mutate, isPending, data } = useQueryAction<
-    { companyId: string; search?: string, skip?: number; take?: number },
+    { companyId: string; search?: string; skip?: number; take?: number },
     RequestResponse<QuoteType[]>
   >(getAllQuotes, () => { }, "quotes");
 
@@ -81,7 +81,6 @@ export default function QuoteTab() {
               <TableHead className="font-medium text-center">Client</TableHead>
               <TableHead className="font-medium text-center">Date</TableHead>
               <TableHead className="font-medium text-center">Montant</TableHead>
-              <TableHead className="font-medium text-center">Mises à jour</TableHead>
               <TableHead className="font-medium text-center">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -116,9 +115,6 @@ export default function QuoteTab() {
                   </TableCell>
                   <TableCell className="text-neutral-600 text-center">
                     {formatNumber(quote.amountType === "TTC" ? quote.totalTTC : quote.totalHT)} {currency}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    <span>-</span>
                   </TableCell>
                   <TableCell className="text-center">
                     <TableActionButton

@@ -20,6 +20,7 @@ import { record } from "zod";
 import Decimal from "decimal.js";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
+import { formatDateToDashModel } from "@/lib/date";
 
 export default function PreviewTab() {
   const param = useParams();
@@ -71,7 +72,7 @@ export default function PreviewTab() {
           onSuccess(data) {
             if (data.data) {
               setQuote(data.data);
-              setFilename(`Devis ${data.data.company.documentModel?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(data.data.quoteNumber, false)}.pdf`)
+              setFilename(`Devis ${data.data.company.documentModel?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(data.data.quoteNumber, false)}`)
             }
           },
         },
@@ -84,10 +85,9 @@ export default function PreviewTab() {
     router.push("/quote");
   }
 
-  if ((isGettingDocument && isGettingQuote) || loading) return <Spinner />;
 
   return (
-    <AccessContainer hasAccess={readAccess} resource="QUOTES" >
+    <AccessContainer hasAccess={readAccess} resource="QUOTES" loading={(isGettingDocument && isGettingQuote) || loading}>
       <ScrollArea className="pr-4 h-full">
         <div className="gap-8 grid grid-cols-[1.5fr_1fr] pt-4 h-full">
           <div className="space-y-4">
@@ -101,7 +101,8 @@ export default function PreviewTab() {
                       padding: 0,
                       margin: 0,
                       quality: 0.98,
-                      scale: 4
+                      scale: 4,
+                      headerText: `- ${filename.split(".pdf")[0]} - ${formatDateToDashModel(new Date(quote?.createdAt || new Date()))}`
                     })}
                   >
                     Télécharger

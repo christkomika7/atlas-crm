@@ -35,6 +35,7 @@ export default function ShareTab() {
   const companyId = useDataStore.use.currentCompany();
   const currency = useDataStore.use.currency();
   const [deliveryNote, setDeliverNote] = useState<DeliveryNoteType>();
+  const [filename, setFilename] = useState("");
 
   const param = useParams();
 
@@ -99,7 +100,8 @@ export default function ShareTab() {
 
               const emails = form.getValues().emails ?? [];
               setDeliverNote(deliveryNote);
-              form.setValue("emails", [...emails, deliveryNote.client.email])
+              form.setValue("emails", [...emails, deliveryNote.client.email]);
+              setFilename(`Bon de livraison ${data.data.company.documentModel?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(data.data.deliveryNoteNumber, false)}`)
             };
           },
         }
@@ -133,7 +135,8 @@ export default function ShareTab() {
             padding: 0,
             margin: 0,
             quality: 0.98,
-            scale: 4
+            scale: 4,
+            headerText: `- ${filename} - ${formatDateToDashModel(new Date(deliveryNote?.createdAt || new Date()))}`
           })
 
         const blob = new Blob([pdfData], { type: "application/pdf" });

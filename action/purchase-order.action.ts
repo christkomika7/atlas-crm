@@ -5,6 +5,7 @@ import { RequestResponse } from "@/types/api.types";
 import { RecurrenceType } from "@/types/invoice.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { toDateOnlyString } from "@/lib/date";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 
 export async function purchaseOrderNumber({ companyId }: { companyId: string }) {
     try {
@@ -23,14 +24,21 @@ export async function purchaseOrderNumber({ companyId }: { companyId: string }) 
     }
 }
 
-export async function all({ companyId, filter }: { companyId: string, filter: "unpaid" | "paid" }) {
+export async function all({ companyId, filter, search, skip = 0, take = DEFAULT_PAGE_SIZE, }: { companyId: string, filter?: "unpaid" | "paid", search?: string, skip?: number; take?: number; }) {
+    const params = new URLSearchParams();
+    if (filter) params.append("filter", filter);
+    if (search) params.append("search", search);
+
+    params.append("skip", String(skip));
+    params.append("take", String(take));
+
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/purchase-order/${companyId}/all${queryString ? `?${queryString}` : ""
+        }`;
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/purchase-order/${companyId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ data: filter }),
+        const response = await fetch(url, {
+            method: 'GET',
         });
 
         const res: RequestResponse<PurchaseOrderType[]> = await response.json()

@@ -507,7 +507,7 @@ export default function InvoiceTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <Combobox
-                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
+                        disabled={amountPaid.gt(0) || !modifyAccess}
                         isLoading={isGettingClients}
                         datas={
                           clientDatas?.data?.map((client) => ({
@@ -594,7 +594,7 @@ export default function InvoiceTab() {
                     <FormItem className="-space-y-2">
                       <FormControl>
                         <TextInput
-                          disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
+                          disabled={amountPaid.gt(0) || !modifyAccess}
                           type="file"
                           multiple={true}
                           design="float"
@@ -636,7 +636,7 @@ export default function InvoiceTab() {
                                       >
                                         <DownloadIcon className="w-4 h-4" />
                                       </span>{" "}
-                                      {!isPaid && modifyAccess &&
+                                      {(!amountPaid.gt(0) || !modifyAccess) &&
                                         <span
                                           onClick={() =>
                                             removeLastUpload(file)
@@ -672,7 +672,7 @@ export default function InvoiceTab() {
                     <FormControl>
                       <Combobox
                         isLoading={isGettingProject}
-                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
+                        disabled={amountPaid.gt(0) || !modifyAccess}
                         datas={projects.map(({ id, name, status }) => ({
                           id: id,
                           label: name,
@@ -711,7 +711,7 @@ export default function InvoiceTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <TextInput
-                        disabled={!(modifyAccess && (amountPaid.gt(0) || isPaid))}
+                        disabled={amountPaid.gt(0) || !modifyAccess}
                         design="text-area"
                         required={false}
                         label="Note"

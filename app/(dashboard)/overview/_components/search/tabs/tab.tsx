@@ -2,7 +2,7 @@ import { TabType } from "@/types/tab.types";
 import InvoiceTab from "./invoice-tab";
 import QuoteTab from "./quote-tab";
 import DeliveryNoteTab from "./delivery-note-tab";
-import CreditNoteTab from "./credit-note-tab";
+// import CreditNoteTab from "./credit-note-tab";
 import PurchaseOrderTab from "./purchase-order-tab";
 import ProjectTab from "./project-tab";
 import ClientTab from "./client-tab";
@@ -24,11 +24,11 @@ export const tabs: TabType[] = [
     title: "Delivery Notes",
     content: <DeliveryNoteTab />,
   },
-  {
-    id: 4,
-    title: "Credit Note",
-    content: <CreditNoteTab />,
-  },
+  // {
+  //   id: 4,
+  //   title: "Credit Note",
+  //   content: <CreditNoteTab />,
+  // },
   {
     id: 5,
     title: "Purchase Order",

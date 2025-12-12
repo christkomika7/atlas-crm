@@ -56,6 +56,8 @@ export async function PUT(req: NextRequest) {
   const id = getIdFromUrl(req.url, "last") as string;
   const formData = await req.formData();
 
+  const logo = formData.get("logo") as File | undefined;
+
   const data: DocumentSchemaType = {
     companyId: formData.get("company")?.toString() || "",
     quotes: {
@@ -78,7 +80,7 @@ export async function PUT(req: NextRequest) {
     secondaryColor: formData.get("secondaryColor") as string,
     position: formData.get("position")?.toString() || undefined,
     size: formData.get("size")?.toString() || undefined,
-    logo: formData.get("logo") as File,
+    logo: logo ? logo : undefined
   };
 
   const [companyExist, documentExist] = await prisma.$transaction([
@@ -99,6 +101,7 @@ export async function PUT(req: NextRequest) {
     documentSchema,
     data,
   ) as DocumentSchemaType;
+
 
   const folder = createFolder([companyExist.companyName, "logo"]);
   let savedPath = "";

@@ -35,6 +35,7 @@ export default function ShareTab() {
   const companyId = useDataStore.use.currentCompany();
   const currency = useDataStore.use.currency();
   const [quote, setQuote] = useState<QuoteType>();
+  const [filename, setFilename] = useState("");
 
   const param = useParams();
 
@@ -96,10 +97,10 @@ export default function ShareTab() {
           onSuccess(data) {
             if (data.data) {
               const quote = data.data;
-
               const emails = form.getValues().emails ?? [];
               setQuote(quote);
               form.setValue("emails", [...emails, quote.client.email])
+              setFilename(`Devis ${data.data.company.documentModel?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(data.data.quoteNumber, false)}`)
             };
           },
         }
@@ -133,7 +134,8 @@ export default function ShareTab() {
             padding: 0,
             margin: 0,
             quality: 0.98,
-            scale: 4
+            scale: 4,
+            headerText: `- ${filename} - ${formatDateToDashModel(new Date(quote?.createdAt || new Date()))}`
           })
 
         const blob = new Blob([pdfData], { type: "application/pdf" });

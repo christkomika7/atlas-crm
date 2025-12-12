@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { toDateOnlyString } from "@/lib/date";
 import { DeliveryNoteSchemaType, DeliveryNoteUpdateSchemaType } from "@/lib/zod/delivery-note.schema";
 import { RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
@@ -22,14 +23,25 @@ export async function deliveryNoteNumber({ companyId }: { companyId: string }) {
     }
 }
 
-export async function getAllDeliveryNote({ companyId, filter }: { companyId: string, filter: "complete" | "progress" }) {
+
+export async function getAllDeliveryNote({ companyId, filter, search, skip = 0, take = DEFAULT_PAGE_SIZE }:
+    { companyId: string, filter?: "complete" | "progress", search?: string, skip?: number; take?: number; }) {
+
+    const params = new URLSearchParams();
+    if (filter) params.append("filter", filter);
+    if (search) params.append("search", search);
+
+    params.append("skip", String(skip));
+    params.append("take", String(take));
+
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/delivery-note/${companyId}/all${queryString ? `?${queryString}` : ""
+        }`;
+
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/delivery-note/${companyId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ data: filter }),
+        const response = await fetch(url, {
+            method: 'GET',
         });
 
         const res: RequestResponse<DeliveryNoteType[]> = await response.json()

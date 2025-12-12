@@ -15,6 +15,7 @@ import {
   useEffect,
   forwardRef,
   useImperativeHandle,
+  useState,
 } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
@@ -28,6 +29,8 @@ import { paymentTerms } from "@/lib/data";
 import { formatNumber } from "@/lib/utils";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
+import { DEFAULT_PAGE_SIZE } from "@/config/constant";
+import Paginations from "@/components/paginations";
 
 type SuppliersTableProps = {
   selectedSupplierIds: string[];
@@ -41,11 +44,18 @@ export interface SuppliersTableRef {
 const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(
   ({ selectedSupplierIds, setSelectedSupplierIds }, ref) => {
     const id = useDataStore.use.currentCompany();
+    const [suppliers, setSuppliers] = useState<SupplierType[]>([]);
+
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+    const [totalItems, setTotalItems] = useState<number>(0);
+
+    const skip = (currentPage - 1) * pageSize;
 
     const { access: readAccess, loading } = useAccess("SUPPLIERS", "READ");
 
-    const { mutate, isPending, data } = useQueryAction<
-      { id: string },
+    const { mutate, isPending } = useQueryAction<
+      { id: string, skip?: number; take?: number },
       RequestResponse<SupplierType[]>
     >(all, () => { }, "suppliers");
 
@@ -56,8 +66,15 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(
     };
 
     const refreshSuppliers = () => {
-      if (id) {
-        mutate({ id });
+      if (id && readAccess) {
+        mutate({ id, skip, take: pageSize }, {
+          onSuccess(data) {
+            if (data.data) {
+              setSuppliers(data.data);
+              setTotalItems(data.total);
+            }
+          },
+        });
       }
     };
 
@@ -67,14 +84,12 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(
 
     useEffect(() => {
       refreshSuppliers();
-    }, [id]);
+    }, [id, readAccess, currentPage]);
 
     const isSelected = (id: string) => selectedSupplierIds.includes(id);
 
-    if (loading) return <Spinner />
-
     return (
-      <AccessContainer hasAccess={readAccess} resource="SUPPLIERS">
+      <AccessContainer hasAccess={readAccess} resource="SUPPLIERS" loading={loading}>
         <div className="border border-neutral-200 rounded-xl w-full">
           <Table>
             <TableHeader>
@@ -103,8 +118,8 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : data?.data && data.data.length > 0 ? (
-                data.data.map((supplier) => (
+              ) : suppliers.length > 0 ? (
+                suppliers.map((supplier) => (
                   <TableRow
                     key={supplier.id}
                     className={`h-16 transition-colors ${isSelected(supplier.id) ? "bg-neutral-100" : ""
@@ -177,6 +192,15 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(
               )}
             </TableBody>
           </Table>
+          <div className="flex justify-end p-4">
+            <Paginations
+              totalItems={totalItems}
+              pageSize={pageSize}
+              controlledPage={currentPage}
+              onPageChange={(page) => setCurrentPage(page)}
+              maxVisiblePages={DEFAULT_PAGE_SIZE}
+            />
+          </div>
         </div>
       </AccessContainer>
     );

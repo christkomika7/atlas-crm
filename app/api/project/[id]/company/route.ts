@@ -10,62 +10,86 @@ export async function GET(req: NextRequest) {
         return Response.json({
             state: "error",
             message: result.message,
-        }, { status: 403 });
+            data: []
+        }, { status: 200 });
     }
 
-    const companyId = getIdFromUrl(req.url, 2) as string;
+    const id = getIdFromUrl(req.url, 2) as string;
 
-    const filter = req.nextUrl.searchParams.get("filter")?.trim() ?? "";
+    if (!id) {
+        return NextResponse.json({
+            status: "error",
+            message: "Aucun projet trouvé.",
+        }, { status: 404 });
+    }
 
-    if (filter === "stop") {
-        const projects = await prisma.project.findMany({
-            where: {
-                companyId,
-                status: 'DONE'
-            },
-            include: { company: true, client: true }
-        });
+    const filterParam = req.nextUrl.searchParams.get("filter") ?? undefined;
+    const searchParam = req.nextUrl.searchParams.get("search") as string;
+
+    const MAX_TAKE = 200;
+    const DEFAULT_TAKE = 50;
+
+    const rawSkip = req.nextUrl.searchParams.get("skip");
+    const rawTake = req.nextUrl.searchParams.get("take");
+
+    const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
+
+    let take = DEFAULT_TAKE;
+    if (rawTake) {
+        const parsed = parseInt(rawTake, 10);
+        if (!Number.isNaN(parsed) && parsed > 0) {
+            take = Math.min(parsed, MAX_TAKE);
+        }
+    }
+
+    try {
+        let where: any = { companyId: id };
+
+        if (searchParam) {
+            const searchTerms = searchParam.split(/\s+/).filter(Boolean);
+
+            where.OR = searchTerms.flatMap((term: string) => [
+                { name: { contains: term, mode: "insensitive" } },
+                { projectInformation: { contains: term, mode: "insensitive" } },
+            ]);
+        }
+
+        if (filterParam === "stop") {
+            where.status = "DONE";
+        }
+
+        if (filterParam === "loading") {
+            where.status = { not: "DONE" };
+        }
+
+        const [total, projects] = await prisma.$transaction([
+            prisma.project.count({ where }),
+            prisma.project.findMany({
+                where,
+                include: {
+                    company: true,
+                    client: true
+                },
+                skip,
+                take,
+                orderBy: { createdAt: "desc" }
+            })
+        ]);
 
         return NextResponse.json(
             {
                 state: "success",
                 data: projects,
+                total
             },
             { status: 200 }
         );
-    }
 
-    if (filter === "loading") {
-        const projects = await prisma.project.findMany({
-            where: {
-                companyId, status: {
-                    not: 'DONE'
-                }
-            },
-            include: { company: true, client: true }
-        });
-
+    } catch (error) {
+        console.error("Erreur GET /api/projects:", error);
         return NextResponse.json(
-            {
-                state: "success",
-                data: projects,
-            },
-            { status: 200 }
+            { status: "error", message: "Erreur lors de la récupération des projets." },
+            { status: 500 }
         );
     }
-
-    const projects = await prisma.project.findMany({
-        where: {
-            companyId
-        },
-        include: { company: true, client: true }
-    });
-
-    return NextResponse.json(
-        {
-            state: "success",
-            data: projects,
-        },
-        { status: 200 }
-    );
 }

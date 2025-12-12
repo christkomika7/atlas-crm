@@ -46,60 +46,6 @@ export async function GET(req: NextRequest) {
   }, { status: 200 })
 }
 
-export async function POST(req: NextRequest) {
-  const result = await checkAccess("DELIVERY_NOTES", "READ");
-
-  if (!result.authorized) {
-    return Response.json({
-      status: "error",
-      message: result.message,
-      data: []
-    }, { status: 200 });
-  }
-
-
-  const id = getIdFromUrl(req.url, "last") as string;
-  const { data }: { data: "complete" | "progress" } = await req.json();
-
-  if (!id) {
-    return NextResponse.json({
-      status: "error",
-      message: "Aucun bon de livraison trouvé.",
-    }, { status: 404 });
-  }
-
-  const deliveryNotes = await prisma.deliveryNote.findMany({
-    where: {
-      companyId: id,
-      isCompleted: data === "complete" ? true : false
-    },
-    include: {
-      client: true,
-      project: true,
-      items: {
-        where: {
-          state: "IGNORE"
-        }
-      },
-      company: {
-        include: {
-          documentModel: true
-        }
-      }
-    },
-    orderBy: {
-      deliveryNoteNumber: "desc"
-    }
-  });
-
-  return NextResponse.json(
-    {
-      state: "success",
-      data: deliveryNotes,
-    },
-    { status: 200 }
-  );
-}
 
 export async function PUT(req: NextRequest) {
   const result = await checkAccess("DELIVERY_NOTES", "MODIFY");

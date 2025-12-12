@@ -44,55 +44,6 @@ export async function GET(req: NextRequest) {
   }, { status: 200 })
 }
 
-export async function POST(req: NextRequest) {
-  const result = await checkAccess("PURCHASE_ORDER", "READ");
-
-  if (!result.authorized) {
-    return Response.json({
-      status: "error",
-      message: result.message,
-      data: []
-    }, { status: 200 });
-  }
-
-  const id = getIdFromUrl(req.url, "last") as string;
-  const { data }: { data: "unpaid" | "paid" } = await req.json();
-
-  if (!id) {
-    return NextResponse.json({
-      status: "error",
-      message: "Aucun bon de commande trouvé.",
-    }, { status: 404 });
-  }
-
-  const purchaseOrders = await prisma.purchaseOrder.findMany({
-    where: {
-      companyId: id,
-      isPaid: data === "paid" ? true : false,
-    },
-    include: {
-      supplier: true,
-      project: true,
-      items: true,
-      company: {
-        include: {
-          documentModel: true
-        }
-      }
-    },
-    orderBy: {
-      purchaseOrderNumber: "desc"
-    }
-  });
-
-  return NextResponse.json(
-    {
-      state: "success",
-      data: purchaseOrders,
-    },
-    { status: 200 }
-  );
-}
 
 export async function PUT(req: NextRequest) {
   const result = await checkAccess("PURCHASE_ORDER", "MODIFY");

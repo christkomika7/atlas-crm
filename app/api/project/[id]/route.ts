@@ -103,7 +103,6 @@ export async function PUT(req: NextRequest) {
 
     const savedPaths = await updateFiles({ folder, outdatedData: project, updatedData: data, files })
 
-    // 🛠 Construction dynamique de l’objet de mise à jour
     const updateData: Prisma.ProjectUpdateInput = {
         name: data.projectName,
         deadline: data.deadline,

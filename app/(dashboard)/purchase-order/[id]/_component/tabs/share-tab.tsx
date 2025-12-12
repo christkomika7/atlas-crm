@@ -38,6 +38,7 @@ export default function ShareTab() {
   const companyId = useDataStore.use.currentCompany();
   const currency = useDataStore.use.currency();
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrderType>();
+  const [filename, setFilename] = useState("");
 
   const param = useParams();
 
@@ -102,7 +103,10 @@ export default function ShareTab() {
               const emails = form.getValues().emails ?? [];
               setPurchaseOrder(purchaseOrder);
               form.setValue("emails", [...emails, purchaseOrder.supplier.email])
+              setFilename(`Bon de commande ${data.data.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(data.data.purchaseOrderNumber, false)}`)
+
             };
+
           },
         }
 
@@ -136,7 +140,8 @@ export default function ShareTab() {
             padding: 0,
             margin: 0,
             quality: 0.98,
-            scale: 4
+            scale: 4,
+            headerText: `- ${filename} - ${formatDateToDashModel(new Date(purchaseOrder?.createdAt || new Date()))}`
           })
         const blob = new Blob([pdfData], { type: "application/pdf" });
         form.setValue("blob", blob);

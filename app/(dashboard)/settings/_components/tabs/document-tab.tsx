@@ -58,6 +58,7 @@ export default function DocumentTab() {
     secondary: "#fef3c7",
   });
 
+
   const [dimension, setDimension] = useState<{
     size: string;
     position: string;
@@ -82,52 +83,55 @@ export default function DocumentTab() {
 
   useEffect(() => {
     if (idCompany && readAccess) {
-      mutateDocument(
-        { id: idCompany },
-        {
-          onSuccess(data) {
-            if (data.data) {
-              const doc = data.data;
-              setDocumentId(doc?.id || "");
-
-              setQuotes({
-                prefix: doc?.quotesPrefix || "",
-                notes: doc?.quotesInfo || "",
-              });
-              setInvoices({
-                prefix: doc?.invoicesPrefix || "",
-                notes: doc?.invoicesInfo || "",
-              });
-              setDeliveryNotes({
-                prefix: doc?.deliveryNotesPrefix || "",
-                notes: doc?.deliveryNotesInfo || "",
-              });
-              setPurchaseOrders({
-                prefix: doc?.purchaseOrderPrefix || "",
-                notes: doc?.purchaseOrderInfo || "",
-              });
-              setColors({
-                primary: doc!.primaryColor,
-                secondary: doc!.secondaryColor,
-              });
-
-              setLogo(doc?.logo);
-              setDimension({
-                size: doc?.size || "Medium",
-                position: doc?.position || "Center",
-              });
-            }
-          },
-        }
-      );
+      initDocument()
     }
   }, [idCompany, readAccess]);
+
+
+  function initDocument() {
+    mutateDocument(
+      { id: idCompany },
+      {
+        onSuccess(data) {
+          if (data.data) {
+            const doc = data.data;
+            setDocumentId(doc?.id || "");
+
+            setQuotes({
+              prefix: doc?.quotesPrefix || "",
+              notes: doc?.quotesInfo || "",
+            });
+            setInvoices({
+              prefix: doc?.invoicesPrefix || "",
+              notes: doc?.invoicesInfo || "",
+            });
+            setDeliveryNotes({
+              prefix: doc?.deliveryNotesPrefix || "",
+              notes: doc?.deliveryNotesInfo || "",
+            });
+            setPurchaseOrders({
+              prefix: doc?.purchaseOrderPrefix || "",
+              notes: doc?.purchaseOrderInfo || "",
+            });
+            setColors({
+              primary: doc!.primaryColor,
+              secondary: doc!.secondaryColor,
+            });
+
+            setLogo(doc?.logo);
+            setDimension({
+              size: doc?.size || "Medium",
+              position: doc?.position || "Center",
+            });
+          }
+        },
+      }
+    );
+  }
 
   useEffect(() => {
     getLogo()
   }, [logo])
-
-
 
   async function getLogo() {
     if (!logo) {
@@ -146,6 +150,8 @@ export default function DocumentTab() {
       setPreview(resolveImageSrc(logo) as string);
     }
   }
+
+
 
   function submit(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.preventDefault();
@@ -183,7 +189,11 @@ export default function DocumentTab() {
     }
 
     if (documentId) {
-      updateDocument({ ...data, id: documentId });
+      updateDocument({ ...data, id: documentId }, {
+        onSuccess() {
+          initDocument()
+        },
+      });
       return;
     }
     return toast.error("Aucun document trouvé.");

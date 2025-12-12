@@ -37,6 +37,7 @@ export default function ShareTab() {
   const companyId = useDataStore.use.currentCompany();
   const currency = useDataStore.use.currency();
   const [invoice, setInvoice] = useState<InvoiceType>();
+  const [filename, setFilename] = useState("");
 
   const param = useParams();
 
@@ -100,7 +101,9 @@ export default function ShareTab() {
               const invoice = data.data;
               const emails = form.getValues().emails ?? [];
               setInvoice(invoice);
-              form.setValue("emails", [...emails, invoice.client.email])
+              form.setValue("emails", [...emails, invoice.client.email]);
+              setFilename(`Facture ${data.data.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(data.data.invoiceNumber, false)}`)
+
             };
           },
         }
@@ -134,7 +137,8 @@ export default function ShareTab() {
             padding: 0,
             margin: 0,
             quality: 0.98,
-            scale: 4
+            scale: 4,
+            headerText: `- ${filename} - ${formatDateToDashModel(new Date(invoice?.createdAt || new Date()))}`
           })
         const blob = new Blob([pdfData], { type: "application/pdf" });
         form.setValue("blob", blob);
