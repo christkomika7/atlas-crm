@@ -1,5 +1,5 @@
 import { DIBURSMENT_CATEGORY, FISCAL_NATURE } from "@/config/constant";
-import { checkAccess } from "@/lib/access"
+import { checkAccess, sessionAccess } from "@/lib/access"
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { formatNumber } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess("TRANSACTION", ["CREATE"]);
+    const { isAdmin, userId } = await sessionAccess();
 
     if (!result.authorized) {
         return Response.json({
@@ -16,6 +17,14 @@ export async function POST(req: NextRequest) {
             message: result.message,
         }, { status: 403 });
     }
+
+    const user = await prisma.user.findUnique({ where: { id: userId as string } })
+
+    if (!user) return NextResponse.json({
+        state: "error",
+        message: "Utlisateur non trouvé."
+    }, { status: 400 });
+
     const res = await req.json();
 
     const data = parseData<DibursementSchemaType>(dibursementSchema, {
@@ -38,9 +47,10 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    const [category, nature] = await prisma.$transaction([
+    const [category, nature, source] = await prisma.$transaction([
         prisma.transactionCategory.findUnique({ where: { id: data.category } }),
         prisma.transactionNature.findUnique({ where: { id: data.nature } }),
+        prisma.source.findUnique({ where: { id: data.source } })
     ]);
 
     if (!category) {
@@ -88,6 +98,16 @@ export async function POST(req: NextRequest) {
     if (data.documentRef) {
         Object.assign(referenceDocument, {
             referencePurchaseOrder: { connect: { id: data.documentRef } },
+        });
+    }
+
+    if (data.partner && data.partner.length > 0) {
+        Object.assign(referenceDocument, {
+            suppliers: {
+                connect: [
+                    ...(data.partner?.map(partner => ({ id: partner })) || [])
+                ]
+            },
         });
     }
 
@@ -155,6 +175,49 @@ export async function POST(req: NextRequest) {
 
             const hasCompletedPayment = payee.add(newAmount.valueOf()).gte(total.minus(0.01));
 
+            if (!isAdmin) {
+                const newDibursement = await prisma.dibursementData.create({
+                    data: {
+                        date: data.date,
+                        category: data.category,
+                        nature: data.nature,
+                        amount: data.amount,
+                        amountType: data.amountType,
+                        periodStart: data.period?.from,
+                        periodEnd: data.period?.to,
+                        paymentType: data.paymentMode,
+                        checkNumber: data.checkNumber,
+                        purchaseOrder: data.documentRef,
+                        allocation: data.allocation,
+                        source: data.source,
+                        payOnBehalfOf: data.payOnBehalfOf,
+                        supplier: JSON.stringify(data.partner),
+                        project: data.project,
+                        fiscalObject: data.fiscalObject,
+                        description: data.description,
+                        comment: data.comment,
+                    }
+                });
+                await prisma.notification.create({
+                    data: {
+                        type: 'CONFIRM',
+                        for: 'DISBURSEMENT',
+                        message: `${user.name} a lancé un décaissement de ${formatNumber(data.amount)} ${companyExist.currency} en attente de validation depuis le compte ${source?.name}.`,
+                        dibursement: {
+                            connect: { id: newDibursement.id }
+                        },
+                        company: {
+                            connect: { id: data.companyId }
+                        }
+                    }
+                });
+
+                return NextResponse.json({
+                    status: "success",
+                    message: "Votre requête est en attente de validation.",
+                });
+            }
+
             const newPayment = await prisma.payment.create({
                 data: {
                     createdAt: data.date,
@@ -190,6 +253,50 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        if (!isAdmin) {
+            const newDibursement = await prisma.dibursementData.create({
+                data: {
+                    date: data.date,
+                    category: data.category,
+                    nature: data.nature,
+                    amount: data.amount,
+                    amountType: data.amountType,
+                    periodStart: data.period?.from,
+                    periodEnd: data.period?.to,
+                    paymentType: data.paymentMode,
+                    checkNumber: data.checkNumber,
+                    purchaseOrder: data.documentRef,
+                    allocation: data.allocation,
+                    source: data.source,
+                    payOnBehalfOf: data.payOnBehalfOf,
+                    supplier: JSON.stringify(data.partner),
+                    project: data.project,
+                    fiscalObject: data.fiscalObject,
+                    description: data.description,
+                    comment: data.comment,
+                }
+            });
+
+            await prisma.notification.create({
+                data: {
+                    type: 'CONFIRM',
+                    for: 'DISBURSEMENT',
+                    message: `${user.name} a lancé un décaissement de ${formatNumber(data.amount)} ${companyExist.currency} en attente de validation depuis le compte ${source?.name}.`,
+                    dibursement: {
+                        connect: { id: newDibursement.id }
+                    },
+                    company: {
+                        connect: { id: data.companyId }
+                    }
+                }
+            });
+
+            return NextResponse.json({
+                status: "success",
+                message: "Votre requête est en attente de validation.",
+            });
+        }
+
 
         if (paymentId) {
             Object.assign(referenceDocument, {
@@ -214,6 +321,20 @@ export async function POST(req: NextRequest) {
                 company: { connect: { id: data.companyId } },
                 ...referenceDocument,
             },
+        });
+
+        await prisma.notification.create({
+            data: {
+                type: 'ALERT',
+                for: 'DISBURSEMENT',
+                message: `${user.name} réalisé un décaissement de ${formatNumber(data.amount)} ${companyExist.currency} dans le compte ${source?.name}.`,
+                paymentDibursement: {
+                    connect: { id: createdDibursement.id }
+                },
+                company: {
+                    connect: { id: createdDibursement.companyId }
+                }
+            }
         });
 
         return NextResponse.json({

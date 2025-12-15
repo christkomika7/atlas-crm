@@ -1,15 +1,17 @@
-import { checkAccess } from "@/lib/access";
+import { INVOICE_PREFIX } from "@/config/constant";
+import { checkAccess, sessionAccess } from "@/lib/access";
 import { toUtcDateOnly } from "@/lib/date";
 import { $Enums } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { formatNumber, getIdFromUrl } from "@/lib/utils";
+import { formatNumber, generateAmaId, getIdFromUrl } from "@/lib/utils";
 import { invoicePaymentSchema, InvoicePaymentSchemaType } from "@/lib/zod/payment.schema";
 import Decimal from "decimal.js";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess("INVOICES", "MODIFY");
+    const { userId } = await sessionAccess();
 
     if (!result.authorized) {
         return Response.json({
@@ -17,6 +19,14 @@ export async function POST(req: NextRequest) {
             message: result.message,
         }, { status: 403 });
     }
+
+    const user = await prisma.user.findUnique({ where: { id: userId as string } })
+
+    if (!user) return NextResponse.json({
+        state: "error",
+        message: "Utlisateur non trouvé."
+    }, { status: 400 });
+
 
     const id = getIdFromUrl(req.url, 2) as string;
     const res = await req.json();
@@ -27,6 +37,7 @@ export async function POST(req: NextRequest) {
     }) as InvoicePaymentSchemaType;
 
     try {
+        let hasCompletedPayment = false;
         const { invoice, payment } = await prisma.$transaction(async (tx) => {
             const invoiceExist = await tx.invoice.findUnique({
                 where: { id },
@@ -66,7 +77,7 @@ export async function POST(req: NextRequest) {
                 );
             }
 
-            const hasCompletedPayment =
+            hasCompletedPayment =
                 data.isPaid || payee.add(newAmount.valueOf()).gte(total.minus(0.01));
 
             const payment = await tx.payment.create({
@@ -95,9 +106,6 @@ export async function POST(req: NextRequest) {
 
                 },
             });
-
-
-
             return { invoice, payment };
         });
 
@@ -224,6 +232,22 @@ export async function POST(req: NextRequest) {
                 }
             })
         ]);
+
+        await prisma.notification.create({
+            data: {
+                type: 'ALERT',
+                for: 'INVOICE',
+                message: hasCompletedPayment ?
+                    `${user.name} a réglé la facture n° ${invoice.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}.` :
+                    `${user.name} a réalisé un accompte de ${formatNumber(data.amount)} ${invoice.company.currency} pour la facture n° ${invoice.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}.`,
+                invoice: {
+                    connect: { id: invoice.id }
+                },
+                company: {
+                    connect: { id: invoice.companyId }
+                }
+            }
+        });
 
         return NextResponse.json(
             { state: "success", message: "Le paiement a été effectué avec succès." },

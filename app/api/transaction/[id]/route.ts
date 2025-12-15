@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
         ...commonSelect,
         periodStart: true,
         periodEnd: true,
-        supplier: true,
+        suppliers: true,
         client: true,
         allocation: { select: { id: true, name: true } },
         payOnBehalfOf: { select: { id: true, firstname: true, lastname: true } },

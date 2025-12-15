@@ -1,8 +1,392 @@
+import { $Enums } from '@/lib/generated/prisma';
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { toDateOnlyString } from "@/lib/date";
 import { CompanySchemaType, EditCompanySchemaType } from "@/lib/zod/company.schema";
 import { RequestResponse } from "@/types/api.types";
-import { CompanyType, FilterDataType } from "@/types/company.types";
+import { CompanyType, ReportType } from "@/types/company.types";
+
+import {
+    SalesByClientItem,
+    SalesByItemItem,
+    SalesByBillboardItem,
+    PaymentsByDateItem,
+    PaymentsByTypeItem,
+    PaymentsByClientItem,
+    ExpensesByCategoryItem,
+    ExpensesJournalItem,
+    DebtorAccountAgingItem,
+    PeriodType
+} from "@/types/company.types";
+
+export async function getSalesByClient({
+    companyId,
+    period,
+    start,
+    end
+}: {
+    companyId: string;
+    period?: PeriodType;
+    start?: Date;
+    end?: Date;
+}) {
+    const params = new URLSearchParams();
+    if (period) params.append("period", period);
+    if (start) params.append("start", toDateOnlyString(start));
+    if (end) params.append("end", toDateOnlyString(end));
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/${companyId}/sales-by-client${queryString ? `?${queryString}` : ""}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+        });
+        const res: RequestResponse<SalesByClientItem[]> = await response.json();
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getSalesByItem({
+    companyId,
+    period,
+    start,
+    end
+}: {
+    companyId: string;
+    period?: PeriodType;
+    start?: Date;
+    end?: Date;
+}) {
+    const params = new URLSearchParams();
+    if (period) params.append("period", period);
+    if (start) params.append("start", toDateOnlyString(start));
+    if (end) params.append("end", toDateOnlyString(end));
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/${companyId}/sales-by-item${queryString ? `?${queryString}` : ""}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+        });
+        const res: RequestResponse<SalesByItemItem[]> = await response.json();
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getSalesByBillboards({
+    companyId,
+    period,
+    start,
+    end
+}: {
+    companyId: string;
+    period?: PeriodType;
+    start?: Date;
+    end?: Date;
+}) {
+    const params = new URLSearchParams();
+    if (period) params.append("period", period);
+    if (start) params.append("start", toDateOnlyString(start));
+    if (end) params.append("end", toDateOnlyString(end));
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/${companyId}/sales-by-billboards${queryString ? `?${queryString}` : ""}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+        });
+        const res: RequestResponse<SalesByBillboardItem[]> = await response.json();
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getPaymentsByDate({
+    companyId,
+    period,
+    start,
+    end
+}: {
+    companyId: string;
+    period?: PeriodType;
+    start?: Date;
+    end?: Date;
+}) {
+    const params = new URLSearchParams();
+    if (period) params.append("period", period);
+    if (start) params.append("start", toDateOnlyString(start));
+    if (end) params.append("end", toDateOnlyString(end));
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/${companyId}/payments-by-date${queryString ? `?${queryString}` : ""}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+        });
+        const res: RequestResponse<PaymentsByDateItem[]> = await response.json();
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getPaymentsByType({
+    companyId,
+    period,
+    start,
+    end
+}: {
+    companyId: string;
+    period?: PeriodType;
+    start?: Date;
+    end?: Date;
+}) {
+    const params = new URLSearchParams();
+    if (period) params.append("period", period);
+    if (start) params.append("start", toDateOnlyString(start));
+    if (end) params.append("end", toDateOnlyString(end));
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/${companyId}/payments-by-type${queryString ? `?${queryString}` : ""}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+        });
+        const res: RequestResponse<PaymentsByTypeItem[]> = await response.json();
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getPaymentsByClients({
+    companyId,
+    period,
+    start,
+    end
+}: {
+    companyId: string;
+    period?: PeriodType;
+    start?: Date;
+    end?: Date;
+}) {
+    const params = new URLSearchParams();
+    if (period) params.append("period", period);
+    if (start) params.append("start", toDateOnlyString(start));
+    if (end) params.append("end", toDateOnlyString(end));
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/${companyId}/payments-by-clients${queryString ? `?${queryString}` : ""}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+        });
+        const res: RequestResponse<PaymentsByClientItem[]> = await response.json();
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getExpensesByCategories({
+    companyId,
+    period,
+    start,
+    end
+}: {
+    companyId: string;
+    period?: PeriodType;
+    start?: Date;
+    end?: Date;
+}) {
+    const params = new URLSearchParams();
+    if (period) params.append("period", period);
+    if (start) params.append("start", toDateOnlyString(start));
+    if (end) params.append("end", toDateOnlyString(end));
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/${companyId}/expenses-by-categories${queryString ? `?${queryString}` : ""}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+        });
+        const res: RequestResponse<ExpensesByCategoryItem[]> = await response.json();
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getExpensesJournal({
+    companyId,
+    period,
+    start,
+    end
+}: {
+    companyId: string;
+    period?: PeriodType;
+    start?: Date;
+    end?: Date;
+}) {
+    const params = new URLSearchParams();
+    if (period) params.append("period", period);
+    if (start) params.append("start", toDateOnlyString(start));
+    if (end) params.append("end", toDateOnlyString(end));
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/${companyId}/expenses-journal${queryString ? `?${queryString}` : ""}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+        });
+        const res: RequestResponse<ExpensesJournalItem[]> = await response.json();
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getDebtorAccountAging({
+    companyId,
+    period,
+    start,
+    end
+}: {
+    companyId: string;
+    period?: PeriodType;
+    start?: Date;
+    end?: Date;
+}) {
+    const params = new URLSearchParams();
+    if (period) params.append("period", period);
+    if (start) params.append("start", toDateOnlyString(start));
+    if (end) params.append("end", toDateOnlyString(end));
+    const queryString = params.toString();
+
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/${companyId}/debtor-account-aging${queryString ? `?${queryString}` : ""}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+        });
+        const res: RequestResponse<DebtorAccountAgingItem[]> = await response.json();
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function exportToPdf({
+    datas,
+    report
+}: {
+    datas:
+    | SalesByClientItem[]
+    | SalesByItemItem[]
+    | SalesByBillboardItem[]
+    | PaymentsByDateItem[]
+    | PaymentsByTypeItem[]
+    | PaymentsByClientItem[]
+    | ExpensesByCategoryItem[]
+    | ExpensesJournalItem[]
+    | DebtorAccountAgingItem[];
+    report: ReportType;
+}) {
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/export`;
+
+    try {
+        // On envoie la requête pour générer le PDF côté serveur
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ datas, report }),
+        });
+
+        if (!response.ok) {
+            // Récupérer l'erreur côté serveur
+            const errRes = await response.json().catch(() => null);
+            throw new Error(errRes?.message || "Erreur lors de l'export PDF");
+        }
+
+        // Récupérer le PDF en blob
+        const blob = await response.blob();
+
+        // Extraire le nom du fichier depuis l'en-tête si disponible
+        const contentDisposition = response.headers.get("Content-Disposition");
+        let filename = crypto.randomUUID() + report + ".pdf";
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="?(.+)"?/);
+            if (match && match[1]) filename = match[1];
+        }
+
+        // Créer un lien de téléchargement côté client
+        const urlBlob = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = urlBlob;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+
+        window.URL.revokeObjectURL(urlBlob);
+        document.body.removeChild(a);
+
+        return { status: "success", message: "Fichier PDF téléchargé avec succès" };
+    } catch (error) {
+        console.error("Erreur dans exportToPdf:", error);
+        throw error;
+    }
+}
+
 
 export async function all(skip = 0, take = DEFAULT_PAGE_SIZE) {
     try {
@@ -24,28 +408,7 @@ export async function all(skip = 0, take = DEFAULT_PAGE_SIZE) {
 }
 
 
-export async function filterDatas({ companyId, reportType, period, start, end }: { companyId: string, reportType?: string, period?: string, start?: Date, end?: Date }) {
-    const params = new URLSearchParams();
-    if (reportType) params.append("reportType", reportType || "salesByClient");
-    if (period) params.append("period", period);
-    if (start) params.append("start", toDateOnlyString(start));
-    if (end) params.append("end", toDateOnlyString(end));
-    const queryString = params.toString();
 
-    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/${companyId}/filter${queryString ? `?${queryString}` : ""}`;
-    try {
-        const response = await fetch(url, {
-            method: 'GET',
-        });
-        const res: RequestResponse<FilterDataType[]> = await response.json()
-        if (!response.ok) {
-            throw new Error(res.message);
-        }
-        return res;
-    } catch (error) {
-        throw error;
-    }
-}
 
 export async function unique({ id }: { id: string }) {
     try {

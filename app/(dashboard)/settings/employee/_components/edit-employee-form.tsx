@@ -935,6 +935,57 @@ export default function EditEmployeeForm() {
                   </FormItem>
                 )}
               />
+              {/* Contracts */}
+              <FormField
+                control={form.control}
+                name="contract"
+                render={() => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <div className="grid grid-cols-[200px_80px_80px_80px]">
+                        <p className="font-medium text-sm">Contrat</p>
+                        <Controller
+                          name="contract.create"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="contract.edit"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                        <Controller
+                          name="contract.read"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center">
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </div>
+                          )}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               {/* Transactions */}
               <FormField
                 control={form.control}

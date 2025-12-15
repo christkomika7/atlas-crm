@@ -412,6 +412,8 @@ export const lights = [
     },
 ]
 
+
+
 export const reportTypes = [
     { id: 2, value: "salesByClient", label: "Ventes par client " },
     { id: 3, value: "salesByItem", label: "Ventes par produit|service" },

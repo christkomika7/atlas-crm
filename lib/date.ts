@@ -3,6 +3,7 @@ import { RentalPeriodType } from "@/types/data.type";
 import { Sale } from "@/types/item.type";
 import { isWithinInterval, parse, startOfDay, addDays as addDaysFNS, differenceInDays, isAfter, isBefore, format, addMonths, addYears } from "date-fns";
 import { fr } from "date-fns/locale/fr";
+import { paymentTerms } from "./data";
 
 type DateRange = {
     startDate?: Date;
@@ -275,5 +276,22 @@ export function getEndDate(start: Date, delay: RentalPeriodType) {
             return addYears(start, 5);
         default:
             return addMonths(start, 6);
+    }
+}
+
+export function dueDate(invoiceDate: Date, due: string): { color: string; text: string; value: number } {
+    const days = paymentTerms.find((p) => p.value === due)?.data ?? 0;
+    const start = new Date(invoiceDate);
+    const end = addDaysFNS(start, days);
+    const status = checkDeadline([start, end]);
+    if (status.isOutside) return {
+        color: "text-red-600",
+        text: "Expiré",
+        value: 0
+    }
+    return {
+        color: 'text-green-600',
+        text: `${status.daysLeft} jour${status.daysLeft > 1 ? 's' : ''}`,
+        value: status.daysLeft
     }
 }

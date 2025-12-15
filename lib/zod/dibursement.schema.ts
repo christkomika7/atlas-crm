@@ -13,7 +13,7 @@ export const dibursementSchema = z.object({
     }).optional(),
     project: z.string().optional(),
     fiscalObject: z.string().optional(),
-    partner: z.string().optional(),
+    partner: z.array(z.string()).optional(),
     amountType: z.enum(["HT", "TTC"], { message: "Le type de montant est requis." }),
     paymentMode: z.string({ error: "Le mode de paiement est requis." }),
     checkNumber: z.string().optional(),

@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { notifyAppointment } from "./cron/appointment";
 import { notifyRecurrence } from "./cron/recurrence";
 import { taskStatus } from "./cron/task-status";
+import { notifyDueInvoices } from "./cron/notification";
 
 export function startCrons() {
     // 🔹 Toutes les minutes (pour les notifications immédiates)
@@ -13,6 +14,7 @@ export function startCrons() {
     cron.schedule("0 0 * * *", async () => {
         await notifyRecurrence({ repeat: "day" });
         await taskStatus();
+        await notifyDueInvoices()
     });
 
     // 🔹 Toutes les semaines (chaque lundi à minuit)

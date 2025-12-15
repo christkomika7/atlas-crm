@@ -19,7 +19,6 @@ export default function InvoicePage() {
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
   const tab = useTabStore.use.tabs()["invoice-tab"];
 
-
   const invoiceTableRef = useRef<InvoiceTableRef>(null);
 
   const { access: createAccess } = useAccess("INVOICES", "CREATE");

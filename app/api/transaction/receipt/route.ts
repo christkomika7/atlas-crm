@@ -1,5 +1,5 @@
 import { RECEIPT_CATEGORY } from "@/config/constant";
-import { checkAccess } from "@/lib/access"
+import { checkAccess, sessionAccess } from "@/lib/access"
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { formatNumber } from "@/lib/utils";
@@ -9,13 +9,20 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess("TRANSACTION", ["CREATE"]);
-
+    const { userId } = await sessionAccess();
     if (!result.authorized) {
         return Response.json({
             state: "error",
             message: result.message,
         }, { status: 403 });
     }
+
+    const user = await prisma.user.findUnique({ where: { id: userId as string } })
+
+    if (!user) return NextResponse.json({
+        state: "error",
+        message: "Utlisateur non trouvé."
+    }, { status: 400 });
 
     const res = await req.json();
 
@@ -199,9 +206,26 @@ export async function POST(req: NextRequest) {
                     }
                 },
                 ...referenceDocument,
+            },
+            include: {
+                company: true,
+                source: true
             }
         });
 
+        await prisma.notification.create({
+            data: {
+                type: 'ALERT',
+                for: 'RECEIPT',
+                message: `${user.name} a réalisé un encaissement de ${formatNumber(data.amount)} ${createdReceipt.company.currency} dans le compte ${createdReceipt.source?.name}.`,
+                receipt: {
+                    connect: { id: createdReceipt.id }
+                },
+                company: {
+                    connect: { id: createdReceipt.companyId }
+                }
+            }
+        });
 
         return NextResponse.json({
             status: "success",

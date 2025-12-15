@@ -1,179 +1,273 @@
 "use client";
+
 import { Combobox } from "@/components/ui/combobox";
 import { periods, reportTypes } from "@/lib/data";
 import { useEffect, useState } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Button } from "@/components/ui/button";
-import { filterDatas } from "@/action/company.action";
 import { RequestResponse } from "@/types/api.types";
 import { useDataStore } from "@/stores/data.store";
-
-import useQueryAction from "@/hook/useQueryAction";
-import { FilterDataType } from "@/types/company.types";
-import Spinner from "@/components/ui/spinner";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDateToDashModel } from "@/lib/date";
-import { formatNumber } from "@/lib/utils";
-import SalesByClientChart from "../chart/sales-by-client-chart";
+import {
+  ReportType,
+  SalesByClientItem,
+  SalesByItemItem,
+  SalesByBillboardItem,
+  PaymentsByDateItem,
+  PaymentsByTypeItem,
+  PaymentsByClientItem,
+  ExpensesByCategoryItem,
+  ExpensesJournalItem,
+  DebtorAccountAgingItem,
+  PeriodType,
+} from "@/types/company.types";
 import { useAccess } from "@/hook/useAccess";
+import useQueryAction from "@/hook/useQueryAction";
 import AccessContainer from "@/components/errors/access-container";
+import ReportData from "./report-data";
+import {
+  getSalesByClient,
+  getSalesByItem,
+  getSalesByBillboards,
+  getPaymentsByDate,
+  getPaymentsByType,
+  getPaymentsByClients,
+  getExpensesByCategories,
+  getExpensesJournal,
+  getDebtorAccountAging,
+} from "@/action/company.action";
+import ExportButton from "../export-button";
 
 export default function ExportTab() {
   const companyId = useDataStore.use.currentCompany();
-  const currency = useDataStore.use.currency()
+  const currency = useDataStore.use.currency();
+
   const [filters, setFilters] = useState<{
-    reportType: string,
-    period: string,
-    start?: Date,
-    end?: Date
+    reportType: ReportType;
+    period: PeriodType | "";
+    start?: Date;
+    end?: Date;
   }>({
     reportType: "salesByClient",
     period: "",
     start: undefined,
-    end: undefined
+    end: undefined,
   });
-  const [datas, setDatas] = useState<FilterDataType[]>([]);
 
-  const { access: readAccess, loading } = useAccess("SETTING", "READ")
+  const [datas, setDatas] = useState<
+    | SalesByClientItem[]
+    | SalesByItemItem[]
+    | SalesByBillboardItem[]
+    | PaymentsByDateItem[]
+    | PaymentsByTypeItem[]
+    | PaymentsByClientItem[]
+    | ExpensesByCategoryItem[]
+    | ExpensesJournalItem[]
+    | DebtorAccountAgingItem[]
+  >([]);
+  const [ready, setReady] = useState(false);
 
-  const { mutate: mutateGetDatas, isPending: isGettingDatas } = useQueryAction<
-    { companyId: string, reportType?: string, period?: string, start?: Date, end?: Date },
-    RequestResponse<FilterDataType[]>
-  >(filterDatas, () => { }, "datas");
+  const { access: readAccess, loading } = useAccess("SETTING", "READ");
+
+  const { mutate: mutateSalesByClient, isPending: isLoadingSalesByClient } =
+    useQueryAction<
+      { companyId: string; period?: PeriodType; start?: Date; end?: Date },
+      RequestResponse<SalesByClientItem[]>
+    >(getSalesByClient, () => { }, "salesByClient");
+
+  const { mutate: mutateSalesByItem, isPending: isLoadingSalesByItem } =
+    useQueryAction<
+      { companyId: string; period?: PeriodType; start?: Date; end?: Date },
+      RequestResponse<SalesByItemItem[]>
+    >(getSalesByItem, () => { }, "salesByItem");
+
+  const {
+    mutate: mutateSalesByBillboards,
+    isPending: isLoadingSalesByBillboards,
+  } = useQueryAction<
+    { companyId: string; period?: PeriodType; start?: Date; end?: Date },
+    RequestResponse<SalesByBillboardItem[]>
+  >(getSalesByBillboards, () => { }, "salesByBillboards");
+
+  const { mutate: mutatePaymentsByDate, isPending: isLoadingPaymentsByDate } =
+    useQueryAction<
+      { companyId: string; period?: PeriodType; start?: Date; end?: Date },
+      RequestResponse<PaymentsByDateItem[]>
+    >(getPaymentsByDate, () => { }, "paymentsByDate");
+
+  const { mutate: mutatePaymentsByType, isPending: isLoadingPaymentsByType } =
+    useQueryAction<
+      { companyId: string; period?: PeriodType; start?: Date; end?: Date },
+      RequestResponse<PaymentsByTypeItem[]>
+    >(getPaymentsByType, () => { }, "paymentsByType");
+
+  const {
+    mutate: mutatePaymentsByClients,
+    isPending: isLoadingPaymentsByClients,
+  } = useQueryAction<
+    { companyId: string; period?: PeriodType; start?: Date; end?: Date },
+    RequestResponse<PaymentsByClientItem[]>
+  >(getPaymentsByClients, () => { }, "paymentsByClients");
+
+  const {
+    mutate: mutateExpensesByCategories,
+    isPending: isLoadingExpensesByCategories,
+  } = useQueryAction<
+    { companyId: string; period?: PeriodType; start?: Date; end?: Date },
+    RequestResponse<ExpensesByCategoryItem[]>
+  >(getExpensesByCategories, () => { }, "expensesByCategories");
+
+  const {
+    mutate: mutateExpensesJournal,
+    isPending: isLoadingExpensesJournal,
+  } = useQueryAction<
+    { companyId: string; period?: PeriodType; start?: Date; end?: Date },
+    RequestResponse<ExpensesJournalItem[]>
+  >(getExpensesJournal, () => { }, "expensesJournal");
+
+  const {
+    mutate: mutateDebtorAccountAging,
+    isPending: isLoadingDebtorAccountAging,
+  } = useQueryAction<
+    { companyId: string; period?: PeriodType; start?: Date; end?: Date },
+    RequestResponse<DebtorAccountAgingItem[]>
+  >(getDebtorAccountAging, () => { }, "debtorAccountAging");
+
+  const loadReportData = () => {
+    if (!companyId || !readAccess) return;
+
+    setReady(false);
+    setDatas([]);
+
+    const params = {
+      companyId,
+      period: filters.period || undefined,
+      start: filters.start,
+      end: filters.end,
+    };
+
+    const onSuccess = (res: RequestResponse<any>) => {
+      setDatas(res.data ?? []);
+      setReady(true);
+    };
+
+    const onError = () => {
+      setDatas([]);
+      setReady(true);
+    };
+
+    switch (filters.reportType) {
+      case "salesByClient":
+        mutateSalesByClient(params, { onSuccess, onError });
+        break;
+      case "salesByItem":
+        mutateSalesByItem(params, { onSuccess, onError });
+        break;
+      case "salesByBillboards":
+        mutateSalesByBillboards(params, { onSuccess, onError });
+        break;
+      case "paymentsByDate":
+        mutatePaymentsByDate(params, { onSuccess, onError });
+        break;
+      case "paymentsByType":
+        mutatePaymentsByType(params, { onSuccess, onError });
+        break;
+      case "paymentsByClients":
+        mutatePaymentsByClients(params, { onSuccess, onError });
+        break;
+      case "expensesByCategories":
+        mutateExpensesByCategories(params, { onSuccess, onError });
+        break;
+      case "expensesJournal":
+        mutateExpensesJournal(params, { onSuccess, onError });
+        break;
+      case "debtorAccountAging":
+        mutateDebtorAccountAging(params, { onSuccess, onError });
+        break;
+    }
+  };
 
   useEffect(() => {
-    if (companyId && readAccess) {
-      mutateGetDatas({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setDatas(data.data)
-          }
-        },
-      });
-    }
+    loadReportData();
+  }, [companyId, readAccess, filters]);
 
-  }, [companyId, readAccess])
-
-  useEffect(() => {
-    if (readAccess) {
-      const { reportType, period, start, end } = filters;
-      mutateGetDatas({ companyId, reportType, period, start, end }, {
-        onSuccess(data) {
-          if (data.data) {
-            setDatas(data.data)
-          }
-        },
-      });
-    }
-  }, [filters, readAccess])
-
-  if (loading) return <Spinner />
+  const isLoading =
+    isLoadingSalesByClient ||
+    isLoadingSalesByItem ||
+    isLoadingSalesByBillboards ||
+    isLoadingPaymentsByDate ||
+    isLoadingPaymentsByType ||
+    isLoadingPaymentsByClients ||
+    isLoadingExpensesByCategories ||
+    isLoadingExpensesJournal ||
+    isLoadingDebtorAccountAging;
 
   return (
-    <AccessContainer hasAccess={readAccess} resource="SETTING">
+    <AccessContainer hasAccess={readAccess} resource="SETTING" loading={loading}>
       <div className="space-y-4 pt-4">
         <div className="flex gap-2 flex-wrap justify-between items-center">
-          <div className="flex flex-wrap gap-2 ">
+          <div className="flex flex-wrap gap-2">
             <Combobox
               className="w-[300px]"
               datas={reportTypes}
               value={filters.reportType}
-              setValue={(e) => setFilters({ ...filters, reportType: String(e) })}
+              setValue={(e) =>
+                setFilters((p) => ({ ...p, reportType: e as ReportType }))
+              }
               placeholder="Type de rapport"
               searchMessage="Rechercher un type de rapport"
               noResultsMessage="Aucun type de rapport trouvé."
             />
+
             <Combobox
               className="w-[220px]"
               required={false}
               datas={periods}
               value={filters.period}
-              setValue={(e) => setFilters({ ...filters, period: String(e) })}
+              setValue={(e) =>
+                setFilters((p) => ({ ...p, period: e as PeriodType | "" }))
+              }
               placeholder="Période"
               searchMessage="Rechercher une période"
               noResultsMessage="Aucune période trouvée."
             />
+
             <DatePicker
               className="w-[160px]"
               label="Date de début"
               required={false}
               mode="single"
-              value={filters.start || undefined}
-              disabled={false}
-              onChange={(date) => setFilters({ ...filters, start: date as Date })}
+              value={filters.start}
+              onChange={(date) =>
+                setFilters((p) => ({ ...p, start: date as Date }))
+              }
             />
+
             <DatePicker
-              required={false}
               className="w-[160px]"
               label="Date de fin"
+              required={false}
               mode="single"
-              value={filters.end || undefined}
-              disabled={false}
-              onChange={(date) => setFilters({ ...filters, end: date as Date })}
+              value={filters.end}
+              onChange={(date) =>
+                setFilters((p) => ({ ...p, end: date as Date }))
+              }
             />
           </div>
-          <Button variant="inset-primary" className="max-w-[120px] !h-11" >Exporter</Button>
+          <ExportButton
+            report={filters.reportType}
+            datas={datas}
+            isLoading={isLoading}
+            ready={ready}
+          />
         </div>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <h2 className="font-semibold">Ventes par clients</h2>
-          </div>
-          {isGettingDatas ? <Spinner /> :
-            <SalesByClientChart />
-          }
-          <div className="border border-neutral-200 px-4 rounded-xl">
-            <Table>
-              <TableHeader>
-                <TableRow className="h-14">
 
-                  <TableHead className="font-medium text-center">
-                    Date
-                  </TableHead>
-                  <TableHead className="font-medium text-center">Client</TableHead>
-                  <TableHead className="font-medium text-center">Nombre de facture</TableHead>
-                  <TableHead className="font-medium text-center">Montant généré</TableHead>
-                  <TableHead className="font-medium text-center">Total payé</TableHead>
-                  <TableHead className="font-medium text-center">Due</TableHead>
-
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-
-                {isGettingDatas ? (
-                  <TableRow>
-                    <TableCell colSpan={6}>
-                      <div className="flex justify-center items-center py-6 w-full">
-                        <Spinner />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : datas.length > 0 ? (
-                  datas.map((data) => (
-                    <TableRow key={data.id} className="h-12">
-                      <TableCell className="text-center">{formatDateToDashModel(data.date)}</TableCell>
-                      <TableCell className="text-center">
-                        {data.name}
-                      </TableCell>
-                      <TableCell className="text-center">{data.count}</TableCell>
-                      <TableCell className="text-center">{formatNumber(data.totalGenerated)} {currency}</TableCell>
-                      <TableCell className="text-center">{formatNumber(data.totalPaid)} {currency}</TableCell>
-                      <TableCell className="text-center">{formatNumber(data.totalRemaining)} {currency}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="py-6 text-gray-500 text-sm text-center"
-                    >
-                      Aucune donnée trouvée.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+        <ReportData
+          report={filters.reportType}
+          datas={datas}
+          currency={currency}
+          isLoading={isLoading}
+          ready={ready}
+        />
       </div>
     </AccessContainer>
   );

@@ -1,5 +1,5 @@
 import { INVOICE_PREFIX, QUOTE_PREFIX } from "@/config/constant";
-import { checkAccess } from "@/lib/access";
+import { checkAccess, sessionAccess } from "@/lib/access";
 import { copyTo, createFolder, removePath } from "@/lib/file";
 import { $Enums } from "@/lib/generated/prisma";
 import prisma from "@/lib/prisma";
@@ -12,6 +12,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess("QUOTES", "CREATE");
+    const { userId } = await sessionAccess();
 
     if (!result.authorized) {
         return Response.json({
@@ -24,26 +25,35 @@ export async function POST(req: NextRequest) {
 
     const updatedItems = await req.json();
 
-    const quote = await prisma.quote.findUnique({
-        where: { id },
-        include: {
-            client: true,
-            productsServices: true,
-            billboards: true,
-            items: true,
-            project: true,
-            company: {
-                include: {
-                    documentModel: true
+    const [quote, user] = await prisma.$transaction([
+        prisma.quote.findUnique({
+            where: { id },
+            include: {
+                client: true,
+                productsServices: true,
+                billboards: true,
+                items: true,
+                project: true,
+                company: {
+                    include: {
+                        documentModel: true
+                    }
                 }
             }
-        }
-    });
+        }),
+        prisma.user.findUnique({ where: { id: userId as string } })
+    ]);
+
 
     if (!quote) return NextResponse.json({
         state: "error",
         message: "Aucun devis trouvé."
-    }, { status: 400 })
+    }, { status: 400 });
+
+    if (!user) return NextResponse.json({
+        state: "error",
+        message: "Utlisateur non trouvé."
+    }, { status: 400 });
 
     const lastQuote = await prisma.quote.findFirst({
         where: { companyId: quote.companyId },
@@ -202,7 +212,21 @@ export async function POST(req: NextRequest) {
                     isCompleted: true
                 }
             })
-        ])
+        ]);
+
+        await prisma.notification.create({
+            data: {
+                type: 'ALERT',
+                for: 'QUOTE',
+                message: `${user.name} a validé le devis n° ${quote.company.documentModel?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(quote.quoteNumber, false)}.`,
+                quote: {
+                    connect: { id: quote.id }
+                },
+                company: {
+                    connect: { id: quote.companyId }
+                }
+            }
+        });
 
         return NextResponse.json({
             status: "success",

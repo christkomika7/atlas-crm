@@ -85,13 +85,15 @@ export async function sessionAccess() {
     if (!data) {
         return {
             hasSession: false,
-            userId: null
+            userId: null,
+            isAdmin: false
         }
 
     }
 
     return {
         hasSession: true,
-        userId: data.user.id || data.session.userId
+        userId: data.user.id || data.session.userId,
+        isAdmin: data.user.role === "ADMIN"
     }
 }

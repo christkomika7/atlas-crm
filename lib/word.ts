@@ -1,8 +1,26 @@
 import { ContractLessorType, ContractType } from '@/types/contract-types';
-import { Document, Packer, Paragraph, TableRow, Table, PageBreak } from 'docx';
+import { Document, Packer, Paragraph, TableRow, Table, PageBreak, TextRun, TableCell } from 'docx';
 import { formatList, formatNumber } from './utils';
 import { cell, clientContractOwner, companyContractOwner, createBillboardParagraphs, createFooter, createHeader, createImagesTable, createText, createTitle, createTitleContent, lessorContractOwner } from './word-utils';
 import { formatDateToDashModel, getMonthsAndDaysDifference } from './date';
+import { writeFileSync } from "fs";
+import { convert } from "libreoffice-convert";
+import { promisify } from "util";
+import { ReportData } from '@/types/company.types';
+import {
+    SalesByClientItem,
+    SalesByItemItem,
+    SalesByBillboardItem,
+    PaymentsByDateItem,
+    PaymentsByTypeItem,
+    PaymentsByClientItem,
+    ExpensesByCategoryItem,
+    ExpensesJournalItem,
+    DebtorAccountAgingItem,
+} from "@/types/company.types";
+
+const convertAsync = promisify(convert);
+import path from "path";
 
 export async function generateClientContractDocument(contract: ContractType): Promise<Blob> {
     const doc = new Document({
@@ -1174,3 +1192,146 @@ export async function generateLessorContractDocument(contract: ContractLessorTyp
     return await Packer.toBlob(doc);
 }
 
+
+
+
+
+
+export async function generateReportWordAndPDF(datas: ReportData[], report: string) {
+    let columns: string[] = [];
+    let tableData: Record<string, any>[] = [];
+
+    switch (report) {
+        case "salesByClient":
+            columns = ['Date', 'Client', 'Nombre de factures', 'Montant généré', 'Total payé', 'Dû'];
+            tableData = (datas as unknown as SalesByClientItem[]).map(d => ({
+                Date: formatDateToDashModel(d.date),
+                Client: d.name,
+                'Nombre de factures': d.count,
+                'Montant généré': formatNumber(d.totalGenerated || 0),
+                'Total payé': formatNumber(d.totalPaid || 0),
+                'Dû': formatNumber(d.totalRemaining || 0),
+            }));
+            break;
+
+        case "salesByBillboards":
+            columns = ['Date', 'Panneau', 'Modèle', 'Nombre de facture', 'Montant généré', 'Total payé', 'Dû'];
+            tableData = (datas as unknown as SalesByBillboardItem[]).map(d => ({
+                Date: formatDateToDashModel(d.date),
+                Panneau: d.name,
+                Modèle: d.type,
+                'Nombre de facture': d.count,
+                'Montant généré': formatNumber(d.totalGenerated || 0),
+                'Total payé': formatNumber(d.totalPaid || 0),
+                'Dû': formatNumber(d.totalRemaining || 0),
+            }));
+            break;
+
+        case "salesByItem":
+            columns = ['Date', 'Produit | Service', 'Nombre de facture', 'Montant généré', 'Total payé', 'Dû'];
+            tableData = (datas as unknown as SalesByItemItem[]).map(d => ({
+                Date: formatDateToDashModel(d.date),
+                'Produit | Service': d.name,
+                'Nombre de facture': d.count,
+                'Montant généré': formatNumber(d.totalGenerated || 0),
+                'Total payé': formatNumber(d.totalPaid || 0),
+                'Dû': formatNumber(d.totalRemaining || 0),
+            }));
+            break;
+
+        case "paymentsByType":
+            columns = ['Date', 'Source', 'Montant'];
+            tableData = (datas as unknown as PaymentsByTypeItem[]).map(d => ({
+                Date: formatDateToDashModel(d.date),
+                Source: d.source,
+                Montant: formatNumber(d.amount || 0),
+            }));
+            break;
+
+        case "paymentsByClients":
+            columns = ['Client', 'Nombre d\'encaissement', 'Total payé'];
+            tableData = (datas as unknown as PaymentsByClientItem[]).map(d => ({
+                Client: d.client,
+                'Nombre d\'encaissement': d.count,
+                'Total payé': formatNumber(d.totalPaid || 0),
+            }));
+            break;
+
+        case "expensesJournal":
+            columns = ['Date', 'Source', 'Montant'];
+            tableData = (datas as unknown as ExpensesJournalItem[]).map(d => ({
+                Date: formatDateToDashModel(d.date),
+                Source: d.source,
+                Montant: formatNumber(d.amount || 0),
+            }));
+            break;
+
+        case "expensesByCategories":
+            columns = ['Date', 'Catégorie', 'Montant total'];
+            tableData = (datas as unknown as ExpensesByCategoryItem[]).map(d => ({
+                Date: formatDateToDashModel(d.date),
+                Catégorie: d.category,
+                'Montant total': formatNumber(d.totalAmount || 0),
+            }));
+            break;
+
+        case "debtorAccountAging":
+            columns = ['Client', 'Total dû', 'Payable aujourd\'hui', '1-30 jours', '31-60 jours', '61-90 jours', '91+ jours'];
+            tableData = (datas as unknown as DebtorAccountAgingItem[]).map(d => ({
+                Client: d.client,
+                'Total dû': formatNumber(d.totalDue || 0),
+                'Payable aujourd\'hui': formatNumber(d.payableToday || 0),
+                '1-30 jours': formatNumber(d.delay1to30 || 0),
+                '31-60 jours': formatNumber(d.delay31to60 || 0),
+                '61-90 jours': formatNumber(d.delay61to90 || 0),
+                '91+ jours': formatNumber(d.delayOver91 || 0),
+            }));
+            break;
+
+        case "paymentsByDate":
+            columns = ['Date', 'Client', 'Montant encaissé'];
+            tableData = (datas as unknown as PaymentsByDateItem[]).map(d => ({
+                Date: formatDateToDashModel(d.date),
+                Client: d.client === "-" ? "Inconnu" : d.client,
+                'Montant encaissé': formatNumber(d.amount || 0),
+            }));
+            break;
+
+        default:
+            if (datas.length) {
+                columns = Object.keys(datas[0]);
+                tableData = datas as any[];
+            }
+    }
+
+    const doc = new Document({
+        sections: [
+            {
+                children: [
+                    new Paragraph({ children: [new TextRun({ text: report, bold: true, size: 32 })] }),
+                    new Paragraph({ text: "" }),
+                    new Table({
+                        rows: [
+                            new TableRow({
+                                children: columns.map(col => new TableCell({ children: [new Paragraph({ text: col })] })),
+                            }),
+                            ...tableData.map(row => new TableRow({
+                                children: columns.map(col => new TableCell({ children: [new Paragraph(String(row[col] ?? ""))] })),
+                            })),
+                        ],
+                    }),
+                ],
+            },
+        ],
+    });
+
+    const wordBuffer = await Packer.toBuffer(doc);
+    const wordPath = path.join(process.cwd(), `${report}.docx`);
+    writeFileSync(wordPath, wordBuffer);
+
+    const pdfBuffer = await convertAsync(wordBuffer, ".pdf", undefined);
+    const pdfPath = path.join(process.cwd(), `${report}.pdf`);
+    writeFileSync(pdfPath, pdfBuffer);
+
+    return { wordBuffer, pdfBuffer };
+}

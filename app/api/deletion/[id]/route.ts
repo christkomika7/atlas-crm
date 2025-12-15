@@ -277,11 +277,12 @@ export async function GET(req: NextRequest) {
             });
 
             let transformDisbursement: DeletionType[] = [];
+            let index = 1;
             for (const deletion of deletionDisbursement) {
                 const dibursement = await prisma.dibursement.findUnique({
                     where: { id: deletion.recordId },
                     include: {
-                        supplier: true,
+                        suppliers: true,
                         referencePurchaseOrder: true,
                         company: {
                             include: { documentModel: true }
@@ -296,13 +297,13 @@ export async function GET(req: NextRequest) {
                 transformDisbursement = [...transformDisbursement, {
                     id: deletion.id,
                     recordId: deletion.recordId,
-                    reference: `${dibursement.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(dibursement.referencePurchaseOrder?.purchaseOrderNumber || 0, false)}`,
+                    reference: dibursement.referencePurchaseOrder ? `${dibursement.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(dibursement.referencePurchaseOrder?.purchaseOrderNumber || 0, false)}` : index.toString(),
                     date: deletion.createdAt,
                     actionBy: deletion.user?.name || "Inconnu",
-                    forUser: `${dibursement.supplier?.companyName}`,
+                    forUser: `${dibursement.suppliers[0]?.companyName || "-"}`,
                     amount: `${formatNumber(new Decimal(dibursement.amount.toString()))} ${dibursement.company.currency}`
                 }];
-
+                index++
             }
 
             return NextResponse.json({

@@ -37,10 +37,11 @@ import { ProfileType } from "@/types/user.types";
 import { ProjectType } from "@/types/project.types";
 import { getallByCompany } from "@/action/project.action";
 import { SupplierType } from "@/types/supplier.types";
-import { all as getallClients } from "@/action/supplier.action";
+import { all as getallPartners } from "@/action/supplier.action";
 import { ADMINISTRATION_CATEGORY, DIBURSMENT_CATEGORY, FISCAL_NATURE, FISCAL_OBJECT, TRANSACTION_CATEGORIES } from "@/config/constant";
 import FiscalObjectModal from "@/components/modal/fiscal-object-modal";
 import { $Enums } from "@/lib/generated/prisma";
+import { MultipleSelect } from "@/components/ui/multi-select";
 
 type DibursementFormProps = {
   refreshTransaction: () => void
@@ -157,7 +158,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
     mutate: mutateGetPartners,
     isPending: isGettingPartners,
   } = useQueryAction<{ id: string }, RequestResponse<SupplierType[]>>(
-    getallClients,
+    getallPartners,
     () => { },
     "suppliers"
   );
@@ -613,21 +614,24 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
-                    <Combobox
-                      required={false}
+                    <MultipleSelect
+
                       isLoading={isGettingPartners}
-                      datas={partners.map(partners => ({
-                        id: partners.id,
-                        label: `${cutText(partners.firstname + " " + partners.lastname)} - ${partners.companyName}`,
-                        value: partners.id
+                      label="Partenaire"
+                      options={partners.map(partner => ({
+                        id: partner.id,
+                        label: `${cutText(partner.firstname + " " + partner.lastname)} - ${partner.companyName}`,
+                        value: partner.id
                       }))}
-                      value={field.value || ""}
-                      setValue={e => {
-                        field.onChange(e)
-                      }}
-                      placeholder="Partenaire"
-                      searchMessage="Rechercher un partenaire"
-                      noResultsMessage="Aucun partenaire trouvé."
+                      value={partners.map(partner =>
+                      ({
+                        id: partner.id,
+                        label: `${cutText(partner.firstname + " " + partner.lastname)} - ${partner.companyName}`,
+                        value: partner.id
+                      }))
+                        .filter(opt => field.value?.includes(opt.value))}
+                      onChange={opts => field.onChange(opts.map(opt => opt.value))}
+                      placeholder="Rechercher un partenaire"
                     />
                   </FormControl>
                   <FormMessage />

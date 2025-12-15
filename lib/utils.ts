@@ -105,7 +105,19 @@ export function calculatePrice(
   return finalPrice;
 }
 
+export function formatDecimal(value: Decimal | number | string): string {
+  try {
+    const decimal = new Decimal(value);
+    return decimal.isInteger()
+      ? decimal.toFixed(0)
+      : decimal.toString();
+  } catch {
+    return "0";
+  }
+}
+
 export function formatNumber(value: string | number | Decimal): string {
+  console.log({ type: typeof value })
   const str = value.toString().replace(/\s+/g, "");
 
   if (!/^-?\d+(\.\d+)?$/.test(str)) {

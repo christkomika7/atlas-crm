@@ -1,18 +1,27 @@
-import { checkAccess } from "@/lib/access"
+import { checkAccess, sessionAccess } from "@/lib/access"
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
+import { formatNumber } from "@/lib/utils";
 import { transferSchema, TransferSchemaType } from "@/lib/zod/transfert.schema";
 import Decimal from "decimal.js";
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess("TRANSACTION", ["CREATE"]);
+    const { isAdmin, userId } = await sessionAccess();
     if (!result.authorized) {
         return Response.json({
             state: "error",
             message: result.message,
         }, { status: 403 });
     }
+
+    const user = await prisma.user.findUnique({ where: { id: userId as string } })
+
+    if (!user) return NextResponse.json({
+        state: "error",
+        message: "Utlisateur non trouvé."
+    }, { status: 400 });
 
     const res = await req.json();
     const data = parseData<TransferSchemaType>(transferSchema, {
@@ -141,6 +150,47 @@ export async function POST(req: NextRequest) {
             });
         }
 
+
+        const [sourceA, sourceB] = await prisma.$transaction([
+            prisma.source.findUnique({ where: { id: data.origin } }),
+            prisma.source.findUnique({ where: { id: data.destination } }),
+        ]);
+
+        if (!isAdmin) {
+            const newDibursement = await prisma.dibursementData.create({
+                data: {
+                    date: data.date,
+                    amount: data.amount,
+                    description: data.description,
+                    comment: data.comment,
+                    category: category.id,
+                    nature: JSON.stringify([disbursementNature.id, receiptNature.id]),
+                    source: JSON.stringify([data.origin, data.destination]),
+                    amountType: "HT",
+                    paymentType: "withdrawal"
+                }
+            });
+
+            await prisma.notification.create({
+                data: {
+                    type: 'CONFIRM',
+                    for: 'TRANSFER',
+                    message: `${user.name} a lancé un transfert en attente de validation de ${formatNumber(data.amount)} ${companyExist.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.`,
+                    dibursement: {
+                        connect: { id: newDibursement.id }
+                    },
+                    company: {
+                        connect: { id: data.companyId }
+                    }
+                }
+            });
+
+            return NextResponse.json({
+                status: "success",
+                message: "Votre requête est en attente de validation.",
+            });
+        }
+
         const createdDisbursement = await prisma.dibursement.create({
             data: {
                 type: "DISBURSEMENT",
@@ -185,6 +235,17 @@ export async function POST(req: NextRequest) {
                 source: {
                     connect: { id: data.destination }
                 },
+                company: {
+                    connect: { id: data.companyId }
+                }
+            }
+        });
+
+        await prisma.notification.create({
+            data: {
+                type: 'ALERT',
+                for: 'TRANSFER',
+                message: `${user.name} a réalisé un transfert  de ${formatNumber(data.amount)} ${companyExist.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.`,
                 company: {
                     connect: { id: data.companyId }
                 }

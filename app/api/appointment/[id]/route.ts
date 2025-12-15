@@ -186,7 +186,7 @@ export async function PUT(req: NextRequest) {
 
     const id = getIdFromUrl(req.url, "last") as string;
 
-    const appointment = await checkData(prisma.appointment, { where: { id }, include: { company: true } }, "identifiant") as AppointmentType;
+    await checkData(prisma.appointment, { where: { id }, include: { company: true } }, "identifiant") as AppointmentType;
 
     const formData = await req.formData();
     const rawData: Record<string, string> = {};
@@ -223,8 +223,6 @@ export async function PUT(req: NextRequest) {
             message: "Aucun élément trouvé pour cet identifiant.",
         }, { status: 404 });
     }
-
-    const previousDocs = appointment.documents ?? [];
 
     const folder = createFolder([companyExist.companyName, "appointment", `${clientExist.firstname}_${clientExist.lastname}_----${appointmentExist?.path.split("_----")[1]}`]);
     let savedDocuments: string[] = await updateFiles({ folder: folder, outdatedData: { id: appointmentExist.id, path: appointmentExist.path || "", files: appointmentExist.documents }, updatedData: { id: data.id, lastUploadDocuments: data.lastUploadDocuments }, files: data.uploadDocuments ?? [] });

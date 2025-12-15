@@ -57,7 +57,9 @@ export async function GET(req: NextRequest) {
             id: invoice.id,
             type: 'Facture',
             amountType: invoice.amountType,
-            reference: `${invoice.company.documentModel?.invoicesPrefix ?? INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}`,
+            reference: `${invoice.company.documentModel?.invoicesPrefix || INVOICE_PREFIX
+                }-${generateAmaId(invoice.invoiceNumber, false)
+                } `,
             price: invoice.amountType === "TTC" ? invoice.totalTTC.toString() : invoice.totalHT.toString(),
             payee: new Decimal(invoice.amountType === "TTC" ? invoice.totalTTC.toString() : invoice.totalHT.toString()).minus(invoice.payee.toString()).toString(),
             currency: invoice.company.currency,
@@ -100,8 +102,8 @@ export async function GET(req: NextRequest) {
         const parsedPurchaseOrder = purchaseOrders.map(purchaseOrder => ({
             id: purchaseOrder.id,
             amountType: purchaseOrder.amountType,
-            type: cutText(`${purchaseOrder.supplier?.firstname} ${purchaseOrder.supplier?.lastname}`),
-            reference: `${purchaseOrder.company.documentModel?.purchaseOrderPrefix ?? PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrder.purchaseOrderNumber, false)}`,
+            type: cutText(`${purchaseOrder.supplier?.firstname} ${purchaseOrder.supplier?.lastname} `),
+            reference: `${purchaseOrder.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrder.purchaseOrderNumber, false)} `,
             price: purchaseOrder.amountType === "TTC" ? purchaseOrder.totalTTC.toString() : purchaseOrder.totalHT.toString(),
             payee: new Decimal(purchaseOrder.amountType === "TTC" ? purchaseOrder.totalTTC.toString() : purchaseOrder.totalHT.toString()).minus(purchaseOrder.payee.toString()).toString(),
             currency: purchaseOrder.company.currency,

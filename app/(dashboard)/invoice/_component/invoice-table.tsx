@@ -26,9 +26,7 @@ import { all } from "@/action/invoice.action";
 import { dropdownMenu } from "./table";
 import { cutText, formatNumber, generateAmaId } from "@/lib/utils";
 import { InvoiceType } from "@/types/invoice.types";
-import { paymentTerms } from "@/lib/data";
-import { addDays } from "date-fns";
-import { checkDeadline, formatDateToDashModel } from "@/lib/date";
+import { dueDate, formatDateToDashModel } from "@/lib/date";
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import Paginations from "@/components/paginations";
 import { useAccess } from "@/hook/useAccess";
@@ -93,21 +91,6 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
     }, [id, currentPage, readAccess]);
 
     const isSelected = (id: string) => selectedInvoiceIds.includes(id);
-
-    function dueDate(invoiceDate: Date, due: string) {
-      const days = paymentTerms.find((p) => p.value === due)?.data ?? 0;
-      const start = new Date(invoiceDate);
-      const end = addDays(start, days);
-      const status = checkDeadline([start, end]);
-      if (status.isOutside) return {
-        color: "text-red-600",
-        text: "Expiré"
-      }
-      return {
-        color: 'text-green-600',
-        text: `${status.daysLeft} jour${status.daysLeft > 1 ? 's' : ''}`
-      }
-    }
 
     return (
       <AccessContainer hasAccess={readAccess} resource="INVOICES" loading={loading} >
