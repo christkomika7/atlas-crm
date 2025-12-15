@@ -128,7 +128,6 @@ export default function Notifications() {
   }
 
   function updateNotificationAfterAction(notificationId: string, updatedNotification: NotificationType) {
-    console.log({ notificationId, updatedNotification })
     setNotifications(prev =>
       prev.map(notif =>
         notif.id === notificationId ? updatedNotification : notif

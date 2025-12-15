@@ -15,6 +15,7 @@ import { INVOICE_PREFIX, PURCHASE_ORDER_PREFIX } from "@/config/constant";
 import { website } from "@/config/website";
 import { notFound } from "next/navigation";
 import { compressToUTF16, decompressFromUTF16, } from "async-lz-string";
+import { acceptPayment } from "./data";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -104,6 +105,82 @@ export function calculatePrice(
 
   return finalPrice;
 }
+
+export function addTotalRow(
+  tableData: Record<string, any>[],
+  columns: string[],
+  currency: string
+): Record<string, any> {
+  const totalRow: Record<string, any> = {};
+
+  columns.forEach((col, index) => {
+    if (index === 0) {
+      totalRow[col] = "Total";
+      return;
+    }
+
+    let sum = 0;
+    let hasNumeric = false;
+    let hasCurrency = false;
+
+    for (const row of tableData) {
+      const value = row[col];
+      if (value == null) continue;
+
+      const valueStr = String(value);
+
+      // 🔎 Détecte la devise
+      if (valueStr.includes(currency)) {
+        hasCurrency = true;
+      }
+
+      let numeric: number | null = null;
+
+      // 🟢 CLEAN UNIQUEMENT SI devise présente
+      if (valueStr.includes(currency)) {
+        const cleaned = valueStr
+          .replace(/\n/g, " ")          // enlève retours ligne
+          .replace(currency, "")       // enlève la devise
+          .replace(/[^\d ]/g, "")      // garde chiffres + espaces
+          .trim();
+
+        if (cleaned !== "") {
+          const parsed = Number(cleaned.replace(/\s+/g, ""));
+          if (!Number.isNaN(parsed)) {
+            numeric = parsed;
+          }
+        }
+      }
+      // 🟡 Sinon, on accepte seulement les nombres purs
+      else if (!Number.isNaN(Number(valueStr))) {
+        numeric = Number(valueStr);
+      }
+
+      if (numeric !== null) {
+        sum += numeric;
+        hasNumeric = true;
+      }
+    }
+
+    // 🔚 Décision finale (inchangée dans l’esprit)
+    if (!hasNumeric) {
+      totalRow[col] = "";
+    } else if (hasCurrency) {
+      totalRow[col] = `${formatNumber(sum)} ${currency}`;
+    } else {
+      totalRow[col] = formatNumber(sum);
+    }
+  });
+
+  return totalRow;
+}
+
+
+export const getPaymentModeLabel = (value: string) => {
+  if (value.toLowerCase() === "withdrawal") return "Retrait";
+  return acceptPayment.find((accept) => accept.value === value)?.label || "-";
+}
+
 
 export function formatDecimal(value: Decimal | number | string): string {
   try {
@@ -896,3 +973,40 @@ export function toShortNum(value: number | string): string {
   return `${sign}${abs.toString()}`;
 }
 
+
+
+
+function extractNumber(value: any): number {
+  if (!value) return 0;
+  if (typeof value === "number") return value;
+
+  return Number(
+    String(value)
+      .replace(/[^\d.,-]/g, "")
+      .replace(/\s/g, "")
+      .replace(",", ".")
+  ) || 0;
+}
+
+export function addTotalRowWithCurrency(
+  tableData: Record<string, any>[],
+  columns: string[],
+  currency: string,
+  totalColumns: string[]
+) {
+  const totalRow: Record<string, any> = {};
+
+  columns.forEach(col => {
+    if (totalColumns.includes(col)) {
+      const sum = tableData.reduce(
+        (acc, row) => acc + extractNumber(row[col]),
+        0
+      );
+      totalRow[col] = `${formatNumber(sum)} ${currency}`;
+    } else {
+      totalRow[col] = col === columns[0] ? "TOTAL" : "";
+    }
+  });
+
+  return totalRow;
+}

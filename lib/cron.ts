@@ -2,7 +2,7 @@ import cron from "node-cron";
 import { notifyAppointment } from "./cron/appointment";
 import { notifyRecurrence } from "./cron/recurrence";
 import { taskStatus } from "./cron/task-status";
-import { notifyDueInvoices } from "./cron/notification";
+import { notifyDueInvoices, notifyRendezVous, notifyTask } from "./cron/notification";
 
 export function startCrons() {
     // 🔹 Toutes les minutes (pour les notifications immédiates)
@@ -10,11 +10,14 @@ export function startCrons() {
         await notifyAppointment();
     });
 
+
     // 🔹 Tous les jours à minuit
     cron.schedule("0 0 * * *", async () => {
         await notifyRecurrence({ repeat: "day" });
         await taskStatus();
         await notifyDueInvoices()
+        await notifyRendezVous()
+        await notifyTask()
     });
 
     // 🔹 Toutes les semaines (chaque lundi à minuit)

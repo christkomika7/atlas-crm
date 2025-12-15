@@ -326,7 +326,9 @@ export async function getDebtorAccountAging({
 
 export async function exportToPdf({
     datas,
-    report
+    filter,
+    companyId,
+    doc
 }: {
     datas:
     | SalesByClientItem[]
@@ -338,18 +340,24 @@ export async function exportToPdf({
     | ExpensesByCategoryItem[]
     | ExpensesJournalItem[]
     | DebtorAccountAgingItem[];
-    report: ReportType;
+    filter: {
+        reportType: ReportType;
+        period: PeriodType | "";
+        start?: Date;
+        end?: Date;
+    };
+    companyId: string;
+    doc: 'pdf' | 'word'
 }) {
-    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/export`;
 
     try {
         // On envoie la requête pour générer le PDF côté serveur
-        const response = await fetch(url, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/company/export`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ datas, report }),
+            body: JSON.stringify({ datas, filter, companyId, doc }),
         });
 
         if (!response.ok) {
@@ -358,29 +366,51 @@ export async function exportToPdf({
             throw new Error(errRes?.message || "Erreur lors de l'export PDF");
         }
 
-        // Récupérer le PDF en blob
-        const blob = await response.blob();
+        if (doc == 'pdf') {
+            // Récupérer le PDF en blob
+            const blob = await response.blob();
 
-        // Extraire le nom du fichier depuis l'en-tête si disponible
-        const contentDisposition = response.headers.get("Content-Disposition");
-        let filename = crypto.randomUUID() + report + ".pdf";
-        if (contentDisposition) {
-            const match = contentDisposition.match(/filename="?(.+)"?/);
-            if (match && match[1]) filename = match[1];
+            let filename = filter.reportType + ".pdf";
+
+            // Créer un lien de téléchargement côté client
+            const urlBlob = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = urlBlob;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+
+            window.URL.revokeObjectURL(urlBlob);
+            document.body.removeChild(a);
+
+            return { status: "success", message: "Fichier PDF téléchargé avec succès" };
+
         }
 
-        // Créer un lien de téléchargement côté client
-        const urlBlob = window.URL.createObjectURL(blob);
+        const contentDisposition = response.headers.get("Content-Disposition");
+        let filename = "export.docx";
+
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="(.+)"/);
+            if (match && match[1]) {
+                filename = match[1];
+            }
+        }
+
+        const blob = await response.blob();
+
+        const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = urlBlob;
+        a.href = url;
         a.download = filename;
         document.body.appendChild(a);
         a.click();
 
-        window.URL.revokeObjectURL(urlBlob);
+        window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
-        return { status: "success", message: "Fichier PDF téléchargé avec succès" };
+        return { status: "success", message: "Fichier DOCX téléchargé avec succès" };
+
     } catch (error) {
         console.error("Erreur dans exportToPdf:", error);
         throw error;

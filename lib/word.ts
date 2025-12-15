@@ -1,8 +1,8 @@
 import { ContractLessorType, ContractType } from '@/types/contract-types';
-import { Document, Packer, Paragraph, TableRow, Table, PageBreak, TextRun, TableCell } from 'docx';
-import { formatList, formatNumber } from './utils';
+import { Document, Packer, Paragraph, TableRow, Table, PageBreak, TextRun, TableCell, BorderStyle, HeightRule, VerticalAlign, AlignmentType, Footer, PageNumber, PageOrientation } from 'docx';
+import { addTotalRow, addTotalRowWithCurrency, formatList, formatNumber, getPaymentModeLabel } from './utils';
 import { cell, clientContractOwner, companyContractOwner, createBillboardParagraphs, createFooter, createHeader, createImagesTable, createText, createTitle, createTitleContent, lessorContractOwner } from './word-utils';
-import { formatDateToDashModel, getMonthsAndDaysDifference } from './date';
+import { formatDateToDashModel, getMonthsAndDaysDifference, period } from './date';
 import { writeFileSync } from "fs";
 import { convert } from "libreoffice-convert";
 import { promisify } from "util";
@@ -21,6 +21,7 @@ import {
 
 const convertAsync = promisify(convert);
 import path from "path";
+import { TransactionType } from '@/types/transaction.type';
 
 export async function generateClientContractDocument(contract: ContractType): Promise<Blob> {
     const doc = new Document({
@@ -671,7 +672,6 @@ tous les termes et conditions énoncés dans ce contrat.`, 600),
     return await Packer.toBlob(doc);
 }
 
-
 export async function generateLessorContractDocument(contract: ContractLessorType): Promise<Blob> {
     const doc = new Document({
         sections: [
@@ -1193,108 +1193,160 @@ export async function generateLessorContractDocument(contract: ContractLessorTyp
 }
 
 
-
-
-
-
-export async function generateReportWordAndPDF(datas: ReportData[], report: string) {
+export async function generateReportWordAndPDF(
+    datas: ReportData[],
+    report: string,
+    companyName: string,
+    currency: string,
+    currentDate: string
+) {
     let columns: string[] = [];
     let tableData: Record<string, any>[] = [];
+    let title: string = '';
+    let sentence = '';
+    let sum = 0;
 
     switch (report) {
         case "salesByClient":
-            columns = ['Date', 'Client', 'Nombre de factures', 'Montant généré', 'Total payé', 'Dû'];
+            title = 'Ventes par clients';
+            sum = (datas as unknown as SalesByClientItem[]).reduce((a, b) => a + Number(b.totalGenerated), 0);
+            sentence = `${datas.length} client${datas.length > 1 ? 's' : ''} ${formatNumber(sum)} ${currency}`;
+
+            columns = ['Date', 'Client', 'Nbr de factures', 'Montant généré', 'Total payé', 'Dû'];
             tableData = (datas as unknown as SalesByClientItem[]).map(d => ({
                 Date: formatDateToDashModel(d.date),
                 Client: d.name,
-                'Nombre de factures': d.count,
-                'Montant généré': formatNumber(d.totalGenerated || 0),
-                'Total payé': formatNumber(d.totalPaid || 0),
-                'Dû': formatNumber(d.totalRemaining || 0),
+                'Nbr de factures': d.count,
+                'Montant généré': `${formatNumber(d.totalGenerated || 0)} ${currency}`,
+                'Total payé': `${formatNumber(d.totalPaid || 0)} ${currency}`,
+                'Dû': `${formatNumber(d.totalRemaining || 0)} ${currency}`,
             }));
+            tableData.push(addTotalRow(tableData, columns, currency));
             break;
 
         case "salesByBillboards":
-            columns = ['Date', 'Panneau', 'Modèle', 'Nombre de facture', 'Montant généré', 'Total payé', 'Dû'];
+            title = 'Ventes par panneaux publicitaires';
+            sum = (datas as unknown as SalesByBillboardItem[]).reduce((a, b) => a + Number(b.totalGenerated), 0);
+            sentence = `${datas.length} panneau${datas.length > 1 ? 'x' : ''} publicitaire${datas.length > 1 ? 's' : ''} ${formatNumber(sum)} ${currency}`;
+
+
+            columns = ['Date', 'Panneau', 'Modèle', 'Nbr de facture', 'Montant généré', 'Total payé', 'Dû'];
             tableData = (datas as unknown as SalesByBillboardItem[]).map(d => ({
                 Date: formatDateToDashModel(d.date),
                 Panneau: d.name,
                 Modèle: d.type,
-                'Nombre de facture': d.count,
-                'Montant généré': formatNumber(d.totalGenerated || 0),
-                'Total payé': formatNumber(d.totalPaid || 0),
-                'Dû': formatNumber(d.totalRemaining || 0),
+                'Nbr de facture': d.count,
+                'Montant généré': `${formatNumber(d.totalGenerated || 0)} ${currency}`,
+                'Total payé': `${formatNumber(d.totalPaid || 0)} ${currency}`,
+                'Dû': `${formatNumber(d.totalRemaining || 0)} ${currency}`,
             }));
+            tableData.push(addTotalRow(tableData, columns, currency));
             break;
 
         case "salesByItem":
-            columns = ['Date', 'Produit | Service', 'Nombre de facture', 'Montant généré', 'Total payé', 'Dû'];
+            title = 'Ventes par articles';
+            sum = (datas as unknown as SalesByItemItem[]).reduce((a, b) => a + Number(b.totalGenerated), 0);
+            sentence = `${datas.length} article${datas.length > 1 ? 's' : ''} ${formatNumber(sum)} ${currency}`;
+
+
+            columns = ['Date', 'Produit | Service', 'Nbr de facture', 'Montant généré', 'Total payé', 'Dû'];
             tableData = (datas as unknown as SalesByItemItem[]).map(d => ({
                 Date: formatDateToDashModel(d.date),
                 'Produit | Service': d.name,
-                'Nombre de facture': d.count,
-                'Montant généré': formatNumber(d.totalGenerated || 0),
-                'Total payé': formatNumber(d.totalPaid || 0),
-                'Dû': formatNumber(d.totalRemaining || 0),
+                'Nbr de facture': d.count,
+                'Montant généré': `${formatNumber(d.totalGenerated || 0)} ${currency}`,
+                'Total payé': `${formatNumber(d.totalPaid || 0)} ${currency}`,
+                'Dû': `${formatNumber(d.totalRemaining || 0)} ${currency}`,
             }));
+            tableData.push(addTotalRow(tableData, columns, currency));
             break;
 
         case "paymentsByType":
+            title = 'Paiements par type';
+            sum = (datas as unknown as PaymentsByTypeItem[]).reduce((a, b) => a + Number(b.amount), 0);
+            sentence = `${datas.length} source${datas.length > 1 ? 's' : ''} ${formatNumber(sum)} ${currency}`;
+
             columns = ['Date', 'Source', 'Montant'];
             tableData = (datas as unknown as PaymentsByTypeItem[]).map(d => ({
                 Date: formatDateToDashModel(d.date),
                 Source: d.source,
-                Montant: formatNumber(d.amount || 0),
+                Montant: `${formatNumber(d.amount || 0)} ${currency}`,
             }));
+            tableData.push(addTotalRow(tableData, columns, currency));
             break;
 
         case "paymentsByClients":
-            columns = ['Client', 'Nombre d\'encaissement', 'Total payé'];
+            title = 'Paiements par client';
+            sum = (datas as unknown as PaymentsByClientItem[]).reduce((a, b) => a + Number(b.totalPaid), 0);
+            sentence = `${datas.length} client${datas.length > 1 ? 's' : ''} ${formatNumber(sum)} ${currency}`;
+
+            columns = ['Client', 'Nbr d\'encaissement', 'Total payé'];
             tableData = (datas as unknown as PaymentsByClientItem[]).map(d => ({
                 Client: d.client,
-                'Nombre d\'encaissement': d.count,
-                'Total payé': formatNumber(d.totalPaid || 0),
+                'Nbr d\'encaissement': d.count,
+                'Total payé': `${formatNumber(d.totalPaid || 0)} ${currency}`,
             }));
+            tableData.push(addTotalRow(tableData, columns, currency));
             break;
 
         case "expensesJournal":
+            title = 'Journal des dépenses';
+            sum = (datas as unknown as ExpensesJournalItem[]).reduce((a, b) => a + Number(b.amount), 0);
+            sentence = `${datas.length} source${datas.length > 1 ? 's' : ''} ${formatNumber(sum)} ${currency}`;
+
             columns = ['Date', 'Source', 'Montant'];
             tableData = (datas as unknown as ExpensesJournalItem[]).map(d => ({
                 Date: formatDateToDashModel(d.date),
                 Source: d.source,
-                Montant: formatNumber(d.amount || 0),
+                Montant: `${formatNumber(d.amount || 0)} ${currency}`,
             }));
+            tableData.push(addTotalRow(tableData, columns, currency));
             break;
 
         case "expensesByCategories":
+            title = 'Dépenses par catégorie';
+            sum = (datas as unknown as ExpensesByCategoryItem[]).reduce((a, b) => a + Number(b.totalAmount), 0);
+            sentence = `${datas.length} catégorie${datas.length > 1 ? 's' : ''} ${formatNumber(sum)} ${currency}`;
+
             columns = ['Date', 'Catégorie', 'Montant total'];
             tableData = (datas as unknown as ExpensesByCategoryItem[]).map(d => ({
                 Date: formatDateToDashModel(d.date),
                 Catégorie: d.category,
-                'Montant total': formatNumber(d.totalAmount || 0),
+                'Montant total': `${formatNumber(d.totalAmount || 0)} ${currency}`,
             }));
+            tableData.push(addTotalRow(tableData, columns, currency));
             break;
 
         case "debtorAccountAging":
+            title = 'Âge des comptes débiteurs';
+            sum = (datas as unknown as DebtorAccountAgingItem[]).reduce((a, b) => a + Number(b.totalDue), 0);
+            sentence = `${datas.length} catégorie${datas.length > 1 ? 's' : ''} ${formatNumber(sum)} ${currency}`;
+
             columns = ['Client', 'Total dû', 'Payable aujourd\'hui', '1-30 jours', '31-60 jours', '61-90 jours', '91+ jours'];
             tableData = (datas as unknown as DebtorAccountAgingItem[]).map(d => ({
                 Client: d.client,
-                'Total dû': formatNumber(d.totalDue || 0),
-                'Payable aujourd\'hui': formatNumber(d.payableToday || 0),
-                '1-30 jours': formatNumber(d.delay1to30 || 0),
-                '31-60 jours': formatNumber(d.delay31to60 || 0),
-                '61-90 jours': formatNumber(d.delay61to90 || 0),
-                '91+ jours': formatNumber(d.delayOver91 || 0),
+                'Total dû': `${formatNumber(d.totalDue || 0)} ${currency}`,
+                'Payable aujourd\'hui': `${formatNumber(d.payableToday || 0)} ${currency}`,
+                '1-30 jours': `${formatNumber(d.delay1to30 || 0)} ${currency}`,
+                '31-60 jours': `${formatNumber(d.delay31to60 || 0)} ${currency}`,
+                '61-90 jours': `${formatNumber(d.delay61to90 || 0)} ${currency}`,
+                '91+ jours': `${formatNumber(d.delayOver91 || 0)} ${currency}`,
             }));
+            tableData.push(addTotalRow(tableData, columns, currency));
             break;
 
         case "paymentsByDate":
+            title = 'Paiements par date';
+            sum = (datas as unknown as PaymentsByDateItem[]).reduce((a, b) => a + Number(b.amount), 0);
+            sentence = `${datas.length} catégorie${datas.length > 1 ? 's' : ''} ${formatNumber(sum)} ${currency}`;
+
             columns = ['Date', 'Client', 'Montant encaissé'];
             tableData = (datas as unknown as PaymentsByDateItem[]).map(d => ({
                 Date: formatDateToDashModel(d.date),
                 Client: d.client === "-" ? "Inconnu" : d.client,
-                'Montant encaissé': formatNumber(d.amount || 0),
+                'Montant encaissé': `${formatNumber(d.amount || 0)} ${currency}`,
             }));
+            tableData.push(addTotalRow(tableData, columns, currency));
             break;
 
         default:
@@ -1305,18 +1357,516 @@ export async function generateReportWordAndPDF(datas: ReportData[], report: stri
     }
 
     const doc = new Document({
+
         sections: [
             {
+                footers: {
+                    default: new Footer({
+                        children: [
+                            new Table({
+                                width: { size: 100, type: "pct" },
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({
+                                                children: [new Paragraph({
+                                                    children: [
+                                                        new TextRun({
+                                                            text: formatDateToDashModel(new Date()),
+                                                            size: 20,
+                                                            font: "Helvetica",
+                                                        }),
+                                                    ],
+                                                    alignment: AlignmentType.CENTER,
+                                                })],
+                                                borders: {
+                                                    top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                },
+                                            }),
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({
+                                                                text: `${title} - ${currentDate}`,
+                                                                size: 20,
+                                                                font: "Helvetica",
+                                                            }),
+                                                        ],
+                                                        alignment: AlignmentType.CENTER,
+                                                    }),
+                                                ],
+                                                borders: {
+                                                    top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                },
+                                            }),
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({
+                                                                children: [PageNumber.CURRENT, " sur ", PageNumber.TOTAL_PAGES],
+                                                                size: 20,
+                                                                font: "Helvetica",
+                                                            }),
+                                                        ],
+                                                        alignment: AlignmentType.RIGHT,
+                                                    }),
+                                                ],
+                                                borders: {
+                                                    top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                },
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                                borders: {
+                                    top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                    bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                    left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                    right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                },
+                            }),
+                        ],
+                    }),
+                },
+                properties: {
+                    page: {
+                        margin: {
+                            left: '10pt',
+                            right: '10pt'
+                        }
+                    }
+
+                },
                 children: [
-                    new Paragraph({ children: [new TextRun({ text: report, bold: true, size: 32 })] }),
-                    new Paragraph({ text: "" }),
+                    new Paragraph({
+                        alignment: 'center',
+                        spacing: { after: 60 },
+                        children: [new TextRun(
+                            {
+                                text: companyName, bold: true, size: 28, font: "Helvetica",
+
+                            }
+                        )]
+                    }),
+                    new Paragraph({
+                        alignment: 'center',
+                        spacing: { after: 60 },
+                        children: [new TextRun(
+                            {
+                                text: title, bold: true, size: 32, font: "Helvetica",
+
+                            }
+                        )]
+                    }),
+                    new Paragraph({
+                        alignment: 'center',
+                        spacing: { after: 240 },
+                        children: [new TextRun(
+                            {
+                                text: currentDate, size: 28, font: "Helvetica",
+
+
+                            }
+                        )]
+                    }),
+                    new Paragraph({
+                        alignment: 'center',
+                        spacing: { after: 60 },
+                        children: [new TextRun(
+                            {
+                                text: sentence, size: 24, font: "Helvetica",
+                            }
+                        )]
+                    }),
+                    new Paragraph({
+                        alignment: 'center',
+                        spacing: { after: 500 },
+                        children: [new TextRun(
+                            {
+                                text: `Informations correctes au ${new Date().toLocaleDateString('fr-FR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: 'numeric'
+                                })}`, size: 24, font: "Helvetica",
+
+                            }
+                        )]
+                    }),
                     new Table({
+                        width: { size: 100, type: "pct" },
                         rows: [
                             new TableRow({
-                                children: columns.map(col => new TableCell({ children: [new Paragraph({ text: col })] })),
+                                height: {
+                                    value: 600,
+                                    rule: HeightRule.AUTO,
+                                },
+                                children: columns.map(col => new TableCell({
+                                    verticalAlign: VerticalAlign.CENTER,
+                                    borders: {
+                                        top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                        left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                        right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                    },
+                                    children: [new Paragraph({
+                                        children: [
+                                            new TextRun({
+                                                text: col,
+                                                bold: true,
+                                                font: "Helvetica",
+                                                size: `10pt`,
+                                            }),
+                                        ],
+                                    })]
+                                }))
                             }),
                             ...tableData.map(row => new TableRow({
-                                children: columns.map(col => new TableCell({ children: [new Paragraph(String(row[col] ?? ""))] })),
+                                height: {
+                                    value: 600,
+                                    rule: HeightRule.AUTO,
+                                },
+                                children: columns.map(col => new TableCell(
+                                    {
+                                        verticalAlign: VerticalAlign.CENTER,
+                                        borders: {
+                                            top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                            left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                            right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                        },
+                                        children: [
+                                            new Paragraph({
+                                                children: [
+                                                    new TextRun({
+                                                        text: String(row[col] ?? ""),
+                                                        font: "Helvetica",
+                                                        size: `10pt`,
+                                                    }),
+                                                ]
+                                            }
+                                            )
+                                        ]
+
+                                    }
+                                )
+                                ),
+                            })),
+                        ],
+                    })
+
+                ],
+            },
+        ],
+    });
+
+    const word = await Packer.toBuffer(doc);
+    const wordBuffer = await Packer.toBlob(doc);
+
+    const pdfBuffer = await convertAsync(word, ".pdf", undefined);
+
+
+    return { wordBuffer, pdfBuffer };
+}
+
+
+export async function generateTransactionsWordAndPDF(
+    datas: TransactionType[],
+    companyName: string,
+    currency: string,
+    currentDate: string
+) {
+    const title = "Journal des transactions";
+    const sentence = `${datas.length} transaction${datas.length > 1 ? "s" : ""}`;
+
+    const columns = [
+        "Date",
+        "Mouvement",
+        "Catégorie",
+        "Nature",
+        "HT Montant",
+        "TTC Montant",
+        "Mode de paiement",
+        "Numéro de chèque",
+        "Référence du document",
+        "Allocation",
+        "Source",
+        "Période",
+        "Payé pour le compte de",
+        "Payeur",
+        "Commentaire",
+    ];
+
+    const tableData: Record<string, any>[] = datas.map(transaction => ({
+        Date: formatDateToDashModel(new Date(transaction.date)),
+        Mouvement: transaction.movement === "INFLOWS" ? "Entrée" : "Sortie",
+        Catégorie: transaction.category?.name || "-",
+        Nature: transaction.nature?.name || "-",
+        Description: transaction.description || "-",
+
+        "HT Montant":
+            transaction.amountType === "HT"
+                ? `${formatNumber(transaction.amount)} ${currency}`
+                : "",
+
+        "TTC Montant":
+            transaction.amountType === "TTC"
+                ? `${formatNumber(transaction.amount)} ${currency}`
+                : "",
+
+        "Mode de paiement": getPaymentModeLabel(transaction.paymentType),
+        "Numéro de chèque": transaction.checkNumber || "-",
+        "Référence du document": transaction.documentReference || "-",
+        Allocation: transaction.allocation?.name || "-",
+        Source: transaction.source?.name || "-",
+        Période: period(transaction.periodStart, transaction.periodEnd),
+
+        "Payé pour le compte de": transaction.payOnBehalfOf
+            ? `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`
+            : "-",
+
+        Payeur: transaction.client
+            ? `${transaction.client.lastname} ${transaction.client.firstname}`
+            : transaction.supplier
+                ? `${transaction.supplier.lastname} ${transaction.supplier.firstname}`
+                : "-",
+
+        Commentaire: transaction.comment || "-",
+    }));
+
+    tableData.push(
+        addTotalRowWithCurrency(
+            tableData,
+            columns,
+            currency,
+            ["HT Montant", "TTC Montant"]
+        )
+    );
+
+    const doc = new Document({
+        sections: [
+            {
+                footers: {
+                    default: new Footer({
+                        children: [
+                            new Table({
+                                width: { size: 100, type: "pct" },
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({
+                                                                text: formatDateToDashModel(new Date()),
+                                                                size: 20,
+                                                                font: "Helvetica",
+                                                            }),
+                                                        ],
+                                                        alignment: AlignmentType.CENTER,
+                                                    }),
+                                                ],
+                                                borders: {
+                                                    top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                },
+                                            }),
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({
+                                                                text: `${title} - ${currentDate}`,
+                                                                size: 20,
+                                                                font: "Helvetica",
+                                                            }),
+                                                        ],
+                                                        alignment: AlignmentType.CENTER,
+                                                    }),
+                                                ],
+                                                borders: {
+                                                    top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                },
+                                            }),
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph({
+                                                        children: [
+                                                            new TextRun({
+                                                                children: [
+                                                                    PageNumber.CURRENT,
+                                                                    " sur ",
+                                                                    PageNumber.TOTAL_PAGES,
+                                                                ],
+                                                                size: 20,
+                                                                font: "Helvetica",
+                                                            }),
+                                                        ],
+                                                        alignment: AlignmentType.RIGHT,
+                                                    }),
+                                                ],
+                                                borders: {
+                                                    top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                    right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                                },
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        ],
+                    }),
+                },
+                properties: {
+                    page: {
+                        size: {
+                            orientation: PageOrientation.LANDSCAPE,
+                        },
+                        margin: {
+                            top: 720,
+                            bottom: 720,
+                            left: 720,
+                            right: 720,
+                        },
+                    },
+                },
+                children: [
+                    new Paragraph({
+                        alignment: "center",
+                        spacing: { after: 60 },
+                        children: [
+                            new TextRun({
+                                text: companyName,
+                                bold: true,
+                                size: 28,
+                                font: "Helvetica",
+                            }),
+                        ],
+                    }),
+                    new Paragraph({
+                        alignment: "center",
+                        spacing: { after: 60 },
+                        children: [
+                            new TextRun({
+                                text: title,
+                                bold: true,
+                                size: 32,
+                                font: "Helvetica",
+                            }),
+                        ],
+                    }),
+                    new Paragraph({
+                        alignment: "center",
+                        spacing: { after: 240 },
+                        children: [
+                            new TextRun({
+                                text: currentDate,
+                                size: 28,
+                                font: "Helvetica",
+                            }),
+                        ],
+                    }),
+                    new Paragraph({
+                        alignment: "center",
+                        spacing: { after: 60 },
+                        children: [
+                            new TextRun({
+                                text: sentence,
+                                size: 24,
+                                font: "Helvetica",
+                            }),
+                        ],
+                    }),
+                    new Paragraph({
+                        alignment: 'center',
+                        spacing: { after: 500 },
+                        children: [new TextRun(
+                            {
+                                text: `Informations correctes au ${new Date().toLocaleDateString('fr-FR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: 'numeric'
+                                })}`, size: 24, font: "Helvetica",
+
+                            }
+                        )]
+                    }),
+                    new Table({
+                        width: { size: 100, type: "pct" },
+                        rows: [
+                            new TableRow({
+                                height: {
+                                    value: 600,
+                                    rule: HeightRule.AUTO,
+                                },
+                                children: columns.map(col => new TableCell({
+                                    verticalAlign: VerticalAlign.CENTER,
+                                    borders: {
+                                        top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                        left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                        right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                    },
+                                    children: [new Paragraph({
+                                        children: [
+                                            new TextRun({
+                                                text: col,
+                                                bold: true,
+                                                font: "Helvetica",
+                                                size: `10pt`,
+                                            }),
+                                        ],
+                                    })]
+                                }))
+                            }),
+                            ...tableData.map(row => new TableRow({
+                                height: {
+                                    value: 600,
+                                    rule: HeightRule.AUTO,
+                                },
+                                children: columns.map(col => new TableCell(
+                                    {
+                                        verticalAlign: VerticalAlign.CENTER,
+                                        borders: {
+                                            top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                            left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                            right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+                                        },
+                                        children: [
+                                            new Paragraph({
+                                                children: [
+                                                    new TextRun({
+                                                        text: String(row[col] ?? ""),
+                                                        font: "Helvetica",
+                                                        size: `10pt`,
+                                                    }),
+                                                ]
+                                            }
+                                            )
+                                        ]
+
+                                    }
+                                )
+                                ),
                             })),
                         ],
                     }),
@@ -1325,13 +1875,5 @@ export async function generateReportWordAndPDF(datas: ReportData[], report: stri
         ],
     });
 
-    const wordBuffer = await Packer.toBuffer(doc);
-    const wordPath = path.join(process.cwd(), `${report}.docx`);
-    writeFileSync(wordPath, wordBuffer);
-
-    const pdfBuffer = await convertAsync(wordBuffer, ".pdf", undefined);
-    const pdfPath = path.join(process.cwd(), `${report}.pdf`);
-    writeFileSync(pdfPath, pdfBuffer);
-
-    return { wordBuffer, pdfBuffer };
+    return await Packer.toBlob(doc);
 }

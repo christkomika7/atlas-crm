@@ -20,7 +20,7 @@ export default function SellArticle({ isLoading, datas, currency }: SellArticleP
     return (
         <div className="space-y-4">
             <div className="space-y-2">
-                <h2 className="font-semibold">Ventes par produits et services</h2>
+                <h2 className="font-semibold">Ventes par articles</h2>
             </div>
             {isLoading ? <Spinner /> :
                 <ExportChart

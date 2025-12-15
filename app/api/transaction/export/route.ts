@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAccess } from "@/lib/access";
-import { generateReportWordAndPDF } from "@/lib/word";
+import { generateTransactionsWordAndPDF } from "@/lib/word";
 import prisma from "@/lib/prisma";
-import { PeriodType, ReportType } from "@/types/company.types";
-import { getYearLabel } from "@/lib/date";
+import { getTransactionsYearRange } from "@/lib/date";
+import { TransactionType } from "@/types/transaction.type";
+import { generateTransactionsExcel } from "@/lib/excel";
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess(["SETTING"], "READ");
@@ -16,14 +17,16 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const { datas, filter, companyId, doc } = await req.json();
+        const { datas, companyId, doc } = await req.json();
 
-        if (!datas || !filter || !companyId || !doc) {
+        if (!datas || !companyId || !doc) {
             return NextResponse.json(
                 { state: "error", message: "Données ou type de rapport manquant." },
                 { status: 400 }
             );
         }
+
+        const transactions = datas as TransactionType[];
 
         const company = await prisma.company.findUnique({ where: { id: companyId } });
 
@@ -34,33 +37,27 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const { reportType, period, start, end } = filter as {
-            reportType: ReportType;
-            period: PeriodType | "";
-            start?: Date;
-            end?: Date;
-        }
+        const yearLabel = getTransactionsYearRange(transactions);
 
-        const yearLabel = getYearLabel(period, start, end);
+        const [wordBuffer, excelBuffer] = await Promise.all([
+            generateTransactionsWordAndPDF(datas, company.companyName, company.currency, yearLabel),
+            generateTransactionsExcel(datas, company.companyName, company.currency, yearLabel)
+        ]);
 
-        const { pdfBuffer, wordBuffer } = await generateReportWordAndPDF(datas, reportType, company.companyName, company.currency, yearLabel);
-
-        if (doc === 'pdf') {
-            const arrayBuffer = Uint8Array.from(pdfBuffer).buffer;
-            const filename = `${reportType}.pdf`;
-            return new NextResponse(arrayBuffer, {
+        if (doc === 'excel') {
+            const filename = `transactions.xlsx`;
+            return new NextResponse(excelBuffer, {
                 headers: {
-                    "Content-Type": "application/pdf",
+                    "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     "Content-Disposition": `attachment; filename="${filename}"`,
                 },
             });
         }
 
-
         return new NextResponse(wordBuffer, {
             headers: {
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                "Content-Disposition": `attachment; filename="${reportType}.docx"`,
+                "Content-Disposition": `attachment; filename="transaction.docx"`,
             },
         });
     } catch (error: any) {

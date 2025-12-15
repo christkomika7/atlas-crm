@@ -244,7 +244,21 @@ export async function GET(req: NextRequest) {
         : null,
     }));
 
-    return NextResponse.json({ state: "success", data: formattedTransactions, total }, { status: 200 });
+
+    const formattedAllTransactions = allTransactions.map((transaction) => ({
+      ...transaction,
+      checkNumber: transaction.checkNumber || null,
+      comment: transaction.comment || null,
+      description: transaction.description || null,
+      payOnBehalfOf: transaction.payOnBehalfOf
+        ? {
+          ...transaction.payOnBehalfOf,
+          name: `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`.trim(),
+        }
+        : null,
+    }));
+
+    return NextResponse.json({ state: "success", data: formattedTransactions, all: formattedAllTransactions, total }, { status: 200 });
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return NextResponse.json(

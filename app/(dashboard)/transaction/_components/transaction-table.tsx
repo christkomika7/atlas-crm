@@ -32,21 +32,20 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
 } from "lucide-react";
-import { formatDateToDashModel } from "@/lib/date";
-import { cutText, formatNumber } from "@/lib/utils";
+import { formatDateToDashModel, period } from "@/lib/date";
+import { cutText, formatNumber, getPaymentModeLabel } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
 import { $Enums } from "@/lib/generated/prisma";
-import { acceptPayment } from "@/lib/data";
 import Paginations from "@/components/paginations";
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { useAccess } from "@/hook/useAccess";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale/fr";
 import AccessContainer from "@/components/errors/access-container";
 
 type TransactionTableProps = {
   selectedTransactionIds: DeletedTransactions[];
   setSelectedTransactionIds: Dispatch<SetStateAction<DeletedTransactions[]>>;
+  setTransactions: Dispatch<SetStateAction<TransactionType[]>>;
+  setIsPending: Dispatch<SetStateAction<boolean>>
 };
 
 export interface TransactionTableRef {
@@ -66,10 +65,11 @@ type SortField =
   | "byPaidOnBehalfOf";
 
 const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
-  ({ selectedTransactionIds, setSelectedTransactionIds }, ref) => {
+  ({ selectedTransactionIds, setSelectedTransactionIds, setTransactions, setIsPending }, ref) => {
     const searchParams = useSearchParams();
     const currency = useDataStore.use.currency();
     const companyId = useDataStore.use.currentCompany();
+    const [datas, setDatas] = useState<TransactionType[]>([])
 
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
@@ -80,7 +80,6 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const source = searchParams.get("source");
     const paidFor = searchParams.get("paidFor");
 
-    const [transactions, setTransactions] = useState<TransactionType[]>([]);
     const [totalItems, setTotalItems] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -92,7 +91,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
 
     const { mutate: mutateGetTransactions } = useQueryAction<
       GetTransactionsParams,
-      { data: TransactionType[]; total: number }
+      { data: TransactionType[]; total: number, all: TransactionType[] }
     >(getTransactions, () => { }, "transactions");
 
     const toggleSelection = (transactionId: string, checked: boolean, transactionType: $Enums.TransactionType) => {
@@ -111,6 +110,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
       (page: number) => {
         if (!companyId && !readAccess) return;
         setIsLoading(true);
+        setIsPending(true)
 
         const params: GetTransactionsParams = {
           companyId,
@@ -129,8 +129,10 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
 
         mutateGetTransactions(params, {
           onSuccess(data) {
-            setTransactions(data.data);
+            setDatas(data.data);
             setTotalItems(data.total);
+            setTransactions(data.all)
+            setIsPending(false)
           },
           onSettled() {
             setIsLoading(false);
@@ -178,26 +180,8 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
       loadTransactions(currentPage);
     }, [companyId, currentPage, sortField, sortOrder, startDate, endDate, category, movement, paymentMode, source, paidFor, loadTransactions, readAccess]);
 
-    const getPaymentModeLabel = (value: string) => {
-      if (value.toLowerCase() === "withdrawal") return "Retrait";
-      acceptPayment.find((accept) => accept.value === value)?.label || "-";
-    }
-
     const isSelected = (id: string) =>
       selectedTransactionIds.some((transac) => transac.id === id);
-
-    const formatDate = (date: Date) => {
-      if (!date || isNaN(date.getTime())) return "-";
-
-      return format(date, "dd MMM yyyy", { locale: fr })
-        .replace(".", "")
-        .replace(/^./, c => c.toUpperCase());
-    };
-
-    const period = (start: Date | null, end: Date | null) => {
-      if (!start || !end) return "-";
-      return `${formatDate(new Date(start))} - ${formatDate(new Date(end))}`;
-    };
 
     return (
       <AccessContainer hasAccess={readAccess} resource="TRANSACTION" loading={loading} >
@@ -249,8 +233,8 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : transactions.length > 0 ? (
-                transactions.map((transaction) => (
+              ) : datas.length > 0 ? (
+                datas.map((transaction) => (
                   <TableRow
                     key={transaction.id}
                     className={`h-16 transition-colors ${isSelected(transaction.id) ? "bg-neutral-100" : ""

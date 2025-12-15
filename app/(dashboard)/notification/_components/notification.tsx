@@ -97,7 +97,6 @@ export default function Notification({
       { notificationId: notification.id, action: state },
       {
         onSuccess(data) {
-          console.log({ data })
           if (data.data && onNotificationUpdate) {
             onNotificationUpdate(notification.id, data.data);
           }

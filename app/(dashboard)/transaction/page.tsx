@@ -17,14 +17,18 @@ import { useDataStore } from "@/stores/data.store";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
 import { Skeleton } from "@/components/ui/skeleton";
+import ExportButton from "./export-button";
 
 export default function TransactionPage() {
+  const [transactions, setTransactions] = useState<TransactionType[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const companyId = useDataStore.use.currentCompany();
   const [filters, setFilters] = useState<"empty" | "filter" | "reset">("empty");
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<
     DeletedTransactions[]
   >([]);
   const transactionTableRef = useRef<TransactionTableRef>(null);
+
 
   const { access: createAccess, loading: loadingCreateAccess } = useAccess("TRANSACTION", "CREATE");
   const { access: modifyAcccess, loading: loadingModifyAccess } = useAccess("TRANSACTION", "MODIFY");
@@ -70,7 +74,7 @@ export default function TransactionPage() {
           <div className="grid grid-cols-[120px_120px_140px] gap-x-2">
             {loadingReadAccess ? <Skeleton className="w-[120px] h-[48px]" /> : <>
               {readAccess &&
-                <Button variant="inset-primary">Exporter</Button>
+                <ExportButton transactions={transactions} isLoading={isPending} />
               }
             </>
             }
@@ -114,6 +118,8 @@ export default function TransactionPage() {
                 ref={transactionTableRef}
                 selectedTransactionIds={selectedTransactionIds}
                 setSelectedTransactionIds={setSelectedTransactionIds}
+                setTransactions={setTransactions}
+                setIsPending={setIsLoading}
               />
             </div>
           </>

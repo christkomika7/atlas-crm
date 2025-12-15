@@ -46,6 +46,7 @@
     "decimal.js": "10.2.1",
     "docx": "^9.5.1",
     "dotenv": "^17.2.1",
+    "exceljs": "^4.4.0",
     "formidable": "^3.5.4",
     "fs-extra": "^11.3.0",
     "html2canvas-pro": "^1.5.11",

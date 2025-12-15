@@ -22,6 +22,65 @@ import {
   TransactionType,
 } from "@/types/transaction.type";
 
+export async function exportToDocument({
+  datas,
+  companyId,
+  doc
+}: {
+  datas: TransactionType[];
+  companyId: string;
+  doc: 'excel' | 'word'
+}) {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/export`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ datas, companyId, doc }),
+    });
+
+    if (!response.ok) {
+      const errRes = await response.json().catch(() => null);
+      throw new Error(errRes?.message || `Erreur lors de l'export ${doc.toUpperCase()}`);
+    }
+
+    const blob = await response.blob();
+
+    let filename = doc === 'excel' ? "transactions.xlsx" : "transactions.docx";
+
+    if (doc === 'word') {
+      const contentDisposition = response.headers.get("Content-Disposition");
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match && match[1]) {
+          filename = match[1];
+        }
+      }
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+
+    return {
+      status: "success",
+      message: `Fichier ${doc === 'excel' ? 'Excel' : 'DOCX'} téléchargé avec succès`
+    };
+
+  } catch (error) {
+    console.error("Erreur dans exportToDocument:", error);
+    throw error;
+  }
+}
+
+
 export async function getTransactions(params: GetTransactionsParams) {
   try {
     const query = new URLSearchParams();
@@ -78,7 +137,7 @@ export async function getTransactions(params: GetTransactionsParams) {
     const res: RequestResponse<TransactionType[]> = await response.json();
     if (res.state === "error") throw new Error(res.message);
 
-    return { data: res.data || [], total: res.total || (res.data ? res.data.length : 0) };
+    return { data: res.data || [], all: res.all || [], total: res.total || (res.data ? res.data.length : 0) };
   } catch (error) {
     console.error("Error in getTransactions:", error);
     throw error;

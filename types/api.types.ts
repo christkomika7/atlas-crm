@@ -8,6 +8,7 @@ export type RequestResponse<T> = {
     total: number;
     state: "error" | "success";
     data?: T;
+    all?: T;
     nextCursor: string;
 };
 

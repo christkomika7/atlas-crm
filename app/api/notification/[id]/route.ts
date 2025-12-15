@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     }
 
     const companyId = getIdFromUrl(req.url, 2) as string;
-    console.log({ companyId })
+
     if (!companyId) {
         return NextResponse.json({
             status: "error",

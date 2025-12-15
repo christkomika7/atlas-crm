@@ -254,7 +254,7 @@ export default function ExportTab() {
             />
           </div>
           <ExportButton
-            report={filters.reportType}
+            filter={filters}
             datas={datas}
             isLoading={isLoading}
             ready={ready}

@@ -4,6 +4,8 @@ import { Sale } from "@/types/item.type";
 import { isWithinInterval, parse, startOfDay, addDays as addDaysFNS, differenceInDays, isAfter, isBefore, format, addMonths, addYears } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 import { paymentTerms } from "./data";
+import { PeriodType } from "@/types/company.types";
+import { TransactionType } from "@/types/transaction.type";
 
 type DateRange = {
     startDate?: Date;
@@ -14,6 +16,46 @@ type DateRange = {
 export function formatDateToDashModel(date: Date): string {
     return new Date(date).toLocaleDateString();
 }
+
+export function getYearLabel(
+    period: PeriodType | "",
+    start?: Date,
+    end?: Date
+): string {
+    // 1️⃣ Cas prioritaire : start & end
+    if (start && end) {
+        const startYear = start.getFullYear();
+        const endYear = end.getFullYear();
+
+        return startYear === endYear
+            ? `${startYear}`
+            : `${startYear} - ${endYear}`;
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    // 2️⃣ Cas basés sur la période
+    switch (period) {
+        case "currentFiscalYear":
+            // exemple : année fiscale classique (à adapter si besoin)
+            return `${currentYear}`;
+
+        case "currentQuarter":
+        case "currentMonth":
+            return `${currentYear}`;
+
+        case "previousMonth":
+            return `${new Date(currentYear, now.getMonth() - 1).getFullYear()}`;
+
+        case "previousYear":
+            return `${currentYear - 1}`;
+
+        default:
+            return `${currentYear}`;
+    }
+}
+
 
 export function addDays(
     date: Date,
@@ -294,4 +336,42 @@ export function dueDate(invoiceDate: Date, due: string): { color: string; text: 
         text: `${status.daysLeft} jour${status.daysLeft > 1 ? 's' : ''}`,
         value: status.daysLeft
     }
+}
+
+
+const formatDate = (date: Date) => {
+    if (!date || isNaN(date.getTime())) return "-";
+
+    return format(date, "dd MMM yyyy", { locale: fr })
+        .replace(".", "")
+        .replace(/^./, c => c.toUpperCase());
+};
+
+export const period = (start: Date | null, end: Date | null) => {
+    if (!start || !end) return "-";
+    return `${formatDate(new Date(start))} - ${formatDate(new Date(end))}`;
+};
+
+export function getTransactionsYearRange(
+    transactions: TransactionType[]
+): string {
+    if (!transactions || transactions.length === 0) return "";
+
+    let minYear = Infinity;
+    let maxYear = -Infinity;
+
+    for (const transaction of transactions) {
+        if (!transaction.createdAt) continue;
+
+        const year = new Date(transaction.createdAt).getFullYear();
+
+        if (year < minYear) minYear = year;
+        if (year > maxYear) maxYear = year;
+    }
+
+    if (minYear === Infinity || maxYear === -Infinity) return "";
+
+    return minYear === maxYear
+        ? `${minYear}`
+        : `${minYear} - ${maxYear}`;
 }

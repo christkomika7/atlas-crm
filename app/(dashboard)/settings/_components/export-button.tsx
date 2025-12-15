@@ -5,6 +5,7 @@ import Papa from 'papaparse';
 import {
     DebtorAccountAgingItem, ExpensesByCategoryItem, ExpensesJournalItem,
     PaymentsByClientItem, PaymentsByDateItem, PaymentsByTypeItem,
+    PeriodType,
     ReportType, SalesByBillboardItem, SalesByClientItem, SalesByItemItem
 } from '@/types/company.types';
 import { formatNumber } from '@/lib/utils';
@@ -12,6 +13,7 @@ import { formatDateToDashModel } from '@/lib/date';
 import useQueryAction from '@/hook/useQueryAction';
 import { exportToPdf } from '@/action/company.action';
 import { useState } from 'react';
+import { useDataStore } from '@/stores/data.store';
 
 type ExportButtonProps = {
     datas:
@@ -24,13 +26,21 @@ type ExportButtonProps = {
     | ExpensesByCategoryItem[]
     | ExpensesJournalItem[]
     | DebtorAccountAgingItem[];
-    report: ReportType;
+    filter: {
+        reportType: ReportType;
+        period: PeriodType | "";
+        start?: Date;
+        end?: Date;
+    };
     isLoading: boolean;
     ready: boolean;
 }
 
-export default function ExportButton({ datas, isLoading, ready, report }: ExportButtonProps) {
+export default function ExportButton({ datas, isLoading, ready, filter }: ExportButtonProps) {
+    const companyId = useDataStore.use.currentCompany();
     const [isLoadingCsv, setIsloadingCsv] = useState(false);
+    const [doc, setDoc] = useState<"word" | "pdf">();
+
     const { mutate: mutate, isPending } =
         useQueryAction<
             {
@@ -44,7 +54,14 @@ export default function ExportButton({ datas, isLoading, ready, report }: Export
                 | ExpensesByCategoryItem[]
                 | ExpensesJournalItem[]
                 | DebtorAccountAgingItem[];
-                report: ReportType
+                filter: {
+                    reportType: ReportType;
+                    period: PeriodType | "";
+                    start?: Date;
+                    end?: Date;
+                },
+                companyId: string;
+                doc: "pdf" | "word"
             },
             {
                 status: string;
@@ -61,7 +78,7 @@ export default function ExportButton({ datas, isLoading, ready, report }: Export
         let csvData: any[] = [];
         let columns: string[] = [];
 
-        switch (report) {
+        switch (filter.reportType) {
             case 'salesByClient':
                 columns = ['Date', 'Client', 'Nombre de factures', 'Montant généré', 'Total payé', 'Dû'];
                 csvData = (datas as SalesByClientItem[]).map(d => ({
@@ -171,7 +188,7 @@ export default function ExportButton({ datas, isLoading, ready, report }: Export
 
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `${report}-export.csv`);
+        link.setAttribute('download', `${filter.reportType}-export.csv`);
         document.body.appendChild(link);
         link.click();
 
@@ -181,9 +198,15 @@ export default function ExportButton({ datas, isLoading, ready, report }: Export
     }
 
 
-    function toPdf(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    function toDoc(e: React.MouseEvent<HTMLButtonElement, MouseEvent>, doc: "pdf" | "word") {
+
         e.preventDefault()
-        mutate({ datas, report })
+        setDoc(doc)
+        mutate({ datas, filter, companyId, doc }, {
+            onSuccess(data, variables, context) {
+                setDoc(undefined);
+            },
+        })
     }
 
     return (
@@ -197,18 +220,25 @@ export default function ExportButton({ datas, isLoading, ready, report }: Export
                 {(!ready || isLoading) ? <span className='p-2'><Spinner /> </span> :
                     <>
                         <Button
-                            onClick={toPdf}
+                            onClick={e => toDoc(e, "word")}
                             variant="primary"
-                            className="bg-white hover:bg-blue justify-start shadow-none !h-10 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                            className="bg-white hover:bg-blue gap-x-2 items-center justify-start shadow-none !h-10 text-black hover:text-white transition-[color,background-color,box-shadow]"
                         >
-                            {isPending ? <Spinner /> : 'PDF'}
+                            DOCX {(isPending && doc === 'word') && <Spinner size={14} />}
+                        </Button>
+                        <Button
+                            onClick={e => toDoc(e, "pdf")}
+                            variant="primary"
+                            className="bg-white hover:bg-blue gap-x-2 items-center justify-start shadow-none !h-10 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                        >
+                            PDF {(isPending && doc === 'pdf') && <Spinner size={14} />}
                         </Button>
                         <Button
                             onClick={toCsv}
                             variant="primary"
-                            className="bg-white hover:bg-blue justify-start shadow-none !h-10 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                            className="bg-white items-center hover:bg-blue gap-x-2 justify-start shadow-none !h-10 text-black hover:text-white transition-[color,background-color,box-shadow]"
                         >
-                            {isLoadingCsv ? <Spinner /> : 'CSV'}
+                            CSV  {isLoadingCsv && <Spinner size={14} />}
                         </Button>
                     </>
                 }
