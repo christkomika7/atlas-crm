@@ -40,13 +40,9 @@ export default function CreateForm() {
     RequestResponse<BillboardType>
   >(create, () => { }, "billboards");
 
-  // ========================================
-  // NETTOYER LES CHAMPS QUAND LE SPACE TYPE CHANGE
-  // ========================================
   useEffect(() => {
     if (!spaceType) return;
 
-    // Nettoyer toutes les erreurs
     form.clearErrors([
       "lessor.delayContractStart",
       "lessor.delayContractEnd",

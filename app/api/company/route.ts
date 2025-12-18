@@ -1,5 +1,4 @@
 import { checkAccess } from "@/lib/access";
-import { removePath } from "@/lib/file";
 import { extractCompanyData } from "@/lib/utils";
 import { companySchema, CompanySchemaType } from "@/lib/zod/company.schema";
 import { NextRequest, NextResponse } from "next/server";
@@ -63,10 +62,6 @@ export async function POST(req: NextRequest) {
             message: result.message,
         }, { status: 403 });
     }
-
-    let uploadedPaths: string[] = [];
-    let uploadedPassportPaths: string[] = [];
-    let uploadedDocumentPaths: string[] = [];
 
     const formData = await req.formData();
     const companyData = extractCompanyData(formData);
@@ -208,8 +203,6 @@ export async function POST(req: NextRequest) {
             { status: 200 }
         );
     } catch (error) {
-        console.log({ error })
-        await removePath([...uploadedPaths, ...uploadedPassportPaths, ...uploadedDocumentPaths]);
         return NextResponse.json(
             {
                 message: "Erreur interne du serveur. Les utilisateurs et fichiers ont été supprimés.",

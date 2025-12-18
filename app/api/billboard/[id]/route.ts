@@ -203,7 +203,7 @@ export async function POST(req: NextRequest) {
             width: billboard.width,
             height: billboard.height,
             lighting: billboard.lighting,
-            structureType: { connect: { id: billboard.structureTypeId } },
+            ...(billboard.structureTypeId ? { structureType: { connect: { id: billboard.structureTypeId } } } : {}),
             panelCondition: billboard.panelCondition,
             decorativeElement: billboard.decorativeElement,
             foundations: billboard.foundations,
@@ -468,8 +468,15 @@ export async function PUT(req: NextRequest) {
                 width: data.billboard.width,
                 height: data.billboard.height,
                 lighting: data.billboard.lighting,
-                structureType: { connect: { id: data.billboard.structureType } },
-                panelCondition: data.billboard.panelCondition,
+                structureType: data.billboard.structureType
+                    ? {
+                        connect: {
+                            id: data.billboard.structureType,
+                        },
+                    }
+                    : {
+                        disconnect: true,
+                    }, panelCondition: data.billboard.panelCondition,
                 decorativeElement: data.billboard.decorativeElement,
                 foundations: data.billboard.foundations,
                 electricity: data.billboard.electricity,

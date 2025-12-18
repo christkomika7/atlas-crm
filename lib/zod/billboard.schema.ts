@@ -78,20 +78,14 @@ export const billboardSchema = z.object({
 
     width: z.number({ error: "La largeur du panneau est requis." }),
     height: z.number({ error: "La hauteur du panneau est requis" }),
-    lighting: z.string({ error: "L'éclairage est requis" }),
-    structureType: z.string({ error: "Le type de structure est requis" }),
-    panelCondition: z.string({ error: "L'état du panneau est requis" }),
-    decorativeElement: z.string({
-        error: "Les éléments décoratifs du panneau publicitaire sont requis.",
-    }),
-    foundations: z.string({
-        error: "FOndations et visserie sont requis.",
-    }),
-    electricity: z.string({ error: "L'électricité et l'éclairage requis." }),
-    framework: z.string({ error: "Structure et châssis est requis." }),
-    note: z.string({
-        error: "Des notes sur l'apparence du panneau publicitaire sont requises.",
-    }),
+    lighting: z.string().optional(),
+    structureType: z.string().optional(),
+    panelCondition: z.string().optional(),
+    decorativeElement: z.string().optional(),
+    foundations: z.string().optional(),
+    electricity: z.string().optional(),
+    framework: z.string().optional(),
+    note: z.string().optional(),
 
 });
 
@@ -149,17 +143,13 @@ export const lessorSchemaBase = z.object({
 });
 
 export const lessorSchema = lessorSchemaBase
-    // ========================================
     // VALIDATIONS PUBLIC
-    // ========================================
     .refine(d => !isPublic(d) || !!d.lessorCustomer, {
         path: ["lessorCustomer"],
         message: "Le bailleur est requis pour un espace public."
     })
 
-    // ========================================
     // VALIDATIONS PRIVATE (tous les types)
-    // ========================================
     .refine(d => !isPrivate(d) || !!d.locationPrice, {
         path: ["locationPrice"],
         message: "Prix requis."
@@ -217,9 +207,7 @@ export const lessorSchema = lessorSchemaBase
         message: "Fourniture courant requise."
     })
 
-    // ========================================
     // VALIDATIONS PRIVATE + PERSONNE MORALE
-    // ========================================
     .refine(d => !isPrivate(d) || !isPersonMoral(d) || !!d.capital, {
         path: ["capital"],
         message: "Capital requis."
@@ -265,9 +253,7 @@ export const lessorSchema = lessorSchemaBase
         message: "Durée requise."
     })
 
-    // ========================================
     // VALIDATIONS PRIVATE + PERSONNE PHYSIQUE
-    // ========================================
     .refine(d => !isPrivate(d) || !isPersonPhysique(d) || !!d.delayContractStart, {
         path: ["delayContractStart"],
         message: "Date du début du contrat requise."
@@ -359,20 +345,14 @@ export const editBillboardSchema = z.object({
 
     width: z.number({ error: "La largeur du panneau est requis." }),
     height: z.number({ error: "La hauteur du panneau est requis" }),
-    lighting: z.string({ error: "L'éclairage est requis" }),
-    structureType: z.string({ error: "Le type de structure est requis" }),
-    panelCondition: z.string({ error: "L'état du panneau est requis" }),
-    decorativeElement: z.string({
-        error: "Les éléments décoratifs du panneau publicitaire sont requis.",
-    }),
-    foundations: z.string({
-        error: "FOndations et visserie sont requis.",
-    }),
-    electricity: z.string({ error: "L'électricité et l'éclairage requis." }),
-    framework: z.string({ error: "Structure et châssis est requis." }),
-    note: z.string({
-        error: "Des notes sur l'apparence du panneau publicitaire sont requises.",
-    }),
+    lighting: z.string().optional(),
+    structureType: z.string().optional(),
+    panelCondition: z.string().optional(),
+    decorativeElement: z.string().optional(),
+    foundations: z.string().optional(),
+    electricity: z.string().optional(),
+    framework: z.string().optional(),
+    note: z.string().optional(),
     lastPhotos: z.array(z.string()).optional(),
     lastBrochures: z.array(z.string()).optional(),
 });
@@ -406,14 +386,6 @@ export const billboardError = {
     maintenance: "Entretien du panneau ",
     width: "Largeur",
     hauteur: "Largeur",
-    lighting: "Éclairage",
-    structureType: "Type de structure",
-    panelCondition: "État du panneau",
-    decorativeElement: "Éléments décoratifs",
-    foundations: "Fondations et visserie",
-    electricity: "Électricité et éclairage",
-    framework: "Structure et châssis",
-    note: "Notes sur l'apparence du panneau",
 }
 
 export const lessorError = {

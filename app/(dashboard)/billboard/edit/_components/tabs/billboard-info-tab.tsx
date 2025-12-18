@@ -746,8 +746,9 @@ export default function BillboardInfoTab({
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      required={false}
                       datas={lights}
-                      value={field.value}
+                      value={field.value || ""}
                       setValue={field.onChange}
                       placeholder="Éclairage"
                       searchMessage="Rechercher un type d'éclairage"
@@ -765,13 +766,14 @@ export default function BillboardInfoTab({
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      required={false}
                       isLoading={isGettingStructureType}
                       datas={structureTypes.map((structureType) => ({
                         id: structureType.id,
                         label: structureType.name,
                         value: structureType.id,
                       }))}
-                      value={field.value}
+                      value={field.value || ""}
                       setValue={(e) => {
                         field.onChange(e);
                       }}
@@ -792,8 +794,9 @@ export default function BillboardInfoTab({
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      required={false}
                       datas={billboardStrucutures}
-                      value={field.value}
+                      value={field.value || ""}
                       setValue={(e) => {
                         field.onChange(e);
                       }}
@@ -813,9 +816,10 @@ export default function BillboardInfoTab({
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      required={false}
                       design="float"
                       label="Éléments décoratifs"
-                      value={field.value}
+                      value={field.value || ""}
                       handleChange={field.onChange}
                     />
                   </FormControl>
@@ -830,9 +834,10 @@ export default function BillboardInfoTab({
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      required={false}
                       design="float"
                       label="Fondations et visserie"
-                      value={field.value}
+                      value={field.value || ""}
                       handleChange={field.onChange}
                     />
                   </FormControl>
@@ -848,9 +853,10 @@ export default function BillboardInfoTab({
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      required={false}
                       design="float"
                       label="Électricité et éclairage"
-                      value={field.value}
+                      value={field.value || ""}
                       handleChange={field.onChange}
                     />
                   </FormControl>
@@ -865,9 +871,10 @@ export default function BillboardInfoTab({
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      required={false}
                       design="float"
                       label="Structure et châssis"
-                      value={field.value}
+                      value={field.value || ""}
                       handleChange={field.onChange}
                     />
                   </FormControl>
@@ -882,8 +889,9 @@ export default function BillboardInfoTab({
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      required={false}
                       datas={generalNotes}
-                      value={field.value}
+                      value={field.value || ""}
                       setValue={field.onChange}
                       placeholder="Aspect général"
                       searchMessage="Rechercher une note"

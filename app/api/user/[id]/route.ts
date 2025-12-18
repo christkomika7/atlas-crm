@@ -6,7 +6,7 @@ import { userEditSchema, UserEditSchemaType, userSchema, UserSchemaType } from "
 import { parseData } from "@/lib/parse";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { auth } from "@/lib/auth";
-import { hashPassword, verifyPassword } from "better-auth/crypto"
+import { hashPassword } from "better-auth/crypto"
 import { $Enums } from "@/lib/generated/prisma";
 
 export async function GET(req: NextRequest) {
@@ -73,8 +73,8 @@ export async function POST(req: NextRequest) {
         transaction: JSON.parse(rawData.transaction),
     }) as UserSchemaType;
 
-    const createUserFolder = () =>
-        createFolder([`${generateId()}_${data.firstname}_${data.lastname}`]);
+    const folder = createFolder([`${generateId()}_${data.firstname}_${data.lastname}`]);
+
 
     const saveImageIfAny = async (folder: string) => {
         return image ? await createFile(image, folder) : "";
@@ -131,7 +131,6 @@ export async function POST(req: NextRequest) {
                 );
             }
 
-            const folder = createUserFolder();
             const savedImage = await saveImageIfAny(folder);
 
             const profile = await createProfileWithPermissions(
@@ -163,6 +162,7 @@ export async function POST(req: NextRequest) {
                 { status: 200 }
             );
         } catch (e) {
+            removePath(folder)
             return NextResponse.json(
                 {
                     message:
@@ -203,7 +203,6 @@ export async function POST(req: NextRequest) {
 
         const userId = newUser.user.id;
 
-        const folder = createUserFolder();
         const savedImage = await saveImageIfAny(folder);
 
         const profile = await createProfileWithPermissions(
@@ -226,6 +225,7 @@ export async function POST(req: NextRequest) {
             { status: 200 }
         );
     } catch (e) {
+        removePath(folder)
         return NextResponse.json(
             {
                 message: "Erreur lors de la création du nouvel utilisateur.",
@@ -415,16 +415,16 @@ export async function DELETE(req: NextRequest) {
             appointments: true,
             projects: true,
             tasks: true,
-            dibursements: true
+            dibursements: true,
+            permissions: true
         }
     });
-
 
     if (!profile) {
         return NextResponse.json({
             message: "Collaborateur introuvable.",
             state: "error",
-        }, { status: 400 })
+        }, { status: 400 });
     }
 
     const appointments = profile.appointments.length;
@@ -435,7 +435,40 @@ export async function DELETE(req: NextRequest) {
     if (appointments > 0 || projects > 0 || tasks > 0 || dibursements > 0) {
         return NextResponse.json({
             status: "error",
-            message: "Certaines données ( rendez-vous, projet, tâche, décaissement.) sont encore reliée à ce collaborateur.",
+            message: "Certaines données (rendez-vous, projet, tâche, décaissement) sont encore reliées à ce collaborateur.",
+        }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { id: profile.userId },
+        include: {
+            profiles: true,
+            invoices: true,
+            purchaseOrders: true,
+            quotes: true,
+            deliveryNotes: true,
+            deletions: true,
+            notifications: true,
+            notificationReads: true
+        }
+    });
+
+    if (!user) {
+        return NextResponse.json({
+            message: "Utilisateur introuvable.",
+            state: "error",
+        }, { status: 400 });
+    }
+
+    const invoices = user.invoices.length;
+    const purchaseOrders = user.purchaseOrders.length;
+    const quotes = user.quotes.length;
+    const deliveryNotes = user.deliveryNotes.length;
+
+    if (invoices > 0 || purchaseOrders > 0 || quotes > 0 || deliveryNotes > 0) {
+        return NextResponse.json({
+            status: "error",
+            message: "Ce collaborateur a créé des documents (factures, devis, bons de commande, bons de livraison) et ne peut pas être supprimé.",
         }, { status: 400 });
     }
 
@@ -446,17 +479,14 @@ export async function DELETE(req: NextRequest) {
 
     await prisma.profile.delete({ where: { id } });
 
-    const user = await prisma.user.findUnique({
-        where: { id: profile.user.id },
-        include: { profiles: true }
-    })
+    const remainingProfiles = user.profiles.filter(p => p.id !== id);
 
-    if (user?.profiles.length === 0) {
+    if (remainingProfiles.length === 0) {
         await prisma.user.delete({ where: { id: user.id } });
     }
 
     return NextResponse.json({
         state: "success",
         message: "Employé supprimé avec succès.",
-    }, { status: 200 })
+    }, { status: 200 });
 }

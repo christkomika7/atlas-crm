@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
                     data: {
                         type: 'CONFIRM',
                         for: 'DISBURSEMENT',
-                        message: `${user.name} a lancé un décaissement de ${formatNumber(data.amount)} ${companyExist.currency} en attente de validation depuis le compte ${source?.name}.`,
+                        message: `${user.name} a initié un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} », actuellement en attente de validation.`,
                         dibursement: {
                             connect: { id: newDibursement.id }
                         },
@@ -281,7 +281,7 @@ export async function POST(req: NextRequest) {
                 data: {
                     type: 'CONFIRM',
                     for: 'DISBURSEMENT',
-                    message: `${user.name} a lancé un décaissement de ${formatNumber(data.amount)} ${companyExist.currency} en attente de validation depuis le compte ${source?.name}.`,
+                    message: `${user.name} a initié un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} », actuellement en attente de validation.`,
                     dibursement: {
                         connect: { id: newDibursement.id }
                     },
@@ -327,7 +327,7 @@ export async function POST(req: NextRequest) {
             data: {
                 type: 'ALERT',
                 for: 'DISBURSEMENT',
-                message: `${user.name} réalisé un décaissement de ${formatNumber(data.amount)} ${companyExist.currency} dans le compte ${source?.name}.`,
+                message: `${user.name} a réalisé un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} ».`,
                 paymentDibursement: {
                     connect: { id: createdDibursement.id }
                 },

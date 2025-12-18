@@ -251,10 +251,10 @@ model Profile {
   dibursements Dibursement[]
 
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -287,7 +287,7 @@ model Supplier {
   uploadDocuments            String[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -325,7 +325,7 @@ model Client {
   uploadDocuments            String[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   appointments Appointment[]
 
@@ -366,7 +366,7 @@ model Appointment {
   teamMember   Profile? @relation(fields: [teamMemberId], references: [id], onDelete: SetNull)
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -389,7 +389,7 @@ model Contract {
   lessorType String?
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   invoices Invoice[]
 
@@ -440,15 +440,15 @@ model Billboard {
 
   width             Float
   height            Float
-  lighting          String
-  structureType     StructureType @relation(fields: [structureTypeId], references: [id])
-  structureTypeId   String
-  panelCondition    String
-  decorativeElement String
-  foundations       String
-  electricity       String
-  framework         String
-  note              String
+  lighting          String?
+  structureType     StructureType? @relation(fields: [structureTypeId], references: [id])
+  structureTypeId   String?
+  panelCondition    String?
+  decorativeElement String?
+  foundations       String?
+  electricity       String?
+  framework         String?
+  note              String?
 
   // Information bailleur
   lessorSpaceType  String
@@ -493,7 +493,7 @@ model Billboard {
   specificCondition  String?
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id])
@@ -526,7 +526,7 @@ model Invoice {
   amountType    AmountType @default(TTC)
 
   createdById String?
-  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Restrict)
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -549,7 +549,7 @@ model Invoice {
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -574,7 +574,7 @@ model PurchaseOrder {
   amountType          AmountType @default(TTC)
 
   createdById String?
-  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Restrict)
 
   supplierId String?
   supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
@@ -590,7 +590,7 @@ model PurchaseOrder {
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -618,7 +618,7 @@ model Quote {
   fromRecordName      String @default("")
 
   createdById String?
-  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Restrict)
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -632,7 +632,7 @@ model Quote {
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -660,7 +660,7 @@ model DeliveryNote {
   fromRecordName      String @default("")
 
   createdById String?
-  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: Restrict)
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -674,7 +674,7 @@ model DeliveryNote {
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -693,7 +693,7 @@ model Recurrence {
   purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -758,7 +758,7 @@ model Item {
   deliveryNote   DeliveryNote? @relation(fields: [deliveryNoteId], references: [id])
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -780,7 +780,7 @@ model Project {
   clientId           String
   client             Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
   companyId          String
-  company            Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company            Company         @relation(fields: [companyId], references: [id], onDelete: Restrict)
   collaborators      Profile[]       @relation("project_collaborators")
   tasks              Task[]
   invoices           Invoice[]
@@ -836,7 +836,7 @@ model City {
   billboards Billboard[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
   areas     Area[]
 
   @@map("city")
@@ -848,7 +848,7 @@ model Area {
   billboards Billboard[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   cityId String
   city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
@@ -862,7 +862,7 @@ model BillboardType {
   billboards Billboard[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   @@map("billboard_type")
 }
@@ -873,7 +873,7 @@ model DisplayBoard {
   billboards Billboard[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   @@map("display_board")
 }
@@ -884,7 +884,7 @@ model StructureType {
   billboards Billboard[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   @@map("structure_type")
 }
@@ -896,7 +896,7 @@ model LessorType {
   billboards Billboard[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   @@map("lessor_type")
 }
@@ -920,7 +920,7 @@ model DocumentModel {
   purchaseOrderInfo String?
 
   companyId String  @unique
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   @@map("company_documents")
 }
@@ -961,7 +961,7 @@ model Receipt {
   supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   paymentId String?  @unique
   payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
@@ -1016,7 +1016,7 @@ model Dibursement {
   comment     String?
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
@@ -1058,7 +1058,7 @@ model FiscalObject {
   dibursements Dibursement[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
@@ -1075,7 +1075,7 @@ model TransactionCategory {
   dibursements Dibursement[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
@@ -1095,7 +1095,7 @@ model TransactionNature {
   allocations  Allocation[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   @@map("transaction_nature")
 }
@@ -1105,7 +1105,7 @@ model Allocation {
   name String
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   natureId String
   nature   TransactionNature @relation(fields: [natureId], references: [id], onDelete: Cascade)
@@ -1122,10 +1122,10 @@ model Deletion {
   isValidate Boolean      @default(false)
 
   userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
@@ -1173,11 +1173,11 @@ model Notification {
   readBy NotificationRead[]
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String?
 
   @@map("notification")
@@ -1313,7 +1313,7 @@ model ProductService {
   quantity    Int                @default(0)
 
   companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt

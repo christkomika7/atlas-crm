@@ -1,11 +1,11 @@
 import { checkAccess, sessionAccess } from "@/lib/access";
 import { NextResponse, type NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
 import { formatNumber, generateAmaId } from "@/lib/utils";
 import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
-import { DibursementData } from "@/lib/generated/prisma";
-import Decimal from "decimal.js";
 import { toUtcDateOnly } from "@/lib/date";
+
+import prisma from "@/lib/prisma";
+import Decimal from "decimal.js";
 
 export async function PUT(req: NextRequest) {
     const result = await checkAccess(["TRANSACTION", "PURCHASE_ORDER"], "MODIFY");
@@ -24,7 +24,6 @@ export async function PUT(req: NextRequest) {
 
     const { notificationId, action } = await req.json();
 
-    // Récupérer la notification initiale avec TOUTES les relations nécessaires
     const notification = await prisma.notification.findUnique({
         where: { id: notificationId },
         include: {
@@ -90,7 +89,6 @@ export async function PUT(req: NextRequest) {
 
     if (action === "cancel") {
         await handleCancelAction({ notification, user });
-        // Récupérer la notification mise à jour après l'action cancel
         const updatedNotification = await prisma.notification.findUnique({
             where: { id: notificationId },
             include: {
@@ -216,7 +214,12 @@ export async function PUT(req: NextRequest) {
                 try {
 
                     let paymentId = "";
-                    const source = await prisma.source.findUnique({ where: { id: notification.dibursement?.source as string } })
+                    const [source, category, nature] = await prisma.$transaction([
+                        prisma.source.findUnique({ where: { id: notification.dibursement?.source as string } }),
+                        prisma.transactionCategory.findUnique({ where: { id: notification.dibursement?.category as string } }),
+                        prisma.transactionNature.findUnique({ where: { id: notification.dibursement?.nature as string } })
+
+                    ]);
 
                     if (data.purchaseOrder) {
                         const purchaseOrderId = data.purchaseOrder;
@@ -332,7 +335,7 @@ export async function PUT(req: NextRequest) {
                         data: {
                             type: 'ALERT',
                             for: 'DISBURSEMENT',
-                            message: `${user.name} a validé un décaissement de ${formatNumber(data.amount.toString())} ${notification.company.currency} dans le compte ${source?.name}.`,
+                            message: `${user.name} a réalisé un décaissement de ${formatNumber(data.amount.toString())} ${notification.company.currency}, au titre de la catégorie « ${category?.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} ».`,
                             paymentDibursement: {
                                 connect: { id: createdDibursement.id }
                             },

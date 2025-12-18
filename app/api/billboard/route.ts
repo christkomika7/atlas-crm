@@ -67,6 +67,12 @@ export async function POST(req: NextRequest) {
         brochures: filesMap["brochures"] ?? [],
     };
 
+    if (rawData.lighting) {
+        Object.assign(billboardData, {
+
+        })
+    }
+
     const lessorData: any = {
         lessorType: getValue(rawData.lessorType),
         lessorSpaceType: getValue(rawData.lessorSpaceType),
@@ -146,7 +152,7 @@ export async function POST(req: NextRequest) {
             width: billboardData.width,
             height: billboardData.height,
             lighting: billboardData.lighting,
-            structureType: { connect: { id: billboardData.structureType } },
+            ...(billboardData.structureType ? { structureType: { connect: { id: billboardData.structureType } } } : {}),
             panelCondition: billboardData.panelCondition,
             decorativeElement: billboardData.decorativeElement,
             foundations: billboardData.foundations,

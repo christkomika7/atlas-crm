@@ -210,7 +210,6 @@ export async function copyTo(files: string[], destination: string): Promise<stri
     return copiedPaths;
 }
 
-
 export async function updateFiles({
     folder,
     outdatedData,
@@ -267,3 +266,50 @@ export async function updateFiles({
     return savedPaths;
 }
 
+export async function moveToNewCompany(oldCompanyName: string, newCompanyName: string): Promise<boolean> {
+    const uploadsRoot = path.join(process.cwd(), "uploads");
+    const oldCompanyPath = path.normalize(path.join(uploadsRoot, oldCompanyName));
+    const newCompanyPath = path.normalize(path.join(uploadsRoot, newCompanyName));
+
+    if (!oldCompanyPath.startsWith(uploadsRoot) || !newCompanyPath.startsWith(uploadsRoot)) {
+        console.warn("Chemin non autorisé - tentative de sortie du répertoire uploads.");
+        return false;
+    }
+
+    if (oldCompanyName.includes('..') || newCompanyName.includes('..')) {
+        console.warn("Chemin non autorisé - caractères de traversée détectés.");
+        return false;
+    }
+
+    try {
+        const oldExists = await fs.pathExists(oldCompanyPath);
+        if (!oldExists) {
+            console.warn(`Le dossier source n'existe pas : ${oldCompanyName}`);
+            return false;
+        }
+
+        const stats = await fs.stat(oldCompanyPath);
+        if (!stats.isDirectory()) {
+            console.warn(`Le chemin source n'est pas un dossier : ${oldCompanyName}`);
+            return false;
+        }
+
+        const newExists = await fs.pathExists(newCompanyPath);
+        if (newExists) {
+            console.warn(`Le dossier destination existe déjà : ${newCompanyName}`);
+            return false;
+        }
+
+        await fs.ensureDir(path.dirname(newCompanyPath));
+
+        await fs.move(oldCompanyPath, newCompanyPath, { overwrite: false });
+
+        console.log(`✓ Migration réussie : "${oldCompanyName}" → "${newCompanyName}"`);
+        console.log(`  Tous les sous-dossiers et fichiers ont été déplacés.`);
+
+        return true;
+    } catch (err) {
+        console.error(`✗ Erreur lors de la migration de "${oldCompanyName}" vers "${newCompanyName}":`, err);
+        return false;
+    }
+}

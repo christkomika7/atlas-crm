@@ -44,15 +44,15 @@ export type BillboardType = {
 
     width: number;
     height: number;
-    lighting: string;
-    structureTypeId: string;
-    structureType: BaseType;
-    panelCondition: string;
-    decorativeElement: string;
-    foundations: string;
-    electricity: string;
-    framework: string;
-    note: string;
+    lighting?: string;
+    structureTypeId?: string;
+    structureType?: BaseType;
+    panelCondition?: string;
+    decorativeElement?: string;
+    foundations?: string;
+    electricity?: string;
+    framework?: string;
+    note?: string;
 
 
     lessorSpaceType: string;

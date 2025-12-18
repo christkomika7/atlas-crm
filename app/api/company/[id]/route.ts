@@ -1,5 +1,5 @@
 import { checkAccess } from "@/lib/access";
-import { createFolder, removePath } from "@/lib/file";
+import { createFolder, moveToNewCompany, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import { extractCompanyData, getIdFromUrl } from "@/lib/utils";
 import { editCompanySchema, EditCompanySchemaType } from "@/lib/zod/company.schema";
@@ -121,8 +121,7 @@ export async function PUT(req: NextRequest) {
 
 
         if (companyHasChangeName) {
-            const folder = createFolder([company.companyName]);
-            await removePath(folder)
+            moveToNewCompany(company.companyName, data.companyName)
         }
 
         return NextResponse.json({
@@ -146,7 +145,7 @@ export async function DELETE(req: NextRequest) {
     const result = await checkAccess("SETTING", "MODIFY");
 
     if (!result.authorized) {
-        return Response.json({
+        return NextResponse.json({
             state: "error",
             message: result.message,
         }, { status: 403 });
@@ -154,33 +153,84 @@ export async function DELETE(req: NextRequest) {
 
     const session = await getSession();
 
+    if (!session) {
+        return NextResponse.json({
+            state: "error",
+            message: "Session invalide.",
+        }, { status: 403 });
+    }
+
     const id = getIdFromUrl(req.url, "last") as string;
 
     const company = await prisma.company.findUnique({
         where: { id },
+        include: {
+            clients: true,
+            suppliers: true,
+            projects: true,
+            appointments: true,
+            invoices: true,
+            quotes: true,
+            deliveryNotes: true,
+            purchaseOrders: true,
+            billboards: true,
+            productsServices: true,
+            profiles: true,
+            notifications: true,
+            receipts: true,
+            dibursements: true,
+            contracts: true,
+        },
     });
 
     if (!company) {
         return NextResponse.json({
-            message: "Entreprise introuvable.",
             state: "error",
-        }, { status: 400 })
+            message: "Entreprise introuvable.",
+        }, { status: 400 });
     }
 
-    if (session?.user.role !== "ADMIN") {
+    // Vérifier les relations importantes (toutes celles en onDelete: Restrict)
+    const hasRelations =
+        company.clients.length > 0 ||
+        company.suppliers.length > 0 ||
+        company.projects.length > 0 ||
+        company.appointments.length > 0 ||
+        company.invoices.length > 0 ||
+        company.quotes.length > 0 ||
+        company.deliveryNotes.length > 0 ||
+        company.purchaseOrders.length > 0 ||
+        company.billboards.length > 0 ||
+        company.productsServices.length > 0 ||
+        company.profiles.length > 0 ||
+        company.notifications.length > 0 ||
+        company.receipts.length > 0 ||
+        company.dibursements.length > 0 ||
+        company.contracts.length > 0;
+
+    if (hasRelations) {
         return NextResponse.json({
             state: "error",
-            message: "Vous n'avez pas les accès nécéssaire pour pouvoir executer cette requête."
-        }, { status: 400 })
+            message: "Impossible de supprimer cette entreprise : elle possède encore des données liées.",
+        }, { status: 400 });
     }
 
+    if (session.user.role !== "ADMIN") {
+        return NextResponse.json({
+            state: "error",
+            message: "Vous n'avez pas les accès nécessaires pour exécuter cette requête.",
+        }, { status: 403 });
+    }
+
+    // Supprimer la company
     await prisma.company.delete({ where: { id: company.id } });
+
+    // Supprimer les fichiers associés
     const folder = createFolder([company.companyName]);
     await removePath(folder);
 
     return NextResponse.json({
         state: "success",
         message: "Entreprise supprimée avec succès.",
-    }, { status: 200 })
-
+    }, { status: 200 });
 }
