@@ -12,10 +12,9 @@ type BilloardRentContractProps = {
   images: string[];
   maps: string;
   reference: string;
-
 }
 
-export default function BilloardRentContractPage() {
+export default function BilloardRentContractPage({ }) {
 
   return (
     <div className="flex justify-center space-y-4 pt-10 h-full">

@@ -194,7 +194,6 @@ export function formatDecimal(value: Decimal | number | string): string {
 }
 
 export function formatNumber(value: string | number | Decimal): string {
-  console.log({ type: typeof value })
   const str = value.toString().replace(/\s+/g, "");
 
   if (!/^-?\d+(\.\d+)?$/.test(str)) {

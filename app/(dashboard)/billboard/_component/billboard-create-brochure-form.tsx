@@ -27,6 +27,8 @@ import { useForm } from "react-hook-form";
 import usePdfStore from "@/stores/pdf.store";
 import { MultipleSelect, Option } from "@/components/ui/multi-select";
 import { BaseType } from "@/types/base.types";
+import { downloadBrochureAsPDF } from "@/lib/pdf";
+import Brochure from "@/components/pdf/brochure";
 
 type BillboardCreateBrochureFormProps = {
   close: () => void;
@@ -91,20 +93,6 @@ export default function BillboardCreateBrochureForm({
   }, [companyId]);
 
 
-  // <BrochurePDF
-  //   data={{
-  //     companyName: "Total Energie (TE)",
-  //     type: "SA",
-  //     capital: "5.000.000 Francs CFA",
-  //     rccm: "12345678902",
-  //     taxIdentificationNumber: "09876543212",
-  //     address: "39 rue de la place, à Libreville, Gabon.",
-  //     AdvertiserName: "Paul Dupin",
-  //     AdvertiserPost: "Directeur Général",
-  //     reference: "Contrat AG-LOC-001",
-  //   }}
-  // />
-
   async function submit(contractData: ContractSchemaType) {
     const { success, data } = contractSchema.safeParse(contractData);
     if (!success) return;
@@ -113,10 +101,32 @@ export default function BillboardCreateBrochureForm({
       async onSuccess(data) {
         if (data.data) {
           const billboards = data.data;
+
+          const items = billboards.map((item) => ({
+            id: item.id,
+            type: item.type.name,
+            reference: item.reference,
+            name: item.name,
+            width: String(item.width),
+            height: String(item.height),
+            address: item.address,
+            orientation: item.orientation,
+            dimension: String((Number(item.width) * Number(item.height))),
+            images: item.photos,
+            maps: item.gmaps,
+            color: item.company.documentModel.primaryColor
+          }))
+
           switch (action) {
             case "download":
+              downloadBrochureAsPDF(<Brochure items={items} />, "Brochure", {
+                padding: 0,
+                margin: 0,
+                quality: 0.98,
+                scale: 4,
+              })
               // await downloadPdf(data.data);
-              close(); // Fermer le modal après téléchargement
+              // close(); // Fermer le modal après téléchargement
               break;
             case "send":
               // const document = await getPdfBase64(data.data);

@@ -430,10 +430,14 @@ export default function RecordDocument({
                 {record?.note && (
                     <pre
                         style={{
-                            lineHeight: 1.3,
+                            maxWidth: 400,
+                            lineHeight: 1.5,
                             fontFamily: araboto.style?.fontFamily || "sans-serif",
                             fontSize: "0.75rem",
-                            color: "#464646"
+                            color: "#464646",
+                            whiteSpace: "pre-wrap",
+                            wordWrap: "break-word",
+                            overflowWrap: "break-word"
                         }}
                     >
                         {record?.note}

@@ -52,6 +52,14 @@ export async function POST(req: NextRequest) {
 
     const billboards = await prisma.billboard.findMany({
         where,
+        include: {
+            type: true,
+            company: {
+                include: {
+                    documentModel: true
+                }
+            }
+        }
     });
 
     return NextResponse.json(

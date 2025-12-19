@@ -119,13 +119,14 @@ export default function PreviewTab() {
               <Spinner />
             ) : (
               <>
+
                 <div className="flex justify-end">
                   <Button variant="primary" className="max-w-xs"
                     onClick={() => downloadComponentAsPDF("invoice-bc", filename, {
                       padding: 0,
                       margin: 0,
                       quality: 0.98,
-                      scale: 4,
+                      scale: 3,
                       headerText: `- ${filename.split(".pdf")[0]} - ${formatDateToDashModel(new Date(invoice?.createdAt || new Date()))}`
                     })}
                   >
