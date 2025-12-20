@@ -4,11 +4,6 @@ import prisma from "@/lib/prisma";
 import { contractSchema, ContractSchemaType } from "@/lib/zod/contract.schema";
 import { NextResponse, type NextRequest } from "next/server";
 
-function ensureArray<T = string>(v?: T | T[] | null): T[] | undefined {
-    if (v === undefined || v === null) return undefined;
-    return Array.isArray(v) ? v : [v];
-}
-
 export async function POST(req: NextRequest) {
     const result = await checkAccess("BILLBOARDS", "READ");
 
@@ -29,26 +24,21 @@ export async function POST(req: NextRequest) {
         },
     }) as ContractSchemaType;
 
-    const billboardTypes = ensureArray<string>(data.billboardType as any);
-    const cities = ensureArray<string>(data.city as any);
-    const areas = ensureArray<string>(data.area as any);
-
     const where: any = {
         hasDelete: false,
     };
 
-    if (billboardTypes && billboardTypes.length > 0) {
-        where.typeId = { in: billboardTypes };
+    if (data.billboardType && data.billboardType.length > 0) {
+        where.typeId = { in: data.billboardType };
     }
 
-    if (cities && cities.length > 0) {
-        where.cityId = { in: cities };
+    if (data.city && data.city.length > 0) {
+        where.cityId = { in: data.city };
     }
 
-    if (areas && areas.length > 0) {
-        where.areaId = { in: areas };
+    if (data.area && data.area.length > 0) {
+        where.areaId = { in: data.area };
     }
-
 
     const billboards = await prisma.billboard.findMany({
         where,
@@ -66,9 +56,7 @@ export async function POST(req: NextRequest) {
         {
             state: "success",
             count: billboards.length,
-            data: billboards.map((billboard) => ({
-                ...billboard,
-            })),
+            data: billboards,
         },
         { status: 200 }
     );

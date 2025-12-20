@@ -456,9 +456,11 @@ export const renderComponentToPDF = async (
         throw error;
     }
 };
-export const downloadBrochureAsPDF = async (
+
+
+
+export const downloadBrochurePDF = async (
     component: React.ReactNode,
-    filename: string = 'document.pdf',
     options: {
         quality?: number;
         scale?: number;
@@ -466,85 +468,129 @@ export const downloadBrochureAsPDF = async (
         padding?: number;
     } = {}
 ): Promise<void> => {
-    const { quality = 0.98, scale = 4, margin = 0, padding = 20 } = options;
 
-    const ReactDOM = await import('react-dom/client');
+    const {
+        quality = 0.98,
+        scale = 4
+    } = options;
+
+    const A4_WIDTH_PX = 794;
+    const A4_WIDTH_MM = 210;
+    const A4_HEIGHT_MM = 297;
+
+    const ReactDOM = await import("react-dom/client");
 
     try {
-        const A4_WIDTH_PX = 794;
-        const A4_HEIGHT_PX = 1123;
-
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        container.style.top = '0';
+        const container = document.createElement("div");
+        container.style.position = "absolute";
+        container.style.left = "-9999px";
+        container.style.top = "0";
         container.style.width = `${A4_WIDTH_PX}px`;
-        container.style.minHeight = `${A4_HEIGHT_PX}px`;
-        container.style.padding = `${padding}px`;
-        container.style.backgroundColor = '#ffffff';
-        container.style.boxSizing = 'border-box';
+        container.style.background = "#fff";
+        container.style.boxSizing = "border-box";
+        container.style.margin = "0";
+        container.style.padding = "0";
+
         document.body.appendChild(container);
 
         const root = ReactDOM.createRoot(container);
         await new Promise<void>((resolve) => {
             root.render(component as React.ReactElement);
-            setTimeout(resolve, 500);
+            setTimeout(resolve, 800);
         });
 
         await document.fonts.ready;
-        await new Promise(res => setTimeout(res, 200));
+        await new Promise(r => setTimeout(r, 300));
+
+        const contentHeight = Math.max(container.scrollHeight, container.offsetHeight);
 
         const canvas = await html2canvas(container, {
             scale,
+            backgroundColor: "#ffffff",
             useCORS: true,
-            backgroundColor: '#ffffff',
             width: A4_WIDTH_PX,
-            height: container.scrollHeight,
+            height: contentHeight,
+            windowWidth: A4_WIDTH_PX,
+            windowHeight: contentHeight
         });
 
         root.unmount();
         document.body.removeChild(container);
 
-        const A4_WIDTH_MM = 210;
-        const A4_HEIGHT_MM = 297;
-        const imgWidth = A4_WIDTH_MM - 2 * margin;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        const availableHeight = A4_HEIGHT_MM - 2 * margin;
-
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-
-        if (imgHeight <= availableHeight) {
-            pdf.addImage(canvas.toDataURL('image/jpeg', quality), 'JPEG', margin, margin, imgWidth, imgHeight, undefined, 'FAST');
-        } else {
-            let remainingHeight = imgHeight;
-            let currentPosition = 0;
-
-            while (remainingHeight > 0.5) {
-                if (currentPosition > 0) pdf.addPage();
-
-                const heightForThisPage = Math.min(remainingHeight, availableHeight);
-                const sourceY = (currentPosition / imgHeight) * canvas.height;
-                const sourceHeight = Math.min((heightForThisPage / imgHeight) * canvas.height, canvas.height - sourceY);
-
-                const pageCanvas = document.createElement('canvas');
-                pageCanvas.width = canvas.width;
-                pageCanvas.height = Math.ceil(sourceHeight);
-
-                const ctx = pageCanvas.getContext('2d');
-                if (ctx) {
-                    ctx.drawImage(canvas, 0, Math.floor(sourceY), canvas.width, Math.ceil(sourceHeight), 0, 0, canvas.width, Math.ceil(sourceHeight));
-                    pdf.addImage(pageCanvas.toDataURL('image/jpeg', quality), 'JPEG', margin, margin, imgWidth, heightForThisPage, undefined, 'FAST');
-                }
-
-                currentPosition += heightForThisPage;
-                remainingHeight -= heightForThisPage;
-            }
+        if (!canvas || canvas.width === 0 || canvas.height === 0) {
+            console.warn("⚠️ Canvas généré avec dimensions faibles", {
+                width: canvas?.width,
+                height: canvas?.height
+            });
         }
 
-        pdf.save(filename);
+        const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4",
+            compress: true
+        });
 
-    } catch (error) {
-        console.error('Erreur lors de la génération du PDF:', error);
-        throw error;
+        const pageWidthMM = A4_WIDTH_MM;
+        const pageHeightMM = A4_HEIGHT_MM;
+
+        const pageHeightPx =
+            (pageHeightMM * canvas.width) / pageWidthMM;
+
+        let offsetY = 0;
+        let pageIndex = 0;
+
+        while (offsetY < canvas.height) {
+            const sliceHeight = Math.min(
+                pageHeightPx,
+                canvas.height - offsetY
+            );
+
+            const pageCanvas = document.createElement("canvas");
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = sliceHeight;
+
+            const ctx = pageCanvas.getContext("2d");
+            if (!ctx) break;
+
+            ctx.drawImage(
+                canvas,
+                0,
+                offsetY,
+                canvas.width,
+                sliceHeight,
+                0,
+                0,
+                canvas.width,
+                sliceHeight
+            );
+
+            if (pageIndex > 0) pdf.addPage();
+
+            const renderHeightMM =
+                (sliceHeight * pageWidthMM) / canvas.width;
+
+            pdf.addImage(
+                pageCanvas.toDataURL("image/jpeg", quality),
+                "JPEG",
+                0,
+                0,
+                pageWidthMM,
+                renderHeightMM,
+                undefined,
+                "FAST"
+            );
+
+            offsetY += sliceHeight;
+            pageIndex++;
+
+            if (pageIndex > 100) break;
+        }
+
+        pdf.save(`${new Date()}-brochure.pdf`);
+
+    } catch (err) {
+        console.error("❌ PDF generation error:", err);
+        throw err;
     }
 };

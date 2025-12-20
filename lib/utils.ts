@@ -295,7 +295,6 @@ export function resolveImageSrc(
 
   try {
     if (typeof file === "string") {
-      // Vérifie si c'est une URL valide (http(s) ou data: ou chemin local)
       try {
         new URL(file, window.location.origin);
         return file;
@@ -305,7 +304,6 @@ export function resolveImageSrc(
     }
 
     if (file instanceof File) {
-      // Vérifie que ce n’est pas un fichier vide ou corrompu
       if (file.size === 0 || !file.type.startsWith("image/")) {
         return null;
       }
@@ -321,7 +319,6 @@ export function resolveImageSrc(
 export function extractCompanyData(formData: FormData) {
   const data: any = {};
 
-  // Champs simples
   const simpleFields = [
     "companyName",
     "country",

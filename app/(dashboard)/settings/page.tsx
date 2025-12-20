@@ -25,7 +25,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Header back="/" title="Settings">
+      <Header back="/" title="Paramètres">
         {createAccess &&
           <div className="flex items-center gap-x-2">
             <Button

@@ -27,8 +27,9 @@ import { useForm } from "react-hook-form";
 import usePdfStore from "@/stores/pdf.store";
 import { MultipleSelect, Option } from "@/components/ui/multi-select";
 import { BaseType } from "@/types/base.types";
-import { downloadBrochureAsPDF } from "@/lib/pdf";
+import { downloadBrochurePDF } from "@/lib/pdf";
 import Brochure from "@/components/pdf/brochure";
+import { toast } from "sonner";
 
 type BillboardCreateBrochureFormProps = {
   close: () => void;
@@ -39,6 +40,8 @@ export default function BillboardCreateBrochureForm({
   close,
   onSendEmail,
 }: BillboardCreateBrochureFormProps) {
+  const [downloadLoader, setDownloadLoader] = useState(false);
+  const [sendEmailLoader, setSendEmailLoader] = useState(false);
   const companyId = useDataStore.use.currentCompany();
   const [action, setAction] = useState<"download" | "send">();
   const setPdf = usePdfStore.use.setPdf();
@@ -101,7 +104,6 @@ export default function BillboardCreateBrochureForm({
       async onSuccess(data) {
         if (data.data) {
           const billboards = data.data;
-
           const items = billboards.map((item) => ({
             id: item.id,
             type: item.type.name,
@@ -115,22 +117,28 @@ export default function BillboardCreateBrochureForm({
             images: item.photos,
             maps: item.gmaps,
             color: item.company.documentModel.primaryColor
-          }))
+          }));
+          console.log({ billboards })
+          if (billboards.length === 0) return toast.error("Votre filtre ne renvoi vers aucune donnée.")
+
 
           switch (action) {
             case "download":
-              downloadBrochureAsPDF(<Brochure items={items} />, "Brochure", {
+              setDownloadLoader(true);
+              await downloadBrochurePDF(<Brochure items={items} />, {
                 padding: 0,
                 margin: 0,
                 quality: 0.98,
                 scale: 4,
               })
-              // await downloadPdf(data.data);
               // close(); // Fermer le modal après téléchargement
+              setDownloadLoader(false)
               break;
             case "send":
+              setSendEmailLoader(true)
               // const document = await getPdfBase64(data.data);
               // setPdf(document);
+              setSendEmailLoader(false)
               close(); // Fermer le modal actuel
               onSendEmail?.(); // Ouvrir le modal d'envoi email
               break;
@@ -171,150 +179,151 @@ export default function BillboardCreateBrochureForm({
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="billboardType"
+            render={({ field }) => {
+              const allOptions: Option[] =
+                billboardsType?.data?.map((billboardType) => ({
+                  id: billboardType.id,
+                  label: billboardType.name,
+                  value: billboardType.id,
+                })) ?? [];
 
-          <div className="gap-x-2 grid grid-cols-3">
-            <FormField
-              control={form.control}
-              name="billboardType"
-              render={({ field }) => {
-                const allOptions: Option[] =
-                  billboardsType?.data?.map((billboardType) => ({
-                    id: billboardType.id,
-                    label: billboardType.name,
-                    value: billboardType.id,
-                  })) ?? [];
+              const selectedOptions = allOptions.filter((opt) =>
+                field.value?.includes(opt.value)
+              );
+              return (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <MultipleSelect
+                      className="max-w-md"
 
-                const selectedOptions = allOptions.filter((opt) =>
-                  field.value?.includes(opt.value)
-                );
-                return (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <MultipleSelect
-                        label={
-                          <span>
-                            Type de panneau <span className="text-red-500">*</span>
-                          </span>
-                        }
-                        isLoading={isPendingArea}
-                        options={allOptions}
-                        value={selectedOptions}
-                        onChange={(options) =>
-                          field.onChange(options.map((opt) => opt.value))
-                        }
-                        placeholder="Sélèctionner des types de panneau"
-                        disabled={isPendingBillboardType}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )
-              }}
-            />
+                      label={
+                        <span>
+                          Type de panneau
+                        </span>
+                      }
+                      isLoading={isPendingArea}
+                      options={allOptions}
+                      value={selectedOptions}
+                      onChange={(options) =>
+                        field.onChange(options.map((opt) => opt.value))
+                      }
+                      placeholder="Sélèctionner des types de panneau"
+                      disabled={isPendingBillboardType}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )
+            }}
+          />
 
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => {
-                const allOptions: Option[] =
-                  cities?.data?.map((city) => ({
-                    id: city.id,
-                    label: city.name,
-                    value: city.id,
-                  })) ?? [];
+          <FormField
+            control={form.control}
+            name="city"
+            render={({ field }) => {
+              const allOptions: Option[] =
+                cities?.data?.map((city) => ({
+                  id: city.id,
+                  label: city.name,
+                  value: city.id,
+                })) ?? [];
 
-                const selectedOptions = allOptions.filter((opt) =>
-                  field.value?.includes(opt.value)
-                );
-                return (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <MultipleSelect
-                        label={
-                          <span>
-                            Ville <span className="text-red-500">*</span>
-                          </span>
-                        }
-                        isLoading={isPendingArea}
-                        options={allOptions}
-                        value={selectedOptions}
-                        onChange={(options) =>
-                          field.onChange(options.map((opt) => opt.value))
-                        }
-                        placeholder="Sélèctionner des villes"
-                        disabled={isPendingCity}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )
-              }}
-            />
-            <FormField
-              control={form.control}
-              name="area"
-              render={({ field }) => {
-                const allOptions: Option[] =
-                  areas?.data?.map((area) => ({
-                    id: area.id,
-                    label: area.name,
-                    value: area.id,
-                  })) ?? [];
+              const selectedOptions = allOptions.filter((opt) =>
+                field.value?.includes(opt.value)
+              );
+              return (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <MultipleSelect
+                      className="max-w-md"
+                      label={
+                        <span>
+                          Ville
+                        </span>
+                      }
+                      isLoading={isPendingArea}
+                      options={allOptions}
+                      value={selectedOptions}
+                      onChange={(options) =>
+                        field.onChange(options.map((opt) => opt.value))
+                      }
+                      placeholder="Sélèctionner des villes"
+                      disabled={isPendingCity}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )
+            }}
+          />
+          <FormField
+            control={form.control}
+            name="area"
+            render={({ field }) => {
+              const allOptions: Option[] =
+                areas?.data?.map((area) => ({
+                  id: area.id,
+                  label: area.name,
+                  value: area.id,
+                })) ?? [];
 
-                const selectedOptions = allOptions.filter((opt) =>
-                  field.value?.includes(opt.value)
-                );
+              const selectedOptions = allOptions.filter((opt) =>
+                field.value?.includes(opt.value)
+              );
 
-                return (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <MultipleSelect
-                        label={
-                          <span>
-                            Quartier <span className="text-red-500">*</span>
-                          </span>
-                        }
-                        isLoading={isPendingArea}
-                        options={allOptions}
-                        value={selectedOptions}
-                        onChange={(options) =>
-                          field.onChange(options.map((opt) => opt.value))
-                        }
-                        placeholder="Sélèctionner des quartiers"
-                        disabled={isPendingArea}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
-          </div>
+              return (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <MultipleSelect
+                      className="max-w-md"
+                      label={
+                        <span>
+                          Quartier
+                        </span>
+                      }
+                      isLoading={isPendingArea}
+                      options={allOptions}
+                      value={selectedOptions}
+                      onChange={(options) =>
+                        field.onChange(options.map((opt) => opt.value))
+                      }
+                      placeholder="Sélèctionner des quartiers"
+                      disabled={isPendingArea}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
         </div>
 
         <div className="flex justify-center gap-x-2 pt-2">
           <Button
             variant="primary"
-            disabled={isPendingBillboardFilter}
+            disabled={isPendingBillboardFilter || downloadLoader}
             onClick={(e) => {
               e.stopPropagation();
               setAction("download");
             }}
             className="justify-center bg-white shadow-none border-2 border-blue max-w-xs text-blue"
           >
-            {isPendingBillboardFilter && action === "download" ? (
+            {downloadLoader ? (
               <Spinner />
             ) : (
               "Télécharger le pdf"
             )}
           </Button>
           <Button
-            disabled={isPendingBillboardFilter}
+            disabled={isPendingBillboardFilter || sendEmailLoader}
             variant="primary"
             className="justify-center max-w-xs"
             onClick={() => setAction("send")}
           >
-            {isPendingBillboardFilter && action === "send" ? (
+            {sendEmailLoader ? (
               <Spinner />
             ) : (
               "Envoyer via email"

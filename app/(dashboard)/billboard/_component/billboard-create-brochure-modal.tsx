@@ -28,7 +28,7 @@ export default function BillboardBrochureModal({
     <>
       <Dialog open={contractModalOpen} onOpenChange={setContractModalOpen}>
         <DialogTrigger asChild>{children}</DialogTrigger>
-        <DialogContent className="min-w-[950px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Selectionner les critères</DialogTitle>
             <DialogDescription></DialogDescription>

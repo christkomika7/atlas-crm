@@ -11,7 +11,6 @@ type BillboardPhotoProps = {
 
 export default function BillboardPhoto({ path, name }: BillboardPhotoProps) {
     const [profil, setProfil] = useState("");
-
     async function getProfil() {
         if (path) {
             const file = await urlToFile(path);

@@ -1,18 +1,36 @@
 import { z } from "zod";
 import { $Enums } from "../generated/prisma";
 
+
 export const contractSchema = z.object({
-    range: z.object({
-        from: z.date(),
-        to: z.date(),
-    }).refine(
-        (data) => new Date(data.from) <= new Date(data.to),
-        { message: "La date de début doit être antérieure à la date de fin.", path: ["end"] }
-    ),
-    billboardType: z.array(z.string()).min(1, { message: "Le type de panneau est requis" }),
-    city: z.array(z.string()).min(1, { error: "La ville est requise." }),
-    area: z.array(z.string()).min(1, { message: "Au minimum une zone doit etre séléctionné." }),
+    range: z
+        .object(
+            {
+                from: z.date({
+                    error: "La date de début est obligatoire.",
+                }),
+                to: z.date({
+                    error: "La date de fin est obligatoire.",
+                }),
+            },
+            {
+                error: "La période est obligatoire.",
+            }
+        )
+        .refine(
+            (data) => data.from <= data.to,
+            {
+                message: "La date de début doit être antérieure à la date de fin.",
+                path: ["to"],
+            }
+        ),
+
+    billboardType: z.array(z.string()).optional(),
+    city: z.array(z.string()).optional(),
+    area: z.array(z.string()).optional(),
 });
+
+
 
 export const clientContractSchema = z.object({
     id: z.string().optional(),

@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
         hostname: 'flagcdn.com',
         pathname: '/**'
       },
+      {
+        protocol: 'https',
+        hostname: 'maps.googleapis.com',
+        pathname: '/maps/api/staticmap**',
+      },
     ],
   },
 };

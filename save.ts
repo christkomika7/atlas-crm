@@ -1,608 +1,552 @@
-import { checkAccess, sessionAccess } from "@/lib/access";
-import { NextResponse, type NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
-import { Decimal } from "decimal.js";
-import { formatNumber, generateAmaId } from "@/lib/utils";
-import { toUtcDateOnly } from "@/lib/date";
-import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
+import html2canvas from 'html2canvas-pro';
+import jsPDF from 'jspdf';
 
-export async function PUT(req: NextRequest) {
-    const result = await checkAccess(['TRANSACTION', 'PURCHASE_ORDER'], "MODIFY");
-    const { userId } = await sessionAccess();
+export const downloadComponentAsPDF = async (
+    elementId: string,
+    filename: string = 'document.pdf',
+    options: {
+        quality?: number;
+        scale?: number;
+        margin?: number;
+        padding?: number;
+        headerText?: string;
+    } = {}
+): Promise<void> => {
+    const {
+        quality = 0.98,
+        scale = 4,
+        margin = 0,
+        padding = 10,
+        headerText = '',
+    } = options;
 
-    if (!result.authorized) {
-        return Response.json({
-            status: "error",
-            message: result.message,
-        }, { status: 200 });
+    const DEFAULT_HEADER_TEXT = 'DOCUMENT CONFIDENTIEL';
+    const A4_WIDTH_PX = 794;
+    try {
+        const element = document.getElementById(elementId);
+        if (!element) throw new Error(`L'élément avec l'ID "${elementId}" n'a pas été trouvé`);
+
+        const paddingBottom = 30;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'absolute';
+        wrapper.style.left = '-9999px';
+        wrapper.style.top = '0';
+        wrapper.style.width = `${A4_WIDTH_PX}px`;
+        wrapper.style.padding = `${padding}px`;
+        wrapper.style.paddingBottom = `${paddingBottom}px`;
+        wrapper.style.backgroundColor = '#ffffff';
+        wrapper.style.boxSizing = 'border-box';
+
+        const clonedElement = element.cloneNode(true) as HTMLElement;
+        clonedElement.style.width = `${A4_WIDTH_PX}px`;
+        clonedElement.style.maxWidth = `${A4_WIDTH_PX}px`;
+        clonedElement.style.boxSizing = 'border-box';
+        clonedElement.style.margin = '0';
+        clonedElement.style.padding = '0';
+
+        wrapper.appendChild(clonedElement);
+        document.body.appendChild(wrapper);
+
+        await document.fonts.ready;
+        await new Promise(res => setTimeout(res, 300));
+
+        const forceStyleRecalculation = (el: HTMLElement) => {
+            const allElements = [el, ...Array.from(el.querySelectorAll('*'))] as HTMLElement[];
+
+            allElements.forEach((element) => {
+                const computed = window.getComputedStyle(element);
+
+                if (computed.transform && computed.transform !== 'none') {
+                    element.style.transform = computed.transform;
+                    element.style.willChange = 'transform';
+                }
+
+                [
+                    'marginTop', 'marginBottom', 'marginLeft', 'marginRight',
+                    'position', 'top', 'right', 'bottom', 'left', 'display',
+                    'flexDirection', 'flexWrap', 'justifyContent', 'alignItems',
+                    'backgroundColor', 'overflow', 'opacity', 'width', 'height',
+                    'gap', 'rowGap', 'columnGap', 'zIndex',
+                ].forEach((prop) => {
+                    const val = (computed as any)[prop];
+                    if (val && val !== 'auto' && val !== '0px' && val !== 'normal') {
+                        (element.style as any)[prop] = val;
+                    }
+                });
+            });
+        };
+
+        forceStyleRecalculation(clonedElement);
+        await new Promise(res => setTimeout(res, 200));
+
+        const canvas = await html2canvas(wrapper, {
+            scale,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            width: A4_WIDTH_PX,
+            height: wrapper.scrollHeight,
+            windowWidth: A4_WIDTH_PX,
+            windowHeight: wrapper.scrollHeight,
+        });
+
+        document.body.removeChild(wrapper);
+
+        const A4_WIDTH_MM = 210;
+        const A4_HEIGHT_MM = 297;
+        const imgWidth = A4_WIDTH_MM - 2 * margin;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        const paddingBottomMM = 14;
+        const footerHeightMM = 10;
+        const headerHeightMM = 10;
+
+        const availableHeightFirstPage = A4_HEIGHT_MM - margin - paddingBottomMM - footerHeightMM;
+        const availableHeightOtherPages = A4_HEIGHT_MM - margin - headerHeightMM - paddingBottomMM - footerHeightMM;
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+            compress: true,
+            precision: 16,
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', quality);
+        const TOLERANCE = 5;
+
+        const fitsOnOnePage = imgHeight <= availableHeightFirstPage + TOLERANCE;
+
+        if (fitsOnOnePage) {
+            const startY = margin;
+            const maxContentHeight = A4_HEIGHT_MM - startY - paddingBottomMM - footerHeightMM;
+            const finalHeight = Math.min(imgHeight, maxContentHeight);
+
+            pdf.addImage(imgData, 'JPEG', margin, startY, imgWidth, finalHeight, undefined, 'FAST');
+            pdf.save(filename);
+            return;
+        }
+
+        let currentPosition = 0;
+        let pageNumber = 0;
+
+        while (currentPosition < imgHeight - 0.5) {
+            if (pageNumber > 0) pdf.addPage();
+
+            const isFirstPage = pageNumber === 0;
+            const availableHeight = isFirstPage ? availableHeightFirstPage : availableHeightOtherPages;
+            const remainingHeight = imgHeight - currentPosition;
+            let heightForThisPage = Math.min(availableHeight, remainingHeight);
+
+            if (heightForThisPage < 5 && pageNumber > 0) {
+                break;
+            }
+
+            const contentStartY = isFirstPage ? margin : margin + headerHeightMM;
+
+            const sourceY = (currentPosition / imgHeight) * canvas.height;
+            const sourceHeight = (heightForThisPage / imgHeight) * canvas.height;
+
+            const pageCanvas = document.createElement('canvas');
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = Math.ceil(sourceHeight);
+
+            const ctx = pageCanvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(
+                    canvas,
+                    0,
+                    Math.floor(sourceY),
+                    canvas.width,
+                    Math.ceil(sourceHeight),
+                    0,
+                    0,
+                    canvas.width,
+                    Math.ceil(sourceHeight)
+                );
+
+                pdf.addImage(
+                    pageCanvas.toDataURL('image/jpeg', quality),
+                    'JPEG',
+                    margin,
+                    contentStartY,
+                    imgWidth,
+                    heightForThisPage,
+                    undefined,
+                    'FAST'
+                );
+            }
+
+            currentPosition += heightForThisPage;
+            pageNumber++;
+        }
+
+        const totalPages = pdf.getNumberOfPages();
+        const shouldShowHeader = totalPages >= 2;
+        const effectiveHeaderText = shouldShowHeader ? (headerText || DEFAULT_HEADER_TEXT) : '';
+
+        for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+
+            if (i > 1 && shouldShowHeader && effectiveHeaderText) {
+                pdf.setFontSize(10);
+                pdf.setTextColor(100);
+                pdf.text(effectiveHeaderText, A4_WIDTH_MM / 2, margin + 5, { align: 'center' });
+            }
+
+            pdf.setFontSize(10);
+            pdf.setTextColor(100);
+            pdf.text(`${i}/${totalPages}`, A4_WIDTH_MM / 2, A4_HEIGHT_MM - margin - 5, { align: 'center' });
+        }
+
+        pdf.save(filename);
+
+    } catch (error) {
+        console.error('❌ Erreur lors de la génération du PDF:', error);
+        throw error;
     }
+};
 
-    const user = await prisma.user.findUnique({ where: { id: userId as string } })
+export const renderComponentToPDF = async (
+    component: React.ReactNode,
+    options: {
+        quality?: number;
+        scale?: number;
+        margin?: number;
+        padding?: number;
+        headerText?: string;
+    } = {}
+): Promise<ArrayBuffer> => {
+    const {
+        quality = 0.98,
+        scale = 4,
+        margin = 0,
+        padding = 10, // ✅ Réduit de 20 à 10
+        headerText = ''
+    } = options;
 
-    if (!user) return NextResponse.json({
-        state: "error",
-        message: "Utlisateur non trouvé."
-    }, { status: 400 });
+    const DEFAULT_HEADER_TEXT = 'DOCUMENT CONFIDENTIEL';
+    const A4_WIDTH_PX = 794;
+
+    const ReactDOM = await import("react-dom/client");
 
     try {
-        const { notificationId, action } = await req.json();
+        const paddingBottom = 30; // ✅ Réduit de 40 à 30
 
-        if (!notificationId || !action) {
-            return NextResponse.json({
-                status: "error",
-                message: "Paramètres manquants.",
-            }, { status: 400 });
-        }
+        const container = document.createElement("div");
+        container.style.position = "absolute";
+        container.style.left = "-9999px";
+        container.style.top = "0";
+        container.style.width = `${A4_WIDTH_PX}px`;
+        container.style.padding = `${padding}px`;
+        container.style.paddingBottom = `${paddingBottom}px`;
+        container.style.backgroundColor = "#ffffff";
+        container.style.boxSizing = "border-box";
+        // ✅ Pas de maxHeight ni overflow:hidden pour permettre le contenu long
 
-        if (action !== 'validate' && action !== 'cancel') {
-            return NextResponse.json({
-                status: "error",
-                message: "Action invalide. Utilisez 'validate' ou 'cancel'.",
-            }, { status: 400 });
-        }
+        document.body.appendChild(container);
 
-        const notification = await prisma.notification.findUnique({
-            where: { id: notificationId },
-            include: {
-                dibursement: true,
-                company: true
+        const root = ReactDOM.createRoot(container);
+        await new Promise<void>((resolve) => {
+            root.render(component as React.ReactElement);
+            setTimeout(resolve, 500);
+        });
+
+        await document.fonts.ready;
+        await new Promise((res) => setTimeout(res, 300));
+
+        // Fonction pour forcer recalcul des styles
+        const forceStyleRecalculation = (el: HTMLElement) => {
+            const allElements = [el, ...Array.from(el.querySelectorAll('*'))] as HTMLElement[];
+
+            allElements.forEach((element) => {
+                const computed = window.getComputedStyle(element);
+
+                // Espacements négatifs Tailwind
+                const classList = Array.from(element.parentElement?.classList || []);
+                const hasNegativeSpaceY = classList.some(cls => cls.startsWith('-space-y-'));
+                const hasNegativeSpaceX = classList.some(cls => cls.startsWith('-space-x-'));
+
+                if (hasNegativeSpaceY || hasNegativeSpaceX) {
+                    const children = Array.from(element.parentElement?.children || []) as HTMLElement[];
+                    children.forEach((child, index) => {
+                        if (index === children.length - 1) return;
+
+                        if (hasNegativeSpaceY) {
+                            const marginTop = window.getComputedStyle(child).marginTop;
+                            if (marginTop) child.style.marginTop = marginTop;
+                            const marginBottom = window.getComputedStyle(child).marginBottom;
+                            if (marginBottom) child.style.marginBottom = marginBottom;
+                        }
+                        if (hasNegativeSpaceX) {
+                            const marginLeft = window.getComputedStyle(child).marginLeft;
+                            if (marginLeft) child.style.marginLeft = marginLeft;
+                            const marginRight = window.getComputedStyle(child).marginRight;
+                            if (marginRight) child.style.marginRight = marginRight;
+                        }
+                    });
+                }
+
+                // Transformations
+                if (computed.transform && computed.transform !== 'none') {
+                    element.style.transform = computed.transform;
+                    element.style.willChange = 'transform';
+                }
+
+                // Styles généraux
+                ['marginTop', 'marginBottom', 'marginLeft', 'marginRight',
+                    'position', 'top', 'right', 'bottom', 'left', 'display',
+                    'flexDirection', 'flexWrap', 'justifyContent', 'alignItems',
+                    'backgroundColor', 'overflow', 'opacity', 'width', 'height',
+                    'gap', 'rowGap', 'columnGap', 'zIndex'].forEach((prop) => {
+                        const val = (computed as any)[prop];
+                        if (val && val !== 'auto' && val !== '0px' && val !== 'normal') {
+                            (element.style as any)[prop] = val;
+                        }
+                    });
+            });
+        };
+
+        forceStyleRecalculation(container);
+        await new Promise(res => setTimeout(res, 200));
+
+        const canvas = await html2canvas(container, {
+            scale,
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: "#ffffff",
+            logging: false,
+            imageTimeout: 0,
+            removeContainer: false,
+            width: A4_WIDTH_PX,
+            height: container.scrollHeight,
+            windowWidth: A4_WIDTH_PX,
+            windowHeight: container.scrollHeight,
+            foreignObjectRendering: false,
+            onclone: (clonedDoc, clonedWrapper) => {
+                const clonedInner = clonedWrapper as HTMLElement;
+                if (clonedInner) forceStyleRecalculation(clonedInner);
             }
         });
 
-        if (!notification) {
-            return NextResponse.json({
-                status: "error",
-                message: "Notification introuvable.",
-            }, { status: 404 });
+        root.unmount();
+        document.body.removeChild(container);
+
+        const A4_WIDTH_MM = 210;
+        const A4_HEIGHT_MM = 297;
+        const imgWidth = A4_WIDTH_MM - 2 * margin;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        const paddingBottomMM = 14;
+        const footerHeightMM = 10;
+        const headerHeightMM = 10;
+
+        const availableHeightFirstPage = A4_HEIGHT_MM - margin - paddingBottomMM - footerHeightMM;
+        const availableHeightOtherPages = A4_HEIGHT_MM - margin - headerHeightMM - paddingBottomMM - footerHeightMM;
+
+        const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4",
+            compress: true,
+            precision: 16
+        });
+
+        const imgData = canvas.toDataURL("image/jpeg", quality);
+        const TOLERANCE = 5; // ✅ Tolérance augmentée
+
+        const fitsOnOnePage = imgHeight <= availableHeightFirstPage + TOLERANCE;
+
+        if (fitsOnOnePage) {
+            // ✅ Une seule page
+            const startY = margin;
+            const maxContentHeight = A4_HEIGHT_MM - startY - paddingBottomMM - footerHeightMM;
+            const finalHeight = Math.min(imgHeight, maxContentHeight);
+
+            pdf.addImage(imgData, "JPEG", margin, startY, imgWidth, finalHeight, undefined, 'FAST');
+
+            // Footer
+            pdf.setFontSize(10);
+            pdf.setTextColor(100);
+            pdf.text('1/1', A4_WIDTH_MM / 2, A4_HEIGHT_MM - margin - 5, { align: 'center' });
+
+            return pdf.output("arraybuffer");
         }
 
-        if (!notification.active) {
-            return NextResponse.json({
-                status: "error",
-                message: "Cette action a déjà été traitée.",
-            }, { status: 400 });
-        }
+        // ✅ Plusieurs pages
+        let currentPosition = 0;
+        let pageNumber = 0;
 
-        if (notification.type !== "CONFIRM") {
-            return NextResponse.json({
-                status: "error",
-                message: "Cette notification ne nécessite pas de confirmation.",
-            }, { status: 400 });
-        }
+        while (currentPosition < imgHeight - 0.5) {
+            if (pageNumber > 0) pdf.addPage();
 
-        // Si l'action est 'cancel'
-        if (action === 'cancel') {
-            const source = await prisma.source.findUnique({ where: { id: notification.dibursement?.source as string } })
+            const isFirstPage = pageNumber === 0;
+            const availableHeight = isFirstPage ? availableHeightFirstPage : availableHeightOtherPages;
+            const remainingHeight = imgHeight - currentPosition;
+            let heightForThisPage = Math.min(availableHeight, remainingHeight);
 
-            await prisma.$transaction([
-                prisma.dibursementData.deleteMany({
-                    where: { id: notification.dibursement?.id }
-                }),
-                prisma.notification.update({
-                    where: { id: notification.id },
-                    data: { active: false }
-                }),
-                prisma.notificationRead.upsert({
-                    where: {
-                        notificationId_userId: {
-                            notificationId: notification.id,
-                            userId: user.id as string
-                        }
-                    },
-                    create: {
-                        notificationId: notification.id,
-                        userId: user.id as string
-                    },
-                    update: {
-                        readAt: new Date()
-                    }
-                }),
-
-                prisma.notification.create({
-                    data: {
-                        type: 'ALERT',
-                        for: 'DISBURSEMENT',
-                        message: `${user.name} a annulé un décaissement de ${formatNumber(notification.dibursement?.amount.toString() || 0)} ${notification.company.currency} dans le compte ${source?.name}.`,
-                        company: {
-                            connect: { id: notification.companyId }
-                        }
-                    }
-                })
-            ]);
-
-            return NextResponse.json({
-                status: "success",
-                message: "Le décaissement a été annulé avec succès.",
-            }, { status: 200 });
-        }
-
-        switch (notification.for) {
-            case "DISBURSEMENT":
-                if (notification.dibursement) {
-                    const data = notification.dibursement;
-
-                    const referenceDocument: Record<string, any> = {};
-
-
-                    if (data.fiscalObject) {
-                        Object.assign(referenceDocument, {
-                            fiscalObject: { connect: { id: data.fiscalObject } },
-                        });
-                    }
-
-                    if (data.allocation) {
-                        Object.assign(referenceDocument, {
-                            allocation: { connect: { id: data.allocation } },
-                        });
-                    }
-
-                    if (data.periodStart && data.periodEnd) {
-                        Object.assign(referenceDocument, {
-                            periodStart: data.periodStart,
-                            periodEnd: data.periodEnd,
-                        });
-                    }
-
-                    if (data.purchaseOrder) {
-                        Object.assign(referenceDocument, {
-                            referencePurchaseOrder: { connect: { id: data.purchaseOrder } },
-                        });
-                    }
-
-                    const partners = data.supplier ? JSON.parse(data.supplier) as string[] : [];
-
-                    if (partners.length > 0) {
-                        Object.assign(referenceDocument, {
-                            suppliers: {
-                                connect: [
-                                    ...(partners.map(partner => ({ id: partner })) || [])
-                                ]
-                            },
-                        });
-                    }
-
-                    if (data.project) {
-                        Object.assign(referenceDocument, {
-                            project: { connect: { id: data.project } },
-                        });
-                    }
-
-                    if (data.payOnBehalfOf) {
-                        Object.assign(referenceDocument, {
-                            payOnBehalfOf: { connect: { id: data.payOnBehalfOf } },
-                        });
-                    }
-
-                    try {
-
-                        let paymentId = "";
-                        const source = await prisma.source.findUnique({ where: { id: notification.dibursement?.source as string } })
-
-                        if (data.purchaseOrder) {
-                            const purchaseOrderId = data.purchaseOrder;
-
-                            const purchaseExist = await prisma.purchaseOrder.findUnique({
-                                where: { id: purchaseOrderId },
-                                select: {
-                                    id: true,
-                                    amountType: true,
-                                    payee: true,
-                                    totalTTC: true,
-                                    totalHT: true,
-                                    isPaid: true,
-                                    company: { select: { id: true, currency: true } },
-                                },
-                            });
-
-                            if (!purchaseExist) {
-                                return NextResponse.json({
-                                    status: "error",
-                                    message: "Identifiant du bon de commande invalide.",
-                                }, { status: 400 });
-                            }
-
-                            if (purchaseExist.isPaid) {
-                                return NextResponse.json({
-                                    status: "error",
-                                    message: "Ce bon de commande a déjà réglée et ne peut pas recevoir de nouveau paiement.",
-                                }, { status: 400 });
-                            }
-
-                            const total =
-                                purchaseExist.amountType === "HT"
-                                    ? purchaseExist.totalHT
-                                    : purchaseExist.totalTTC;
-
-                            const payee = purchaseExist.payee;
-                            const remaining = total.minus(payee);
-                            const newAmount = new Decimal(data.amount.toString());
-
-                            if (newAmount.gt(remaining.valueOf())) {
-                                return NextResponse.json({
-                                    status: "error",
-                                    message: `Le montant saisi dépasse le solde restant à payer (${formatNumber(
-                                        remaining.toString()
-                                    )} ${purchaseExist.company.currency}).`,
-                                }, { status: 400 });
-                            }
-
-                            const hasCompletedPayment = payee.add(newAmount.valueOf()).gte(total.minus(0.01));
-
-                            const newPayment = await prisma.payment.create({
-                                data: {
-                                    createdAt: data.date,
-                                    amount: String(data.amount),
-                                    paymentMode: data.paymentType,
-                                    infos: data.description,
-                                    purchaseOrder: { connect: { id: purchaseOrderId } },
-                                },
-                            });
-
-                            paymentId = newPayment.id;
-
-                            const purchaseOrder = await prisma.purchaseOrder.update({
-                                where: { id: purchaseOrderId },
-                                data: {
-                                    isPaid: hasCompletedPayment,
-                                    payee: payee.add(newAmount.valueOf()),
-                                },
-                                include: {
-                                    supplier: true
-                                }
-
-                            });
-
-                            if (purchaseOrder.supplierId) {
-                                await prisma.supplier.update({
-                                    where: { id: purchaseOrder.supplierId },
-                                    data: {
-                                        due: { decrement: data.amount },
-                                        paidAmount: { increment: data.amount }
-                                    }
-                                })
-                            }
-                        }
-
-                        if (paymentId) {
-                            Object.assign(referenceDocument, {
-                                payment: { connect: { id: paymentId } },
-                            });
-                        }
-
-                        const createdDibursement = await prisma.dibursement.create({
-                            data: {
-                                type: "DISBURSEMENT",
-                                date: data.date,
-                                movement: "OUTFLOWS",
-                                amount: String(data.amount),
-                                amountType: data.amountType,
-                                paymentType: data.paymentType,
-                                checkNumber: data.checkNumber,
-                                description: data.description,
-                                comment: data.comment,
-                                category: { connect: { id: data.category } },
-                                source: { connect: { id: data.source as string } },
-                                nature: { connect: { id: data.nature } },
-                                company: { connect: { id: notification.companyId } },
-                                ...referenceDocument,
-                            },
-                        });
-
-                        await prisma.notification.create({
-                            data: {
-                                type: 'ALERT',
-                                for: 'DISBURSEMENT',
-                                message: `${user.name} a validé un décaissement de ${formatNumber(data.amount.toString())} ${notification.company.currency} dans le compte ${source?.name}.`,
-                                paymentDibursement: {
-                                    connect: { id: createdDibursement.id }
-                                },
-                                company: {
-                                    connect: { id: createdDibursement.companyId }
-                                }
-                            }
-                        });
-
-                    } catch (error: any) {
-                        console.error("Error creating disbursement:", error);
-                        const isClientError = error instanceof Error && (
-                            /Identifiant|dépasse|déjà réglé|obligatoire/i.test(error.message)
-                        );
-
-                        const status = isClientError ? 400 : 500;
-                        const message = error instanceof Error ? error.message : "Erreur lors de la création de décaissement.";
-
-                        return NextResponse.json(
-                            { status: "error", message },
-                            { status }
-                        );
-                    }
-
-                }
+            if (heightForThisPage < 5 && pageNumber > 0) {
                 break;
-            case 'PURCHASE_ORDER':
-                if (notification.type === "CONFIRM") {
-                    const { purchaseOrder, payment } = await prisma.$transaction(async (tx) => {
-                        const purchaseExist = await tx.purchaseOrder.findUnique({
-                            where: { id: notification.purchaseOrderId as string },
-                            select: {
-                                id: true,
-                                amountType: true,
-                                payee: true,
-                                totalTTC: true,
-                                totalHT: true,
-                                isPaid: true,
-                                supplierId: true,
-                                companyId: true,
-                                company: {
-                                    select: {
-                                        id: true,
-                                        currency: true,
-                                        profiles: {
-                                            include: {
-                                                user: true
-                                            }
-                                        }
-                                    }
-                                },
-                            },
-                        });
+            }
 
-                        const data = notification.dibursement!;
+            const contentStartY = isFirstPage ? margin : margin + headerHeightMM;
 
-                        if (!purchaseExist) {
-                            throw new Error("Identifiant de bon de commande invalide.");
-                        }
+            const sourceY = (currentPosition / imgHeight) * canvas.height;
+            const sourceHeight = (heightForThisPage / imgHeight) * canvas.height;
 
-                        if (purchaseExist.isPaid) {
-                            throw new Error("Ce bon de commande est déjà réglé et ne peut pas recevoir de nouveau paiement.");
-                        }
+            const pageCanvas = document.createElement("canvas");
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = Math.ceil(sourceHeight);
 
-                        const total =
-                            purchaseExist.amountType === "HT"
-                                ? purchaseExist.totalHT
-                                : purchaseExist.totalTTC;
+            const ctx = pageCanvas.getContext("2d");
+            if (ctx) {
+                ctx.drawImage(
+                    canvas,
+                    0,
+                    Math.floor(sourceY),
+                    canvas.width,
+                    Math.ceil(sourceHeight),
+                    0,
+                    0,
+                    canvas.width,
+                    Math.ceil(sourceHeight)
+                );
 
-                        const payee = purchaseExist.payee;
-                        const remaining = total.minus(payee);
-                        const newAmount = new Decimal(data?.amount?.toString() || 0);
+                pdf.addImage(
+                    pageCanvas.toDataURL("image/jpeg", quality),
+                    "JPEG",
+                    margin,
+                    contentStartY,
+                    imgWidth,
+                    heightForThisPage,
+                    undefined,
+                    'FAST'
+                );
+            }
 
-                        if (!data?.isPaid && newAmount.gt(remaining.valueOf())) {
-                            throw new Error(
-                                `Le montant saisi dépasse le solde restant à payer (${formatNumber(
-                                    remaining.toString()
-                                )} ${purchaseExist.company.currency}).`
-                            );
-                        }
+            currentPosition += heightForThisPage;
+            pageNumber++;
 
-                        const hasCompletedPayment =
-                            data?.isPaid || payee.add(newAmount.valueOf()).gte(total.minus(0.01));
-
-                        const payment = await tx.payment.create({
-                            data: {
-                                createdAt: data?.date,
-                                amount: String(data?.isPaid ? remaining : data?.amount),
-                                paymentMode: data?.paymentType as string,
-                                infos: data?.description,
-                                purchaseOrder: { connect: { id: purchaseExist.id } },
-                            },
-                        });
-
-                        const purchaseOrder = await tx.purchaseOrder.update({
-                            where: { id: purchaseExist.id },
-                            data: {
-                                isPaid: hasCompletedPayment,
-                                payee: String(data?.isPaid ? total : payee.add(newAmount.valueOf())),
-                            },
-                            include: {
-                                company: {
-                                    include: {
-                                        documentModel: true,
-                                        profiles: {
-                                            include: {
-                                                user: true
-                                            }
-                                        }
-                                    }
-                                },
-                                supplier: true,
-                            },
-                        });
-
-                        await tx.notification.create({
-                            data: {
-                                type: 'ALERT',
-                                for: 'PURCHASE_ORDER',
-                                message: hasCompletedPayment
-                                    ? `${user.name} a réglé le bon de commande n° ${purchaseOrder.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrder.purchaseOrderNumber, false)}.`
-                                    : `${user.name} a réalisé un accompte de ${formatNumber(data.amount.toString())} ${purchaseOrder.company.currency} pour le bon de commande n° ${purchaseOrder.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrder.purchaseOrderNumber, false)}.`,
-                                purchaseOrder: {
-                                    connect: { id: purchaseOrder.id }
-                                },
-                                company: {
-                                    connect: { id: purchaseOrder.companyId }
-                                }
-                            }
-                        });
-
-                        return { purchaseOrder, payment };
-                    });
-
-                    await prisma.$transaction([
-                        prisma.dibursement.create({
-                            data: {
-                                date: toUtcDateOnly(notification.dibursement!.date),
-                                amount: new Decimal(notification.dibursement!.amount.toString()),
-                                amountType: purchaseOrder.amountType,
-                                checkNumber: notification.dibursement!.checkNumber || "",
-                                paymentType: notification.dibursement!.paymentType,
-                                description: notification.dibursement!.description || "",
-                                suppliers: {
-                                    connect: {
-                                        id: purchaseOrder.supplierId as string
-                                    }
-                                },
-                                referencePurchaseOrder: {
-                                    connect: {
-                                        id: purchaseOrder.id
-                                    }
-                                },
-                                category: {
-                                    connect: {
-                                        id: notification.dibursement!.category
-                                    }
-                                },
-                                nature: {
-                                    connect: {
-                                        id: notification.dibursement!.nature
-                                    }
-                                },
-                                allocation: {
-                                    connect: {
-                                        id: notification.dibursement!.allocation as string
-                                    }
-                                },
-                                source: {
-                                    connect: {
-                                        id: notification.dibursement!.source as string
-                                    }
-                                },
-                                payment: {
-                                    connect: {
-                                        id: payment.id
-                                    }
-                                },
-                                company: {
-                                    connect: {
-                                        id: purchaseOrder.companyId
-                                    }
-                                }
-                            }
-                        }),
-                        prisma.supplier.update({
-                            where: { id: purchaseOrder.supplierId as string },
-                            data: {
-                                due: {
-                                    decrement: notification.dibursement!.amount
-                                },
-                                paidAmount: {
-                                    increment: notification.dibursement!.amount
-                                }
-                            }
-                        })
-                    ]);
-                }
-            case "TRANSFER":
-                if (notification.type === "CONFIRM") {
-                    const data = notification.dibursement!;
-                    const [origin, destination] = JSON.parse(data.source as string) as [string, string];
-                    const [disbursementNature, receiptNature] = JSON.parse(data.nature) as [string, string];
-
-                    const [sourceA, sourceB] = await prisma.$transaction([
-                        prisma.source.findUnique({ where: { id: origin } }),
-                        prisma.source.findUnique({ where: { id: destination } }),
-                    ]);
-
-                    await prisma.dibursement.create({
-                        data: {
-                            type: "DISBURSEMENT",
-                            date: data.date,
-                            movement: 'OUTFLOWS',
-                            amount: data.amount,
-                            amountType: "HT",
-                            paymentType: "withdrawal",
-                            description: data.description || `Transfert vers ${sourceB?.name}`,
-                            comment: data.comment,
-                            category: {
-                                connect: { id: data.category }
-                            },
-                            nature: {
-                                connect: { id: disbursementNature }
-                            },
-                            source: {
-                                connect: { id: origin }
-                            },
-                            company: {
-                                connect: { id: notification.companyId }
-                            }
-                        }
-                    });
-
-                    await prisma.receipt.create({
-                        data: {
-                            type: "RECEIPT",
-                            date: data.date,
-                            movement: 'INFLOWS',
-                            amount: data.amount,
-                            amountType: "HT",
-                            paymentType: "withdrawal",
-                            description: data.description || `Transfert depuis ${sourceA?.name}`,
-                            comment: data.comment,
-                            category: {
-                                connect: { id: data.category }
-                            },
-                            nature: {
-                                connect: { id: receiptNature }
-                            },
-                            source: {
-                                connect: { id: destination }
-                            },
-                            company: {
-                                connect: { id: notification.companyId }
-                            }
-                        }
-                    });
-
-                    await prisma.notification.create({
-                        data: {
-                            type: 'ALERT',
-                            for: 'TRANSFER',
-                            message: `${user.name} a réalisé un transfert  de ${formatNumber(data.amount.toString())} ${notification.company.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.`,
-                            company: {
-                                connect: { id: notification.companyId }
-                            }
-                        }
-                    });
-
-                }
-                break
-            default:
-                return NextResponse.json({
-                    status: "error",
-                    message: "Type de notification non géré.",
-                }, { status: 400 });
+            if (pageNumber > 100) break; // Sécurité
         }
 
+        const totalPages = pdf.getNumberOfPages();
+        const shouldShowHeader = totalPages >= 2;
+        const effectiveHeaderText = shouldShowHeader ? (headerText || DEFAULT_HEADER_TEXT) : '';
 
-        // Marquer comme lu automatiquement
-        await prisma.notificationRead.upsert({
-            where: {
-                notificationId_userId: {
-                    notificationId: notificationId,
-                    userId: user.id
-                }
-            },
-            create: {
-                notificationId: notificationId,
-                userId: user.id
-            },
-            update: {
-                readAt: new Date()
+        // Ajouter headers et footers
+        for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+
+            if (i > 1 && shouldShowHeader && effectiveHeaderText) {
+                pdf.setFontSize(10);
+                pdf.setTextColor(100);
+                pdf.text(effectiveHeaderText, A4_WIDTH_MM / 2, margin + 5, { align: 'center' });
             }
+
+            pdf.setFontSize(10);
+            pdf.setTextColor(100);
+            pdf.text(`${i}/${totalPages}`, A4_WIDTH_MM / 2, A4_HEIGHT_MM - margin - 5, { align: 'center' });
+        }
+
+        return pdf.output("arraybuffer");
+
+    } catch (error) {
+        console.error('❌ Erreur lors de la génération du PDF:', error);
+        throw error;
+    }
+};
+
+
+export const downloadBrochureAsPDF = async (
+    component: React.ReactNode,
+    filename: string = 'document.pdf',
+    options: {
+        quality?: number;
+        scale?: number;
+        margin?: number;
+        padding?: number;
+    } = {}
+): Promise<void> => {
+    const { quality = 0.98, scale = 4, margin = 0, padding = 20 } = options;
+
+    const ReactDOM = await import('react-dom/client');
+
+    try {
+        const A4_WIDTH_PX = 794;
+        const A4_HEIGHT_PX = 1123;
+
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.style.width = `${A4_WIDTH_PX}px`;
+        container.style.minHeight = `${A4_HEIGHT_PX}px`;
+        container.style.padding = `${padding}px`;
+        container.style.backgroundColor = '#ffffff';
+        container.style.boxSizing = 'border-box';
+        document.body.appendChild(container);
+
+        const root = ReactDOM.createRoot(container);
+        await new Promise<void>((resolve) => {
+            root.render(component as React.ReactElement);
+            setTimeout(resolve, 500);
         });
 
-        return NextResponse.json({
-            status: "success",
-            message: "L'action a été validée avec succès.",
-        }, { status: 200 });
+        await document.fonts.ready;
+        await new Promise(res => setTimeout(res, 200));
 
-    } catch (error: any) {
-        console.error("Erreur lors de la confirmation de l'action:", error);
-        return NextResponse.json(
-            {
-                status: "error",
-                message: error.message || "Erreur lors du traitement de l'action."
-            },
-            { status: 500 }
-        );
+        const canvas = await html2canvas(container, {
+            scale,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            width: A4_WIDTH_PX,
+            height: container.scrollHeight,
+        });
+
+        root.unmount();
+        document.body.removeChild(container);
+
+        const A4_WIDTH_MM = 210;
+        const A4_HEIGHT_MM = 297;
+        const imgWidth = A4_WIDTH_MM - 2 * margin;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const availableHeight = A4_HEIGHT_MM - 2 * margin;
+
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+
+        if (imgHeight <= availableHeight) {
+            pdf.addImage(canvas.toDataURL('image/jpeg', quality), 'JPEG', margin, margin, imgWidth, imgHeight, undefined, 'FAST');
+        } else {
+            let remainingHeight = imgHeight;
+            let currentPosition = 0;
+
+            while (remainingHeight > 0.5) {
+                if (currentPosition > 0) pdf.addPage();
+
+                const heightForThisPage = Math.min(remainingHeight, availableHeight);
+                const sourceY = (currentPosition / imgHeight) * canvas.height;
+                const sourceHeight = Math.min((heightForThisPage / imgHeight) * canvas.height, canvas.height - sourceY);
+
+                const pageCanvas = document.createElement('canvas');
+                pageCanvas.width = canvas.width;
+                pageCanvas.height = Math.ceil(sourceHeight);
+
+                const ctx = pageCanvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(canvas, 0, Math.floor(sourceY), canvas.width, Math.ceil(sourceHeight), 0, 0, canvas.width, Math.ceil(sourceHeight));
+                    pdf.addImage(pageCanvas.toDataURL('image/jpeg', quality), 'JPEG', margin, margin, imgWidth, heightForThisPage, undefined, 'FAST');
+                }
+
+                currentPosition += heightForThisPage;
+                remainingHeight -= heightForThisPage;
+            }
+        }
+
+        pdf.save(filename);
+
+    } catch (error) {
+        console.error('Erreur lors de la génération du PDF:', error);
+        throw error;
     }
-} 
+};

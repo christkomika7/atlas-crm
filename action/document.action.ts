@@ -1,4 +1,3 @@
-import { urlToFile } from "@/lib/utils";
 import { DocumentSchemaType } from "@/lib/zod/document.schema";
 import { RequestResponse } from "@/types/api.types";
 import { ModelDocumentType } from "@/types/document.types";

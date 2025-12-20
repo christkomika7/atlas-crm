@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
             prisma.billboard.findMany({
                 where,
                 include: {
-                    company: true,
+                    company: { include: { documentModel: true } },
                     type: true,
                     city: true,
                     area: true,
@@ -154,16 +154,18 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
     }
 
-    // Nouveau key et nouveaux dossiers
+
     const key = generateId();
 
     const folderPhoto = createFolder([
+        billboard.company.companyName,
         "billboard",
         "photo",
         `${billboard.name}_----${key}`
     ]);
 
     const folderBrochure = createFolder([
+        billboard.company.companyName,
         "billboard",
         "brochure",
         `${billboard.name}_----${key}`
@@ -425,11 +427,9 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ status: "error", message: "Référence déjà utilisée." }, { status: 400 });
     }
 
-    // Création dossiers
     const folderPhoto = createFolder([companyExist.companyName, "billboard", "photo", `${data.billboard.name}_----${billboard.pathPhoto.split("_----")[1]}`]);
     const folderBrochure = createFolder([companyExist.companyName, "billboard", "brochure", `${data.billboard.name}_----${billboard.pathBrochure.split("_----")[1]}`]);
 
-    // Sauvegarde fichiers
     let savedPathsPhoto: string[] = await updateFiles({ folder: folderPhoto, outdatedData: { id: billboard.id, path: billboard.pathPhoto, files: billboard.photos }, updatedData: { id: data.billboard.id, lastUploadDocuments: data.billboard.lastPhotos }, files: data.billboard.photos ?? [] });
     let savedPathsBrochure: string[] = await updateFiles({ folder: folderBrochure, outdatedData: { id: billboard.id, path: billboard.pathBrochure, files: billboard.brochures }, updatedData: { id: data.billboard.id, lastUploadDocuments: data.billboard.lastBrochures }, files: data.billboard.brochures ?? [] });
 
