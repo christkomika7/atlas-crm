@@ -13,7 +13,9 @@ export async function GET(req: NextRequest) {
         }, { status: 403 });
     }
 
-    const id = getIdFromUrl(req.url, 2) as string;
+    const id = getIdFromUrl(req.url, 3) as string;
+
+    console.log("Nature ID:", id);
 
     if (!id) {
         return NextResponse.json({

@@ -196,7 +196,6 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
         },
       });
 
-
       mutateGetPartners({ id: companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -236,58 +235,68 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
       });
     }
   }, [companyId]);
-
   useEffect(() => {
-    if (categoryId) {
-      mutateGetNature({ categoryId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setNatures(data.data);
-          }
-        },
-      })
+    if (!categoryId) {
+      setNatures([]);
+      setNature("");
+      setNatureId("");
+      return;
     }
-  }, [categoryId])
 
-  useEffect(() => {
-    mutateGetSources({ companyId, type: paymentMode }, {
-      onSuccess(data) {
-        if (data.data) {
-          setSources(data.data)
-        }
-      },
-    });
-  }, [paymentMode])
+    mutateGetNature(
+      { categoryId },
+      {
+        onSuccess: (data) => data.data && setNatures(data.data),
+      }
+    );
+  }, [categoryId]);
 
 
   useEffect(() => {
-    mutateGetAllocations({ natureId }, {
-      onSuccess(data) {
-        if (data.data) {
-          setAllocations(data.data)
-        }
+    if (!companyId) return;
+    mutateGetSources(
+      {
+        companyId,
+        type: paymentMode,
       },
-    });
-  }, [natureId])
+      {
+        onSuccess: (data) => data.data && setSources(data.data),
+      }
+    );
+  }, [paymentMode, companyId]);
+
+
+
+  useEffect(() => {
+    if (!natureId) {
+      setAllocations([]);
+      return;
+    }
+
+    mutateGetAllocations(
+      { natureId },
+      {
+        onSuccess: (data) => data.data && setAllocations(data.data),
+      }
+    );
+  }, [natureId]);
 
   function getCategoryData(id: string) {
-    const current = categories.find(category => category.id === id);
+    const current = categories.find(c => c.id === id);
     setCategory(current?.name || "");
-    setCategoryId(id)
+    setCategoryId(id);
   }
 
   function getNatureData(id: string) {
-    const current = natures.find(nature => nature.id === id);
+    const current = natures.find(n => n.id === id);
     setNature(current?.name || "");
-    setNatureId(id)
+    setNatureId(id);
   }
 
   function getFiscalObjectName(id: string) {
-    const current = fiscalObjects.find(fiscalObject => fiscalObject.id === id);
+    const current = fiscalObjects.find(f => f.id === id);
     setFiscalObject(current?.name || "");
   }
-
-
 
   async function submit(dibursementData: DibursementSchemaType) {
     const { success, data } = dibursementSchema.safeParse(dibursementData);

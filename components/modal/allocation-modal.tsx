@@ -37,7 +37,7 @@ export default function AllocationModal({ natureId }: AllocationModalProps) {
     const [name, setName] = useState("");
     const [currentId, setCurrentId] = useState("");
 
-    const { mutate: muatateCreateAllocation, isPending: isCreatingAllocation } = useQueryAction<
+    const { mutate: mutateCreateAllocation, isPending: isCreatingAllocation } = useQueryAction<
         AllocationSchemaType,
         RequestResponse<AllocationType>
     >(createAllocation, () => { }, "allocation");
@@ -81,7 +81,7 @@ export default function AllocationModal({ natureId }: AllocationModalProps) {
         if (!name) return toast.error("Aucune allocation insérée.");
         if (!natureId) return toast.error("Aucune nature est trouvée.");
 
-        muatateCreateAllocation(
+        mutateCreateAllocation(
             { name, companyId, natureId },
             {
                 onSuccess(data) {
