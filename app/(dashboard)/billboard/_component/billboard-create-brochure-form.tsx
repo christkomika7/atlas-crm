@@ -120,7 +120,6 @@ export default function BillboardCreateBrochureForm({
         return {
           ...item,
           images: [first, second],
-          // maps: getStaticMapImage(item.maps)
         };
       })
     );
