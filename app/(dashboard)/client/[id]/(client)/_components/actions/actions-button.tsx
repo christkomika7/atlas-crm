@@ -6,24 +6,32 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useAccess } from "@/hook/useAccess";
 import { useDataStore } from "@/stores/data.store";
 import { useParams } from "next/navigation";
-import { SetStateAction, useState } from "react";
+import { SetStateAction, use, useEffect, useState } from "react";
 
 import DeliveryNoteModal from "@/components/modal/delivery-note-modal";
 import InvoiceModal from "@/components/modal/invoice-modal";
 import ModalContainer from "@/components/modal/modal-container";
 import QuoteModal from "@/components/modal/quote-modal";
-import ReceiptModal from "@/components/modal/receipt-modal";
+import RevenueModal from "@/components/modal/revenu-modal";
+import useQueryAction from "@/hook/useQueryAction";
+import { RequestResponse } from "@/types/api.types";
+import { ClientType } from "@/types/client.types";
+import { unique as getClient } from "@/action/client.action";
+import { Skeleton } from "@/components/ui/skeleton";
+import useClientStore from "@/stores/client.store";
 
 export default function ActionsButton() {
   const [open, setOpen] = useState({
     invoice: false,
     quote: false,
     deliveryNote: false,
-    receipt: false,
+    revenue: false,
   });
 
   const param = useParams();
   const reset = useDataStore.use.reset();
+  const setClient = useClientStore.use.setClient();
+  const client = useClientStore.use.client();
 
   const { access: createInvoiceAccess } = useAccess("INVOICES", "CREATE");
   const { access: createQuoteAccess } = useAccess("QUOTES", "CREATE");
@@ -33,7 +41,30 @@ export default function ActionsButton() {
   const hasAccess =
     createInvoiceAccess || createQuoteAccess || createDeliveryNoteAccess || createTransactionAccess;
 
+
+  const { mutate: mutateClient, isPending: isGettingClient } = useQueryAction<
+    { id: string },
+    RequestResponse<ClientType>
+  >(getClient, () => { }, "client");
+
+  useEffect(() => {
+    if (param.id) {
+      mutateClient(
+        { id: param.id as string },
+        {
+          onSuccess(data) {
+            if (data.data) {
+              setClient(data.data);
+            }
+          },
+        }
+      );
+    }
+
+  }, [param])
+
   if (!hasAccess) return null;
+  if (isGettingClient) return <Skeleton className="w-[120px] h-[48px]" />
 
   return (
     <Popover>
@@ -115,21 +146,20 @@ export default function ActionsButton() {
 
         {createTransactionAccess && (
           <ModalContainer
-            size="2xl"
+            size="3xl"
             action={
               <Button className="bg-white justify-start hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]">
-                Créer un relevé
+                Générer un relevé
               </Button>
             }
-            title="Relevé"
-            open={open.receipt}
+            title={`Relevé concernant ${client?.firstname} ${client?.lastname} (${client?.companyName})`}
+            open={open.revenue}
             setOpen={(value: SetStateAction<boolean>) =>
-              setOpen((prev) => ({ ...prev, receipt: value as boolean }))
+              setOpen((prev) => ({ ...prev, revenue: value as boolean }))
             }
           >
-            <ReceiptModal
-              refreshData={() => reset()}
-              closeModal={() => setOpen((prev) => ({ ...prev, receipt: false }))}
+            <RevenueModal
+              closeModal={() => setOpen((prev) => ({ ...prev, revenue: false }))}
             />
           </ModalContainer>
         )}

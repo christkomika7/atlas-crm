@@ -26,7 +26,7 @@ import useTransactionStore from "@/stores/transaction.store";
 import { AllocationType, FiscalObjectType, SourceType, TransactionCategoryType, TransactionDocument, TransactionNatureType, TransactionType } from "@/types/transaction.type";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
-import { createDibursement, getAllocations, getCategories, getDocuments, getFisclaObjects, getNatures, getSources } from "@/action/transaction.action";
+import { createDibursement, getAllocations, getAllocationsByNature, getCategories, getDocuments, getFisclaObjects, getNatures, getSources } from "@/action/transaction.action";
 import CategoryModal from "../../../../components/modal/category-modal";
 import NatureModal from "../../../../components/modal/nature-modal";
 import { acceptPayment } from "@/lib/data";
@@ -118,8 +118,8 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const {
     mutate: mutateGetAllocations,
     isPending: isGettingAllocations,
-  } = useQueryAction<{ companyId: string }, RequestResponse<AllocationType[]>>(
-    getAllocations,
+  } = useQueryAction<{ natureId: string }, RequestResponse<AllocationType[]>>(
+    getAllocationsByNature,
     () => { },
     "allocations"
   );
@@ -213,15 +213,6 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
         },
       });
 
-      mutateGetAllocations({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setAllocations(data.data)
-          }
-        },
-      });
-
-
       mutateGetDocuments({ companyId, type: "dibursement" }, {
         onSuccess(data) {
           if (data.data) {
@@ -267,6 +258,17 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
       },
     });
   }, [paymentMode])
+
+
+  useEffect(() => {
+    mutateGetAllocations({ natureId }, {
+      onSuccess(data) {
+        if (data.data) {
+          setAllocations(data.data)
+        }
+      },
+    });
+  }, [natureId])
 
   function getCategoryData(id: string) {
     const current = categories.find(category => category.id === id);
@@ -354,7 +356,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               )}
             />
           </div>
-          <div className="gap-4.5 grid grid-cols-3">
+          <div className="gap-4.5 grid grid-cols-2">
             <FormField
               control={form.control}
               name="nature"
@@ -383,7 +385,84 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="allocation"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      required={DIBURSMENT_CATEGORY.includes(category)}
+                      isLoading={isGettingAllocations}
+                      datas={allocations.map(allocation => ({
+                        id: allocation.id,
+                        label: allocation.name,
+                        value: allocation.id
+                      }))}
+                      value={field.value || ""}
+                      setValue={field.onChange}
+                      placeholder="Allocation"
+                      searchMessage="Rechercher une allocation"
+                      noResultsMessage="Aucune allocation trouvée."
+                      addElement={<AllocationModal natureId={natureId} />}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
+          </div>
+          <div className="gap-4.5 grid grid-cols-2">
+            <FormField
+              control={form.control}
+              name="source"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      isLoading={isGettingSources}
+                      datas={sources.map(source => ({
+                        id: source.id,
+                        label: source.name,
+                        value: source.id
+                      }))}
+                      value={field.value}
+                      setValue={field.onChange}
+                      placeholder="Source"
+                      searchMessage="Rechercher une source"
+                      noResultsMessage="Aucune source trouvée."
+                      addElement={<SourceModal sourceType={paymentMode} />}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="paymentMode"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      datas={acceptPayment}
+                      value={field.value}
+                      setValue={e => {
+                        setPaymentMode(e as "check" | "cash" | "bank-transfer");
+                        field.onChange(e);
+                      }}
+                      placeholder="Mode de paiement"
+                      searchMessage="Rechercher un mode de paiement"
+                      noResultsMessage="Aucun mode de paiement trouvé."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="gap-4.5 grid grid-cols-2">
             {ADMINISTRATION_CATEGORY === category && FISCAL_NATURE === nature ?
               <FormField
                 control={form.control}
@@ -524,29 +603,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               />
             </div>
           </div>
-          <div className="gap-4.5 grid grid-cols-[1fr_1fr_1.5fr]">
-            <FormField
-              control={form.control}
-              name="paymentMode"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      datas={acceptPayment}
-                      value={field.value}
-                      setValue={e => {
-                        setPaymentMode(e as "check" | "cash" | "bank-transfer");
-                        field.onChange(e);
-                      }}
-                      placeholder="Mode de paiement"
-                      searchMessage="Rechercher un mode de paiement"
-                      noResultsMessage="Aucun mode de paiement trouvé."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="gap-4.5 grid grid-cols-2">
             <FormField
               control={form.control}
               name="checkNumber"
@@ -607,7 +664,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               )}
             />
           </div>
-          <div className={cn("gap-4.5 grid", TRANSACTION_CATEGORIES.includes(category) ? "grid-cols-3" : "grid-cols-2")}>
+          <div className={cn("gap-4.5 grid grid-cols-2")}>
             <FormField
               control={form.control}
               name="partner"
@@ -632,89 +689,6 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                         .filter(opt => field.value?.includes(opt.value))}
                       onChange={opts => field.onChange(opts.map(opt => opt.value))}
                       placeholder="Rechercher un partenaire"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="allocation"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      required={DIBURSMENT_CATEGORY.includes(category)}
-                      isLoading={isGettingAllocations}
-                      datas={allocations.map(allocation => ({
-                        id: allocation.id,
-                        label: allocation.name,
-                        value: allocation.id
-                      }))}
-                      value={field.value || ""}
-                      setValue={field.onChange}
-                      placeholder="Allocation"
-                      searchMessage="Rechercher une allocation"
-                      noResultsMessage="Aucune allocation trouvée."
-                      addElement={<AllocationModal natureId={natureId} />}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {TRANSACTION_CATEGORIES.includes(category) &&
-              <FormField
-                control={form.control}
-                name="period"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <DatePicker
-                        label="Période"
-                        mode="range"
-                        value={
-                          field.value?.from && field.value.to
-                            ? {
-                              from: new Date(field.value.from),
-                              to: new Date(field.value.to),
-                            }
-                            : undefined
-                        }
-                        onChange={(value) => {
-                          field.onChange(value)
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            }
-
-          </div>
-          <div className="gap-4.5 grid grid-cols-2">
-            <FormField
-              control={form.control}
-              name="source"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isGettingSources}
-                      datas={sources.map(source => ({
-                        id: source.id,
-                        label: source.name,
-                        value: source.id
-                      }))}
-                      value={field.value}
-                      setValue={field.onChange}
-                      placeholder="Source"
-                      searchMessage="Rechercher une source"
-                      noResultsMessage="Aucune source trouvée."
-                      addElement={<SourceModal sourceType={paymentMode} />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -748,6 +722,34 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               )}
             />
           </div>
+          {TRANSACTION_CATEGORIES.includes(category) &&
+            <FormField
+              control={form.control}
+              name="period"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <DatePicker
+                      label="Période"
+                      mode="range"
+                      value={
+                        field.value?.from && field.value.to
+                          ? {
+                            from: new Date(field.value.from),
+                            to: new Date(field.value.to),
+                          }
+                          : undefined
+                      }
+                      onChange={(value) => {
+                        field.onChange(value)
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          }
           <div className="gap-4.5 grid grid-cols-2">
             <FormField
               control={form.control}

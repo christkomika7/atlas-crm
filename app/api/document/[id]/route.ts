@@ -80,7 +80,8 @@ export async function PUT(req: NextRequest) {
     secondaryColor: formData.get("secondaryColor") as string,
     position: formData.get("position")?.toString() || undefined,
     size: formData.get("size")?.toString() || undefined,
-    logo: logo ? logo : undefined
+    logo: logo ? logo : undefined,
+    documents: formData.getAll("documents") as File[],
   };
 
   const [companyExist, documentExist] = await prisma.$transaction([
@@ -104,16 +105,32 @@ export async function PUT(req: NextRequest) {
 
 
   const folder = createFolder([companyExist.companyName, "logo"]);
+
   let savedPath = "";
 
   await removePath(documentExist.logo);
+  await removePath(documentExist.recordFiles);
 
   try {
     savedPath = await createFile(parsedData.logo, folder, "logo");
+    const documentFilesPaths: string[] = [];
+
+    if (parsedData.documents && parsedData.documents.length > 0) {
+      for (let i = 0; i < parsedData.documents.length; i++) {
+        const documentFile = parsedData.documents[i];
+        const documentFilePath = await createFile(
+          documentFile,
+          createFolder([companyExist.companyName, "documents"]),
+          `document_${i + 1}`,
+        );
+        documentFilesPaths.push(documentFilePath);
+      }
+    }
     const updateDocument = await prisma.documentModel.update({
       where: { id },
       data: {
         logo: savedPath,
+        recordFiles: documentFilesPaths,
         position: parsedData.position ?? "",
         size: parsedData.size ?? "",
         primaryColor: parsedData.primaryColor,

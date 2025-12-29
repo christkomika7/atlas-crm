@@ -272,6 +272,26 @@ export async function getAllocations({ companyId }: { companyId: string }) {
   }
 }
 
+export async function getAllocationsByNature({ natureId }: { natureId: string }) {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/allocation/${natureId}/nature`,
+      {
+        method: "GET",
+        cache: "no-store"
+      },
+    );
+
+    const res: RequestResponse<AllocationType[]> = await response.json();
+    if (!response.ok) {
+      throw new Error(res.message);
+    }
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
+
 export async function getNaturesByCompanyId({ companyId, filter, categories }: { companyId: string, filter?: boolean, categories?: string[] }) {
   const params = new URLSearchParams();
 

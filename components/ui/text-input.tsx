@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { InputNumber } from "./input-number";
 
 type TextInputProps = {
+  inputId?: string;
   type?: "text" | "password" | "email" | "time" | "file" | "number" | "search";
   design?: "default" | "float" | "text-area";
   multiple?: boolean;
@@ -49,6 +50,7 @@ export default function TextInput({
   inputRef,
   min,
   max,
+  inputId
 }: TextInputProps) {
   const id = label.replaceAll(" ", "-");
   const [data, setData] = useState<File[]>([]);
@@ -91,6 +93,7 @@ export default function TextInput({
               value={
                 typeof value === "number" ? value : Number(value || 0)
               }
+              id={inputId}
               min={min}
               max={max}
               onValueChange={(val) => handleChange(val || 0)}
@@ -105,6 +108,7 @@ export default function TextInput({
           ) : (
             <Input
               ref={inputRef}
+              id={inputId}
               type={type}
               value={getInputValue()}
               multiple={multiple}
@@ -162,6 +166,7 @@ export default function TextInput({
               value={
                 typeof value === "number" ? value : Number(value || 0)
               }
+              id={inputId}
               onValueChange={(val) => handleChange(val || 0)}
               placeholder=" "
               min={min}

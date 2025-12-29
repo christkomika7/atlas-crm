@@ -36,7 +36,20 @@ export const documentSchema = z.object({
         .instanceof(File, {
             message: "Le fichier du logo est requis et doit être une image.",
         })
-        .optional()
+        .optional(),
+    documents: z
+        .array(
+            z.instanceof(File).refine(
+                (file) => file.type === "application/pdf",
+                {
+                    message: "Seuls les fichiers PDF sont autorisés.",
+                }
+            )
+        )
+        .length(5, {
+            message: "Vous devez obligatoirement soumettre exactement 5 fichiers PDF.",
+        }),
+
 });
 
 export type DocumentSchemaType = z.infer<typeof documentSchema>;

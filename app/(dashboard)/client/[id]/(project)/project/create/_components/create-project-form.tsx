@@ -127,6 +127,7 @@ export default function ProjectForm() {
                     <DatePicker
                       label="Date limite"
                       mode="single"
+                      value={field.value}
                       onChange={(e) => field.onChange(e as Date)}
                     />
                   </FormControl>

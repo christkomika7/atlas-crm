@@ -80,7 +80,6 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
     const setProject = useProjectStore.use.setProject();
     const projects = useProjectStore.use.projects();
 
-    const locationBillboardDate = useItemStore.use.locationBillboardDate();
     const setLocationBillboard = useItemStore.use.setLocationBillboard();
 
 

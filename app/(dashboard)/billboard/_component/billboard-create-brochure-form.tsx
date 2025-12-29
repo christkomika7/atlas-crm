@@ -19,7 +19,7 @@ import { contractSchema, ContractSchemaType } from "@/lib/zod/contract.schema";
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { AreaType } from "@/types/area.types";
-import { BillboardType } from "@/types/billboard.types";
+import { BillboardType, BrochureBillboardItem } from "@/types/billboard.types";
 import { CityType } from "@/types/city.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
@@ -30,6 +30,7 @@ import { BaseType } from "@/types/base.types";
 import { downloadBrochurePDF } from "@/lib/pdf";
 import Brochure from "@/components/pdf/brochure";
 import { toast } from "sonner";
+import { resolveImageSrc, urlToFile } from "@/lib/utils";
 
 type BillboardCreateBrochureFormProps = {
   close: () => void;
@@ -95,6 +96,37 @@ export default function BillboardCreateBrochureForm({
     }
   }, [companyId]);
 
+  // function getStaticMapImage(mapValue: string) {
+  //   const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+
+  //   if (!mapValue || !API_KEY) return "/empty.jpg";
+
+  //   const encoded = encodeURIComponent(mapValue);
+
+  //   return `https://maps.googleapis.com/maps/api/staticmap?center=${encoded}&zoom=16&size=600x300&scale=2&maptype=roadmap&markers=color:red|${encoded}&key=${API_KEY}`;
+  // }
+
+  async function getProfil(items: BrochureBillboardItem[]) {
+    const updatedItems: BrochureBillboardItem[] = await Promise.all(
+      items.map(async (item) => {
+        let first = "";
+        let second = "";
+
+        if (item.images && item.images.length > 0) {
+          first = resolveImageSrc(await urlToFile(item.images[0])) || "";
+          second = String(item.images[1] ? resolveImageSrc(await urlToFile(item.images[1])) : "");
+        }
+
+        return {
+          ...item,
+          images: [first, second],
+          // maps: getStaticMapImage(item.maps)
+        };
+      })
+    );
+    return updatedItems
+  }
+
 
   async function submit(contractData: ContractSchemaType) {
     const { success, data } = contractSchema.safeParse(contractData);
@@ -118,14 +150,17 @@ export default function BillboardCreateBrochureForm({
             maps: item.gmaps,
             color: item.company.documentModel.primaryColor
           }));
-          console.log({ billboards })
-          if (billboards.length === 0) return toast.error("Votre filtre ne renvoi vers aucune donnée.")
 
 
           switch (action) {
             case "download":
               setDownloadLoader(true);
-              await downloadBrochurePDF(<Brochure items={items} />, {
+              const formattedItems = await getProfil(items)
+              if (formattedItems.length === 0) return toast.error("Votre filtre ne renvoi vers aucune donnée.");
+
+              console.log({ formattedItems })
+
+              await downloadBrochurePDF(<Brochure items={formattedItems} />, {
                 padding: 0,
                 margin: 0,
                 quality: 0.98,

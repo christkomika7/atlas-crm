@@ -25,6 +25,7 @@ import Spinner from "@/components/ui/spinner";
 import { resolveImageSrc, urlToFile } from "@/lib/utils";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
+import { Label } from "recharts";
 
 export default function DocumentTab() {
   const idCompany = useDataStore.use.currentCompany();
@@ -32,6 +33,7 @@ export default function DocumentTab() {
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [preview, setPreview] = useState("");
   const [logo, setLogo] = useState<File | string>();
+  const [recordFile, setRecordFile] = useState<File[]>([]);
 
   const [quotes, setQuotes] = useState({
     prefix: "",
@@ -156,9 +158,14 @@ export default function DocumentTab() {
   function submit(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.preventDefault();
     const file = logo instanceof File ? logo : undefined
+    const documents = recordFile.filter((file) => file.type === "application/pdf");
+    if (documents.length !== 5) {
+      return toast.error("Vous devez obligatoirement soumettre exactement 5 fichiers PDF.");
+    }
     const data: DocumentSchemaType = {
       companyId: idCompany,
       logo: file,
+      documents: documents,
       size: dimension.size,
       position: dimension.position,
       primaryColor: colors.primary,
@@ -220,15 +227,38 @@ export default function DocumentTab() {
           <div className="gap-x-2 grid grid-cols-[1fr_1.3fr] pt-4 h-full">
             <div className="space-y-4 w-full">
               <h2 className="font-semibold text-xl">Configuration</h2>
-              <TextInput
-                type="file"
-                value={logo}
-                disabled={!modifyAccess}
-                accept="image/png, image/jpeg, image/jpg"
-                handleChange={(file) =>
-                  setLogo(file as File)
-                }
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <label className="font-medium text-xs" htmlFor="logo">Logo</label>
+                  <TextInput
+                    inputId="documents"
+                    label="Logo"
+                    type="file"
+                    value={logo}
+                    disabled={!modifyAccess}
+                    accept="image/png, image/jpeg, image/jpg"
+                    handleChange={(file) =>
+                      setLogo(file as File)
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="font-medium text-xs" htmlFor="documents">Documents (5 PDF obligatoires)</label>
+                  <TextInput
+                    inputId="documents"
+                    label="Documents (5 PDF obligatoires)"
+                    type="file"
+                    value={recordFile}
+                    disabled={!modifyAccess}
+                    showFileData={false}
+                    multiple
+                    accept="application/pdf"
+                    handleChange={(file) =>
+                      setRecordFile(file as File[])
+                    }
+                  />
+                </div>
+              </div>
               <Combobox
                 className="w-full"
                 disabled={!modifyAccess}

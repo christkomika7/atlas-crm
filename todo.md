@@ -17,3 +17,9 @@ Transaction avec systeme d'action
 Rendez vous 3 jour avant, 2h avant et la date du rendez vous
 Projet date limite des taches 3 jours avant
 
+
+# A faire maintenant
+- Faire le revenu
+- Corriger la maquette au niveau des grands nombres
+- Ajouter les elements des brochures dans les parametres
+

@@ -80,8 +80,11 @@ export async function update(data: DocumentSchemaType & { id: string }) {
         formData.append("position", data.position ?? "");
         formData.append("size", data.size ?? "");
         formData.append("logo", data.logo instanceof File ? data.logo : "");
-
-
+        formData.append("documents", data.documents?.[0] instanceof File ? data.documents[0] : "");
+        formData.append("documents", data.documents?.[1] instanceof File ? data.documents[1] : "");
+        formData.append("documents", data.documents?.[2] instanceof File ? data.documents[2] : "");
+        formData.append("documents", data.documents?.[3] instanceof File ? data.documents[3] : "");
+        formData.append("documents", data.documents?.[4] instanceof File ? data.documents[4] : "");
 
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/document/${data.id}`, {

@@ -255,6 +255,7 @@ export const renderComponentToPDF = async (
         await document.fonts.ready;
         await new Promise((res) => setTimeout(res, 300));
 
+
         // Fonction pour forcer recalcul des styles
         const forceStyleRecalculation = (el: HTMLElement) => {
             const allElements = [el, ...Array.from(el.querySelectorAll('*'))] as HTMLElement[];
@@ -458,7 +459,6 @@ export const renderComponentToPDF = async (
 };
 
 
-
 export const downloadBrochurePDF = async (
     component: React.ReactNode,
     options: {
@@ -593,4 +593,4 @@ export const downloadBrochurePDF = async (
         console.error("❌ PDF generation error:", err);
         throw err;
     }
-};
+}; 

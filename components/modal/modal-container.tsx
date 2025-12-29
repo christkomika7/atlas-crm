@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 type ModalContainerProps = {
   action?: React.ReactNode;
-  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | '3xl' | '4xl';
   title: string;
   description?: string;
   children: React.ReactNode;
@@ -57,7 +57,9 @@ export default function ModalContainer({
           size === "md" && "!max-w-[672px]",
           size === "lg" && "!max-w-[768px]",
           size === "xl" && "!max-w-[896px]",
-          size === "2xl" && "!max-w-[1024px]"
+          size === "2xl" && "!max-w-[1024px]",
+          size === "3xl" && "!max-w-[1444px]",
+          size === "4xl" && "!max-w-[1824px]",
         )}
       >
         <DialogHeader>

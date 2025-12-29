@@ -1,5 +1,5 @@
 import { createdPayment, unique } from "@/action/purchase-order.action";
-import { getAllocations, getCategories, getNatures, getSources } from "@/action/transaction.action";
+import { getAllocations, getAllocationsByNature, getCategories, getNatures, getSources } from "@/action/transaction.action";
 import AllocationModal from "@/components/modal/allocation-modal";
 import CategoryModal from "@/components/modal/category-modal";
 import NatureModal from "@/components/modal/nature-modal";
@@ -104,8 +104,8 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
   const {
     mutate: mutateGetAllocations,
     isPending: isGettingAllocations,
-  } = useQueryAction<{ companyId: string }, RequestResponse<AllocationType[]>>(
-    getAllocations,
+  } = useQueryAction<{ natureId: string }, RequestResponse<AllocationType[]>>(
+    getAllocationsByNature,
     () => { },
     "allocations"
   );
@@ -122,14 +122,6 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
         onSuccess(data) {
           if (data.data) {
             setCategories(data.data)
-          }
-        },
-      });
-
-      mutateGetAllocations({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setAllocations(data.data)
           }
         },
       });
@@ -157,6 +149,17 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
       })
     }
   }, [categoryId])
+
+
+  useEffect(() => {
+    mutateGetAllocations({ natureId }, {
+      onSuccess(data) {
+        if (data.data) {
+          setAllocations(data.data)
+        }
+      },
+    });
+  }, [natureId])
 
   useEffect(() => {
     if (purchaseOrderId) {

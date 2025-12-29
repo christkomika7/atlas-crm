@@ -143,3 +143,18 @@ export type ConflictResult = {
         message: string;
     }>;
 }
+
+export type BrochureBillboardItem = {
+    id: string;
+    type: string;
+    name: string;
+    height: string;
+    color: string;
+    width: string;
+    address: string;
+    orientation: string;
+    dimension: string;
+    images: string[];
+    maps: string;
+    reference: string;
+}

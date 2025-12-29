@@ -902,8 +902,9 @@ model LessorType {
 }
 
 model DocumentModel {
-  id             String  @id @default(uuid())
+  id             String   @id @default(uuid())
   logo           String?
+  recordFiles    String[]
   position       String
   size           String
   primaryColor   String
