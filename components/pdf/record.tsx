@@ -242,10 +242,10 @@ export default function RecordDocument({
                         <td className="w-[50px] font-bold text-right">
                             Qté
                         </td>
-                        <td className="w-[150px] font-bold text-right">
+                        <td className="w-[130px] font-bold text-right">
                             Prix unitaire
                         </td>
-                        <td className="w-[180px] pr-[27px] font-bold text-right">
+                        <td className="w-[260px] pr-[27px] font-bold text-right">
                             Prix total
                         </td>
                     </tr>
@@ -396,7 +396,7 @@ export default function RecordDocument({
                                 style={{
                                     backgroundColor: secondColor,
                                 }}
-                                className="py-3 text-2xl font-bold text-right"
+                                className="py-3 text-2xl font-black text-right"
                             >
                                 Net à payer
                             </td>
@@ -404,7 +404,7 @@ export default function RecordDocument({
                                 style={{
                                     backgroundColor: secondColor,
                                 }}
-                                className="pr-[27px] text-2xl font-bold text-right"
+                                className="pr-[27px] text-2xl font-black text-right"
                             >
                                 {formatNumber(
                                     record && payee ? new Decimal(getAmountPrice(record!.amountType, record?.totalTTC, record?.totalHT)).minus(payee) : 0

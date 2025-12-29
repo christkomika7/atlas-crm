@@ -15,8 +15,6 @@ export async function GET(req: NextRequest) {
 
     const id = getIdFromUrl(req.url, 3) as string;
 
-    console.log("Nature ID:", id);
-
     if (!id) {
         return NextResponse.json({
             status: "error",
