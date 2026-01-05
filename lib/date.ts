@@ -321,7 +321,7 @@ export function getEndDate(start: Date, delay: RentalPeriodType) {
     }
 }
 
-export function dueDate(invoiceDate: Date, due: string): { color: string; text: string; value: number } {
+export function dueDate(invoiceDate: Date, due: string): { color: string; daysLeft: string; text: string; value: number, dayEnd: Date } {
     const days = paymentTerms.find((p) => p.value === due)?.data ?? 0;
     const start = new Date(invoiceDate);
     const end = addDaysFNS(start, days);
@@ -329,12 +329,16 @@ export function dueDate(invoiceDate: Date, due: string): { color: string; text: 
     if (status.isOutside) return {
         color: "text-red-600",
         text: "Expiré",
-        value: 0
+        daysLeft: `${status.daysLeft} jour${Math.abs(status.daysLeft) > 1 ? 's' : ''}`,
+        value: 0,
+        dayEnd: end,
     }
     return {
         color: 'text-green-600',
-        text: `${status.daysLeft} jour${status.daysLeft > 1 ? 's' : ''}`,
-        value: status.daysLeft
+        text: 'En cour',
+        daysLeft: `${status.daysLeft} jour${Math.abs(status.daysLeft) > 1 ? 's' : ''}`,
+        value: status.daysLeft,
+        dayEnd: end,
     }
 }
 

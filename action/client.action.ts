@@ -1,7 +1,8 @@
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { ClientSchemaType, EditClientSchemaType } from "@/lib/zod/client.schema";
+import { RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
 import { RequestResponse } from "@/types/api.types";
-import { ClientType } from "@/types/client.types";
+import { ClientType, RevenueType } from "@/types/client.types";
 import { DeliveryNoteType } from "@/types/delivery-note.types";
 import { InvoiceType } from "@/types/invoice.types";
 import { QuoteType } from "@/types/quote.types";
@@ -33,6 +34,44 @@ export async function all({ id, filter, search, skip = 0, take = DEFAULT_PAGE_SI
         throw error;
     }
 }
+
+export async function getRevenue({
+    clientId,
+    start,
+    end,
+    hasNoInvoicePaid,
+}: {
+    clientId: string;
+    start?: string;
+    end?: string;
+    hasNoInvoicePaid: boolean;
+}) {
+    const params = new URLSearchParams();
+    params.append("hasNoInvoicePaid", hasNoInvoicePaid ? "yes" : "no");
+    if (start) params.append("start", start);
+    if (end) params.append("end", end);
+
+    const queryString = params.toString();
+    const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/client/${clientId}/revenue${queryString ? `?${queryString}` : ""}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+        });
+
+        const res: RequestResponse<RevenueType> = await response.json()
+
+        console.log(res);
+        if (!response.ok) {
+            throw new Error(res.message);
+        }
+        return res;
+
+    } catch (error) {
+        throw error;
+    }
+}
+
 
 export async function unique({ id }: { id: string }) {
     try {
@@ -199,7 +238,6 @@ export async function getInvoice({ id }: { id: string }) {
     }
 }
 
-
 export async function getQuote({ id }: { id: string }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/client/${id}/quote`, {
@@ -217,7 +255,6 @@ export async function getQuote({ id }: { id: string }) {
     }
 }
 
-
 export async function getDeliveryNote({ id }: { id: string }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/client/${id}/delivery-note`, {
@@ -231,6 +268,45 @@ export async function getDeliveryNote({ id }: { id: string }) {
         return res;
 
     } catch (error) {
+        throw error;
+    }
+}
+
+
+export async function share(data: RecordEmailSchemaType) {
+    const formData = new FormData();
+
+    formData.append("companyId", data.companyId);
+    formData.append('filename', data.filename || '');
+    formData.append('start', data.start || '');
+    formData.append('end', data.end || '');
+    formData.append("recordId", data.recordId);
+    formData.append("subject", data.subject ?? "");
+    formData.append("message", data.message ?? "");
+    formData.append("emails", JSON.stringify(data.emails));
+    formData.append("blob", data.blob);
+
+    data.file?.forEach((file) => {
+        if (file instanceof File) {
+            formData.append("files", file);
+        }
+    });
+
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/client/share`, {
+            method: "POST",
+            body: formData,
+        });
+
+        const res: RequestResponse<null> = await response.json();
+
+        if (!response.ok) {
+            throw new Error(res.message || "Erreur lors du partage du relevé");
+        }
+
+        return res;
+    } catch (error) {
+        console.error("Erreur dans la fonction share:", error);
         throw error;
     }
 }

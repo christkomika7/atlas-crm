@@ -39,8 +39,6 @@ export default function BillboardBrochureModal({
           />
         </DialogContent>
       </Dialog>
-
-
       <BillboardSendEmailModal
         open={emailModalOpen}
         onOpenChange={setEmailModalOpen}

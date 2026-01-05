@@ -26,7 +26,6 @@ export async function compressString(value: string) {
   return await compressToUTF16(value)
 }
 
-
 export async function decompressString(value: string) {
   return await decompressFromUTF16(value)
 }
@@ -42,6 +41,7 @@ export function formatList(items: string[]) {
 export function normalizeName(name?: string) {
   return (name ?? "").trim().toLowerCase();
 }
+
 
 export function generateId() {
   const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -242,6 +242,46 @@ export function generateAmaId(id: number, withText: boolean = true) {
   return String(id).padStart(3, "0");
 }
 
+export async function fetchPdfAsArrayBuffer(path: string): Promise<ArrayBuffer> {
+  try {
+    if (!path || typeof path !== "string" || path.trim() === "") {
+      throw new Error("URL ou chemin PDF invalide ou vide.");
+    }
+
+    const cleanedPath = path.trim();
+
+    if (cleanedPath.includes("..") || cleanedPath.includes("//")) {
+      throw new Error("Chemin PDF non autorisé.");
+    }
+
+    const url = cleanedPath.startsWith("http")
+      ? cleanedPath
+      : `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/upload?path=${encodeURIComponent(cleanedPath)}`;
+
+    console.log("🔍 Tentative de chargement du PDF depuis:", url);
+    console.log("📄 Chemin original:", path);
+
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      console.error("❌ Erreur HTTP:", res.status, res.statusText);
+      console.error("❌ URL qui a échoué:", url);
+      throw new Error(`Erreur HTTP ${res.status} lors du chargement du PDF: ${url}`);
+    }
+
+    console.log("✅ PDF chargé avec succès");
+
+    const blob = await res.blob();
+    const blobBuffer = await blob.arrayBuffer();
+    const arrayBuffer = new ArrayBuffer(blobBuffer.byteLength);
+    new Uint8Array(arrayBuffer).set(new Uint8Array(blobBuffer));
+
+    return arrayBuffer;
+  } catch (e) {
+    console.error("Erreur fetchPdfAsArrayBuffer:", e);
+    throw e;
+  }
+}
 export async function urlToFile(path: string): Promise<File> {
   try {
     if (!path || typeof path !== "string" || path.trim() === "") {

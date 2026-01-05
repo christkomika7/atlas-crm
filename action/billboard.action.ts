@@ -45,7 +45,7 @@ export async function filter(data: ContractSchemaType) {
             body: JSON.stringify(data),
         });
 
-        const res: RequestResponse<BillboardType[]> = await response.json();
+        const res: RequestResponse<string[]> = await response.json();
 
         if (!response.ok) {
             throw new Error(res.message);

@@ -5,6 +5,7 @@ export type ModelDocumentType = {
     companyId: string;
     company: CompanyType
     logo?: string;
+    recordFiles: string[];
     position: string | null;
     size: string | null;
     primaryColor: string;

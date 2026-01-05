@@ -6,36 +6,36 @@ import { useAccess } from '@/hook/useAccess';
 import { formatDateToDashModel } from '@/lib/date';
 import { downloadComponentAsPDF } from '@/lib/pdf';
 import { formatNumber } from '@/lib/utils'
-import useClientStore from '@/stores/client.store';
 import { useDataStore } from '@/stores/data.store';
-import { RevenueType } from '@/types/client.types';
+import useSupplierStore from '@/stores/supplier.store';
+import { SupplierRevenueType } from '@/types/supplier.types';
 
 type PreviewRevenueProps = {
-    revenues?: RevenueType;
+    revenues?: SupplierRevenueType;
     isLoading: boolean;
 }
 
 export default function PreviewRevenue({ revenues, isLoading }: PreviewRevenueProps) {
-    const filename = `Relevé ${revenues?.client.companyName} du ${formatDateToDashModel(revenues?.startDate || new Date())} au ${formatDateToDashModel(revenues?.endDate || new Date())}`
+    const filename = `Relevé ${revenues?.supplier.companyName} du ${formatDateToDashModel(revenues?.startDate || new Date())} au ${formatDateToDashModel(revenues?.endDate || new Date())}`
     const currency = useDataStore.use.currency();
-    const client = useClientStore.use.client();
+    const supplier = useSupplierStore.use.supplier();
 
-    const { access: readAccess, loading } = useAccess("CLIENTS", "READ");
+    const { access: readAccess, loading } = useAccess("SUPPLIERS", "READ");
 
     return (
-        <AccessContainer loading={loading} resource='CLIENTS' hasAccess={readAccess}>
+        <AccessContainer loading={loading} resource='SUPPLIERS' hasAccess={readAccess}>
             <div className="max-h-[500px] pr-4">
                 <div className='grid grid-cols-[1fr_400px] gap-2'>
                     <ScrollArea className="max-h-[500px] py-4 pr-4">
                         <RevenueRecord
-                            type="client-revenue-record"
-                            id="client-revenue-record"
-                            firstColor={revenues?.client.company.documentModel.primaryColor || "#fbbf24"}
-                            secondColor={revenues?.client.company.documentModel.secondaryColor || "#fef3c7"}
-                            logo={revenues?.client.company.documentModel.logo}
-                            logoSize={revenues?.client.company.documentModel.size || "Medium"}
-                            logoPosition={revenues?.client.company.documentModel.position || "Center"}
-                            revenue={revenues as RevenueType}
+                            type="supplier-revenue-record"
+                            id="supplier-revenue-record"
+                            firstColor={revenues?.supplier.company.documentModel.primaryColor || "#fbbf24"}
+                            secondColor={revenues?.supplier.company.documentModel.secondaryColor || "#fef3c7"}
+                            logo={revenues?.supplier.company.documentModel.logo}
+                            logoSize={revenues?.supplier.company.documentModel.size || "Medium"}
+                            logoPosition={revenues?.supplier.company.documentModel.position || "Center"}
+                            revenue={revenues as SupplierRevenueType}
                             isLoading={isLoading}
                         />
                     </ScrollArea>
@@ -46,7 +46,7 @@ export default function PreviewRevenue({ revenues, isLoading }: PreviewRevenuePr
                                 <h2 className='font-medium'>Date</h2> <p className='text-sm text-neutral-600'>{formatDateToDashModel(new Date())}</p>
                             </div>
                             <div className='flex justify-between gap-x-2'>
-                                <h2 className='font-medium'>Client</h2> <p className='text-sm text-neutral-600'>{client?.firstname} {client?.lastname} ({client?.companyName})</p>
+                                <h2 className='font-medium'>Fournisseur</h2> <p className='text-sm text-neutral-600'>{supplier?.firstname} {supplier?.lastname} ({supplier?.companyName})</p>
                             </div>
                         </div>
                         <div className='space-y-3'>
@@ -60,7 +60,7 @@ export default function PreviewRevenue({ revenues, isLoading }: PreviewRevenuePr
                                 <h2 className='font-medium'>Solde</h2> {formatNumber(Number(revenues?.totalDue || 0) - Number(revenues?.totalPaid || 0))} {currency}
                             </div>
                             <Button variant="primary"
-                                onClick={() => downloadComponentAsPDF("revenue-record", filename, {
+                                onClick={() => downloadComponentAsPDF("supplier-revenue-record", filename, {
                                     padding: 0,
                                     margin: 0,
                                     quality: 0.98,

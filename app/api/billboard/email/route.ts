@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
 
         const pdfBuffer = base64ToBuffer(contract);
-        const fileName = `contrat-${Date.now()}.pdf`;
+        const fileName = `brochure-${Date.now()}.pdf`;
 
         const mailOptions = {
             from: {

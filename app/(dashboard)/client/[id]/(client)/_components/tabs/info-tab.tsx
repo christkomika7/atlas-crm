@@ -38,7 +38,7 @@ export default function InfoTab() {
       {loading ? <Spinner /> :
         <AccessContainer hasAccess={readAccess} resource="CLIENTS">
           <div className="flex-1 min-h-0">
-            <ScrollArea className="h-full w-full">
+            <ScrollArea className="h-[500px] w-full">
               <div className="space-y-5 p-4 max-w-2xl">
                 <TextInput
                   design="float"

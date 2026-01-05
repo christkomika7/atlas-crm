@@ -1,4 +1,3 @@
-// BillboardSendEmailModal.tsx
 import {
   Dialog,
   DialogContent,
@@ -20,7 +19,7 @@ export default function BillboardSendEmailModal({
 }: BillboardSendEmailModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="min-w-[950px]">
+      <DialogContent className="min-w-[650px]">
         <DialogHeader>
           <DialogTitle>Envoyer au client</DialogTitle>
           <DialogDescription></DialogDescription>

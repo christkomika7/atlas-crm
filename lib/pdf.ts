@@ -1,5 +1,7 @@
 import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
+import { PDFDocument } from "pdf-lib";
+import { fetchPdfAsArrayBuffer } from './utils';
 
 export const downloadComponentAsPDF = async (
     elementId: string,
@@ -458,139 +460,32 @@ export const renderComponentToPDF = async (
     }
 };
 
+export async function mergePdfsFromUrls(urls: string[]): Promise<Blob> {
+    console.log("📦 Début du merge de", urls.length, "PDFs");
+    console.log("📝 URLs à merger:", urls);
 
-export const downloadBrochurePDF = async (
-    component: React.ReactNode,
-    options: {
-        quality?: number;
-        scale?: number;
-        margin?: number;
-        padding?: number;
-    } = {}
-): Promise<void> => {
+    const mergedPdf = await PDFDocument.create();
 
-    const {
-        quality = 0.98,
-        scale = 4
-    } = options;
+    for (let i = 0; i < urls.length; i++) {
+        const url = urls[i];
+        console.log(`\n🔄 Traitement du PDF ${i + 1}/${urls.length}:`, url);
 
-    const A4_WIDTH_PX = 794;
-    const A4_WIDTH_MM = 210;
-    const A4_HEIGHT_MM = 297;
-
-    const ReactDOM = await import("react-dom/client");
-
-    try {
-        const container = document.createElement("div");
-        container.style.position = "absolute";
-        container.style.left = "-9999px";
-        container.style.top = "0";
-        container.style.width = `${A4_WIDTH_PX}px`;
-        container.style.background = "#fff";
-        container.style.boxSizing = "border-box";
-        container.style.margin = "0";
-        container.style.padding = "0";
-
-        document.body.appendChild(container);
-
-        const root = ReactDOM.createRoot(container);
-        await new Promise<void>((resolve) => {
-            root.render(component as React.ReactElement);
-            setTimeout(resolve, 800);
-        });
-
-        await document.fonts.ready;
-        await new Promise(r => setTimeout(r, 300));
-
-        const contentHeight = Math.max(container.scrollHeight, container.offsetHeight);
-
-        const canvas = await html2canvas(container, {
-            scale,
-            backgroundColor: "#ffffff",
-            useCORS: true,
-            width: A4_WIDTH_PX,
-            height: contentHeight,
-            windowWidth: A4_WIDTH_PX,
-            windowHeight: contentHeight
-        });
-
-        root.unmount();
-        document.body.removeChild(container);
-
-        if (!canvas || canvas.width === 0 || canvas.height === 0) {
-            console.warn("⚠️ Canvas généré avec dimensions faibles", {
-                width: canvas?.width,
-                height: canvas?.height
-            });
+        try {
+            const pdfBytes = await fetchPdfAsArrayBuffer(url);
+            const pdf = await PDFDocument.load(pdfBytes);
+            const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+            pages.forEach(page => mergedPdf.addPage(page));
+            console.log(`✅ PDF ${i + 1} ajouté avec succès (${pages.length} pages)`);
+        } catch (error) {
+            console.error(`❌ Erreur avec le PDF ${i + 1}:`, error);
+            throw new Error(`Impossible de charger le PDF ${i + 1}: ${url}`);
         }
-
-        const pdf = new jsPDF({
-            orientation: "portrait",
-            unit: "mm",
-            format: "a4",
-            compress: true
-        });
-
-        const pageWidthMM = A4_WIDTH_MM;
-        const pageHeightMM = A4_HEIGHT_MM;
-
-        const pageHeightPx =
-            (pageHeightMM * canvas.width) / pageWidthMM;
-
-        let offsetY = 0;
-        let pageIndex = 0;
-
-        while (offsetY < canvas.height) {
-            const sliceHeight = Math.min(
-                pageHeightPx,
-                canvas.height - offsetY
-            );
-
-            const pageCanvas = document.createElement("canvas");
-            pageCanvas.width = canvas.width;
-            pageCanvas.height = sliceHeight;
-
-            const ctx = pageCanvas.getContext("2d");
-            if (!ctx) break;
-
-            ctx.drawImage(
-                canvas,
-                0,
-                offsetY,
-                canvas.width,
-                sliceHeight,
-                0,
-                0,
-                canvas.width,
-                sliceHeight
-            );
-
-            if (pageIndex > 0) pdf.addPage();
-
-            const renderHeightMM =
-                (sliceHeight * pageWidthMM) / canvas.width;
-
-            pdf.addImage(
-                pageCanvas.toDataURL("image/jpeg", quality),
-                "JPEG",
-                0,
-                0,
-                pageWidthMM,
-                renderHeightMM,
-                undefined,
-                "FAST"
-            );
-
-            offsetY += sliceHeight;
-            pageIndex++;
-
-            if (pageIndex > 100) break;
-        }
-
-        pdf.save(`${new Date()}-brochure.pdf`);
-
-    } catch (err) {
-        console.error("❌ PDF generation error:", err);
-        throw err;
     }
-}; 
+
+    const mergedBytes = await mergedPdf.save();
+    const arrayBuffer = new ArrayBuffer(mergedBytes.byteLength);
+    new Uint8Array(arrayBuffer).set(mergedBytes);
+
+    console.log("✅ Merge terminé avec succès");
+    return new Blob([arrayBuffer], { type: "application/pdf" });
+}

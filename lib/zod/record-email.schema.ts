@@ -6,6 +6,9 @@ export const recordEmailSchema = z.object({
     emails: z.array(z.string()).min(1, {
         message: "Au moins une adresse email est requise."
     }),
+    start: z.string().optional(),
+    end: z.string().optional(),
+    filename: z.string().optional(),
     subject: z.string().optional(),
     message: z.string().optional(),
     file: z

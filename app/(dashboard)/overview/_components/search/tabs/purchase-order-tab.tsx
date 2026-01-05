@@ -14,7 +14,7 @@ import {
 import { DEFAULT_PAGE_SIZE, PURCHASE_ORDER_PREFIX } from "@/config/constant";
 import { cutText, formatNumber, generateAmaId } from "@/lib/utils";
 import { addDays } from "date-fns";
-import { checkDeadline, formatDateToDashModel } from "@/lib/date";
+import { checkDeadline, dueDate, formatDateToDashModel } from "@/lib/date";
 import { useEffect, useState } from "react";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { useDataStore } from "@/stores/data.store";
@@ -71,21 +71,6 @@ export default function PurchaseOrderTab() {
   }, [readAccess, id, debouncedSearch])
 
 
-  function dueDate(purchaseOrderDate: Date, due: string) {
-    const days = paymentTerms.find((p) => p.value === due)?.data ?? 0;
-    const start = new Date(purchaseOrderDate);
-    const end = addDays(start, days);
-    const status = checkDeadline([start, end]);
-    if (status.isOutside) return {
-      color: "text-red-600",
-      text: "Expiré"
-    }
-    return {
-      color: 'text-green-600',
-      text: `${status.daysLeft} jour${status.daysLeft > 1 ? 's' : ''}`
-    }
-  }
-
   return (
     <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER" loading={loading}>
       <div className="border border-neutral-200 rounded-xl">
@@ -138,7 +123,7 @@ export default function PurchaseOrderTab() {
                         dueDate(purchaseOrder.createdAt, purchaseOrder.paymentLimit).color
                       }
                     >
-                      {dueDate(purchaseOrder.createdAt, purchaseOrder.paymentLimit).text}
+                      {dueDate(purchaseOrder.createdAt, purchaseOrder.paymentLimit).daysLeft}
                     </span>
                   </TableCell>
                   <TableCell className="text-center">

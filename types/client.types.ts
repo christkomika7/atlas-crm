@@ -29,6 +29,37 @@ export type ClientType = {
     company: CompanyType
 }
 
+export type InvoiceRevenueType = {
+    reference: string;
+    echeance: {
+        color: string;
+        daysLeft: string;
+        text: string;
+        value: number;
+        dayEnd: Date
+    };
+    statut: boolean;
+    totalTTC: string;
+    amountType: string;
+    payee: string;
+};
+
+export type RevenueType = {
+    invoices: InvoiceRevenueType[];
+    initialBalance: string;
+    totalTTC: string;
+    totalPaid: string;
+    totalDue: string;
+    payableToday: string;
+    delay1to30: string;
+    delay31to60: string;
+    delay61to90: string;
+    delayOver91: string;
+    client: ClientType;
+    startDate: Date;
+    endDate: Date;
+};
+
 export type ClientsTableHandle = {
     refetchClients: () => void;
 };

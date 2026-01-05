@@ -156,7 +156,7 @@ const InvoiceTable = forwardRef<InvoiceTableRef, InvoiceTableProps>(
                           dueDate(invoice.createdAt, invoice.paymentLimit).color
                         }
                       >
-                        {dueDate(invoice.createdAt, invoice.paymentLimit).text}
+                        {dueDate(invoice.createdAt, invoice.paymentLimit).daysLeft}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">

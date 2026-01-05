@@ -16,7 +16,7 @@ import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { useAccess } from "@/hook/useAccess";
 import useQueryAction from "@/hook/useQueryAction";
 import { paymentTerms } from "@/lib/data";
-import { checkDeadline, formatDateToDashModel } from "@/lib/date";
+import { checkDeadline, dueDate, formatDateToDashModel } from "@/lib/date";
 import { cutText, formatNumber, generateAmaId } from "@/lib/utils";
 import { useDataStore } from "@/stores/data.store";
 import useSearchStore from "@/stores/search.store";
@@ -74,21 +74,6 @@ export default function InvoiceTab() {
     refreshInvoice(debouncedSearch)
   }, [readAccess, id, debouncedSearch])
 
-  function dueDate(invoiceDate: Date, due: string) {
-    const days = paymentTerms.find((p) => p.value === due)?.data ?? 0;
-    const start = new Date(invoiceDate);
-    const end = addDays(start, days);
-    const status = checkDeadline([start, end]);
-    if (status.isOutside) return {
-      color: "text-red-600",
-      text: "Expiré"
-    }
-    return {
-      color: 'text-green-600',
-      text: `${status.daysLeft} jour${status.daysLeft > 1 ? 's' : ''}`
-    }
-  }
-
 
   return (
     <AccessContainer hasAccess={readAccess} resource="INVOICES" loading={loading} >
@@ -142,7 +127,7 @@ export default function InvoiceTab() {
                         dueDate(invoice.createdAt, invoice.paymentLimit).color
                       }
                     >
-                      {dueDate(invoice.createdAt, invoice.paymentLimit).text}
+                      {dueDate(invoice.createdAt, invoice.paymentLimit).daysLeft}
                     </span>
                   </TableCell>
                   <TableCell className="text-center">

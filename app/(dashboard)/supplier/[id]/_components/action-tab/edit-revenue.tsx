@@ -8,31 +8,31 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAccess } from '@/hook/useAccess'
 import { formatDateToDashModel } from '@/lib/date'
 import { cn, formatNumber } from '@/lib/utils'
-import useClientStore from '@/stores/client.store'
 import { useDataStore } from '@/stores/data.store'
-import { RevenueType } from '@/types/client.types'
+import useSupplierStore from '@/stores/supplier.store'
+import { SupplierRevenueType } from '@/types/supplier.types'
 import React, { Dispatch, SetStateAction } from 'react'
 
 type EditRevenueProps = {
-    setHasNoInvoicePaid: Dispatch<SetStateAction<boolean>>;
-    hasNoInvoicePaid?: boolean;
+    setHasNoPurchaseOrderPaid: Dispatch<SetStateAction<boolean>>;
+    hasNoPurchaseOrderPaid?: boolean;
     setDate: Dispatch<SetStateAction<{
         start?: Date;
         end?: Date;
     }>>;
     date?: { start?: Date; end?: Date };
-    revenues: RevenueType | undefined;
+    revenues: SupplierRevenueType | undefined;
     isLoading?: boolean;
 }
 
-export default function EditRevenue({ setHasNoInvoicePaid, hasNoInvoicePaid, setDate, date, revenues, isLoading }: EditRevenueProps) {
-    const client = useClientStore.use.client();
+export default function EditRevenue({ setHasNoPurchaseOrderPaid, hasNoPurchaseOrderPaid, setDate, date, revenues, isLoading }: EditRevenueProps) {
+    const supplier = useSupplierStore.use.supplier();
     const currency = useDataStore.use.currency();
 
-    const { access: readAccess, loading } = useAccess("CLIENTS", "READ");
+    const { access: readAccess, loading } = useAccess("SUPPLIERS", "READ");
 
     return (
-        <AccessContainer hasAccess={readAccess} resource='CLIENTS' loading={loading}>
+        <AccessContainer hasAccess={readAccess} resource='SUPPLIERS' loading={loading}>
             <ScrollArea className="max-h-[550px] pr-4">
                 <div className='grid grid-cols-[1fr_400px] gap-x-12'>
                     <div className="border border-neutral-200 rounded-xl">
@@ -73,8 +73,8 @@ export default function EditRevenue({ setHasNoInvoicePaid, hasNoInvoicePaid, set
                                             </TableCell>
                                         </TableRow>
 
-                                        {revenues && revenues.invoices.length > 0 ? (
-                                            revenues.invoices.map((revenue, index) => (
+                                        {revenues && revenues.purchaseOrders.length > 0 ? (
+                                            revenues.purchaseOrders.map((revenue, index) => (
                                                 <TableRow
                                                     key={index}
                                                     className="h-16 transition-colors"
@@ -122,12 +122,12 @@ export default function EditRevenue({ setHasNoInvoicePaid, hasNoInvoicePaid, set
                                 <h2 className='font-medium'>Date</h2> <p className='text-sm text-neutral-600'>{formatDateToDashModel(new Date())}</p>
                             </div>
                             <div className='flex justify-between gap-x-2 mb-10'>
-                                <h2 className='font-medium'>Client</h2> <p className='text-sm text-neutral-600'>{client?.firstname} {client?.lastname} ({client?.companyName})</p>
+                                <h2 className='font-medium'>Fournisseur</h2> <p className='text-sm text-neutral-600'>{supplier?.firstname} {supplier?.lastname} ({supplier?.companyName})</p>
                             </div>
                             <div>
                                 <Label className='flex gap-x-3 text-base'>
-                                    <Checkbox checked={hasNoInvoicePaid} onCheckedChange={e => setHasNoInvoicePaid(e as boolean)} className='size-6' />
-                                    N'afficher que les factures impayées
+                                    <Checkbox checked={hasNoPurchaseOrderPaid} onCheckedChange={e => setHasNoPurchaseOrderPaid(e as boolean)} className='size-6' />
+                                    N'afficher que les bons de commandes impayées
                                 </Label>
                             </div>
                         </div>
@@ -150,7 +150,7 @@ export default function EditRevenue({ setHasNoInvoicePaid, hasNoInvoicePaid, set
                             </div>
                         </div>
                         <div className='flex items-center justify-between gap-x-2'>
-                            <h2 className='font-medium'>Total TTC</h2>      {formatNumber(revenues?.totalTTC || 0)} {currency}
+                            <h2 className='font-medium'>Total TTC</h2>  {formatNumber(revenues?.totalTTC || 0)} {currency}
                         </div>
                     </div>
                 </div>

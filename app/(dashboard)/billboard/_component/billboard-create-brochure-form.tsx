@@ -19,7 +19,6 @@ import { contractSchema, ContractSchemaType } from "@/lib/zod/contract.schema";
 import { useDataStore } from "@/stores/data.store";
 import { RequestResponse } from "@/types/api.types";
 import { AreaType } from "@/types/area.types";
-import { BillboardType, BrochureBillboardItem } from "@/types/billboard.types";
 import { CityType } from "@/types/city.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
@@ -27,10 +26,8 @@ import { useForm } from "react-hook-form";
 import usePdfStore from "@/stores/pdf.store";
 import { MultipleSelect, Option } from "@/components/ui/multi-select";
 import { BaseType } from "@/types/base.types";
-import { downloadBrochurePDF } from "@/lib/pdf";
-import Brochure from "@/components/pdf/brochure";
 import { toast } from "sonner";
-import { resolveImageSrc, urlToFile } from "@/lib/utils";
+import { mergePdfsFromUrls } from "@/lib/pdf";
 
 type BillboardCreateBrochureFormProps = {
   close: () => void;
@@ -41,8 +38,7 @@ export default function BillboardCreateBrochureForm({
   close,
   onSendEmail,
 }: BillboardCreateBrochureFormProps) {
-  const [downloadLoader, setDownloadLoader] = useState(false);
-  const [sendEmailLoader, setSendEmailLoader] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<"download" | "send" | null>(null);
   const companyId = useDataStore.use.currentCompany();
   const [action, setAction] = useState<"download" | "send">();
   const setPdf = usePdfStore.use.setPdf();
@@ -82,7 +78,7 @@ export default function BillboardCreateBrochureForm({
   );
 
   const { mutate: mutateBilboardFilter, isPending: isPendingBillboardFilter } =
-    useQueryAction<ContractSchemaType, RequestResponse<BillboardType[]>>(
+    useQueryAction<ContractSchemaType, RequestResponse<string[]>>(
       filter,
       () => { },
       "filter-billboard"
@@ -96,87 +92,70 @@ export default function BillboardCreateBrochureForm({
     }
   }, [companyId]);
 
-  // function getStaticMapImage(mapValue: string) {
-  //   const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+  function downloadPdf(blob: Blob, filename = "brochure.pdf") {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
-  //   if (!mapValue || !API_KEY) return "/empty.jpg";
 
-  //   const encoded = encodeURIComponent(mapValue);
-
-  //   return `https://maps.googleapis.com/maps/api/staticmap?center=${encoded}&zoom=16&size=600x300&scale=2&maptype=roadmap&markers=color:red|${encoded}&key=${API_KEY}`;
-  // }
-
-  async function getProfil(items: BrochureBillboardItem[]) {
-    const updatedItems: BrochureBillboardItem[] = await Promise.all(
-      items.map(async (item) => {
-        let first = "";
-        let second = "";
-
-        if (item.images && item.images.length > 0) {
-          first = resolveImageSrc(await urlToFile(item.images[0])) || "";
-          second = String(item.images[1] ? resolveImageSrc(await urlToFile(item.images[1])) : "");
-        }
-
-        return {
-          ...item,
-          images: [first, second],
-        };
-      })
-    );
-    return updatedItems
+  function blobToBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
 
   async function submit(contractData: ContractSchemaType) {
     const { success, data } = contractSchema.safeParse(contractData);
-    if (!success) return;
+    if (!success || !action) return;
+
+    setLoadingAction(action);
 
     mutateBilboardFilter(data, {
-      async onSuccess(data) {
-        if (data.data) {
-          const billboards = data.data;
-          const items = billboards.map((item) => ({
-            id: item.id,
-            type: item.type.name,
-            reference: item.reference,
-            name: item.name,
-            width: String(item.width),
-            height: String(item.height),
-            address: item.address,
-            orientation: item.orientation,
-            dimension: String((Number(item.width) * Number(item.height))),
-            images: item.photos,
-            maps: item.gmaps,
-            color: item.company.documentModel.primaryColor
-          }));
-
-
-          switch (action) {
-            case "download":
-              setDownloadLoader(true);
-              const formattedItems = await getProfil(items)
-              if (formattedItems.length === 0) return toast.error("Votre filtre ne renvoi vers aucune donnée.");
-
-              console.log({ formattedItems })
-
-              await downloadBrochurePDF(<Brochure items={formattedItems} />, {
-                padding: 0,
-                margin: 0,
-                quality: 0.98,
-                scale: 4,
-              })
-              // close(); // Fermer le modal après téléchargement
-              setDownloadLoader(false)
-              break;
-            case "send":
-              setSendEmailLoader(true)
-              // const document = await getPdfBase64(data.data);
-              // setPdf(document);
-              setSendEmailLoader(false)
-              close(); // Fermer le modal actuel
-              onSendEmail?.(); // Ouvrir le modal d'envoi email
-              break;
+      async onSuccess(response) {
+        try {
+          if (!response.data?.length) {
+            toast.error("Aucun PDF trouvé pour ce filtre.");
+            return;
           }
+
+          const validBrochures = response.data.filter(
+            (url) => typeof url === "string" && url.trim() !== ""
+          );
+
+          if (!validBrochures.length) {
+            toast.error("Aucune URL de PDF valide trouvée.");
+            return;
+          }
+
+          const mergedPdfBlob = await mergePdfsFromUrls(validBrochures);
+
+          if (action === "download") {
+            downloadPdf(mergedPdfBlob, "brochures.pdf");
+            toast.success("PDF téléchargé avec succès !");
+          }
+
+          if (action === "send") {
+            const base64Pdf = await blobToBase64(mergedPdfBlob);
+            setPdf(base64Pdf);
+            close();
+            onSendEmail?.();
+            toast.success("PDF préparé pour l'envoi !");
+          }
+        } catch (error) {
+          toast.error(
+            `Erreur lors de la génération du PDF : ${error instanceof Error ? error.message : "Erreur inconnue"
+            }`
+          );
+        } finally {
+          setLoadingAction(null);
         }
       },
     });
@@ -337,32 +316,22 @@ export default function BillboardCreateBrochureForm({
 
         <div className="flex justify-center gap-x-2 pt-2">
           <Button
-            variant="primary"
-            disabled={isPendingBillboardFilter || downloadLoader}
-            onClick={(e) => {
-              e.stopPropagation();
-              setAction("download");
-            }}
+            type="submit"
+            disabled={isPendingBillboardFilter || loadingAction !== null}
+            onClick={() => setAction("download")}
             className="justify-center bg-white shadow-none border-2 border-blue max-w-xs text-blue"
           >
-            {downloadLoader ? (
-              <Spinner />
-            ) : (
-              "Télécharger le pdf"
-            )}
+            {loadingAction === "download" ? <Spinner /> : "Télécharger le PDF"}
           </Button>
           <Button
-            disabled={isPendingBillboardFilter || sendEmailLoader}
-            variant="primary"
-            className="justify-center max-w-xs"
+            type="submit"
+            disabled={isPendingBillboardFilter || loadingAction !== null}
             onClick={() => setAction("send")}
+            className="justify-center max-w-xs"
           >
-            {sendEmailLoader ? (
-              <Spinner />
-            ) : (
-              "Envoyer via email"
-            )}
+            {loadingAction === "send" ? <Spinner /> : "Envoyer via email"}
           </Button>
+
         </div>
       </form>
     </Form>

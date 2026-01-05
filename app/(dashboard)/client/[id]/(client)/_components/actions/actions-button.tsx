@@ -41,7 +41,6 @@ export default function ActionsButton() {
   const hasAccess =
     createInvoiceAccess || createQuoteAccess || createDeliveryNoteAccess || createTransactionAccess;
 
-
   const { mutate: mutateClient, isPending: isGettingClient } = useQueryAction<
     { id: string },
     RequestResponse<ClientType>
@@ -159,7 +158,6 @@ export default function ActionsButton() {
             }
           >
             <RevenueModal
-              closeModal={() => setOpen((prev) => ({ ...prev, revenue: false }))}
             />
           </ModalContainer>
         )}

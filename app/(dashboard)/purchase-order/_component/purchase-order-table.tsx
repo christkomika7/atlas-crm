@@ -25,9 +25,7 @@ import TableActionButton from "./table-action-button";
 import { all } from "@/action/purchase-order.action";
 import { dropdownMenu } from "./table";
 import { cutText, formatNumber, generateAmaId } from "@/lib/utils";
-import { paymentTerms } from "@/lib/data";
-import { addDays } from "date-fns";
-import { checkDeadline, formatDateToDashModel } from "@/lib/date";
+import { dueDate, formatDateToDashModel } from "@/lib/date";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { DEFAULT_PAGE_SIZE, PURCHASE_ORDER_PREFIX } from "@/config/constant";
 import { useAccess } from "@/hook/useAccess";
@@ -93,21 +91,6 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
 
     const isSelected = (id: string) => selectedPurchaseOrderIds.includes(id);
 
-    function dueDate(purchaseOrderDate: Date, due: string) {
-      const days = paymentTerms.find((p) => p.value === due)?.data ?? 0;
-      const start = new Date(purchaseOrderDate);
-      const end = addDays(start, days);
-      const status = checkDeadline([start, end]);
-      if (status.isOutside) return {
-        color: "text-red-600",
-        text: "Expiré"
-      }
-      return {
-        color: 'text-green-600',
-        text: `${status.daysLeft} jour${status.daysLeft > 1 ? 's' : ''}`
-      }
-    }
-
     return (
       <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER" loading={loading}>
         <div className="border border-neutral-200 rounded-xl">
@@ -172,7 +155,7 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
                           dueDate(purchaseOrder.createdAt, purchaseOrder.paymentLimit).color
                         }
                       >
-                        {dueDate(purchaseOrder.createdAt, purchaseOrder.paymentLimit).text}
+                        {dueDate(purchaseOrder.createdAt, purchaseOrder.paymentLimit).daysLeft}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">

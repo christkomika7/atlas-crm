@@ -173,14 +173,14 @@ export default function RecordDocument({
                         display: "grid",
                         gridTemplateColumns: "80px 1fr",
                         columnGap: "69px",
-                        marginBottom: "3px",
+                        marginBottom: "1px",
 
                     }}>
                         <span className="font-medium">{type} N° :</span>
                         <span className="font-normal">{orderValue}-{recordNumber}</span>
                     </p>
 
-                    <p style={{ display: "grid", gridTemplateColumns: "80px 1fr", columnGap: "69px", marginBottom: "3px", }}>
+                    <p style={{ display: "grid", gridTemplateColumns: "80px 1fr", columnGap: "69px", marginBottom: "1px", }}>
                         <span className="font-medium">Date :</span>
                         <span className="font-normal">
                             {record?.updatedAt ? formatDateToDashModel(new Date(record.updatedAt)) : formatDateToDashModel(new Date())}
@@ -202,30 +202,30 @@ export default function RecordDocument({
                         {title}
                     </h2>
                     <div className="">
-                        <p className="text-right mb-[3px]">
+                        <p className="text-right mb-[1px]">
                             {record?.company.registeredAddress}
                         </p>
-                        <p className="mb-[3px] text-right">
+                        <p className="mb-[1px] text-right">
                             BP: {record?.company.codePostal}
                         </p>
-                        <p className="mb-[3px] text-right">
+                        <p className="mb-[1px] text-right">
                             {record?.company.city},{" "}
                             {getCountryFrenchName(record?.company.country as string)}
                         </p>
-                        <p className="mb-[3px] text-right">
+                        <p className="mb-[1px] text-right">
                             {record?.company.email}
                         </p>
                         {record?.company.website && (
-                            <p className="mb-[3px] text-right">
+                            <p className="mb-[1px] text-right">
                                 <Link href={record?.company.website}>
                                     {record?.company.website}
                                 </Link>
                             </p>
                         )}
-                        <p className="mb-[3px] text-right">
+                        <p className="mb-[1px] text-right">
                             {record?.company.phoneNumber}
                         </p>
-                        <p className="mb-[3px] text-right">
+                        <p className="mb-[1px] text-right">
                             RCCM: {record?.company.businessRegistrationNumber}
                         </p>
                         <p className="text-right">

@@ -42,6 +42,38 @@ export type BillboardSupplier = {
 }
 
 
+
+export type PurchaseOrderRevenueType = {
+    reference: string;
+    echeance: {
+        color: string;
+        daysLeft: string;
+        text: string;
+        value: number;
+        dayEnd: Date
+    };
+    statut: boolean;
+    totalTTC: string;
+    amountType: string;
+    payee: string;
+};
+
+export type SupplierRevenueType = {
+    purchaseOrders: PurchaseOrderRevenueType[];
+    initialBalance: string;
+    totalTTC: string;
+    totalPaid: string;
+    totalDue: string;
+    payableToday: string;
+    delay1to30: string;
+    delay31to60: string;
+    delay61to90: string;
+    delayOver91: string;
+    supplier: SupplierType;
+    startDate: Date;
+    endDate: Date;
+};
+
 export type CustomersTableHandle = {
     refetchClients: () => void;
 };

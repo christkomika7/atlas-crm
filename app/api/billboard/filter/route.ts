@@ -52,11 +52,22 @@ export async function POST(req: NextRequest) {
         }
     });
 
+    const brochures: string[] = billboards.flatMap(billboard =>
+        [
+            billboard.company.documentModel?.recordFiles[0],
+            billboard.company.documentModel?.recordFiles[1],
+            billboard.company.documentModel?.recordFiles[2],
+            ...billboard.brochures,
+            billboard.company.documentModel?.recordFiles[3],
+            billboard.company.documentModel?.recordFiles[4],
+        ].filter((file): file is string => Boolean(file))
+    );
+
+
     return NextResponse.json(
         {
             state: "success",
-            count: billboards.length,
-            data: billboards,
+            data: brochures,
         },
         { status: 200 }
     );

@@ -1,55 +1,53 @@
 "use client";
-import { useDataStore } from "@/stores/data.store";
 import { Tabs } from "../ui/tabs";
-import EditRevenue from "@/app/(dashboard)/client/[id]/(client)/_components/actions/action-tab/edit-revenue";
-import PreviewRevenue from "@/app/(dashboard)/client/[id]/(client)/_components/actions/action-tab/preview-revenue";
 import { useEffect, useState } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
-import { RevenueType } from "@/types/client.types";
-import { getRevenue } from "@/action/client.action";
 import { useParams } from "next/navigation";
-import ShareRevenue from "@/app/(dashboard)/client/[id]/(client)/_components/actions/action-tab/share-revenue";
+import { SupplierRevenueType } from "@/types/supplier.types";
+import { getSupplierRevenue } from "@/action/supplier.action";
+import EditRevenue from "@/app/(dashboard)/supplier/[id]/_components/action-tab/edit-revenue";
+import PreviewRevenue from "@/app/(dashboard)/supplier/[id]/_components/action-tab/preview-revenue";
+import ShareRevenue from "@/app/(dashboard)/supplier/[id]/_components/action-tab/share-revenue";
 
-export default function RevenueModal() {
+export default function SupplierRevenueModal() {
     const param = useParams();
-    const [hasNoInvoicePaid, setHasNoInvoicePaid] = useState(false);
+    const [hasNoPurchaseOrderPaid, setHasNoPurchaseOrderPaid] = useState(false);
     const [date, setDate] = useState<{ start?: Date; end?: Date }>({ start: undefined, end: undefined })
-    const [revenues, setRevenues] = useState<RevenueType>();
+    const [revenues, setRevenues] = useState<SupplierRevenueType>();
 
     const {
         mutate: mutateGetRevenue,
         isPending: isGettingRevenue,
     } = useQueryAction<{
-        clientId: string;
+        supplierId: string;
         start?: string | undefined;
         end?: string | undefined;
-        hasNoInvoicePaid: boolean
-    }, RequestResponse<RevenueType>>(
-        getRevenue,
+        hasNoPurchaseOrderPaid: boolean
+    }, RequestResponse<SupplierRevenueType>>(
+        getSupplierRevenue,
         () => { },
-        "revenue-client"
+        "revenue-supplier"
     );
 
 
     useEffect(() => {
         if (param.id) {
             mutateGetRevenue({
-                clientId: param.id as string,
+                supplierId: param.id as string,
                 start: date.start ? date.start.toISOString() : undefined,
                 end: date.end ? date.end.toISOString() : undefined,
-                hasNoInvoicePaid: hasNoInvoicePaid,
+                hasNoPurchaseOrderPaid,
             }, {
                 onSuccess(data) {
                     if (data.data) {
-                        console.log(data.data);
                         setRevenues(data.data);
                     }
                 },
             });
         }
 
-    }, [param, date, hasNoInvoicePaid]);
+    }, [param, date, hasNoPurchaseOrderPaid]);
 
 
     return (
@@ -58,7 +56,7 @@ export default function RevenueModal() {
                 {
                     id: 1,
                     title: "Modifier",
-                    content: <EditRevenue setHasNoInvoicePaid={setHasNoInvoicePaid} hasNoInvoicePaid={hasNoInvoicePaid} setDate={setDate} date={date} revenues={revenues} />,
+                    content: <EditRevenue setHasNoPurchaseOrderPaid={setHasNoPurchaseOrderPaid} hasNoPurchaseOrderPaid={hasNoPurchaseOrderPaid} setDate={setDate} date={date} revenues={revenues} />,
                 },
                 {
                     id: 2,
