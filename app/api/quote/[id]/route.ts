@@ -73,7 +73,6 @@ export async function POST(req: NextRequest) {
     },
     include: {
       client: true,
-      project: true,
       items: {
         where: {
           state: "IGNORE"
@@ -184,12 +183,11 @@ export async function PUT(req: NextRequest) {
 
   }) as QuoteUpdateSchemaType;
 
-  const [quoteExist, companyExist, clientExist, projectExist] =
+  const [quoteExist, companyExist, clientExist] =
     await prisma.$transaction([
       prisma.quote.findUnique({ where: { id }, include: { items: true, productsServices: true, billboards: true, } }),
       prisma.company.findUnique({ where: { id: data.companyId }, include: { documentModel: true } }),
       prisma.client.findUnique({ where: { id: data.clientId } }),
-      prisma.project.findUnique({ where: { id: data.projectId } }),
     ]);
 
   if (!quoteExist) {
@@ -212,15 +210,6 @@ export async function PUT(req: NextRequest) {
       { status: 404 }
     );
   }
-
-  if (!projectExist) {
-    return NextResponse.json(
-      { status: "error", message: "Projet introuvable." },
-      { status: 404 }
-    );
-  }
-
-
 
   await rollbackQuote(quoteExist as unknown as QuoteType);
 
@@ -264,24 +253,6 @@ export async function PUT(req: NextRequest) {
     )
   }
 
-  if (quoteExist.projectId !== data.projectId) {
-    await prisma.$transaction([
-      prisma.quote.update({
-        where: { id: quoteExist.id },
-        data: {
-          project: {
-            disconnect: {
-              id: quoteExist.projectId as string
-            }
-          }
-        }
-      })
-    ]
-    )
-  }
-
-
-  // Update file
   const key = generateId();
   const quoteReference = `${companyExist.documentModel?.quotesPrefix ?? QUOTE_PREFIX}-${data.quoteNumber}`;
   const folder = createFolder([companyExist.companyName, "quote", `${quoteReference}_----${key}/files`]);
@@ -343,7 +314,7 @@ export async function PUT(req: NextRequest) {
       price: productService.price,
       updatedPrice: productService.updatedPrice,
       locationStart: new Date(),
-      locationEnd: projectExist.deadline,
+      locationEnd: new Date(),
       discount: productService.discount ?? "0",
       discountType: productService.discountType as string,
       currency: productService.currency!,
@@ -373,12 +344,6 @@ export async function PUT(req: NextRequest) {
           amountType: data.amountType,
           items: {
             create: itemForCreate
-          },
-          project: {
-            connect: {
-              id: data.projectId
-            },
-
           },
           client: {
             connect: {
@@ -475,16 +440,6 @@ export async function DELETE(req: NextRequest) {
   await prisma.$transaction([
     prisma.client.update({
       where: { id: quote.clientId as string },
-      data: {
-        quotes: {
-          disconnect: {
-            id: quote.id
-          }
-        }
-      }
-    }),
-    prisma.project.update({
-      where: { id: quote.projectId as string },
       data: {
         quotes: {
           disconnect: {

@@ -11,7 +11,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { RequestResponse } from "@/types/api.types";
 import { Button } from "@/components/ui/button";
 import { all as getSuppliers, unique as getSupplier } from "@/action/supplier.action";
-import { getallByCompany } from "@/action/project.action";
 
 import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
@@ -19,9 +18,7 @@ import TextInput from "@/components/ui/text-input";
 import { Combobox } from "@/components/ui/combobox";
 import { useDataStore } from "@/stores/data.store";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { ProjectType } from "@/types/project.types";
 import ItemModal from "./item-modal";
-import useProjectStore from "@/stores/project.store";
 import { unique } from "@/action/document.action";
 import { ModelDocumentType } from "@/types/document.types";
 import { useRouter } from "next/navigation";
@@ -58,12 +55,8 @@ export default function PurchaseOrderForm() {
   const setSupplierId = useSupplierIdStore.use.setSupplierId();
 
   const items = usePurchaseItemStore.use.items();
-  const updateDiscount = usePurchaseItemStore.use.updateDiscount();
   const clearItem = usePurchaseItemStore.use.clearItem();
   const setItemQuantities = usePurchaseItemStore.use.setItemQuantity();
-
-  const setProject = useProjectStore.use.setProject();
-  const projects = useProjectStore.use.projects();
 
   const [amountType, setAmountType] = useState<"HT" | "TTC">("TTC");
   const [company, setCompany] = useState<CompanyType>();
@@ -118,16 +111,6 @@ export default function PurchaseOrderForm() {
     "document"
   );
 
-  const {
-    mutate: mutateProject,
-    isPending: isLoadingProject,
-    data: projectData,
-  } = useQueryAction<{ companyId: string }, RequestResponse<ProjectType[]>>(
-    getallByCompany,
-    () => { },
-    "projects"
-  );
-
 
   const { mutate: mutateGetProductService } = useQueryAction<
     { companyId: string; },
@@ -177,9 +160,6 @@ export default function PurchaseOrderForm() {
           },
         }
       );
-
-      mutateProject({ companyId });
-
     }
   }, [companyId]);
 
@@ -191,7 +171,6 @@ export default function PurchaseOrderForm() {
           onSuccess(data) {
             if (data.data) {
               setPaymentLimit(data.data.paymentTerms);
-              // updateDiscount(data.data.discount);
             }
           },
         }
@@ -208,13 +187,6 @@ export default function PurchaseOrderForm() {
       setSupplier(suppliersData.data.find((c) => c.id === supplierId));
     }
   }, [supplierId, suppliersData]);
-
-  useEffect(() => {
-    if (projectData?.data) {
-      setProject(projectData.data);
-    }
-  }, [projectData]);
-
 
   useEffect(() => {
     if (items.length > 0) {
@@ -407,43 +379,6 @@ export default function PurchaseOrderForm() {
                       handleChange={(e) => {
                         field.onChange(e);
                       }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">Projet</h2>
-            <FormField
-              control={form.control}
-              name="projectId"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isLoadingProject}
-                      datas={projects.map(({ id, name, status }) => ({
-                        id: id,
-                        label: name,
-                        value: id,
-                        color:
-                          status === "BLOCKED"
-                            ? "bg-red"
-                            : status === "TODO"
-                              ? "bg-neutral-200"
-                              : status === "IN_PROGRESS"
-                                ? "bg-blue"
-                                : "bg-emerald-500",
-                      }))}
-                      value={field.value ?? ""}
-                      setValue={(e) => {
-                        field.onChange(e);
-                      }}
-                      placeholder="Sélectionner un projet"
-                      searchMessage="Rechercher un projet"
-                      noResultsMessage="Aucun projet trouvé."
                     />
                   </FormControl>
                   <FormMessage />

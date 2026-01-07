@@ -16,13 +16,11 @@ import { Combobox } from "@/components/ui/combobox";
 import { useDataStore } from "@/stores/data.store";
 import { ClientType } from "@/types/client.types";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { ProjectType } from "@/types/project.types";
 import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
 import { ModelDocumentType } from "@/types/document.types";
 import { useParams } from "next/navigation";
 import { CompanyType } from "@/types/company.types";
 import { all as getClients, unique as getClient } from "@/action/client.action";
-import { allByClient } from "@/action/project.action";
 import { unique as getDocument } from "@/action/document.action";
 import { DownloadIcon, XIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -42,9 +40,7 @@ import { useAccess } from "@/hook/useAccess";
 import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
 import TextInput from "@/components/ui/text-input";
-import useProjectStore from "@/stores/project.store";
 import useClientIdStore from "@/stores/client-id.store";
-import ProjectModal from "../../../_component/project-modal";
 import ItemList from "../../../create/_component/item-list";
 import ItemModal from "../../../create/_component/item-modal";
 import Decimal from "decimal.js";
@@ -55,7 +51,6 @@ import AccessContainer from "@/components/errors/access-container";
 export default function QuoteTab() {
   const param = useParams();
 
-  const isFirstLoadingDiscount = useRef(true);
   const isFirstLoadingClientDiscount = useRef(true);
 
   const companyId = useDataStore.use.currentCompany();
@@ -67,13 +62,9 @@ export default function QuoteTab() {
   const setClientId = useClientIdStore.use.setClientId();
 
   const items = useItemStore.use.items();
-  // const updateDiscount = useItemStore.use.updateDiscount();
   const clearItem = useItemStore.use.clearItem();
   const setItems = useItemStore.use.setItems();
   const setItemQuantities = useItemStore.use.setItemQuantity();
-
-  const setProject = useProjectStore.use.setProject();
-  const projects = useProjectStore.use.projects();
 
   const [paymentLimit, setPaymentLimit] = useState("");
 
@@ -85,7 +76,6 @@ export default function QuoteTab() {
   const [lastUploadFiles, setLastUploadFiles] = useState<string[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  const locationBillboardDate = useItemStore.use.locationBillboardDate();
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
 
 
@@ -144,14 +134,6 @@ export default function QuoteTab() {
     "document"
   );
 
-  const {
-    mutate: mutateGetProject,
-    isPending: isGettingProject,
-  } = useQueryAction<{ clientId: string }, RequestResponse<ProjectType[]>>(
-    allByClient,
-    () => { },
-    "projects"
-  );
 
   const { mutate: mutateGetProductService } = useQueryAction<
     { companyId: string; },
@@ -240,7 +222,6 @@ export default function QuoteTab() {
               discount: quote.discount,
               discountType: quote.discountType as "purcent" | "money",
               clientId: quote.clientId,
-              projectId: quote.projectId,
               item: {
                 billboards: quote.items.filter(item => item.itemType === "billboard").map(billboard => ({
                   id: billboard.id,
@@ -291,14 +272,6 @@ export default function QuoteTab() {
                 }
               },
             });
-            mutateGetProject({ clientId: quote.clientId }, {
-              onSuccess(data) {
-                if (data.data) {
-                  const project = data.data;
-                  setProject(project);
-                }
-              },
-            });
             mutateGetClient({ id: quote.clientId })
             mutateGetDocument({ id: quote.companyId })
           }
@@ -306,33 +279,6 @@ export default function QuoteTab() {
       })
     }
   }, [param, readAccess])
-
-
-  useEffect(() => {
-    if (clientId) {
-      mutateGetProject({ clientId: clientId }, {
-        onSuccess(data) {
-          if (data.data) {
-            const project = data.data;
-            setProject(project);
-          }
-        },
-      });
-      mutateGetClient(
-        { id: clientId },
-        {
-          onSuccess(data) {
-            if (data.data) {
-              if (isFirstLoadingDiscount.current) {
-                isFirstLoadingDiscount.current = false;
-                return;
-              }
-            }
-          },
-        }
-      );
-    }
-  }, [clientId]);
 
   useEffect(() => {
     if (clientDatas?.data && clientId) {
@@ -630,45 +576,6 @@ export default function QuoteTab() {
                   )}
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <h2 className="font-semibold">Projet</h2>
-              <FormField
-                control={form.control}
-                name="projectId"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <Combobox
-                        disabled={isCompleted || !modifyAccess}
-                        isLoading={isGettingProject}
-                        datas={projects.map(({ id, name, status }) => ({
-                          id: id,
-                          label: name,
-                          value: id,
-                          color:
-                            status === "BLOCKED"
-                              ? "bg-red"
-                              : status === "TODO"
-                                ? "bg-neutral-200"
-                                : status === "IN_PROGRESS"
-                                  ? "bg-blue"
-                                  : "bg-emerald-500",
-                        }))}
-                        value={field.value ?? ""}
-                        setValue={(e) => {
-                          field.onChange(e);
-                        }}
-                        placeholder="Sélectionner un projet"
-                        searchMessage="Rechercher un projet"
-                        noResultsMessage="Aucun projet trouvé."
-                        addElement={<ProjectModal clientId={clientId} />}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
             <div className="space-y-2">
               <h2 className="font-semibold">Détails des paiements</h2>

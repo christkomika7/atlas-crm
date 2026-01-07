@@ -628,9 +628,6 @@ model Quote {
   items            Item[]
   notifications    Notification[]
 
-  projectId String?
-  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
@@ -669,9 +666,6 @@ model DeliveryNote {
   billboards       Billboard[]
   items            Item[]
   notifications    Notification[]
-
-  projectId String?
-  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
@@ -784,9 +778,7 @@ model Project {
   collaborators      Profile[]       @relation("project_collaborators")
   tasks              Task[]
   invoices           Invoice[]
-  quotes             Quote[]
   purchaseOrders     PurchaseOrder[]
-  deliveryNotes      DeliveryNote[]
   dibursements       Dibursement[]
   notifications      Notification[]
 

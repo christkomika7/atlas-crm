@@ -49,11 +49,25 @@ export async function POST(req: NextRequest) {
         prisma.purchaseOrder.findUnique({
             where: { id: data.recordId },
             include: {
-                supplier: true
+                supplier: true,
+                project: true,
             }
         })
     ]);
 
+    if (!purchaseOrder) {
+        return NextResponse.json(
+            { status: "error", message: "Bon de commande introuvable." },
+            { status: 404 }
+        );
+    }
+
+    if (!purchaseOrder.projectId) {
+        return NextResponse.json(
+            { status: "error", message: "Le bon de commande doit être lié à un projet pour pouvoir être partagé." },
+            { status: 404 }
+        );
+    }
 
     if (!company) return NextResponse.json(
         { status: "error", message: "Entreprise introuvable." },

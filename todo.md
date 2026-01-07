@@ -8,6 +8,4 @@
 - Historique paiement suppression
 
 # A faire maintenant
-- Ajouter les elements des brochures dans les parametres
-- Corriger la maquette au niveau des grands nombres
 - Au niveau des devis la partie projets

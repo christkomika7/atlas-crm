@@ -7,7 +7,6 @@ import Decimal from "decimal.js";
 export const deliveryNoteSchema = z
     .object({
         clientId: z.string({ error: "Le client est requis" }),
-        projectId: z.string({ error: "Le projet est requis" }),
         companyId: z.string({ error: "L'entreprise est requise" }),
         deliveryNoteNumber: z.number({ error: "Le numéro du bon de livraison est obligatoire." }),
         item: z.object({
@@ -58,7 +57,6 @@ export const deliveryNoteUpdateSchema = z
     .object({
         id: z.string({ error: "L'identifiant est requis" }),
         clientId: z.string({ error: "Le client est requis" }),
-        projectId: z.string({ error: "Le projet est requis" }),
         companyId: z.string({ error: "L'entreprise est requise" }),
         deliveryNoteNumber: z.number({ error: "Le numéro du bon de livraison est requis." }),
         item: z.object({

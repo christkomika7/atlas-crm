@@ -44,6 +44,10 @@ export async function POST(req: NextRequest) {
         message: "Aucune facture trouvée."
     }, { status: 400 })
 
+    if (!invoice?.projectId) {
+        throw new Error("La facture doit être liée à un projet pour pouvoir être dupliquée.");
+    }
+
     if (!type || type === "invoice") {
         const lastInvoice = await prisma.invoice.findFirst({
             where: { companyId: invoice.companyId },
@@ -263,12 +267,6 @@ export async function POST(req: NextRequest) {
                         items: {
                             create: itemForCreate
                         },
-                        project: {
-                            connect: {
-                                id: invoice.projectId as string
-                            },
-
-                        },
                         client: {
                             connect: {
                                 id: invoice.clientId as string
@@ -388,12 +386,6 @@ export async function POST(req: NextRequest) {
                         fromRecordReference: `${invoice.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}`,
                         items: {
                             create: itemForCreate
-                        },
-                        project: {
-                            connect: {
-                                id: invoice.projectId as string
-                            },
-
                         },
                         client: {
                             connect: {

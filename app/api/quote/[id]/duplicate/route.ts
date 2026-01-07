@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
             productsServices: true,
             billboards: true,
             items: true,
-            project: true,
             company: {
                 include: {
                     documentModel: true
@@ -59,7 +58,6 @@ export async function POST(req: NextRequest) {
                 state: $Enums.ItemState.IGNORE,
                 name: billboard.name,
                 reference: billboard.reference,
-
                 hasTax: billboard.hasTax,
                 description: billboard.description ?? "",
                 quantity: billboard.quantity,
@@ -121,12 +119,6 @@ export async function POST(req: NextRequest) {
                         items: {
                             create: itemForCreate
                         },
-                        project: {
-                            connect: {
-                                id: quote.projectId as string
-                            },
-
-                        },
                         client: {
                             connect: {
                                 id: quote.clientId as string
@@ -169,7 +161,6 @@ export async function POST(req: NextRequest) {
         }
 
     } else {
-
         const itemForCreate = [
             ...quote.items.filter(it => it.itemType === "billboard")?.map(billboard => ({
                 state: $Enums.ItemState.IGNORE,
@@ -239,12 +230,6 @@ export async function POST(req: NextRequest) {
                         fromRecordReference: `${quote.company.documentModel?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(quote.quoteNumber, false)}`,
                         items: {
                             create: itemForCreate
-                        },
-                        project: {
-                            connect: {
-                                id: quote.projectId as string
-                            },
-
                         },
                         client: {
                             connect: {

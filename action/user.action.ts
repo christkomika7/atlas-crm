@@ -221,7 +221,6 @@ export async function getCollaborators({ id, includeMe = false }: { id: string, 
     }
 }
 
-
 export async function deleteUser({ id }: { id: string }) {
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/user/${id}`, {

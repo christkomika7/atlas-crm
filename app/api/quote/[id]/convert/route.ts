@@ -33,7 +33,6 @@ export async function POST(req: NextRequest) {
                 productsServices: true,
                 billboards: true,
                 items: true,
-                project: true,
                 company: {
                     include: {
                         documentModel: true
@@ -145,12 +144,6 @@ export async function POST(req: NextRequest) {
                     items: {
                         create: itemForCreate
                     },
-                    project: {
-                        connect: {
-                            id: quote.projectId as string
-                        },
-
-                    },
                     client: {
                         connect: {
                             id: quote.clientId as string
@@ -172,12 +165,6 @@ export async function POST(req: NextRequest) {
                         })) ?? []
                     },
                 },
-            }),
-            prisma.project.update({
-                where: {
-                    id: quote.projectId as string
-                },
-                data: { status: "TODO", amount }
             }),
             prisma.client.update({
                 where: { id: quote.clientId as string },

@@ -19,16 +19,12 @@ import TextInput from "@/components/ui/text-input";
 import { Combobox } from "@/components/ui/combobox";
 import { useDataStore } from "@/stores/data.store";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { ProjectType } from "@/types/project.types";
-import useProjectStore from "@/stores/project.store";
-
 
 import { ModelDocumentType } from "@/types/document.types";
 import { useParams } from "next/navigation";
 import { CompanyType } from "@/types/company.types";
 
 import { all as getSuppliers, unique as getSupplier } from "@/action/supplier.action";
-import { getallByCompany } from "@/action/project.action";
 import { unique as getDocument } from "@/action/document.action";
 import { DownloadIcon, XIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -69,14 +65,9 @@ export default function PurchaseOrderTab() {
   const setSupplierId = useSupplierIdStore.use.setSupplierId();
 
   const items = usePurchaseItemStore.use.items();
-  // const updateDiscount = usePurchaseItemStore.use.updateDiscount();
   const clearItem = usePurchaseItemStore.use.clearItem();
   const setItems = usePurchaseItemStore.use.setItems();
   const setItemQuantities = usePurchaseItemStore.use.setItemQuantity();
-
-
-  const setProject = useProjectStore.use.setProject();
-  const projects = useProjectStore.use.projects();
 
   const [paymentLimit, setPaymentLimit] = useState("");
   const [isPaid, setIsPaid] = useState(false);
@@ -137,14 +128,6 @@ export default function PurchaseOrderTab() {
     "document"
   );
 
-  const {
-    mutate: mutateGetProject,
-    isPending: isGettingProject,
-  } = useQueryAction<{ companyId: string }, RequestResponse<ProjectType[]>>(
-    getallByCompany,
-    () => { },
-    "projects"
-  );
 
   const { mutate: mutateGetProductService } = useQueryAction<
     { companyId: string; },
@@ -170,15 +153,6 @@ export default function PurchaseOrderTab() {
           }
         },
       });
-
-      mutateGetProject({ companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            const project = data.data;
-            setProject(project);
-          }
-        },
-      });
     }
   }, [companyId, readAccess])
 
@@ -201,7 +175,6 @@ export default function PurchaseOrderTab() {
                 isFirstLoadingDiscount.current = false;
                 return;
               }
-              // updateDiscount(data.data.discount);
             }
           },
         }
@@ -349,7 +322,6 @@ export default function PurchaseOrderTab() {
             discountType: purchaseOrder.discountType as "purcent" | "money",
             payee: new Decimal(purchaseOrder.payee),
             supplierId: purchaseOrder.supplierId,
-            projectId: purchaseOrder.projectId,
             item: {
               productServices: purchaseOrder.items.filter(item => item.itemType !== "billboard").map(productService => ({
                 id: productService.id,
@@ -379,14 +351,6 @@ export default function PurchaseOrderTab() {
               if (data.data && data.data.length > 0 && purchaseOrder.supplierId) {
                 const supplierss = data.data;
                 setSupplier(supplierss.find((c) => c.id === purchaseOrder.supplierId));
-              }
-            },
-          });
-          mutateGetProject({ companyId: purchaseOrder.companyId }, {
-            onSuccess(data) {
-              if (data.data) {
-                const project = data.data;
-                setProject(project);
               }
             },
           });
@@ -597,44 +561,6 @@ export default function PurchaseOrderTab() {
                   )}
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <h2 className="font-semibold">Projet</h2>
-              <FormField
-                control={form.control}
-                name="projectId"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <Combobox
-                        isLoading={isGettingProject}
-                        disabled={amountPaid.gt(0) || !modifyAccess}
-                        datas={projects.map(({ id, name, status }) => ({
-                          id: id,
-                          label: name,
-                          value: id,
-                          color:
-                            status === "BLOCKED"
-                              ? "bg-red"
-                              : status === "TODO"
-                                ? "bg-neutral-200"
-                                : status === "IN_PROGRESS"
-                                  ? "bg-blue"
-                                  : "bg-emerald-500",
-                        }))}
-                        value={field.value ?? ""}
-                        setValue={(e) => {
-                          field.onChange(e);
-                        }}
-                        placeholder="Sélectionner un projet"
-                        searchMessage="Rechercher un projet"
-                        noResultsMessage="Aucun projet trouvé."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
             <div className="space-y-2">
               <h2 className="font-semibold">Détails des paiements</h2>

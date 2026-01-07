@@ -23,6 +23,21 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+        const purchaseOrder = await prisma.purchaseOrder.findUnique({
+            where: { id: res.invoiceId },
+            include: {
+                project: true,
+            }
+        });
+
+        if (!purchaseOrder) {
+            throw new Error("Le bon de commande n'existe pas.");
+        }
+
+        if (!purchaseOrder?.projectId) {
+            throw new Error("Le bon de commande doit être lié à un projet pour pouvoir créer une récurrence.");
+        }
+
         await prisma.recurrence.create({
             data: {
                 repeat: res.repeat,

@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
                     totalHT: true,
                     isPaid: true,
                     supplierId: true,
+                    projectId: true,
                     companyId: true,
                     company: {
                         select: {
@@ -66,6 +67,10 @@ export async function POST(req: NextRequest) {
 
             if (!purchaseExist) {
                 throw new Error("Identifiant de bon de commande invalide.");
+            }
+
+            if (!purchaseExist.projectId) {
+                throw new Error("Le bon de commande doit être lié à un projet pour pouvoir enregistrer un paiement.");
             }
 
             if (purchaseExist.isPaid) {

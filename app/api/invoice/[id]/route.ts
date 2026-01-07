@@ -285,7 +285,6 @@ export async function PUT(req: NextRequest) {
     }
   }
 
-  // Update file
   const key = generateId();
   const invoiceReference = `${companyExist.documentModel?.invoicesPrefix ?? INVOICE_PREFIX}-${data.invoiceNumber}`;
   const folder = createFolder([companyExist.companyName, "invoice", `${invoiceReference}_----${key}/files`]);

@@ -51,7 +51,8 @@ export async function POST(req: NextRequest) {
         prisma.invoice.findUnique({
             where: { id: data.recordId },
             include: {
-                client: true
+                client: true,
+                project: true,
             }
         })
     ]);
@@ -66,6 +67,13 @@ export async function POST(req: NextRequest) {
         { status: "error", message: "Facture introuvable." },
         { status: 404 }
     );
+
+    if (!invoice.projectId) {
+        return NextResponse.json(
+            { status: "error", message: "La facture doit être liée à un projet pour pouvoir envoyer un email." },
+            { status: 404 }
+        );
+    }
 
     try {
         const filename = `Facture ${company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}.pdf`;

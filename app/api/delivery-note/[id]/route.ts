@@ -133,12 +133,11 @@ export async function PUT(req: NextRequest) {
 
   }) as DeliveryNoteUpdateSchemaType;
 
-  const [deliveryNoteExist, companyExist, clientExist, projectExist] =
+  const [deliveryNoteExist, companyExist, clientExist] =
     await prisma.$transaction([
       prisma.deliveryNote.findUnique({ where: { id }, include: { items: true, productsServices: true, billboards: true, } }),
       prisma.company.findUnique({ where: { id: data.companyId }, include: { documentModel: true } }),
       prisma.client.findUnique({ where: { id: data.clientId } }),
-      prisma.project.findUnique({ where: { id: data.projectId } }),
     ]);
 
   if (!deliveryNoteExist) {
@@ -158,13 +157,6 @@ export async function PUT(req: NextRequest) {
   if (!clientExist) {
     return NextResponse.json(
       { status: "error", message: "Client introuvable." },
-      { status: 404 }
-    );
-  }
-
-  if (!projectExist) {
-    return NextResponse.json(
-      { status: "error", message: "Projet introuvable." },
       { status: 404 }
     );
   }
@@ -207,22 +199,6 @@ export async function PUT(req: NextRequest) {
           }
         }
       }),
-    ]
-    )
-  }
-
-  if (deliveryNoteExist.projectId !== data.projectId) {
-    await prisma.$transaction([
-      prisma.deliveryNote.update({
-        where: { id: deliveryNoteExist.id },
-        data: {
-          project: {
-            disconnect: {
-              id: deliveryNoteExist.projectId as string
-            }
-          }
-        }
-      })
     ]
     )
   }
@@ -289,7 +265,7 @@ export async function PUT(req: NextRequest) {
       price: productService.price,
       updatedPrice: productService.updatedPrice,
       locationStart: new Date(),
-      locationEnd: projectExist.deadline,
+      locationEnd: new Date(),
       discount: productService.discount ?? "0",
       discountType: productService.discountType as string,
       currency: productService.currency!,
@@ -319,12 +295,6 @@ export async function PUT(req: NextRequest) {
           files: savedFilePaths,
           items: {
             create: itemForCreate
-          },
-          project: {
-            connect: {
-              id: data.projectId
-            },
-
           },
           client: {
             connect: {
@@ -422,16 +392,6 @@ export async function DELETE(req: NextRequest) {
   await prisma.$transaction([
     prisma.client.update({
       where: { id: deliveryNote.clientId as string },
-      data: {
-        deliveryNotes: {
-          disconnect: {
-            id: deliveryNote.id
-          }
-        }
-      }
-    }),
-    prisma.project.update({
-      where: { id: deliveryNote.projectId as string },
       data: {
         deliveryNotes: {
           disconnect: {

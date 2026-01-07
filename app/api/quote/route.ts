@@ -85,10 +85,9 @@ export async function POST(req: NextRequest) {
         files,
     }) as QuoteSchemaType;
 
-    const [companyExist, clientExist, projectExist, document] = await prisma.$transaction([
+    const [companyExist, clientExist, document] = await prisma.$transaction([
         prisma.company.findUnique({ where: { id: data.companyId } }),
         prisma.client.findUnique({ where: { id: data.clientId } }),
-        prisma.project.findUnique({ where: { id: data.projectId } }),
         prisma.documentModel.findFirst({ where: { companyId: data.companyId } }),
     ]);
 
@@ -102,12 +101,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             status: "error",
             message: "L'identifiant du client est introuvable.",
-        }, { status: 404 });
-    }
-    if (!projectExist) {
-        return NextResponse.json({
-            status: "error",
-            message: "L'identifiant du projet est introuvable.",
         }, { status: 404 });
     }
 
@@ -143,7 +136,7 @@ export async function POST(req: NextRequest) {
                 updatedPrice: billboard.updatedPrice,
                 discount: billboard.discount ?? "0",
                 locationStart: billboard.locationStart,
-                locationEnd: billboard.locationEnd ?? projectExist.deadline,
+                locationEnd: billboard.locationEnd ?? new Date(),
                 discountType: billboard.discountType as string,
                 currency: billboard.currency!,
                 billboard: {
@@ -168,7 +161,7 @@ export async function POST(req: NextRequest) {
                 price: productService.price,
                 updatedPrice: productService.updatedPrice,
                 locationStart: new Date(),
-                locationEnd: projectExist.deadline,
+                locationEnd: new Date(),
                 discount: productService.discount ?? "0",
                 discountType: productService.discountType as string,
                 currency: productService.currency!,
@@ -203,11 +196,6 @@ export async function POST(req: NextRequest) {
                     },
                     items: {
                         create: itemForCreate
-                    },
-                    project: {
-                        connect: {
-                            id: data.projectId
-                        },
                     },
                     client: {
                         connect: {
@@ -297,16 +285,6 @@ export async function DELETE(req: NextRequest) {
         await prisma.$transaction([
             prisma.client.update({
                 where: { id: quote.clientId as string },
-                data: {
-                    quotes: {
-                        disconnect: {
-                            id: quote.id
-                        }
-                    }
-                }
-            }),
-            prisma.project.update({
-                where: { id: quote.projectId as string },
                 data: {
                     quotes: {
                         disconnect: {

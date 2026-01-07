@@ -1,24 +1,40 @@
-import { $Enums } from "@/lib/generated/prisma";
-import React from "react";
+export enum NoAccessResource {
+  QUOTES = "QUOTES",
+  INVOICES = "INVOICES",
+  DELIVERY_NOTES = "DELIVERY_NOTES",
+  PURCHASE_ORDERS = "PURCHASE_ORDERS",
+  RECEIPTS = "RECEIPTS",
+  DISBURSEMENTS = "DISBURSEMENTS",
+  PRODUCT_SERVICES = "PRODUCT_SERVICES",
+  BILLBOARDS = "BILLBOARDS",
+  CLIENTS = "CLIENTS",
+  SUPPLIERS = "SUPPLIERS",
+  PROJECTS = "PROJECTS",
+  CONTRACT = "CONTRACT",
+  APPOINTMENTS = "APPOINTMENTS",
+  NO_PROJECT = "NO_PROJECT",
+}
 
 
-const messages: Record<string, string> = {
-  QUOTES: "Vous n'avez pas l'autorisation d'accéder aux devis.",
-  INVOICES: "Vous n'avez pas l'autorisation d'accéder aux factures.",
-  DELIVERY_NOTES: "Vous n'avez pas l'autorisation d'accéder aux bons de livraison.",
-  PURCHASE_ORDERS: "Vous n'avez pas l'autorisation d'accéder aux bons de commande.",
-  RECEIPTS: "Vous n'avez pas l'autorisation d'accéder aux reçus.",
-  DISBURSEMENTS: "Vous n'avez pas l'autorisation d'accéder aux décaissements.",
-  PRODUCT_SERVICES: "Vous n'avez pas l'autorisation d'accéder aux produits et services.",
-  BILLBOARDS: "Vous n'avez pas l'autorisation d'accéder aux panneaux d'affichage.",
-  CLIENTS: "Vous n'avez pas l'autorisation d'accéder aux clients.",
-  SUPPLIERS: "Vous n'avez pas l'autorisation d'accéder aux fournisseurs.",
-  PROJECTS: "Vous n'avez pas l'autorisation d'accéder aux projets.",
-  CONTRACT: "Vous n'avez pas l'autorisation d'accéder aux contrats.",
-  APPOINTMENTS: "Vous n'avez pas l'autorisation d'accéder aux rendez-vous.",
+const messages: Record<NoAccessResource, string> = {
+  [NoAccessResource.QUOTES]: "Vous n'avez pas l'autorisation d'accéder aux devis.",
+  [NoAccessResource.INVOICES]: "Vous n'avez pas l'autorisation d'accéder aux factures.",
+  [NoAccessResource.DELIVERY_NOTES]: "Vous n'avez pas l'autorisation d'accéder aux bons de livraison.",
+  [NoAccessResource.PURCHASE_ORDERS]: "Vous n'avez pas l'autorisation d'accéder aux bons de commande.",
+  [NoAccessResource.RECEIPTS]: "Vous n'avez pas l'autorisation d'accéder aux reçus.",
+  [NoAccessResource.DISBURSEMENTS]: "Vous n'avez pas l'autorisation d'accéder aux décaissements.",
+  [NoAccessResource.PRODUCT_SERVICES]: "Vous n'avez pas l'autorisation d'accéder aux produits et services.",
+  [NoAccessResource.BILLBOARDS]: "Vous n'avez pas l'autorisation d'accéder aux panneaux d'affichage.",
+  [NoAccessResource.CLIENTS]: "Vous n'avez pas l'autorisation d'accéder aux clients.",
+  [NoAccessResource.SUPPLIERS]: "Vous n'avez pas l'autorisation d'accéder aux fournisseurs.",
+  [NoAccessResource.PROJECTS]: "Vous n'avez pas l'autorisation d'accéder aux projets.",
+  [NoAccessResource.CONTRACT]: "Vous n'avez pas l'autorisation d'accéder aux contrats.",
+  [NoAccessResource.APPOINTMENTS]: "Vous n'avez pas l'autorisation d'accéder aux rendez-vous.",
+  [NoAccessResource.NO_PROJECT]: "Aucun projet sélectionné. Veuillez sélectionner un projet pour continuer.",
 };
 
-export default function NoAccess({ type }: { type: $Enums.Resource }) {
+
+export default function NoAccess({ type }: { type: NoAccessResource }) {
   const message = messages[type] || "Vous n'avez pas l'autorisation d'accéder à cette ressource.";
 
   return (

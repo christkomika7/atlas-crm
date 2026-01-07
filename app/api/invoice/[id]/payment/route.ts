@@ -49,8 +49,13 @@ export async function POST(req: NextRequest) {
                     totalHT: true,
                     isPaid: true,
                     company: { select: { id: true, currency: true } },
+                    projectId: true,
                 },
             });
+
+            if (!invoiceExist?.projectId) {
+                throw new Error("La facture doit être liée à un projet pour pouvoir enregistrer un paiement.");
+            }
 
             if (!invoiceExist) {
                 throw new Error("Identifiant de facture invalide.");
@@ -110,12 +115,10 @@ export async function POST(req: NextRequest) {
         });
 
 
-        // Vérifier et récupérer ou créer la catégorie, nature et source
         const natureName = invoice.client!.companyName;
         let categoryId: string = '';
         let natureId: string = '';
 
-        // Vérifier si la catégorie existe
         let category = await prisma.transactionCategory.findFirst({
             where: {
                 name: "Règlement client",
@@ -123,7 +126,6 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        // Si la catégorie n'existe pas, la créer
         if (!category) {
             category = await prisma.transactionCategory.create({
                 data: {
@@ -139,7 +141,6 @@ export async function POST(req: NextRequest) {
         }
         categoryId = category.id;
 
-        // Vérifier si la nature existe
         let nature = await prisma.transactionNature.findFirst({
             where: {
                 name: natureName,
@@ -148,7 +149,6 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        // Si la nature n'existe pas, la créer
         if (!nature) {
             nature = await prisma.transactionNature.create({
                 data: {

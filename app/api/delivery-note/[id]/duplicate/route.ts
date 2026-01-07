@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
             productsServices: true,
             billboards: true,
             items: true,
-            project: true,
             company: {
                 include: {
                     documentModel: true
@@ -119,12 +118,6 @@ export async function POST(req: NextRequest) {
                         files: savedPaths,
                         items: {
                             create: itemForCreate
-                        },
-                        project: {
-                            connect: {
-                                id: deliveryNote.projectId as string
-                            },
-
                         },
                         client: {
                             connect: {
@@ -235,12 +228,6 @@ export async function POST(req: NextRequest) {
                         fromRecordReference: `${deliveryNote.company.documentModel?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(deliveryNote.deliveryNoteNumber, false)}`,
                         items: {
                             create: itemForCreate
-                        },
-                        project: {
-                            connect: {
-                                id: deliveryNote.projectId as string
-                            },
-
                         },
                         client: {
                             connect: {

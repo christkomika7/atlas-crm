@@ -80,7 +80,6 @@ export async function GET(req: NextRequest) {
                 where,
                 include: {
                     client: true,
-                    project: true,
                     items: {
                         where: { state: "IGNORE" }
                     },

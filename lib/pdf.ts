@@ -461,23 +461,17 @@ export const renderComponentToPDF = async (
 };
 
 export async function mergePdfsFromUrls(urls: string[]): Promise<Blob> {
-    console.log("📦 Début du merge de", urls.length, "PDFs");
-    console.log("📝 URLs à merger:", urls);
-
     const mergedPdf = await PDFDocument.create();
 
     for (let i = 0; i < urls.length; i++) {
         const url = urls[i];
-        console.log(`\n🔄 Traitement du PDF ${i + 1}/${urls.length}:`, url);
 
         try {
             const pdfBytes = await fetchPdfAsArrayBuffer(url);
             const pdf = await PDFDocument.load(pdfBytes);
             const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
             pages.forEach(page => mergedPdf.addPage(page));
-            console.log(`✅ PDF ${i + 1} ajouté avec succès (${pages.length} pages)`);
         } catch (error) {
-            console.error(`❌ Erreur avec le PDF ${i + 1}:`, error);
             throw new Error(`Impossible de charger le PDF ${i + 1}: ${url}`);
         }
     }
@@ -486,6 +480,5 @@ export async function mergePdfsFromUrls(urls: string[]): Promise<Blob> {
     const arrayBuffer = new ArrayBuffer(mergedBytes.byteLength);
     new Uint8Array(arrayBuffer).set(mergedBytes);
 
-    console.log("✅ Merge terminé avec succès");
     return new Blob([arrayBuffer], { type: "application/pdf" });
 }

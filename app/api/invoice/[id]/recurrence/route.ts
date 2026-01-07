@@ -22,7 +22,24 @@ export async function POST(req: NextRequest) {
         }, { status: 404 });
     }
 
+
     try {
+        const invoice = await prisma.invoice.findUnique({
+            where: { id: res.invoiceId },
+            include: {
+                project: true,
+            }
+        });
+
+        if (!invoice) {
+            throw new Error("La facture n'existe pas.");
+        }
+
+        if (!invoice?.projectId) {
+            throw new Error("La facture doit être liée à un projet pour pouvoir créer une récurrence.");
+        }
+
+
         await prisma.recurrence.create({
             data: {
                 repeat: res.repeat,
@@ -38,6 +55,7 @@ export async function POST(req: NextRequest) {
                 }
             }
         })
+
         return NextResponse.json(
             { state: "success", message: "La récurrence a été effectué avec succès." },
             { status: 200 }

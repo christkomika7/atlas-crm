@@ -25,7 +25,6 @@ export async function GET(req: NextRequest) {
                 }
             },
             client: true,
-            project: true,
             items: {
                 where: {
                     state: "IGNORE"
