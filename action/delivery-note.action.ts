@@ -101,7 +101,6 @@ export async function createDeliveryNote(data: DeliveryNoteSchemaType) {
         }));
 
         formData.append("clientId", data.clientId);
-        formData.append("projectId", data.projectId);
         formData.append("companyId", data.companyId);
         formData.append("amountType", data.amountType);
         formData.append("totalHT", data.totalHT.toString());
@@ -149,7 +148,6 @@ export async function updateDeliveryNote(data: DeliveryNoteUpdateSchemaType) {
 
         formData.append("id", data.id)
         formData.append("clientId", data.clientId);
-        formData.append("projectId", data.projectId);
         formData.append("companyId", data.companyId);
         formData.append("amountType", data.amountType);
         formData.append("totalHT", data.totalHT.toString());
