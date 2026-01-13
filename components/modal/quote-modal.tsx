@@ -11,7 +11,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { RequestResponse } from "@/types/api.types";
 import { Button } from "@/components/ui/button";
 import { all as getClients, unique as getClient } from "@/action/client.action";
-import { allByClient } from "@/action/project.action";
 
 import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
@@ -20,9 +19,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { useDataStore } from "@/stores/data.store";
 import { ClientType } from "@/types/client.types";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { ProjectType } from "@/types/project.types";
 import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
-import useProjectStore from "@/stores/project.store";
 import useClientIdStore from "@/stores/client-id.store";
 import { unique } from "@/action/document.action";
 import { ModelDocumentType } from "@/types/document.types";
@@ -43,7 +40,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import ItemList from "@/app/(dashboard)/quote/create/_component/item-list";
 import ItemModal from "@/app/(dashboard)/quote/create/_component/item-modal";
-import ProjectModal from "@/app/(dashboard)/quote/_component/project-modal";
 import QuoteInfo from "@/app/(dashboard)/quote/create/_component/quote-info";
 import { ScrollArea } from "../ui/scroll-area";
 
@@ -76,9 +72,6 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
     const clearItem = useItemStore.use.clearItem();
 
     const setItemQuantities = useItemStore.use.setItemQuantity();
-
-    const setProject = useProjectStore.use.setProject();
-    const projects = useProjectStore.use.projects();
 
     const setLocationBillboard = useItemStore.use.setLocationBillboard();
 
@@ -125,16 +118,6 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
         unique,
         () => { },
         "document"
-    );
-
-    const {
-        mutate: mutateProject,
-        isPending: isLoadingProject,
-        data: projectData,
-    } = useQueryAction<{ clientId: string }, RequestResponse<ProjectType[]>>(
-        allByClient,
-        () => { },
-        "projects"
     );
 
     const {
@@ -212,7 +195,6 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
         if (idClient) {
             setClientId(idClient)
             form.setValue("clientId", idClient);
-            mutateProject({ clientId: idClient });
             mutateClient(
                 { id: idClient },
                 {
@@ -231,7 +213,6 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
         if (clientId && !idClient) {
             setClientId(clientId)
             form.setValue("clientId", clientId);
-            mutateProject({ clientId });
             mutateClient(
                 { id: clientId },
                 {
@@ -255,12 +236,6 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
             setClient(clientsData.data.find((c) => c.id === clientId));
         }
     }, [clientId, clientsData]);
-
-    useEffect(() => {
-        if (projectData?.data) {
-            setProject(projectData.data);
-        }
-    }, [projectData]);
 
 
     useEffect(() => {
@@ -485,44 +460,6 @@ export default function QuoteModal({ idClient, closeModal, refreshData }: QuoteM
                                                 handleChange={(e) => {
                                                     field.onChange(e);
                                                 }}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <h2 className="font-semibold">Projet</h2>
-                            <FormField
-                                control={form.control}
-                                name="projectId"
-                                render={({ field }) => (
-                                    <FormItem className="-space-y-2">
-                                        <FormControl>
-                                            <Combobox
-                                                isLoading={isLoadingProject}
-                                                datas={projects.map(({ id, name, status }) => ({
-                                                    id: id,
-                                                    label: name,
-                                                    value: id,
-                                                    color:
-                                                        status === "BLOCKED"
-                                                            ? "bg-red"
-                                                            : status === "TODO"
-                                                                ? "bg-neutral-200"
-                                                                : status === "IN_PROGRESS"
-                                                                    ? "bg-blue"
-                                                                    : "bg-emerald-500",
-                                                }))}
-                                                value={field.value ?? ""}
-                                                setValue={(e) => {
-                                                    field.onChange(e);
-                                                }}
-                                                placeholder="Sélectionner un projet"
-                                                searchMessage="Rechercher un projet"
-                                                noResultsMessage="Aucun projet trouvé."
-                                                addElement={<ProjectModal clientId={clientId} />}
                                             />
                                         </FormControl>
                                         <FormMessage />

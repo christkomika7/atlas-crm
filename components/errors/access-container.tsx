@@ -17,7 +17,7 @@ export default function AccessContainer({ children, hasAccess, resource, loading
                 <>
                     {children}
                 </>
-                : <NoAccess type={resource} />
+                : <NoAccess type={resource as unknown as import("./no-access").NoAccessResource} />
             }
         </div>
     )
