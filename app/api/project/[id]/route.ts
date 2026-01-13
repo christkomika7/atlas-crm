@@ -164,9 +164,7 @@ export async function DELETE(req: NextRequest) {
         where: { id },
         include: {
             invoices: true,
-            quotes: true,
             purchaseOrders: true,
-            deliveryNotes: true,
             dibursements: true,
             tasks: true,
             company: true
@@ -191,9 +189,7 @@ export async function DELETE(req: NextRequest) {
 
     if (
         project.invoices.length > 0 ||
-        project.quotes.length > 0 ||
         project.purchaseOrders.length > 0 ||
-        project.deliveryNotes.length > 0 ||
         project.dibursements.length > 0 ||
         project.tasks.length > 0
     ) {
