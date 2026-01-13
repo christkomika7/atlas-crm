@@ -11,7 +11,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { RequestResponse } from "@/types/api.types";
 import { Button } from "@/components/ui/button";
 import { all as getClients, unique as getClient } from "@/action/client.action";
-import { allByClient } from "@/action/project.action";
 
 import useQueryAction from "@/hook/useQueryAction";
 import Spinner from "@/components/ui/spinner";
@@ -20,11 +19,8 @@ import { Combobox } from "@/components/ui/combobox";
 import { useDataStore } from "@/stores/data.store";
 import { ClientType } from "@/types/client.types";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { ProjectType } from "@/types/project.types";
 import ItemModal from "./item-modal";
 import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
-import useProjectStore from "@/stores/project.store";
-import ProjectModal from "../../_component/project-modal";
 import useClientIdStore from "@/stores/client-id.store";
 import { unique } from "@/action/document.action";
 import { ModelDocumentType } from "@/types/document.types";
@@ -68,13 +64,9 @@ export default function DeliveryNoteForm() {
   const [client, setClient] = useState<ClientType>();
 
   const items = useItemStore.use.items();
-  const updateDiscount = useItemStore.use.updateDiscount();
   const clearItem = useItemStore.use.clearItem();
 
   const setItemQuantities = useItemStore.use.setItemQuantity();
-
-  const setProject = useProjectStore.use.setProject();
-  const projects = useProjectStore.use.projects();
 
   const locationBillboardDate = useItemStore.use.locationBillboardDate();
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
@@ -130,17 +122,6 @@ export default function DeliveryNoteForm() {
     () => { },
     "item-locations"
   );
-
-  const {
-    mutate: mutateProject,
-    isPending: isLoadingProject,
-    data: projectData,
-  } = useQueryAction<{ clientId: string }, RequestResponse<ProjectType[]>>(
-    allByClient,
-    () => { },
-    "projects"
-  );
-
 
   const { mutate: mutateGetProductService } = useQueryAction<
     { companyId: string; },
@@ -202,23 +183,6 @@ export default function DeliveryNoteForm() {
   }, [companyId]);
 
   useEffect(() => {
-    if (clientId) {
-      mutateProject({ clientId });
-      mutateClient(
-        { id: clientId },
-        {
-          onSuccess(data) {
-            if (data.data) {
-              setPaymentLimit(data.data.paymentTerms);
-              // updateDiscount(data.data.discount);
-            }
-          },
-        }
-      );
-    }
-  }, [clientId]);
-
-  useEffect(() => {
     form.setValue("paymentLimit", paymentLimit);
   }, [paymentLimit])
 
@@ -227,13 +191,6 @@ export default function DeliveryNoteForm() {
       setClient(clientsData.data.find((c) => c.id === clientId));
     }
   }, [clientId, clientsData]);
-
-  useEffect(() => {
-    if (projectData?.data) {
-      setProject(projectData.data);
-    }
-  }, [projectData]);
-
 
   useEffect(() => {
     if (items.length > 0) {
@@ -455,44 +412,6 @@ export default function DeliveryNoteForm() {
                       handleChange={(e) => {
                         field.onChange(e);
                       }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-semibold">Projet</h2>
-            <FormField
-              control={form.control}
-              name="projectId"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isLoadingProject}
-                      datas={projects.map(({ id, name, status }) => ({
-                        id: id,
-                        label: name,
-                        value: id,
-                        color:
-                          status === "BLOCKED"
-                            ? "bg-red"
-                            : status === "TODO"
-                              ? "bg-neutral-200"
-                              : status === "IN_PROGRESS"
-                                ? "bg-blue"
-                                : "bg-emerald-500",
-                      }))}
-                      value={field.value ?? ""}
-                      setValue={(e) => {
-                        field.onChange(e);
-                      }}
-                      placeholder="Sélectionner un projet"
-                      searchMessage="Rechercher un projet"
-                      noResultsMessage="Aucun projet trouvé."
-                      addElement={<ProjectModal clientId={clientId} />}
                     />
                   </FormControl>
                   <FormMessage />

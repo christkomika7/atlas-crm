@@ -20,9 +20,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { useDataStore } from "@/stores/data.store";
 import { ClientType } from "@/types/client.types";
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { ProjectType } from "@/types/project.types";
 import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
-import useProjectStore from "@/stores/project.store";
 import useClientIdStore from "@/stores/client-id.store";
 
 
@@ -31,9 +29,7 @@ import { useParams } from "next/navigation";
 import { CompanyType } from "@/types/company.types";
 
 import { all as getClients, unique as getClient } from "@/action/client.action";
-import { allByClient } from "@/action/project.action";
 import { unique as getDocument } from "@/action/document.action";
-import ProjectModal from "../../../_component/project-modal";
 import { DownloadIcon, XIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalculateTaxe } from "@/hook/useCalculateTaxe";
@@ -71,13 +67,9 @@ export default function DeliveryNoteTab() {
   const setClientId = useClientIdStore.use.setClientId();
 
   const items = useItemStore.use.items();
-  // const updateDiscount = useItemStore.use.updateDiscount();
   const clearItem = useItemStore.use.clearItem();
   const setItems = useItemStore.use.setItems();
   const setItemQuantities = useItemStore.use.setItemQuantity();
-
-  const setProject = useProjectStore.use.setProject();
-  const projects = useProjectStore.use.projects();
 
   const locationBillboardDate = useItemStore.use.locationBillboardDate();
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
@@ -139,15 +131,6 @@ export default function DeliveryNoteTab() {
     getDocument,
     () => { },
     "document"
-  );
-
-  const {
-    mutate: mutateGetProject,
-    isPending: isGettingProject,
-  } = useQueryAction<{ clientId: string }, RequestResponse<ProjectType[]>>(
-    allByClient,
-    () => { },
-    "projects"
   );
 
   const {
@@ -246,7 +229,6 @@ export default function DeliveryNoteTab() {
               discount: deliveryNote.discount,
               discountType: deliveryNote.discountType as "purcent" | "money",
               clientId: deliveryNote.clientId,
-              projectId: deliveryNote.projectId,
               item: {
                 billboards: deliveryNote.items.filter(item => item.itemType === "billboard").map(billboard => ({
                   id: billboard.id,
@@ -295,14 +277,7 @@ export default function DeliveryNoteTab() {
                 }
               },
             });
-            mutateGetProject({ clientId: deliveryNote.clientId }, {
-              onSuccess(data) {
-                if (data.data) {
-                  const project = data.data;
-                  setProject(project);
-                }
-              },
-            });
+
             mutateGetClient({ id: deliveryNote.clientId })
             mutateGetDocument({ id: deliveryNote.companyId })
           }
@@ -314,14 +289,6 @@ export default function DeliveryNoteTab() {
 
   useEffect(() => {
     if (clientId) {
-      mutateGetProject({ clientId: clientId }, {
-        onSuccess(data) {
-          if (data.data) {
-            const project = data.data;
-            setProject(project);
-          }
-        },
-      });
       mutateGetClient(
         { id: clientId },
         {
@@ -331,7 +298,6 @@ export default function DeliveryNoteTab() {
                 isFirstLoadingDiscount.current = false;
                 return;
               }
-              // updateDiscount(data.data.discount);
             }
           },
         }
@@ -637,45 +603,6 @@ export default function DeliveryNoteTab() {
                   )}
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <h2 className="font-semibold">Projet</h2>
-              <FormField
-                control={form.control}
-                name="projectId"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <Combobox
-                        disabled={!(modifyAccess && !isCompleted)}
-                        isLoading={isGettingProject}
-                        datas={projects.map(({ id, name, status }) => ({
-                          id: id,
-                          label: name,
-                          value: id,
-                          color:
-                            status === "BLOCKED"
-                              ? "bg-red"
-                              : status === "TODO"
-                                ? "bg-neutral-200"
-                                : status === "IN_PROGRESS"
-                                  ? "bg-blue"
-                                  : "bg-emerald-500",
-                        }))}
-                        value={field.value ?? ""}
-                        setValue={(e) => {
-                          field.onChange(e);
-                        }}
-                        placeholder="Sélectionner un projet"
-                        searchMessage="Rechercher un projet"
-                        noResultsMessage="Aucun projet trouvé."
-                        addElement={<ProjectModal clientId={clientId} />}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
             <div className="space-y-2">
               <h2 className="font-semibold">Détails des paiements</h2>
