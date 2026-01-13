@@ -710,16 +710,6 @@ export async function PUT(req: NextRequest) {
                                 }
                             }
                         }),
-                        prisma.project.update({
-                            where: { id: quote.projectId as string },
-                            data: {
-                                quotes: {
-                                    disconnect: {
-                                        id: quote.id
-                                    }
-                                }
-                            }
-                        }),
                         prisma.quote.delete({ where: { id: recordId } })
                     ]);
 
@@ -865,16 +855,6 @@ export async function PUT(req: NextRequest) {
                     await prisma.$transaction([
                         prisma.client.update({
                             where: { id: deliveryNote.clientId as string },
-                            data: {
-                                deliveryNotes: {
-                                    disconnect: {
-                                        id: deliveryNote.id
-                                    }
-                                }
-                            }
-                        }),
-                        prisma.project.update({
-                            where: { id: deliveryNote.projectId as string },
                             data: {
                                 deliveryNotes: {
                                     disconnect: {
@@ -1308,9 +1288,7 @@ export async function PUT(req: NextRequest) {
                         where: { id: recordId },
                         include: {
                             invoices: true,
-                            quotes: true,
                             purchaseOrders: true,
-                            deliveryNotes: true,
                             dibursements: true,
                             tasks: true
                         }
@@ -1318,15 +1296,13 @@ export async function PUT(req: NextRequest) {
 
                     if (
                         project.invoices.length > 0 ||
-                        project.quotes.length > 0 ||
                         project.purchaseOrders.length > 0 ||
-                        project.deliveryNotes.length > 0 ||
                         project.dibursements.length > 0 ||
                         project.tasks.length > 0
                     ) {
                         return NextResponse.json({
                             state: "error",
-                            message: "Supprimez d'abord les transactions, factures, devis, bon de livraisons, bon de commandes et tâches associés à ce projet.",
+                            message: "Supprimez d'abord les transactions, factures, bon de commandes et tâches associés à ce projet.",
                         }, { status: 409 });
                     }
 
