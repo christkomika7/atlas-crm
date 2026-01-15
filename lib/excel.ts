@@ -94,8 +94,8 @@ export async function generateTransactionsExcel(
             paidFor: tx.payOnBehalfOf ? `${tx.payOnBehalfOf.lastname} ${tx.payOnBehalfOf.firstname}` : "-",
             payer: tx.client
                 ? `${tx.client.lastname} ${tx.client.firstname}`
-                : tx.supplier
-                    ? `${tx.supplier.lastname} ${tx.supplier.firstname}`
+                : tx.payOnBehalfOf
+                    ? `${tx.payOnBehalfOf.lastname} ${tx.payOnBehalfOf.firstname}`
                     : "-",
             comment: tx.comment || "-",
         });
