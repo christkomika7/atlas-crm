@@ -86,8 +86,8 @@ export default function ExportButton({ transactions, isLoading }: ExportButtonPr
                 : "-",
             Payeur: transaction.client
                 ? `${transaction.client.lastname} ${transaction.client.firstname}`
-                : transaction.supplier
-                    ? `${transaction.supplier.lastname} ${transaction.supplier.firstname}`
+                : transaction.payOnBehalfOf
+                    ? `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`
                     : "-",
             Commentaire: transaction.comment || "-",
         }));
