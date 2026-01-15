@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
 
 
         let paymentId = "";
+        let clientId = "";
         if (data.documentRef) {
             const invoiceExist = await prisma.invoice.findUnique({
                 where: { id: data.documentRef },
@@ -79,6 +80,8 @@ export async function POST(req: NextRequest) {
                     client: true
                 }
             });
+
+            clientId = invoiceExist?.clientId || "";
 
             if (!invoiceExist) {
                 return NextResponse.json({
@@ -172,6 +175,16 @@ export async function POST(req: NextRequest) {
             Object.assign(referenceDocument, {
                 payment: { connect: { id: paymentId } },
             });
+        }
+
+        if (clientId) {
+            Object.assign(referenceDocument, {
+                client: {
+                    connect: {
+                        id: clientId
+                    }
+                },
+            })
         }
 
         const createdReceipt = await prisma.receipt.create({

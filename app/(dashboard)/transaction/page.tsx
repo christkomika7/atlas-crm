@@ -74,7 +74,7 @@ export default function TransactionPage() {
           <div className="grid grid-cols-[120px_120px_140px] gap-x-2">
             {loadingReadAccess ? <Skeleton className="w-[120px] h-[48px]" /> : <>
               {readAccess &&
-                <ExportButton transactions={transactions} isLoading={isPending} />
+                <ExportButton transactions={transactions} isLoading={isPending || isLoading} />
               }
             </>
             }

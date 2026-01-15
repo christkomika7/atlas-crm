@@ -39,8 +39,7 @@ export type TransactionType = {
   clientId?: string;
   client?: ClientType;
 
-  supplierId?: string;
-  supplier?: SupplierType;
+  suppliers?: SupplierType[];
 
   sourceId?: string;
   source?: SourceType;

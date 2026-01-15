@@ -425,6 +425,28 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
           <div className="gap-4.5 grid grid-cols-2">
             <FormField
               control={form.control}
+              name="paymentMode"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      datas={acceptPayment}
+                      value={field.value}
+                      setValue={e => {
+                        setPaymentMode(e as "check" | "cash" | "bank-transfer");
+                        field.onChange(e);
+                      }}
+                      placeholder="Mode de paiement"
+                      searchMessage="Rechercher un mode de paiement"
+                      noResultsMessage="Aucun mode de paiement trouvé."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="source"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
@@ -442,28 +464,6 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                       searchMessage="Rechercher une source"
                       noResultsMessage="Aucune source trouvée."
                       addElement={<SourceModal sourceType={paymentMode} />}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="paymentMode"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      datas={acceptPayment}
-                      value={field.value}
-                      setValue={e => {
-                        setPaymentMode(e as "check" | "cash" | "bank-transfer");
-                        field.onChange(e);
-                      }}
-                      placeholder="Mode de paiement"
-                      searchMessage="Rechercher un mode de paiement"
-                      noResultsMessage="Aucun mode de paiement trouvé."
                     />
                   </FormControl>
                   <FormMessage />

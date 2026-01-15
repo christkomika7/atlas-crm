@@ -40,6 +40,8 @@ import Paginations from "@/components/paginations";
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { transactions } from "@/lib/data";
 
 type TransactionTableProps = {
   selectedTransactionIds: DeletedTransactions[];
@@ -183,6 +185,8 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const isSelected = (id: string) =>
       selectedTransactionIds.some((transac) => transac.id === id);
 
+    console.log({ datas });
+
     return (
       <AccessContainer hasAccess={readAccess} resource="TRANSACTION" loading={loading} >
         <div className="border border-neutral-200 rounded-xl flex flex-col justify-between h-full">
@@ -200,6 +204,8 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                   { label: "TTC Montant", field: null },
                   { label: "Mode de paiement", field: null },
                   { label: "Numéro de chèque", field: null },
+                  { label: "Partenaire", field: null },
+                  { label: "Client", field: null },
                   { label: "Référence du document", field: null },
                   { label: "Allocation", field: null },
                   { label: "Source", field: null },
@@ -265,22 +271,70 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                     </TableCell>
                     <TableCell className="text-center">{getPaymentModeLabel(transaction.paymentType)}</TableCell>
                     <TableCell className="text-center">{transaction.checkNumber || "-"}</TableCell>
-                    <TableCell className="text-center">{transaction.documentReference}</TableCell>
+
+                    <TableCell className="text-center">
+                      {transaction.suppliers?.length ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-pointer">
+                              {cutText(
+                                transaction.suppliers
+                                  .map((s) => `${s.lastname} ${s.firstname}`)
+                                  .join(", ")
+                              )}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            {transaction.suppliers
+                              .map((s) => ` ${s.lastname} ${s.firstname}`)
+                              .join(", ")}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {transaction.client ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-pointer">
+                              {cutText(
+                                `${transaction.client.lastname} ${transaction.client.firstname}`
+                              )}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            {`${transaction.client.lastname} ${transaction.client.firstname}`}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>                    <TableCell className="text-center">{transaction.documentReference}</TableCell>
                     <TableCell className="text-center">{transaction.allocation?.name || "-"}</TableCell>
                     <TableCell className="text-center">{transaction.source?.name || "-"}</TableCell>
                     <TableCell className="text-center">{period(transaction?.periodStart, transaction?.periodEnd)}</TableCell>
-
                     <TableCell className="text-center">
-                      {transaction.payOnBehalfOf
-                        ? cutText(`${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`)
-                        : "-"}
+                      {transaction.payOnBehalfOf ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-pointer">
+                              {cutText(
+                                `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`
+                              )}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            {`${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        "-"
+                      )}
                     </TableCell>
                     <TableCell className="text-center">
-                      {transaction.client
-                        ? `${transaction.client.lastname} ${transaction.client.firstname}`
-                        : transaction.supplier
-                          ? `${transaction.supplier.lastname} ${transaction.supplier.firstname}`
-                          : "-"}
+                      {transaction.payOnBehalfOf ? cutText(`${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`) : "-"}
                     </TableCell>
                     <TableCell className="text-center">{transaction.comment || "-"}</TableCell>
                   </TableRow>
