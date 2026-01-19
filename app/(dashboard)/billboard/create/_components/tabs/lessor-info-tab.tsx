@@ -45,7 +45,7 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
   const { mutate: mutateCity, isPending: isPendingCity } = useQueryAction<{ companyId: string },
     RequestResponse<CityType[]>>(allCities, () => { }, "cities");
 
-  const { mutate: mutateGetSuppliers, isPending: isGettingSuppliers } = useQueryAction<{ id: string },
+  const { mutate: mutateGetSuppliers, isPending: isGettingSuppliers } = useQueryAction<{ id: string, take?: number },
     RequestResponse<SupplierType[]>>(all, () => { }, "suppliers");
 
   const { mutate: mutateGetElements, isPending: isGettingElements } = useQueryAction<
@@ -57,7 +57,7 @@ export default function LessorInfoTab({ form }: LessorInfoTabProps) {
   useEffect(() => {
     if (!companyId) return;
 
-    mutateGetSuppliers({ id: companyId }, {
+    mutateGetSuppliers({ id: companyId, take: -1 }, {
       onSuccess(data) {
         if (data.data) setSuppliers(data.data);
       },
