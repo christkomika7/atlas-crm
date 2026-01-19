@@ -8,25 +8,30 @@ import { parseData } from "@/lib/parse";
 import { $Enums } from "@/lib/generated/prisma";
 import { checkAccessDeletion } from "@/lib/server";
 
-
 export async function GET(req: NextRequest) {
   const result = await checkAccess("SUPPLIERS", "READ");
 
   if (!result.authorized) {
-    return Response.json({
-      status: "error",
-      message: result.message,
-      data: []
-    }, { status: 200 });
+    return NextResponse.json(
+      {
+        status: "error",
+        message: result.message,
+        data: [],
+      },
+      { status: 200 }
+    );
   }
 
   const id = getIdFromUrl(req.url, 2) as string;
 
   if (!id) {
-    return NextResponse.json({
-      status: "error",
-      message: "Aucun fournisseur trouvé.",
-    }, { status: 404 });
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "Aucun fournisseur trouvé.",
+      },
+      { status: 404 }
+    );
   }
 
   const searchParam = req.nextUrl.searchParams.get("search") as string;
@@ -39,24 +44,36 @@ export async function GET(req: NextRequest) {
 
   const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
 
-  let take = DEFAULT_TAKE;
+  let take: number | undefined = DEFAULT_TAKE;
+
   if (rawTake) {
     const parsed = parseInt(rawTake, 10);
-    if (!Number.isNaN(parsed) && parsed > 0) {
+
+    if (parsed === -1) {
+      take = undefined; // 🔥 récupérer tous les suppliers
+    } else if (!Number.isNaN(parsed) && parsed > 0) {
       take = Math.min(parsed, MAX_TAKE);
     }
   }
 
   try {
-    const companyExist = await prisma.company.findUnique({ where: { id } });
+    const companyExist = await prisma.company.findUnique({
+      where: { id },
+    });
+
     if (!companyExist) {
-      return NextResponse.json({
-        status: "error",
-        message: "Aucun élément trouvé pour cet identifiant.",
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          status: "error",
+          message: "Aucun élément trouvé pour cet identifiant.",
+        },
+        { status: 404 }
+      );
     }
 
-    let where: any = { companyId: id };
+    const where: any = {
+      companyId: id,
+    };
 
     if (searchParam) {
       const searchTerms = searchParam.split(/\s+/).filter(Boolean);
@@ -75,29 +92,31 @@ export async function GET(req: NextRequest) {
         include: {
           company: true,
         },
-        skip,
-        take,
-        orderBy: { createdAt: "desc" }
-      })
+        ...(take !== undefined && { skip, take }),
+        orderBy: { createdAt: "desc" },
+      }),
     ]);
 
     return NextResponse.json(
       {
         state: "success",
         data: suppliers,
-        total
+        total,
       },
       { status: 200 }
     );
-
   } catch (error) {
     console.error("Erreur GET /api/suppliers:", error);
     return NextResponse.json(
-      { status: "error", message: "Erreur lors de la récupération des fournisseurs." },
+      {
+        status: "error",
+        message: "Erreur lors de la récupération des fournisseurs.",
+      },
       { status: 500 }
     );
   }
 }
+
 
 export async function POST(req: NextRequest) {
   const result = await checkAccess("SUPPLIERS", "CREATE");

@@ -3,7 +3,6 @@ import { Document, Packer, Paragraph, TableRow, Table, PageBreak, TextRun, Table
 import { addTotalRow, addTotalRowWithCurrency, formatList, formatNumber, getPaymentModeLabel } from './utils';
 import { cell, clientContractOwner, companyContractOwner, createBillboardParagraphs, createFooter, createHeader, createImagesTable, createText, createTitle, createTitleContent, lessorContractOwner } from './word-utils';
 import { formatDateToDashModel, getMonthsAndDaysDifference, period } from './date';
-import { writeFileSync } from "fs";
 import { convert } from "libreoffice-convert";
 import { promisify } from "util";
 import { ReportData } from '@/types/company.types';
@@ -18,10 +17,9 @@ import {
     ExpensesJournalItem,
     DebtorAccountAgingItem,
 } from "@/types/company.types";
+import { TransactionType } from '@/types/transaction.type';
 
 const convertAsync = promisify(convert);
-import path from "path";
-import { TransactionType } from '@/types/transaction.type';
 
 export async function generateClientContractDocument(contract: ContractType): Promise<Blob> {
     const doc = new Document({
