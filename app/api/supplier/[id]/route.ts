@@ -42,8 +42,7 @@ export async function GET(req: NextRequest) {
   const rawSkip = req.nextUrl.searchParams.get("skip");
   const rawTake = req.nextUrl.searchParams.get("take");
 
-  const skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
-
+  let skip = 0;
   let take: number | undefined = DEFAULT_TAKE;
 
   if (rawTake) {
@@ -51,9 +50,13 @@ export async function GET(req: NextRequest) {
 
     if (parsed === -1) {
       take = undefined; // 🔥 récupérer tous les suppliers
+      skip = 0; // Ignorer skip si on veut tout
     } else if (!Number.isNaN(parsed) && parsed > 0) {
       take = Math.min(parsed, MAX_TAKE);
+      skip = rawSkip ? Math.max(0, parseInt(rawSkip, 10) || 0) : 0;
     }
+  } else if (rawSkip) {
+    skip = Math.max(0, parseInt(rawSkip, 10) || 0);
   }
 
   try {
@@ -116,7 +119,6 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-
 
 export async function POST(req: NextRequest) {
   const result = await checkAccess("SUPPLIERS", "CREATE");
