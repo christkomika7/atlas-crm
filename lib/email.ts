@@ -19,21 +19,18 @@ export type SendEmailProps = {
 
 const createTransporter = () => {
     return nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-        // Ou pour un serveur SMTP personnalisé
-        /* 
+        // service: 'gmail',
+        // auth: {
+        //     user: process.env.EMAIL_USER,
+        //     pass: process.env.EMAIL_PASS,
+        // },
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || '587'),
         secure: false, // true pour le port 465, false pour les autres ports
         auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
         },
-        */
     });
 };
 
