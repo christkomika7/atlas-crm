@@ -335,7 +335,10 @@ export async function PUT(req: NextRequest) {
                         data: {
                             type: 'ALERT',
                             for: 'DISBURSEMENT',
-                            message: `${user.name} a réalisé un décaissement de ${formatNumber(data.amount.toString())} ${notification.company.currency}, au titre de la catégorie « ${category?.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} ».`,
+                            message: `${user.name} a réalisé un décaissement de ${formatNumber(data.amount.toString())} ${notification.company.currency}, au titre de la catégorie « ${category?.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} ».
+                            \nCommentaire : \n
+                            ${data.comment}
+                            `,
                             paymentDibursement: {
                                 connect: { id: createdDibursement.id }
                             },
@@ -601,7 +604,10 @@ export async function PUT(req: NextRequest) {
                     data: {
                         type: 'ALERT',
                         for: 'TRANSFER',
-                        message: `${user.name} a réalisé un transfert  de ${formatNumber(data.amount.toString())} ${notification.company.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.`,
+                        message: `${user.name} a réalisé un transfert  de ${formatNumber(data.amount.toString())} ${notification.company.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.
+                        \nCommentaire : \n
+                        ${data.comment}
+                        `,
                         company: {
                             connect: { id: notification.companyId }
                         }

@@ -20,8 +20,8 @@ export const ACCEPTED_FILES_TYPES = [
 export type IMAGE_TYPES = "image/jpeg" | "image/jpg" | "image/png" | "image/webp" | "application/octet-stream";
 
 export const SEARCH_DEBOUND = 800 as const;
-export const DEFAULT_PAGE_SIZE = 5 as const;
-export const NOTIFICATION_PAGE_SIZE = 20 as const;
+export const DEFAULT_PAGE_SIZE = 1000 as const;
+export const NOTIFICATION_PAGE_SIZE = 1000 as const;
 
 export const IMAGE_TYPES = ["jpeg", "jpg", "png", "webp"];
 

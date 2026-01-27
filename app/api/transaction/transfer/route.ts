@@ -175,7 +175,10 @@ export async function POST(req: NextRequest) {
                 data: {
                     type: 'CONFIRM',
                     for: 'TRANSFER',
-                    message: `${user.name} a lancé un transfert en attente de validation de ${formatNumber(data.amount)} ${companyExist.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.`,
+                    message: `${user.name} a lancé un transfert en attente de validation de ${formatNumber(data.amount)} ${companyExist.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.
+                    \nCommentaire : \n
+                    ${data.comment}
+                    `,
                     dibursement: {
                         connect: { id: newDibursement.id }
                     },
@@ -245,7 +248,10 @@ export async function POST(req: NextRequest) {
             data: {
                 type: 'ALERT',
                 for: 'TRANSFER',
-                message: `${user.name} a réalisé un transfert  de ${formatNumber(data.amount)} ${companyExist.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.`,
+                message: `${user.name} a réalisé un transfert  de ${formatNumber(data.amount)} ${companyExist.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.
+                \nCommentaire : \n
+                ${data.comment}
+                `,
                 company: {
                     connect: { id: data.companyId }
                 }

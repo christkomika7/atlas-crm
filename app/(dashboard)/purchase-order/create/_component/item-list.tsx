@@ -47,7 +47,7 @@ export default function ItemList({ item, taxes, disabled, calculate, amountPaid,
                 </span>
             }
             <small className="font-semibold">• {item.reference}</small>
-            <h2 className="font-semibold text-sm">{item.name} {item.hasTax && <span className="text-blue">*</span>}</h2>
+            <h2 className="font-semibold text-sm">{item.name} {!item.hasTax && <span className="text-blue">*</span>}</h2>
             {item.description && (
                 <pre className={`${generalSans.className} whitespace-pre-wrap mb-2 leading-tight text-sm`}>{item.description}</pre>
             )}

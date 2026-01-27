@@ -14,7 +14,7 @@ import { Combobox } from "@/components/ui/combobox";
 import TextInput from "@/components/ui/text-input";
 import { useDataStore } from "@/stores/data.store";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { MessageCircleWarningIcon } from "lucide-react";
+import { Check, MessageCircleWarningIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { documentSchema, DocumentSchemaType } from "@/lib/zod/document.schema";
 import useQueryAction from "@/hook/useQueryAction";
@@ -25,7 +25,6 @@ import Spinner from "@/components/ui/spinner";
 import { resolveImageSrc, urlToFile } from "@/lib/utils";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
-import { Label } from "recharts";
 
 export default function DocumentTab() {
   const idCompany = useDataStore.use.currentCompany();
@@ -34,6 +33,7 @@ export default function DocumentTab() {
   const [preview, setPreview] = useState("");
   const [logo, setLogo] = useState<File | string>();
   const [recordFile, setRecordFile] = useState<File[]>([]);
+  const [files, setFiles] = useState<string[]>([]);
 
   const [quotes, setQuotes] = useState({
     prefix: "",
@@ -120,6 +120,8 @@ export default function DocumentTab() {
               secondary: doc!.secondaryColor,
             });
 
+            setFiles(doc?.recordFiles || [])
+
             setLogo(doc?.logo);
             setDimension({
               size: doc?.size || "Medium",
@@ -158,10 +160,9 @@ export default function DocumentTab() {
   function submit(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.preventDefault();
     const file = logo instanceof File ? logo : undefined
-    const documents = recordFile.filter((file) => file.type === "application/pdf");
-    if (documents.length !== 5) {
-      return toast.error("Vous devez obligatoirement soumettre exactement 5 fichiers PDF.");
-    }
+    const documents = recordFile.filter((file) => file.type === "application/pdf").filter(Boolean);
+
+
     const data: DocumentSchemaType = {
       companyId: idCompany,
       logo: file,
@@ -227,7 +228,7 @@ export default function DocumentTab() {
           <div className="gap-x-2 grid grid-cols-[1fr_1.3fr] pt-4 h-full">
             <div className="space-y-4 w-full">
               <h2 className="font-semibold text-xl">Configuration</h2>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <div className="space-y-2">
                   <label className="font-medium text-xs" htmlFor="logo">Logo</label>
                   <TextInput
@@ -242,7 +243,7 @@ export default function DocumentTab() {
                     }
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-0.5">
                   <label className="font-medium text-xs" htmlFor="documents">Documents (5 PDF obligatoires)</label>
                   <TextInput
                     inputId="documents"
@@ -257,6 +258,7 @@ export default function DocumentTab() {
                       setRecordFile(file as File[])
                     }
                   />
+                  {files && files.length === 5 ? <p className="text-xs text-green-500"><Check className="size-3.5 inline mr-1" /> 5 documents PDF sélectionnés</p> : <p className="text-xs text-red-500 flex gap-x-0.5 items-center"> <XIcon className="size-3.5" /> Veuillez sélectionner 5 documents PDF</p>}
                 </div>
               </div>
               <Combobox

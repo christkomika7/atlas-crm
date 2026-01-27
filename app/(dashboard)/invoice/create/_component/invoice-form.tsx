@@ -69,12 +69,10 @@ export default function InvoiceForm() {
   const [client, setClient] = useState<ClientType>();
 
   const items = useItemStore.use.items();
-  // const updateDiscount = useItemStore.use.updateDiscount();
   const clearItem = useItemStore.use.clearItem();
 
   const setItemQuantities = useItemStore.use.setItemQuantity();
 
-  const locationBillboardDate = useItemStore.use.locationBillboardDate();
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
 
 
@@ -215,7 +213,6 @@ export default function InvoiceForm() {
           onSuccess(data) {
             if (data.data) {
               setPaymentLimit(data.data.paymentTerms);
-              // updateDiscount(data.data.discount);
             }
           },
         }

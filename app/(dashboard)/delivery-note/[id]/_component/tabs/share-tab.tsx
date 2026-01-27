@@ -130,6 +130,7 @@ export default function ShareTab() {
             recordNumber={`${generateAmaId(deliveryNote?.deliveryNoteNumber ?? 1, false)}`}
             isLoading={false}
             moreInfos={false}
+            note={deliveryNote?.company.documentModel.deliveryNotesInfo}
           />
           , {
             padding: 0,

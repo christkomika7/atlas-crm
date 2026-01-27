@@ -133,6 +133,7 @@ export default function ShareTab() {
             payee={invoice?.payee}
             recordNumber={`${generateAmaId(invoice?.invoiceNumber ?? 1, false)}`}
             isLoading={false}
+            note={invoice?.company.documentModel.invoicesInfo}
           />
           , {
             padding: 0,

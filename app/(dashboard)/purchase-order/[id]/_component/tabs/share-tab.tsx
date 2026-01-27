@@ -136,6 +136,7 @@ export default function ShareTab() {
             supplier={purchaseOrder?.supplier}
             isLoading={false}
             payee={purchaseOrder?.payee}
+            note={purchaseOrder?.company.documentModel.purchaseOrderInfo}
           />
           , {
             padding: 0,

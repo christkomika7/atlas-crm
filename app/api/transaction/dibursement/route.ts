@@ -202,7 +202,10 @@ export async function POST(req: NextRequest) {
                     data: {
                         type: 'CONFIRM',
                         for: 'DISBURSEMENT',
-                        message: `${user.name} a initié un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} », actuellement en attente de validation.`,
+                        message: `${user.name} a initié un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} », actuellement en attente de validation.
+                        \nCommentaire : \n
+                        ${data.comment}
+                        `,
                         dibursement: {
                             connect: { id: newDibursement.id }
                         },
@@ -281,7 +284,10 @@ export async function POST(req: NextRequest) {
                 data: {
                     type: 'CONFIRM',
                     for: 'DISBURSEMENT',
-                    message: `${user.name} a initié un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} », actuellement en attente de validation.`,
+                    message: `${user.name} a initié un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} », actuellement en attente de validation.
+                    \nCommentaire : \n
+                    ${data.comment}
+                    `,
                     dibursement: {
                         connect: { id: newDibursement.id }
                     },
@@ -327,7 +333,10 @@ export async function POST(req: NextRequest) {
             data: {
                 type: 'ALERT',
                 for: 'DISBURSEMENT',
-                message: `${user.name} a réalisé un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} ».`,
+                message: `${user.name} a réalisé un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} ».
+                \nCommentaire : \n
+                ${data.comment}
+                `,
                 paymentDibursement: {
                     connect: { id: createdDibursement.id }
                 },

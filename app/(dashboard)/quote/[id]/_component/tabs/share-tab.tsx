@@ -129,6 +129,8 @@ export default function ShareTab() {
             recordNumber={`${generateAmaId(quote?.quoteNumber ?? 1, false)}`}
             isLoading={false}
             moreInfos={false}
+            note={quote?.company.documentModel?.quotesInfo}
+
           />
           , {
             padding: 0,

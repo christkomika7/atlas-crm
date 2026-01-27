@@ -15,6 +15,7 @@ import usePurchaseItemStore from "@/stores/purchase-item.store";
 import { SetStateAction } from "react";
 import Paginations from "@/components/paginations";
 import { DEFAULT_PAGE_SIZE } from "@/config/constant";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 
 type ProductServiceTabProps = {
@@ -93,96 +94,98 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
 
   return (
     <div className="pt-2">
-      <Table>
-        <TableHeader>
-          <TableRow className="h-14">
-            <TableHead className="min-w-[50px] font-medium" />
-            <TableHead className="font-medium text-center">
-              Produit / Services
-            </TableHead>
-            <TableHead className="font-medium text-center">
-              Description
-            </TableHead>
-            <TableHead className="font-medium text-center">
-              Quantité disponible
-            </TableHead>
-            <TableHead className="font-medium text-center">
-              Quantité sélectionnée
-            </TableHead>
-            <TableHead className="font-medium text-center">Montant</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isGettingProductServices ? (
-            <TableRow>
-              <TableCell colSpan={6}>
-                <div className="flex justify-center items-center py-6 w-full">
-                  <Spinner />
-                </div>
-              </TableCell>
+      <ScrollArea className="h-[400px] pr-4">
+        <Table>
+          <TableHeader>
+            <TableRow className="h-14">
+              <TableHead className="min-w-[50px] font-medium" />
+              <TableHead className="font-medium text-center">
+                Produit / Services
+              </TableHead>
+              <TableHead className="font-medium text-center">
+                Description
+              </TableHead>
+              <TableHead className="font-medium text-center">
+                Quantité disponible
+              </TableHead>
+              <TableHead className="font-medium text-center">
+                Quantité sélectionnée
+              </TableHead>
+              <TableHead className="font-medium text-center">Montant</TableHead>
             </TableRow>
-          ) : productServices.length > 0 ? (
-            productServices.map((productService) => {
-              const isItemSelected = isSelected(productService.id);
-              const selectedQuantity = getItemQuantity(productService.id);
+          </TableHeader>
+          <TableBody>
+            {isGettingProductServices ? (
+              <TableRow>
+                <TableCell colSpan={6}>
+                  <div className="flex justify-center items-center py-6 w-full">
+                    <Spinner />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : productServices.length > 0 ? (
+              productServices.map((productService) => {
+                const isItemSelected = isSelected(productService.id);
+                const selectedQuantity = getItemQuantity(productService.id);
 
-              return (
-                <TableRow
-                  key={productService.id}
-                  className={cn(
-                    "h-16 transition-colors",
-                    isItemSelected ? "bg-neutral-100" : ""
-                  )}
-                >
-                  <TableCell className="text-neutral-600">
-                    <div className="flex justify-center items-center">
-                      <Checkbox
-                        checked={isItemSelected}
-                        onCheckedChange={(checked) =>
-                          toggleSelection(!!checked, productService)
-                        }
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {productService.type === "PRODUCT" ? "Produit" : "Service"}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {cutText(productService.designation)} {productService.hasTax && <span className="text-blue">*</span>}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {getCurrentQuantity(productService.id, productService.quantity)}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {isItemSelected ? (
-                      <div className="flex justify-center items-center gap-2">
-                        <span className="font-medium text-blue-600 min-w-[30px]">
-                          {selectedQuantity}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">0</span>
+                return (
+                  <TableRow
+                    key={productService.id}
+                    className={cn(
+                      "h-16 transition-colors",
+                      isItemSelected ? "bg-neutral-100" : ""
                     )}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(Number(productService.unitPrice))}{" "}
-                    {productService.company.currency}
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          ) : (
-            <TableRow>
-              <TableCell
-                colSpan={6}
-                className="py-6 text-gray-500 text-sm text-center"
-              >
-                Aucun produit ou service trouvé.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+                  >
+                    <TableCell className="text-neutral-600">
+                      <div className="flex justify-center items-center">
+                        <Checkbox
+                          checked={isItemSelected}
+                          onCheckedChange={(checked) =>
+                            toggleSelection(!!checked, productService)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {productService.type === "PRODUCT" ? "Produit" : "Service"}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {cutText(productService.designation)} {!productService.hasTax && <span className="text-blue">*</span>}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {getCurrentQuantity(productService.id, productService.quantity)}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {isItemSelected ? (
+                        <div className="flex justify-center items-center gap-2">
+                          <span className="font-medium text-blue-600 min-w-[30px]">
+                            {selectedQuantity}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">0</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {formatNumber(Number(productService.unitPrice))}{" "}
+                      {productService.company.currency}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="py-6 text-gray-500 text-sm text-center"
+                >
+                  Aucun produit ou service trouvé.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </ScrollArea>
       <div className="flex justify-end p-4">
         <Paginations
           totalItems={totalItems}

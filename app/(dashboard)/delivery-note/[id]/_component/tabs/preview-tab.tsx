@@ -123,6 +123,7 @@ export default function PreviewTab() {
                     recordNumber={`${generateAmaId(deliveryNote?.deliveryNoteNumber ?? 1, false)}`}
                     isLoading={isGettingDeliveryNote}
                     moreInfos={false}
+                    note={deliveryNote?.company.documentModel?.deliveryNotesInfo}
                   />
                 </div>
               </>

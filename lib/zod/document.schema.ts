@@ -39,16 +39,13 @@ export const documentSchema = z.object({
         .optional(),
     documents: z
         .array(
-            z.instanceof(File).refine(
-                (file) => file.type === "application/pdf",
-                {
+            z
+                .instanceof(File)
+                .refine((file) => file.type === "application/pdf", {
                     message: "Seuls les fichiers PDF sont autorisés.",
-                }
-            )
+                })
         )
-        .length(5, {
-            message: "Vous devez obligatoirement soumettre exactement 5 fichiers PDF.",
-        }),
+        .optional(),
 
 });
 

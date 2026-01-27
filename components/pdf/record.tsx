@@ -34,6 +34,7 @@ type DocumentPreviewProps = {
         address: string;
     };
     moreInfos?: boolean
+    note?: string | null
 };
 
 function isPurchaseOrder(record: any): record is PurchaseOrderType {
@@ -55,6 +56,7 @@ export default function RecordDocument({
     recordNumber,
     supplier,
     payee,
+    note,
     moreInfos = true
 }: DocumentPreviewProps) {
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -234,187 +236,167 @@ export default function RecordDocument({
                     </div>
                 </div>
             </div>
+            <div className="w-full text-sm">
+                {/* HEADER */}
+                <div className="grid grid-cols-[1fr_80px_160px_180px] border-y border-[#bfbfbf] h-12 items-center font-bold">
+                    <div className="pl-[27px]">Article</div>
+                    <div className="text-right">Qté</div>
+                    <div className="text-right">Prix unitaire</div>
+                    <div className="pr-[27px] text-right">Prix total</div>
+                </div>
 
-            <table className="w-full px-8">
-                <thead className="h-12">
-                    <tr className="!border-y border-[#bfbfbf] w-full">
-                        <td className="pl-[27px] font-semibold">Article</td>
-                        <td className="w-[50px] font-bold text-right">
-                            Qté
-                        </td>
-                        <td className="w-[130px] font-bold text-right">
-                            Prix unitaire
-                        </td>
-                        <td className="w-[260px] pr-[27px] font-bold text-right">
-                            Prix total
-                        </td>
-                    </tr>
-                </thead>
-                <tbody>
-                    {record?.items.map((item) => (
-                        <tr key={item.id}>
-                            <td className="px-[27px] py-2 align-top">
-                                <p className="mb-[3px]">{item.name} {item.hasTax && <span className="text-blue">*</span>}</p>
-                                <p className={`whitespace-pre-wrap mb-[8px] leading-snug`}>{item.description}</p>
-                                {item.itemType === "billboard" &&
-                                    <p className={`whitespace-pre-wrap flex flex-col mb-[3px] leading-tight`}>
-                                        <span>Durée de la compagne : </span>
-                                        <span>Du {new Date(item.locationStart).toLocaleDateString("fr-fr", {
+                {/* BODY */}
+                {record?.items.map((item) => (
+                    <div
+                        key={item.id}
+                        className="grid grid-cols-[1fr_80px_160px_180px] py-2"
+                    >
+                        {/* ARTICLE */}
+                        <div className="px-[27px]">
+                            <p className="mb-[3px]">
+                                {item.name} {!item.hasTax && <span className="text-blue">*</span>}
+                            </p>
+
+                            <p className="whitespace-pre-wrap mb-[8px] leading-snug">
+                                {item.description}
+                            </p>
+
+                            {item.itemType === "billboard" && (
+                                <p className="whitespace-pre-wrap flex flex-col leading-tight">
+                                    <span>Durée de la campagne :</span>
+                                    <span>
+                                        Du{" "}
+                                        {new Date(item.locationStart).toLocaleDateString("fr-fr", {
                                             day: "numeric",
                                             month: "long",
-                                            year: "numeric"
-                                        })} au {new Date(item.locationEnd).toLocaleDateString("fr-fr", {
-                                            day: "numeric",
-                                            month: "long",
-                                            year: "numeric"
+                                            year: "numeric",
                                         })}{" "}
-                                            ({getMonthsAndDaysDifference(new Date(item.locationStart), new Date(item.locationEnd))}).
-                                        </span>
-                                    </p>
-                                }
-                            </td>
-                            <td className="py-2 text-right align-top">
-                                {item.quantity}
-                            </td>
-                            <td className="py-2 text-right align-top">
-                                {moreInfos &&
-                                    <>
-                                        {formatNumber(
-                                            calculate({
-                                                items: [parseItem(item)],
-                                                taxes: record.company?.vatRates ?? [],
-                                                amountType: record.amountType,
-                                            }).totalWithoutTaxes
-                                        )}{" "}
-                                        {item.currency}
-                                    </>
-                                }
-                            </td>
-                            <td className="py-2 text-right pr-[27px] align-top">
-                                {moreInfos && <>
+                                        au{" "}
+                                        {new Date(item.locationEnd).toLocaleDateString("fr-fr", {
+                                            day: "numeric",
+                                            month: "long",
+                                            year: "numeric",
+                                        })}{" "}
+                                        (
+                                        {getMonthsAndDaysDifference(
+                                            new Date(item.locationStart),
+                                            new Date(item.locationEnd)
+                                        )}
+                                        ).
+                                    </span>
+                                </p>
+                            )}
+                        </div>
+
+                        {/* QTE */}
+                        <div className="text-right">{item.quantity}</div>
+
+                        {/* PRIX UNITAIRE */}
+                        <div className="text-right">
+                            {moreInfos &&
+                                <>
                                     {formatNumber(
                                         calculate({
                                             items: [parseItem(item)],
                                             taxes: record.company?.vatRates ?? [],
                                             amountType: record.amountType,
                                         }).totalWithoutTaxes
-                                    )}
-                                    {" "}
+                                    )}{" "}
                                     {item.currency}
-                                </>}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-                {moreInfos &&
-                    <tfoot>
-                        <tr className="h-[29px]"></tr>
-                        <tr>
-                            <td colSpan={3} className="text-right">
-                                Sous-Total
-                            </td>
-                            <td className="pr-[27px] text-right">
-                                {formatNumber(calculate({
-                                    items: (record ? (parseItems(record.items)) : []),
-                                    taxes: record?.company?.vatRates ?? [],
-                                    amountType: record?.amountType || "TTC",
-                                    discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
-                                }).SubTotal)}
-                                {record?.company.currency}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colSpan={3} className="text-right">
-                                Remise ({record?.discountType === "money" ? `${formatNumber(record!.discount)} ${record?.company?.currency}` : `${record!.discount}%`})
-                            </td>
-                            <td className="pr-[27px] text-right">
-                                {formatNumber(calculate({
-                                    items: (record ? (parseItems(record.items)) : []),
-                                    taxes: record?.company?.vatRates ?? [],
-                                    amountType: record?.amountType || "TTC",
-                                    discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
-                                }).discountAmount.toString())} {" "}{record?.company.currency}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colSpan={3} className="text-right">
-                                Sous-total
-                            </td>
-                            <td className="pr-[27px] text-right">
-                                {formatNumber(calculate({
-                                    items: (record ? (parseItems(record.items)) : []),
-                                    taxes: record?.company?.vatRates ?? [],
-                                    amountType: record?.amountType || "TTC",
-                                    discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
-                                }).subTotal)}
-                                {record?.company.currency}
-                            </td>
-                        </tr>
-                        {record?.amountType === "TTC" &&
-                            <>
-                                {calculate({
-                                    items: (record ? (parseItems(record.items)) : []),
-                                    taxes: record?.company?.vatRates ?? [],
-                                    amountType: record?.amountType || "TTC",
-                                    discount: [Number(record?.discount || 0), record?.discountType as "money" | "purcent"]
-                                }).taxes.map((tax) => (
-                                    <tr key={tax.taxName}>
-                                        <td colSpan={3} className="text-right">
-                                            {tax.taxName} </td>
-                                        <td className="pr-[27px] text-right">  {formatNumber(tax.totalTax)} {record?.company?.currency}</td>
-                                    </tr>
-                                ))}
-                            </>
-                        }
-                        {record?.amountType === "TTC" &&
-                            <tr>
-                                <td colSpan={3} className="text-right">
-                                    Total TTC
-                                </td>
-                                <td className="pr-[27px] text-right">{formatNumber(record!.totalTTC)} {record?.company.currency}</td>
-                            </tr>
-                        }
+                                </>
+                            }
+                        </div>
 
-                        <tr className="h-5"></tr>
-                        {payee &&
-                            <tr >
-                                <td colSpan={3} className="text-right">
-                                    Payé
-                                </td>
-                                <td className="pr-[27px] text-right">{formatNumber(payee)} {record?.company.currency}</td>
-                            </tr>
-                        }
-                        <tr className="h-[8px]"></tr>
-                        <tr>
-                            <td></td>
-                            <td
-                                style={{
-                                    backgroundColor: secondColor,
-                                }}
-                            ></td>
-                            <td
-                                style={{
-                                    backgroundColor: secondColor,
-                                }}
-                                className="py-3 text-2xl font-black text-right"
-                            >
-                                Net à payer
-                            </td>
-                            <td
-                                style={{
-                                    backgroundColor: secondColor,
-                                }}
-                                className="pr-[27px] text-2xl font-black text-right"
-                            >
+                        {/* PRIX TOTAL */}
+                        <div className="pr-[27px] text-right">
+                            {moreInfos &&
+                                <>
+                                    {formatNumber(
+                                        calculate({
+                                            items: [parseItem(item)],
+                                            taxes: record.company?.vatRates ?? [],
+                                            amountType: record.amountType,
+                                        }).totalWithoutTaxes
+                                    )}{" "}
+                                    {item.currency}
+                                </>
+                            }
+                        </div>
+                    </div>
+                ))}
+
+                {/* FOOTER */}
+                {moreInfos && (
+                    <div className="mt-6 space-y-2">
+                        {/* Sous-total */}
+                        <div className="grid grid-cols-[1fr_180px]">
+                            <div className="text-right pr-4">Sous-total</div>
+                            <div className="pr-[27px] text-right">
                                 {formatNumber(
-                                    record && payee ? new Decimal(getAmountPrice(record!.amountType, record?.totalTTC, record?.totalHT)).minus(payee) : 0
-                                )} {record?.company.currency}
-                            </td>
-                        </tr>
-                    </tfoot>
+                                    calculate({
+                                        items: record ? parseItems(record.items) : [],
+                                        taxes: record?.company?.vatRates ?? [],
+                                        amountType: record?.amountType || "TTC",
+                                        discount: [
+                                            Number(record?.discount || 0),
+                                            record?.discountType as "money" | "purcent",
+                                        ],
+                                    }).SubTotal
+                                )}{" "}
+                                {record?.company.currency}
+                            </div>
+                        </div>
 
-                }
-            </table>
+                        {/* Remise */}
+                        <div className="grid grid-cols-[1fr_180px]">
+                            <div className="text-right pr-4">
+                                Remise (
+                                {record?.discountType === "money"
+                                    ? `${formatNumber(record!.discount)} ${record?.company?.currency}`
+                                    : `${record!.discount}%`}
+                                )
+                            </div>
+                            <div className="pr-[27px] text-right">
+                                {formatNumber(
+                                    calculate({
+                                        items: record ? parseItems(record.items) : [],
+                                        taxes: record?.company?.vatRates ?? [],
+                                        amountType: record?.amountType || "TTC",
+                                        discount: [
+                                            Number(record?.discount || 0),
+                                            record?.discountType as "money" | "purcent",
+                                        ],
+                                    }).discountAmount
+                                )}{" "}
+                                {record?.company.currency}
+                            </div>
+                        </div>
+
+                        {/* TOTAL */}
+                        <div
+                            className="grid grid-cols-[1fr_180px] py-3 text-2xl font-black"
+                            style={{ backgroundColor: secondColor }}
+                        >
+                            <div className="text-right pr-4">Net à payer</div>
+                            <div className="pr-[27px] text-right">
+                                {formatNumber(
+                                    record && payee
+                                        ? new Decimal(
+                                            getAmountPrice(
+                                                record.amountType,
+                                                record.totalTTC,
+                                                record.totalHT
+                                            )
+                                        ).minus(payee)
+                                        : 0
+                                )}{" "}
+                                {record?.company.currency}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
 
             <div className="px-[27px] mt-[65px]" >
                 <h3 style={{ marginBottom: "7px", fontWeight: 600, }}>
@@ -426,8 +408,7 @@ export default function RecordDocument({
                 </p>
 
                 <h3 style={{ marginBottom: "3px" }}>NB :</h3>
-
-                {record?.note && (
+                {record?.note ? (
                     <pre
                         style={{
                             maxWidth: 400,
@@ -442,7 +423,23 @@ export default function RecordDocument({
                     >
                         {record?.note}
                     </pre>
-                )}
+                ) : note ? (
+                    <pre
+                        style={{
+                            maxWidth: 400,
+                            lineHeight: 1.5,
+                            fontFamily: araboto.style?.fontFamily || "sans-serif",
+                            fontSize: "0.75rem",
+                            color: "#464646",
+                            whiteSpace: "pre-wrap",
+                            wordWrap: "break-word",
+                            overflowWrap: "break-word"
+                        }}
+                    >
+                        {note}
+                    </pre>
+
+                ) : null}
             </div>
         </div>
     );

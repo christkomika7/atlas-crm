@@ -230,7 +230,10 @@ export async function POST(req: NextRequest) {
             data: {
                 type: 'ALERT',
                 for: 'RECEIPT',
-                message: `${user.name} a réalisé un encaissement de ${formatNumber(data.amount)} ${createdReceipt.company.currency} dans le compte ${createdReceipt.source?.name}.`,
+                message: `${user.name} a réalisé un encaissement de ${formatNumber(data.amount)} ${createdReceipt.company.currency} dans le compte ${createdReceipt.source?.name}.
+                \nCommentaire : \n
+                ${data.comment}
+                `,
                 receipt: {
                     connect: { id: createdReceipt.id }
                 },

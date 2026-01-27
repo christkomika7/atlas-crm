@@ -124,6 +124,7 @@ export default function PreviewTab() {
                     recordNumber={`${generateAmaId(quote?.quoteNumber ?? 1, false)}`}
                     isLoading={isGettingQuote}
                     payee={new Decimal(0)}
+                    note={quote?.company.documentModel?.quotesInfo}
                   />
                 </div>
               </>

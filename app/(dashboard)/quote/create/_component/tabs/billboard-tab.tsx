@@ -1,6 +1,7 @@
 import BillboardStatus from "@/app/(dashboard)/billboard/_component/billboard-status";
 import Paginations from "@/components/paginations";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import Spinner from "@/components/ui/spinner";
 import {
   TableHeader,
@@ -81,81 +82,83 @@ export default function BillboardTab({ isGettingBillboards, billboards, totalIte
 
   return (
     <div className="pt-2">
-      <Table>
-        <TableHeader>
-          <TableRow className="h-14">
-            <TableHead className="min-w-[50px] font-medium" />
-            <TableHead className="font-medium text-center">
-              Ref du panneau
-            </TableHead>
-            <TableHead className="font-medium text-center">Nom</TableHead>
-            <TableHead className="font-medium text-center">
-              Disponibilité
-            </TableHead>
-            <TableHead className="font-medium text-center">Montant</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isGettingBillboards ? (
-            <TableRow>
-              <TableCell colSpan={9}>
-                <div className="flex justify-center items-center py-6 w-full">
-                  <Spinner />
-                </div>
-              </TableCell>
+      <ScrollArea className="h-[400px] pr-4">
+        <Table>
+          <TableHeader>
+            <TableRow className="h-14">
+              <TableHead className="min-w-[50px] font-medium" />
+              <TableHead className="font-medium text-center">
+                Ref du panneau
+              </TableHead>
+              <TableHead className="font-medium text-center">Nom</TableHead>
+              <TableHead className="font-medium text-center">
+                Disponibilité
+              </TableHead>
+              <TableHead className="font-medium text-center">Montant</TableHead>
             </TableRow>
-          ) : billboards.length > 0 ? (
-            billboards.map((billboard) => {
-              const isClientSelected = !!clientId;
-              return (
-                <TableRow
-                  key={billboard.id}
-                  className={cn(
-                    "h-16 transition-colors",
-                    isSelected(billboard.id) && "bg-neutral-100",
-                    !isClientSelected &&
-                    "bg-gray-100 opacity-50 cursor-not-allowed"
-                  )}
+          </TableHeader>
+          <TableBody>
+            {isGettingBillboards ? (
+              <TableRow>
+                <TableCell colSpan={9}>
+                  <div className="flex justify-center items-center py-6 w-full">
+                    <Spinner />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : billboards.length > 0 ? (
+              billboards.map((billboard) => {
+                const isClientSelected = !!clientId;
+                return (
+                  <TableRow
+                    key={billboard.id}
+                    className={cn(
+                      "h-16 transition-colors",
+                      isSelected(billboard.id) && "bg-neutral-100",
+                      !isClientSelected &&
+                      "bg-gray-100 opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <TableCell className="text-neutral-600">
+                      <div className="flex justify-center items-center">
+                        <Checkbox
+                          disabled={!isClientSelected}
+                          checked={isSelected(billboard.id)}
+                          onCheckedChange={(checked) =>
+                            toggleSelection(!!checked, billboard)
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {billboard.reference}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {billboard.name} {!billboard.hasTax && <span className="text-blue">*</span>}
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      <BillboardStatus items={billboard.items.map(item => [item.locationStart, item.locationEnd])} />
+                    </TableCell>
+                    <TableCell className="text-neutral-600 text-center">
+                      {formatNumber(Number(billboard.rentalPrice))}{" "}
+                      {billboard.company.currency}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={9}
+                  className="py-6 text-gray-500 text-sm text-center"
                 >
-                  <TableCell className="text-neutral-600">
-                    <div className="flex justify-center items-center">
-                      <Checkbox
-                        disabled={!isClientSelected}
-                        checked={isSelected(billboard.id)}
-                        onCheckedChange={(checked) =>
-                          toggleSelection(!!checked, billboard)
-                        }
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {billboard.reference}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {billboard.name} {billboard.hasTax && <span className="text-blue">*</span>}
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    <BillboardStatus items={billboard.items.map(item => [item.locationStart, item.locationEnd])} />
-                  </TableCell>
-                  <TableCell className="text-neutral-600 text-center">
-                    {formatNumber(Number(billboard.rentalPrice))}{" "}
-                    {billboard.company.currency}
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          ) : (
-            <TableRow>
-              <TableCell
-                colSpan={9}
-                className="py-6 text-gray-500 text-sm text-center"
-              >
-                Aucun panneau publicitaire trouvé.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+                  Aucun panneau publicitaire trouvé.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </ScrollArea>
       <div className="flex justify-end p-4">
         <Paginations
           totalItems={totalItems}
