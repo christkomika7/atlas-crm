@@ -35,7 +35,6 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    // Pour les filtres multiples, on récupère les valeurs séparées par une virgule
     const movementValues = searchParams.get("movementValue")?.split(",") || [];
     const categoryValues = searchParams.get("categoryValue")?.split(",") || [];
     const sourceValues = searchParams.get("sourceValue")?.split(",") || [];
@@ -104,7 +103,7 @@ export async function GET(req: NextRequest) {
 
     const allReceipts = await prisma.receipt.findMany({
       where: baseWhere,
-      orderBy: { createdAt: "desc" },
+      orderBy: { date: "desc" },
       select: {
         ...commonSelect,
         supplier: true,
@@ -116,7 +115,7 @@ export async function GET(req: NextRequest) {
 
     const allDisbursements = await prisma.dibursement.findMany({
       where: disbursementWhere,
-      orderBy: { createdAt: "desc" },
+      orderBy: { date: "desc" },
       select: {
         ...commonSelect,
         periodStart: true,
@@ -180,8 +179,8 @@ export async function GET(req: NextRequest) {
       }
 
       if (activeSort === "byDate") {
-        const aDate = new Date(a.createdAt).getTime();
-        const bDate = new Date(b.createdAt).getTime();
+        const aDate = new Date(a.date).getTime();
+        const bDate = new Date(b.date).getTime();
         return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
       }
 
@@ -225,7 +224,7 @@ export async function GET(req: NextRequest) {
         return sortOrder === "asc" ? aPaid.localeCompare(bPaid) : bPaid.localeCompare(aPaid);
       }
 
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
 
     const total = allTransactions.length;

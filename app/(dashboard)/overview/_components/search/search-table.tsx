@@ -24,7 +24,7 @@ export default function SearchTable() {
             className="pl-8"
           />
           <span className="absolute top-1/2 -translate-y-1/2 left-2.5">
-            <SearchIcon className="!size-4 stroke-neutral-600" />
+            <SearchIcon className="size-4! stroke-neutral-600" />
           </span>
         </div>
         <div className="flex gap-x-2">
@@ -32,7 +32,7 @@ export default function SearchTable() {
           <UserAccount />
         </div>
       </div>
-      <ScrollArea className="pb-2 overflow-x-hidden w-full">
+      <ScrollArea className="pb-2 overflow-x-hidden w-full pr-4 h-112.5">
         <Tabs tabs={tabs} tabId="overview-tab" />
         <ScrollBar orientation="horizontal" />
       </ScrollArea>

@@ -72,13 +72,13 @@ export default function TransactionPage() {
             </Button>
           )}
           <div className="grid grid-cols-[120px_120px_140px] gap-x-2">
-            {loadingReadAccess ? <Skeleton className="w-[120px] h-[48px]" /> : <>
+            {loadingReadAccess ? <Skeleton className="w-30 h-12" /> : <>
               {readAccess &&
                 <ExportButton transactions={transactions} isLoading={isPending || isLoading} />
               }
             </>
             }
-            {loadingModifyAccess ? <Skeleton className="w-[120px] h-[48px]" /> : <>
+            {loadingModifyAccess ? <Skeleton className="w-30 h-12" /> : <>
               {modifyAcccess &&
                 <Button
                   variant="primary"
@@ -98,7 +98,7 @@ export default function TransactionPage() {
               }
             </>}
 
-            {loadingCreateAccess ? <Skeleton className="w-[140px] h-[48px]" /> : <>
+            {loadingCreateAccess ? <Skeleton className="w-35 h-12" /> : <>
               {createAccess &&
                 <HeaderMenu refreshTransaction={handleTransactionAdded} />
               }
@@ -110,7 +110,7 @@ export default function TransactionPage() {
       <div className="space-y-2 h-full w-(--left-sidebar-width)">
         <AccessContainer hasAccess={readAccess} resource="TRANSACTION" loading={loadingReadAccess}>
           <>
-            <div className="sticky top-[54px] bg-white z-20 left-0 pb-2">
+            <div className="sticky top-13.5 bg-white z-20 left-0 pb-2">
               <TransactionFilters filters={filters} setFilters={setFilters} />
             </div>
             <div className="p-2">

@@ -31,7 +31,7 @@ export default async function OverviewPage() {
         {canViewDashboard ? (
           <>
             <SourceInfos canViewDashboard={canViewDashboard} />
-            <div className="grid grid-cols-[3fr_1fr] min-h-[94px] gap-4">
+            <div className="grid grid-cols-[3fr_1fr] min-h-23.5 gap-4">
               <div className="space-y-2">
                 <InvoiceInfos canViewDashboard={canViewDashboard} />
               </div>

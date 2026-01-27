@@ -41,7 +41,6 @@ import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { transactions } from "@/lib/data";
 
 type TransactionTableProps = {
   selectedTransactionIds: DeletedTransactions[];
@@ -185,15 +184,13 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const isSelected = (id: string) =>
       selectedTransactionIds.some((transac) => transac.id === id);
 
-    console.log({ datas });
-
     return (
       <AccessContainer hasAccess={readAccess} resource="TRANSACTION" loading={loading} >
         <div className="border border-neutral-200 rounded-xl flex flex-col justify-between h-full">
           <Table>
             <TableHeader>
               <TableRow className="h-14">
-                <TableHead className="min-w-[50px] font-medium" />
+                <TableHead className="min-w-12.5 font-medium" />
                 {[
                   { label: "Date", field: "byDate" },
                   { label: "Mouvement", field: "byMovement" },
@@ -243,10 +240,8 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                 datas.map((transaction) => (
                   <TableRow
                     key={transaction.id}
-                    className={`h-16 transition-colors ${isSelected(transaction.id) ? "bg-neutral-100" : ""
-                      }`}
-                  >
-                    <TableCell className="text-center">
+                    className={`h-16 transition-colors ${isSelected(transaction.id) ? "bg-neutral-100" : ""}`}
+                  ><TableCell className="text-center">
                       <Checkbox
                         checked={isSelected(transaction.id)}
                         onCheckedChange={(checked) =>
@@ -271,7 +266,6 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                     </TableCell>
                     <TableCell className="text-center">{getPaymentModeLabel(transaction.paymentType)}</TableCell>
                     <TableCell className="text-center">{transaction.checkNumber || "-"}</TableCell>
-
                     <TableCell className="text-center">
                       {transaction.suppliers?.length ? (
                         <Tooltip>
@@ -311,7 +305,8 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                       ) : (
                         "-"
                       )}
-                    </TableCell>                    <TableCell className="text-center">{transaction.documentReference}</TableCell>
+                    </TableCell>
+                    <TableCell className="text-center">{transaction.documentReference}</TableCell>
                     <TableCell className="text-center">{transaction.allocation?.name || "-"}</TableCell>
                     <TableCell className="text-center">{transaction.source?.name || "-"}</TableCell>
                     <TableCell className="text-center">{period(transaction?.periodStart, transaction?.periodEnd)}</TableCell>

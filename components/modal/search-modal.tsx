@@ -10,7 +10,7 @@ export default function SearchModal() {
       <DialogTrigger asChild>
         <SearchButton />
       </DialogTrigger>
-      <DialogContent showCloseButton={false} className="!max-w-[970px] !w-full">
+      <DialogContent showCloseButton={false} className="max-w-242.5! w-full!">
         <VisuallyHidden>
           <DialogTitle />
         </VisuallyHidden>
