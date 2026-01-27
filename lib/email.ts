@@ -16,7 +16,6 @@ export type SendEmailProps = {
     html: string;
     attachments?: AttachementProps[]
 }
-
 const createTransporter = () => {
     return nodemailer.createTransport({
         // service: 'gmail',
