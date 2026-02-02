@@ -133,7 +133,7 @@ export function MultipleSelect({
             <ChevronsUpDown className="opacity-50 ml-2 w-4 h-4 shrink-0" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)] max-h-64 overflow-y-auto">
+        <PopoverContent className="p-0 w-(--radix-popover-trigger-width)">
           <Command>
             <CommandInput
               placeholder="Rechercher..."
@@ -146,7 +146,7 @@ export function MultipleSelect({
                 {isLoading
                   ? loadingIndicator
                   : filteredOptions.length > 0
-                  ? filteredOptions.map((item) => (
+                    ? filteredOptions.map((item) => (
                       <CommandItem
                         key={item.value}
                         value={item.value}
@@ -170,7 +170,7 @@ export function MultipleSelect({
                         </div>
                       </CommandItem>
                     ))
-                  : emptyIndicator}
+                    : emptyIndicator}
               </CommandGroup>
             </CommandList>
           </Command>

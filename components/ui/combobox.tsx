@@ -81,7 +81,7 @@ export function Combobox({
             required={required}
             className={inputClassName}
           />
-          <FloatingLabel htmlFor="country" className="!gap-x-0 !cursor-default">
+          <FloatingLabel htmlFor="country" className="gap-x-0! cursor-default!">
             {placeholder} {placeholder && required && <span className="text-red-500">*</span>}
           </FloatingLabel>
           <span className="top-1/2 right-2 absolute -translate-y-1/2">

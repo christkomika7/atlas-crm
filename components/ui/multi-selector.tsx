@@ -561,7 +561,7 @@ const MultipleSelector = React.forwardRef<
                   disabled ||
                   selected.length < 1 ||
                   selected.filter((s) => s.fixed).length === selected.length) &&
-                  "hidden"
+                "hidden"
               )}
             >
               <X className="w-3.5 h-3.5 text-destructive" />
@@ -595,7 +595,6 @@ const MultipleSelector = React.forwardRef<
                     <CommandGroup
                       key={key}
                       heading={key}
-                      className="h-full overflow-auto"
                     >
                       <>
                         {dropdowns.map((option) => {
@@ -621,7 +620,7 @@ const MultipleSelector = React.forwardRef<
                               className={cn(
                                 "cursor-pointer",
                                 option.disable &&
-                                  "cursor-default text-muted-foreground"
+                                "cursor-default text-muted-foreground"
                               )}
                             >
                               {option.label}
