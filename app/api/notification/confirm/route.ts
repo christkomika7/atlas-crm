@@ -168,18 +168,7 @@ export async function PUT(req: NextRequest) {
                     });
                 }
 
-                if (data.allocation) {
-                    Object.assign(referenceDocument, {
-                        allocation: { connect: { id: data.allocation } },
-                    });
-                }
 
-                if (data.periodStart && data.periodEnd) {
-                    Object.assign(referenceDocument, {
-                        periodStart: data.periodStart,
-                        periodEnd: data.periodEnd,
-                    });
-                }
 
                 if (data.purchaseOrder) {
                     Object.assign(referenceDocument, {
@@ -187,17 +176,6 @@ export async function PUT(req: NextRequest) {
                     });
                 }
 
-                const partners = data.supplier ? JSON.parse(data.supplier) as string[] : [];
-
-                if (partners.length > 0) {
-                    Object.assign(referenceDocument, {
-                        suppliers: {
-                            connect: [
-                                ...(partners.map(partner => ({ id: partner })) || [])
-                            ]
-                        },
-                    });
-                }
 
                 if (data.project) {
                     Object.assign(referenceDocument, {
@@ -276,7 +254,7 @@ export async function PUT(req: NextRequest) {
                                 createdAt: data.date,
                                 amount: String(data.amount),
                                 paymentMode: data.paymentType,
-                                infos: data.description,
+                                infos: data.infos,
                                 purchaseOrder: { connect: { id: purchaseOrderId } },
                             },
                         });
@@ -321,12 +299,17 @@ export async function PUT(req: NextRequest) {
                             amountType: data.amountType,
                             paymentType: data.paymentType,
                             checkNumber: data.checkNumber,
-                            description: data.description,
-                            comment: data.comment,
+                            period: data.period,
+                            infos: data.infos,
                             category: { connect: { id: data.category } },
                             source: { connect: { id: data.source as string } },
                             nature: { connect: { id: data.nature } },
                             company: { connect: { id: notification.companyId } },
+                            userAction: {
+                                connect: {
+                                    id: data.userActionId as string
+                                }
+                            },
                             ...referenceDocument,
                         },
                     });
@@ -337,7 +320,7 @@ export async function PUT(req: NextRequest) {
                             for: 'DISBURSEMENT',
                             message: `${user.name} a réalisé un décaissement de ${formatNumber(data.amount.toString())} ${notification.company.currency}, au titre de la catégorie « ${category?.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} ».
                             \nCommentaire : \n
-                            ${data.comment}
+                            ${data.infos}
                             `,
                             paymentDibursement: {
                                 connect: { id: createdDibursement.id }
@@ -429,7 +412,7 @@ export async function PUT(req: NextRequest) {
                             createdAt: data?.date,
                             amount: String(data?.isPaid ? remaining : data?.amount),
                             paymentMode: data?.paymentType as string,
-                            infos: data?.description,
+                            infos: data?.infos,
                             purchaseOrder: { connect: { id: purchaseExist.id } },
                         },
                     });
@@ -482,7 +465,7 @@ export async function PUT(req: NextRequest) {
                             amountType: purchaseOrder.amountType,
                             checkNumber: notification.dibursement!.checkNumber || "",
                             paymentType: notification.dibursement!.paymentType,
-                            description: notification.dibursement!.description || "",
+                            infos: notification.dibursement!.infos || "",
                             suppliers: {
                                 connect: {
                                     id: purchaseOrder.supplierId as string
@@ -503,9 +486,9 @@ export async function PUT(req: NextRequest) {
                                     id: notification.dibursement!.nature
                                 }
                             },
-                            allocation: {
+                            userAction: {
                                 connect: {
-                                    id: notification.dibursement!.allocation as string
+                                    id: notification.dibursement?.userActionId as string
                                 }
                             },
                             source: {
@@ -558,8 +541,7 @@ export async function PUT(req: NextRequest) {
                         amount: data.amount,
                         amountType: "HT",
                         paymentType: "withdrawal",
-                        description: data.description || `Transfert vers ${sourceB?.name}`,
-                        comment: data.comment,
+                        infos: data.infos || `Transfert vers ${sourceB?.name}`,
                         category: {
                             connect: { id: data.category }
                         },
@@ -571,7 +553,12 @@ export async function PUT(req: NextRequest) {
                         },
                         company: {
                             connect: { id: notification.companyId }
-                        }
+                        },
+                        userAction: {
+                            connect: {
+                                id: data.userActionId as string
+                            }
+                        },
                     }
                 });
 
@@ -583,8 +570,7 @@ export async function PUT(req: NextRequest) {
                         amount: data.amount,
                         amountType: "HT",
                         paymentType: "withdrawal",
-                        description: data.description || `Transfert depuis ${sourceA?.name}`,
-                        comment: data.comment,
+                        infos: data.infos || `Transfert depuis ${sourceA?.name}`,
                         category: {
                             connect: { id: data.category }
                         },
@@ -596,7 +582,12 @@ export async function PUT(req: NextRequest) {
                         },
                         company: {
                             connect: { id: notification.companyId }
-                        }
+                        },
+                        userAction: {
+                            connect: {
+                                id: data.userActionId as string
+                            }
+                        },
                     }
                 });
 
@@ -606,7 +597,7 @@ export async function PUT(req: NextRequest) {
                         for: 'TRANSFER',
                         message: `${user.name} a réalisé un transfert  de ${formatNumber(data.amount.toString())} ${notification.company.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.
                         \nCommentaire : \n
-                        ${data.comment}
+                        ${data.infos}
                         `,
                         company: {
                             connect: { id: notification.companyId }

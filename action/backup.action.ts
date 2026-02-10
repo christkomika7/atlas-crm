@@ -1,7 +1,6 @@
 import { RequestResponse } from "@/types/api.types";
 
 export async function exportBackup() {
-    console.log(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/backup/export`)
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL!}/api/backup/export`, {
             method: 'GET',

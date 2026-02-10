@@ -161,8 +161,7 @@ export async function POST(req: NextRequest) {
                 data: {
                     date: data.date,
                     amount: data.amount,
-                    description: data.description,
-                    comment: data.comment,
+                    infos: data.information,
                     category: category.id,
                     nature: JSON.stringify([disbursementNature.id, receiptNature.id]),
                     source: JSON.stringify([data.origin, data.destination]),
@@ -177,7 +176,7 @@ export async function POST(req: NextRequest) {
                     for: 'TRANSFER',
                     message: `${user.name} a lancé un transfert en attente de validation de ${formatNumber(data.amount)} ${companyExist.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.
                     \nCommentaire : \n
-                    ${data.comment}
+                    ${data.information}
                     `,
                     dibursement: {
                         connect: { id: newDibursement.id }
@@ -202,8 +201,7 @@ export async function POST(req: NextRequest) {
                 amount: data.amount,
                 amountType: "HT",
                 paymentType: "withdrawal",
-                description: data.description || `Transfert vers ${destinationSource.name}`,
-                comment: data.comment,
+                infos: data.information || `Transfert vers ${destinationSource.name}`,
                 category: {
                     connect: { id: category.id }
                 },
@@ -227,8 +225,7 @@ export async function POST(req: NextRequest) {
                 amount: data.amount,
                 amountType: "HT",
                 paymentType: "withdrawal",
-                description: data.description || `Transfert depuis ${originSource.name}`,
-                comment: data.comment,
+                infos: data.information || `Transfert depuis ${originSource.name}`,
                 category: {
                     connect: { id: category.id }
                 },
@@ -250,7 +247,7 @@ export async function POST(req: NextRequest) {
                 for: 'TRANSFER',
                 message: `${user.name} a réalisé un transfert  de ${formatNumber(data.amount)} ${companyExist.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.
                 \nCommentaire : \n
-                ${data.comment}
+                ${data.information}
                 `,
                 company: {
                     connect: { id: data.companyId }

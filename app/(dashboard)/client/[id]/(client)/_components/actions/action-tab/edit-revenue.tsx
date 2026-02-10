@@ -33,7 +33,7 @@ export default function EditRevenue({ setHasNoInvoicePaid, hasNoInvoicePaid, set
 
     return (
         <AccessContainer hasAccess={readAccess} resource='CLIENTS' loading={loading}>
-            <ScrollArea className="max-h-[550px] pr-4">
+            <ScrollArea className="max-h-137.5 pr-4">
                 <div className='grid grid-cols-[1fr_400px] gap-x-12'>
                     <div className="border border-neutral-200 rounded-xl">
                         <Table>

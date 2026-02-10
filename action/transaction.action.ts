@@ -2,16 +2,15 @@ import { compressString } from "@/lib/utils";
 import { DibursementSchemaType } from "@/lib/zod/dibursement.schema";
 import { ReceiptSchemaType } from "@/lib/zod/receipt.schema";
 import {
-  AllocationSchemaType,
   CategorySchemaType,
   FiscalObjectSchemaType,
   NatureSchemaType,
   SourceSchemaType,
+  UserActionSchemaType,
 } from "@/lib/zod/transaction.schema";
 import { TransferSchemaType } from "@/lib/zod/transfert.schema";
 import { RequestResponse } from "@/types/api.types";
 import {
-  AllocationType,
   DeletedTransactions,
   FiscalObjectType,
   GetTransactionsParams,
@@ -20,6 +19,7 @@ import {
   TransactionDocument,
   TransactionNatureType,
   TransactionType,
+  UserActionType,
 } from "@/types/transaction.type";
 
 export async function exportToDocument({
@@ -102,19 +102,14 @@ export async function getTransactions(params: GetTransactionsParams) {
     if (params.sourceValue && params.sourceValue.length > 0)
       query.set("sourceValue", params.sourceValue.join(","));
 
-    if (params.paidForValue) query.set("paidForValue", params.paidForValue);
-
     const sortKeys: (keyof GetTransactionsParams)[] = [
       "byDate",
       "byAmount",
       "byMovement",
       "byCategory",
       "byNature",
-      "byDescription",
       "byPaymentMode",
-      "byAllocation",
       "bySource",
-      "byPaidOnBehalfOf",
     ];
 
     for (const key of sortKeys) {
@@ -252,17 +247,17 @@ export async function getSources({ companyId, type, filter }: { companyId: strin
   }
 }
 
-export async function getAllocations({ companyId }: { companyId: string }) {
+export async function getUserActions({ companyId }: { companyId: string }) {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/allocation/${companyId}`,
+      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/user-action/${companyId}`,
       {
         method: "GET",
         cache: "no-store"
       },
     );
 
-    const res: RequestResponse<AllocationType[]> = await response.json();
+    const res: RequestResponse<UserActionType[]> = await response.json();
     if (!response.ok) {
       throw new Error(res.message);
     }
@@ -272,17 +267,17 @@ export async function getAllocations({ companyId }: { companyId: string }) {
   }
 }
 
-export async function getAllocationsByNature({ natureId }: { natureId: string }) {
+export async function getUserActionsByNature({ natureId }: { natureId: string }) {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/allocation/${natureId}/nature`,
+      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/user-action/${natureId}/nature`,
       {
         method: "GET",
         cache: "no-store"
       },
     );
 
-    const res: RequestResponse<AllocationType[]> = await response.json();
+    const res: RequestResponse<UserActionType[]> = await response.json();
     if (!response.ok) {
       throw new Error(res.message);
     }
@@ -488,10 +483,10 @@ export async function createSource(data: SourceSchemaType) {
   }
 }
 
-export async function createAllocation(data: AllocationSchemaType) {
+export async function createUserAction(data: UserActionSchemaType) {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/allocation`,
+      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/user-action`,
       {
         method: "POST",
         headers: {
@@ -501,17 +496,17 @@ export async function createAllocation(data: AllocationSchemaType) {
       },
     );
 
-    const res: RequestResponse<AllocationType> = await response.json();
+    const res: RequestResponse<UserActionType> = await response.json();
 
     if (!response.ok) {
       throw new Error(
-        res.message || "Erreur lors de la création de l'allocation",
+        res.message || "Erreur lors de la création de l'action utilisateur",
       );
     }
 
     return res;
   } catch (error) {
-    console.error("Erreur dans la fonction create:", error);
+    console.error("Erreur dans la fonction createUserAction:", error);
     throw error;
   }
 }
@@ -676,20 +671,20 @@ export async function deleteSource({ sourceId }: { sourceId: string }) {
   }
 }
 
-export async function deleteAllocation({
-  allocationId,
+export async function deleteUserAction({
+  userActionId,
 }: {
-  allocationId: string;
+  userActionId: string;
 }) {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/allocation/${allocationId}`,
+      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/user-action/${userActionId}`,
       {
         method: "DELETE",
       },
     );
 
-    const res: RequestResponse<AllocationType> = await response.json();
+    const res: RequestResponse<UserActionType> = await response.json();
     if (!response.ok) {
       throw new Error(res.message);
     }

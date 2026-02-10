@@ -74,6 +74,7 @@ export async function create(data: PurchaseOrderSchemaType) {
         const formData = new FormData();
         formData.append("supplierId", data.supplierId);
         formData.append("companyId", data.companyId);
+        formData.append("projectId", data.projectId);
         formData.append("totalHT", data.totalHT.toString());
         formData.append("purchaseOrderNumber", JSON.stringify(data.purchaseOrderNumber));
         formData.append("paymentLimit", data.paymentLimit);
@@ -159,6 +160,7 @@ export async function update(data: PurchaseOrderUpdateSchemaType) {
         const formData = new FormData();
         formData.append("id", data.id);
         formData.append("supplierId", data.supplierId);
+        formData.append("projectId", data.projectId);
         formData.append("companyId", data.companyId);
         formData.append("totalHT", data.totalHT.toString());
         formData.append("amountType", data.amountType);

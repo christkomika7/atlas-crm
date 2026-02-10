@@ -33,25 +33,21 @@ export type TransactionType = {
   referencePurchaseOrderId?: string;
   referencePurchaseOrder?: PurchaseOrderType;
 
-  allocationId?: string;
-  allocation?: AllocationType;
-
-  clientId?: string;
-  client?: ClientType;
-
-  suppliers?: SupplierType[];
+  userActionId?: string;
+  userAction?: UserActionType;
 
   sourceId?: string;
   source?: SourceType;
 
-  periodStart: Date | null;
-  periodEnd: Date | null;
+  period: string | null;
 
   payOnBehalfOfId?: string;
   payOnBehalfOf?: ClientType;
 
-  description?: string;
-  comment?: string;
+  clientOrSupplier: string;
+  clientOrSupplierType: $Enums.UserActionType;
+
+  infos?: string;
 
   companyId: string;
   company: CompanyType;
@@ -69,7 +65,6 @@ export type TransactionCategoryType = {
 export type TransactionNatureType = {
   id: string;
   name: string;
-  allocations: AllocationType[]
 };
 
 export type SourceType = {
@@ -78,9 +73,24 @@ export type SourceType = {
   name: string;
 };
 
-export type AllocationType = {
+export type UserActionType = {
   id: string;
-  name: string;
+  type: $Enums.UserActionType;
+
+  natureId: string;
+  nature: TransactionNatureType;
+
+  clientId: string;
+  client: ClientType;
+
+  supplierId: string;
+  supplier: SupplierType;
+
+  companyId: string;
+  company: CompanyType;
+
+
+
 };
 
 export type FiscalObjectType = {
@@ -121,11 +131,8 @@ export type GetTransactionsParams = {
   byMovement?: "asc" | "desc";
   byCategory?: "asc" | "desc";
   byNature?: "asc" | "desc";
-  byDescription?: "asc" | "desc";
   byPaymentMode?: "asc" | "desc";
-  byAllocation?: "asc" | "desc";
   bySource?: "asc" | "desc";
-  byPaidOnBehalfOf?: "asc" | "desc";
 };
 
 export type DeletedTransactions = {

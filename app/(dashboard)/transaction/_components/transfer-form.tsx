@@ -22,7 +22,6 @@ import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
 import { createTransfer, getSources } from "@/action/transaction.action";
 import { transferSchema, TransferSchemaType } from "@/lib/zod/transfert.schema";
-import { transactions } from "@/lib/data";
 
 
 type TransferFormProps = {
@@ -222,14 +221,14 @@ export default function TransferForm({ refreshTransaction, closeModal }: Transfe
                         />
                         <FormField
                             control={form.control}
-                            name="comment"
+                            name="information"
                             render={({ field }) => (
                                 <FormItem className="-space-y-2">
                                     <FormControl>
                                         <TextInput
                                             type="text"
                                             design="text-area"
-                                            label="Commentaire"
+                                            label="Information"
                                             required={false}
                                             value={field.value}
                                             handleChange={field.onChange}

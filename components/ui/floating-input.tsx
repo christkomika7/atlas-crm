@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+  extends React.InputHTMLAttributes<HTMLInputElement> { }
 
 const FloatingInput = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, ...props }, ref) => {
@@ -32,7 +32,7 @@ const FloatingLabel = React.forwardRef<
   return (
     <Label
       className={cn(
-        "top-1 peer-focus:top-1 peer-placeholder-shown:top-1/2 rtl:peer-focus:left-auto z-10 absolute bg-gray dark:bg-background px-3 peer-focus:px-2 rounded-full text-neutral-700 text-sm scale-75 peer-focus:scale-75 peer-placeholder-shown:scale-100 origin-[0] -translate-y-4 rtl:peer-focus:translate-x-1/4 peer-focus:-translate-y-4 peer-placeholder-shown:-translate-y-1/2 duration-300 cursor-text peer-focus:secondary peer-focus:dark:secondary start-2 transform",
+        "top-1 peer-focus:top-1 peer-placeholder-shown:top-1/2 rtl:peer-focus:left-auto z-10 absolute bg-gray dark:bg-background px-3 peer-focus:px-2 rounded-full text-neutral-700 text-sm scale-75 peer-focus:scale-75 peer-placeholder-shown:scale-100 origin-left -translate-y-4 rtl:peer-focus:translate-x-1/4 peer-focus:-translate-y-4 peer-placeholder-shown:-translate-y-1/2 duration-300 cursor-text peer-focus:secondary peer-focus:dark:secondary start-2 transform",
         className
       )}
       ref={ref}
@@ -58,7 +58,7 @@ const FloatingLabelInput = React.forwardRef<
 FloatingLabelInput.displayName = "FloatingLabelInput";
 
 export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> { }
 
 const FloatingTextareaBase = React.forwardRef<
   HTMLTextAreaElement,
@@ -85,7 +85,7 @@ const FloatingTextareaLabel = React.forwardRef<
   return (
     <Label
       className={cn(
-        "top-2 peer-focus:top-2 peer-placeholder-shown:top-6 rtl:peer-focus:left-auto z-10 absolute bg-gray dark:bg-background px-3 peer-focus:px-2 rounded-full text-neutral-700 text-sm scale-75 peer-focus:scale-75 peer-placeholder-shown:scale-100 origin-[0] -translate-y-4 rtl:peer-focus:translate-x-1/4 peer-focus:-translate-y-4 peer-placeholder-shown:-translate-y-1/2 duration-300 cursor-text peer-focus:secondary peer-focus:dark:secondary start-2 transform",
+        "top-2 peer-focus:top-2 peer-placeholder-shown:top-6 rtl:peer-focus:left-auto z-10 absolute bg-gray dark:bg-background px-3 peer-focus:px-2 rounded-full text-neutral-700 text-sm scale-75 peer-focus:scale-75 peer-placeholder-shown:scale-100 origin-left -translate-y-4 rtl:peer-focus:translate-x-1/4 peer-focus:-translate-y-4 peer-placeholder-shown:-translate-y-1/2 duration-300 cursor-text peer-focus:secondary peer-focus:dark:secondary start-2 transform",
         className
       )}
       ref={ref}

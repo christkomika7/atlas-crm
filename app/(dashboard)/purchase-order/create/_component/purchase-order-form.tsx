@@ -42,6 +42,10 @@ import PurchaseOrderInfo from "./purchase-order-info";
 import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
 import useSupplierIdStore from "@/stores/supplier-id.store";
 import usePurchaseItemStore from "@/stores/purchase-item.store";
+import useProjectStore from "@/stores/project.store";
+import { ProjectType } from "@/types/project.types";
+import { allByClient, getallByCompany } from "@/action/project.action";
+import ProjectModal from "@/app/(dashboard)/invoice/_component/project-modal";
 
 export default function PurchaseOrderForm() {
   const router = useRouter();
@@ -64,6 +68,9 @@ export default function PurchaseOrderForm() {
 
   const [supplierDiscount, setSupplierDiscount] = useState<DiscountType>({ discount: 0, discountType: "purcent" });
   const [supplier, setSupplier] = useState<SupplierType>();
+
+  const setProject = useProjectStore.use.setProject();
+  const projects = useProjectStore.use.projects();
 
   const { calculate } = useCalculateTaxe();
 
@@ -111,6 +118,15 @@ export default function PurchaseOrderForm() {
     "document"
   );
 
+  const {
+    mutate: mutateProject,
+    isPending: isLoadingProject,
+  } = useQueryAction<{ companyId: string }, RequestResponse<ProjectType[]>>(
+    getallByCompany,
+    () => { },
+    "projects"
+  );
+
 
   const { mutate: mutateGetProductService } = useQueryAction<
     { companyId: string; },
@@ -141,6 +157,14 @@ export default function PurchaseOrderForm() {
       });
 
       mutateSuppliers({ id: companyId });
+      mutateProject({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setProject(data.data)
+          }
+        },
+      });
+
 
       mutateGetPurchaseOrderNumber({ companyId }, {
         onSuccess(data) {
@@ -163,8 +187,11 @@ export default function PurchaseOrderForm() {
     }
   }, [companyId]);
 
+
+
   useEffect(() => {
     if (supplierId) {
+
       mutateSupplier(
         { id: supplierId },
         {
@@ -379,6 +406,44 @@ export default function PurchaseOrderForm() {
                       handleChange={(e) => {
                         field.onChange(e);
                       }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="space-y-2">
+            <h2 className="font-semibold">Projet</h2>
+            <FormField
+              control={form.control}
+              name="projectId"
+              render={({ field }) => (
+                <FormItem className="-space-y-2">
+                  <FormControl>
+                    <Combobox
+                      isLoading={isLoadingProject}
+                      datas={projects.map(({ id, name, status }) => ({
+                        id: id,
+                        label: name,
+                        value: id,
+                        color:
+                          status === "BLOCKED"
+                            ? "bg-red"
+                            : status === "TODO"
+                              ? "bg-neutral-200"
+                              : status === "IN_PROGRESS"
+                                ? "bg-blue"
+                                : "bg-emerald-500",
+                        disabled: status !== "BLOCKED",
+                      }))}
+                      value={field.value ?? ""}
+                      setValue={(e) => {
+                        field.onChange(e);
+                      }}
+                      placeholder="Sélectionner un projet"
+                      searchMessage="Rechercher un projet"
+                      noResultsMessage="Aucun projet trouvé."
                     />
                   </FormControl>
                   <FormMessage />

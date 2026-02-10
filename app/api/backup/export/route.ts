@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
             "fiscalObject",
             "transactionCategory",
             "transactionNature",
-            "allocation",
+            "userAction",
             "deletion",
             "notification",
             "notificationRead",

@@ -47,18 +47,16 @@ export default function ExportButton({ transactions, isLoading }: ExportButtonPr
             "Mouvement",
             "Catégorie",
             "Nature",
-            "Description",
+            "Information",
             "HT Montant",
             "TTC Montant",
             "Mode de paiement",
             "Numéro de chèque",
             "Référence du document",
-            "Allocation",
+            "Client / Fournisseur / Tiers",
             "Source",
             "Période",
-            "Payé pour le compte de",
-            "Payeur",
-            "Commentaire",
+
         ];
 
         const csvData = transactions.map((transaction) => ({
@@ -66,7 +64,7 @@ export default function ExportButton({ transactions, isLoading }: ExportButtonPr
             Mouvement: transaction.movement === "INFLOWS" ? "Entrée" : "Sortie",
             Catégorie: transaction.category?.name || "-",
             Nature: transaction.nature?.name || "-",
-            Description: transaction.description || "-",
+            Information: transaction.infos || "-",
             "HT Montant":
                 transaction.amountType === "HT"
                     ? `${formatNumber(transaction.amount)} ${currency}`
@@ -78,18 +76,9 @@ export default function ExportButton({ transactions, isLoading }: ExportButtonPr
             "Mode de paiement": getPaymentModeLabel(transaction.paymentType),
             "Numéro de chèque": transaction.checkNumber || "-",
             "Référence du document": transaction.documentReference || "-",
-            Allocation: transaction.allocation?.name || "-",
+            "Client / Fournisseur / Tiers": transaction.userAction?.type === "CLIENT" ? `${transaction.userAction.client.lastname} ${transaction.userAction.client.firstname}` : transaction.userAction?.type === `SUPPLIER` ? `${transaction.userAction.supplier.lastname} ${transaction.userAction.supplier.firstname}` : "-",
             Source: transaction.source?.name || "-",
-            Période: period(transaction.periodStart, transaction.periodEnd),
-            "Payé pour le compte de": transaction.payOnBehalfOf
-                ? `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`
-                : "-",
-            Payeur: transaction.client
-                ? `${transaction.client.lastname} ${transaction.client.firstname}`
-                : transaction.payOnBehalfOf
-                    ? `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`
-                    : "-",
-            Commentaire: transaction.comment || "-",
+            Période: transaction.period,
         }));
 
         const csv = Papa.unparse({
@@ -129,27 +118,27 @@ export default function ExportButton({ transactions, isLoading }: ExportButtonPr
             <PopoverTrigger asChild>
                 <Button variant="inset-primary">Exporter</Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="p-1 w-[120px]">
+            <PopoverContent align="end" className="p-1 w-30">
                 {isLoading ? <span className='p-2'><Spinner /> </span> :
                     <>
                         <Button
                             onClick={e => toDoc(e, "word")}
                             variant="primary"
-                            className="bg-white hover:bg-blue gap-x-2 items-center justify-start shadow-none !h-10 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                            className="bg-white hover:bg-blue gap-x-2 items-center justify-start shadow-none h-10! text-black hover:text-white transition-[color,background-color,box-shadow]"
                         >
                             DOCX {(isPending && doc === 'word') && <Spinner size={14} />}
                         </Button>
                         <Button
                             onClick={e => toDoc(e, "excel")}
                             variant="primary"
-                            className="bg-white hover:bg-blue gap-x-2 items-center justify-start shadow-none !h-10 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                            className="bg-white hover:bg-blue gap-x-2 items-center justify-start shadow-none h-10! text-black hover:text-white transition-[color,background-color,box-shadow]"
                         >
                             EXCEL {(isPending && doc === 'excel') && <Spinner size={14} />}
                         </Button>
                         <Button
                             onClick={toCsv}
                             variant="primary"
-                            className="bg-white items-center hover:bg-blue gap-x-2 justify-start shadow-none !h-10 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                            className="bg-white items-center hover:bg-blue gap-x-2 justify-start shadow-none h-10! text-black hover:text-white transition-[color,background-color,box-shadow]"
                         >
                             CSV  {isLoadingCsv && <Spinner size={14} />}
                         </Button>

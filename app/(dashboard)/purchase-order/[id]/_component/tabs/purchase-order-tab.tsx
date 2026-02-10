@@ -26,6 +26,7 @@ import { CompanyType } from "@/types/company.types";
 
 import { all as getSuppliers, unique as getSupplier } from "@/action/supplier.action";
 import { unique as getDocument } from "@/action/document.action";
+import { unique as getProject } from "@/action/project.action"
 import { DownloadIcon, XIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalculateTaxe } from "@/hook/useCalculateTaxe";
@@ -48,6 +49,9 @@ import PurchaseOrderInfo from "../../../create/_component/purchase-order-info";
 import usePurchaseItemStore, { PurchaseItemType } from "@/stores/purchase-item.store";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
+import useProjectStore from "@/stores/project.store";
+import { getallByCompany } from "@/action/project.action";
+import { ProjectType } from "@/types/project.types";
 
 
 export default function PurchaseOrderTab() {
@@ -81,6 +85,10 @@ export default function PurchaseOrderTab() {
   const [supplier, setSupplier] = useState<SupplierType>();
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState(0);
   const [lastUploadFiles, setLastUploadFiles] = useState<string[]>([]);
+
+
+  const setProject = useProjectStore.use.setProject();
+  const projects = useProjectStore.use.projects();
 
   const { access: readAccess, loading } = useAccess("PURCHASE_ORDER", "READ");
   const { access: modifyAccess } = useAccess("PURCHASE_ORDER", "MODIFY");
@@ -128,6 +136,25 @@ export default function PurchaseOrderTab() {
     "document"
   );
 
+  const {
+    mutate: mutateProject,
+    isPending: isLoadingProject,
+  } = useQueryAction<{ companyId: string }, RequestResponse<ProjectType[]>>(
+    getallByCompany,
+    () => { },
+    "projects"
+  );
+
+
+  const {
+    mutate: mutateGetProject,
+    isPending: isGettingProject,
+  } = useQueryAction<{ id: string }, RequestResponse<ProjectType>>(
+    getProject,
+    () => { },
+    "project"
+  );
+
 
   const { mutate: mutateGetProductService } = useQueryAction<
     { companyId: string; },
@@ -142,6 +169,13 @@ export default function PurchaseOrderTab() {
 
   useEffect(() => {
     if (companyId && readAccess) {
+      mutateProject({ companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setProject(data.data)
+          }
+        },
+      });
       mutateGetProductService({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -344,7 +378,17 @@ export default function PurchaseOrderTab() {
             lastUploadFiles: [],
           });
 
-          setItems(mappedItems)
+          setItems(mappedItems);
+          if (purchaseOrder.projectId) {
+            mutateGetProject({ id: purchaseOrder.projectId }, {
+              onSuccess(data) {
+                if (data.data) {
+                  const project = data.data;
+                  form.setValue("projectId", project.id);
+                }
+              },
+            });
+          }
 
           mutateGetSuppliers({ id: purchaseOrder.companyId }, {
             onSuccess(data) {
@@ -504,6 +548,44 @@ export default function PurchaseOrderTab() {
                           handleChange={(e) => {
                             field.onChange(e);
                           }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <h2 className="font-semibold">Projet</h2>
+                <FormField
+                  control={form.control}
+                  name="projectId"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <Combobox
+                          isLoading={isLoadingProject}
+                          datas={projects.map(({ id, name, status }) => ({
+                            id: id,
+                            label: name,
+                            value: id,
+                            color:
+                              status === "BLOCKED"
+                                ? "bg-red"
+                                : status === "TODO"
+                                  ? "bg-neutral-200"
+                                  : status === "IN_PROGRESS"
+                                    ? "bg-blue"
+                                    : "bg-emerald-500",
+                            disabled: status !== "BLOCKED",
+                          }))}
+                          value={field.value ?? ""}
+                          setValue={(e) => {
+                            field.onChange(e);
+                          }}
+                          placeholder="Sélectionner un projet"
+                          searchMessage="Rechercher un projet"
+                          noResultsMessage="Aucun projet trouvé."
                         />
                       </FormControl>
                       <FormMessage />

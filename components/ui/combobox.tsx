@@ -79,7 +79,7 @@ export function Combobox({
             id="country"
             value={getDisplayValue()}
             required={required}
-            className={inputClassName}
+            className={cn(inputClassName, { "bg-gray/60": disabled })}
           />
           <FloatingLabel htmlFor="country" className="gap-x-0! cursor-default!">
             {placeholder} {placeholder && required && <span className="text-red-500">*</span>}

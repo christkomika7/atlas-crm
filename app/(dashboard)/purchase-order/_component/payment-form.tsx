@@ -1,6 +1,5 @@
 import { createdPayment, unique } from "@/action/purchase-order.action";
-import { getAllocations, getAllocationsByNature, getCategories, getNatures, getSources } from "@/action/transaction.action";
-import AllocationModal from "@/components/modal/allocation-modal";
+import { getCategories, getNatures, getSources } from "@/action/transaction.action";
 import CategoryModal from "@/components/modal/category-modal";
 import NatureModal from "@/components/modal/nature-modal";
 import SourceModal from "@/components/modal/source-modal";
@@ -25,7 +24,7 @@ import { useDataStore } from "@/stores/data.store";
 import useTransactionStore from "@/stores/transaction.store";
 import { RequestResponse } from "@/types/api.types";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
-import { AllocationType, SourceType, TransactionCategoryType, TransactionNatureType } from "@/types/transaction.type";
+import { SourceType, TransactionCategoryType, TransactionNatureType } from "@/types/transaction.type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Decimal } from "decimal.js";
 import { useEffect, useState } from "react";
@@ -43,7 +42,6 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
 
   const [isPaid, setIsPaid] = useState(false);
   const [categoryId, setCategoryId] = useState("");
-  const [natureId, setNatureId] = useState("");
   const [paymentMode, setPaymentMode] = useState<"check" | "cash" | "bank-transfer">();
 
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrderType>();
@@ -54,9 +52,6 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
   const setNatures = useTransactionStore.use.setNatures();
   const sources = useTransactionStore.use.sources();
   const setSources = useTransactionStore.use.setSources();
-
-  const allocations = useTransactionStore.use.allocations();
-  const setAllocations = useTransactionStore.use.setAllocations();
 
   const form = useForm<PurchaseOrderPaymentSchemaType>({
     resolver: zodResolver(purchaseOrderPaymentSchema),
@@ -101,15 +96,6 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
     "sources"
   );
 
-  const {
-    mutate: mutateGetAllocations,
-    isPending: isGettingAllocations,
-  } = useQueryAction<{ natureId: string }, RequestResponse<AllocationType[]>>(
-    getAllocationsByNature,
-    () => { },
-    "allocations"
-  );
-
   const { mutate: mutateCreatePayment, isPending: isCreatingPayment } = useQueryAction<
     PurchaseOrderPaymentSchemaType,
     RequestResponse<null>
@@ -149,17 +135,6 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
       })
     }
   }, [categoryId])
-
-
-  useEffect(() => {
-    mutateGetAllocations({ natureId }, {
-      onSuccess(data) {
-        if (data.data) {
-          setAllocations(data.data)
-        }
-      },
-    });
-  }, [natureId])
 
   useEffect(() => {
     if (purchaseOrderId) {
@@ -280,7 +255,6 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
                       }))}
                       value={field.value}
                       setValue={e => {
-                        setNatureId(e)
                         field.onChange(e)
                       }}
                       placeholder="Nature"
@@ -366,35 +340,6 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
             />
             <FormField
               control={form.control}
-              name="allocation"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isGettingAllocations}
-                      datas={allocations.map(allocation => ({
-                        id: allocation.id,
-                        label: allocation.name,
-                        value: allocation.id
-                      }))}
-                      value={field.value}
-                      setValue={field.onChange}
-                      placeholder="Allocation"
-                      searchMessage="Rechercher une allocation"
-                      noResultsMessage="Aucune allocation trouvée."
-                      addElement={<AllocationModal natureId={natureId} />}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-          </div>
-          <div className="gap-4.5 grid grid-cols-2">
-
-            <FormField
-              control={form.control}
               name="date"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
@@ -410,27 +355,26 @@ export default function PaymentForm({ purchaseOrderId, closeModal, refresh }: Pa
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="checkNumber"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      required={false}
-                      type="text"
-                      design="float"
-                      label="Numéro de chèque"
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </div>
-
+          <FormField
+            control={form.control}
+            name="checkNumber"
+            render={({ field }) => (
+              <FormItem className="-space-y-2">
+                <FormControl>
+                  <TextInput
+                    required={false}
+                    type="text"
+                    design="float"
+                    label="Numéro de chèque"
+                    value={field.value}
+                    handleChange={field.onChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="information"

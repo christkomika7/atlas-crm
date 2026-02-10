@@ -236,7 +236,6 @@ export async function DELETE(req: NextRequest) {
       invoices: true,
       projects: true,
       receipts: true,
-      dibursements: true,
       contracts: true,
       deliveryNotes: true,
       quotes: true,
@@ -274,7 +273,6 @@ export async function DELETE(req: NextRequest) {
     client.invoices.length > 0 ||
     client.projects.length > 0 ||
     client.receipts.length > 0 ||
-    client.dibursements.length > 0 ||
     client.contracts.length > 0 ||
     client.quotes.length > 0 ||
     client.deliveryNotes.length > 0 ||

@@ -25,7 +25,7 @@ import { InvoiceType } from "@/types/invoice.types";
 import { SourceType } from "@/types/transaction.type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Decimal } from "decimal.js";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 

@@ -27,12 +27,10 @@ export async function generateTransactionsExcel(
         { key: "paymentType", width: 20 },
         { key: "checkNumber", width: 20 },
         { key: "documentReference", width: 25 },
-        { key: "allocation", width: 20 },
+        { key: "clientOrSupplier", width: 50 },
         { key: "source", width: 20 },
         { key: "period", width: 20 },
-        { key: "paidFor", width: 25 },
-        { key: "payer", width: 25 },
-        { key: "comment", width: 30 },
+        { key: "infos", width: 30 },
     ];
 
     sheet.columns = columns;
@@ -57,10 +55,10 @@ export async function generateTransactionsExcel(
 
     // ✅ AJOUTER LA LIGNE D'EN-TÊTE DES COLONNES
     const headerLabels = [
-        "Date", "Mouvement", "Catégorie", "Nature", "Description",
+        "Date", "Mouvement", "Catégorie", "Nature", "Information",
         "HT Montant", "TTC Montant", "Mode de paiement", "Numéro de chèque",
-        "Référence du document", "Allocation", "Source", "Période",
-        "Payé pour le compte de", "Payeur", "Commentaire"
+        "Référence du document", "Source", "Période",
+        "Client | Fournisseur | Tiers"
     ];
 
     const headerRow = sheet.addRow(headerLabels);
@@ -82,22 +80,15 @@ export async function generateTransactionsExcel(
             movement: tx.movement === "INFLOWS" ? "Entrée" : "Sortie",
             category: tx.category?.name || "-",
             nature: tx.nature?.name || "-",
-            description: tx.description || "-",
+            infos: tx.infos || "-",
             htAmount: tx.amountType === "HT" ? `${formatNumber(tx.amount)} ${currency}` : "-",
             ttcAmount: tx.amountType === "TTC" ? `${formatNumber(tx.amount)} ${currency}` : "-",
             paymentType: getPaymentModeLabel(tx.paymentType),
             checkNumber: tx.checkNumber || "-",
             documentReference: tx.documentReference || "-",
-            allocation: tx.allocation?.name || "-",
             source: tx.source?.name || "-",
-            period: period(tx.periodStart, tx.periodEnd),
-            paidFor: tx.payOnBehalfOf ? `${tx.payOnBehalfOf.lastname} ${tx.payOnBehalfOf.firstname}` : "-",
-            payer: tx.client
-                ? `${tx.client.lastname} ${tx.client.firstname}`
-                : tx.payOnBehalfOf
-                    ? `${tx.payOnBehalfOf.lastname} ${tx.payOnBehalfOf.firstname}`
-                    : "-",
-            comment: tx.comment || "-",
+            period: tx.period,
+            clientOrSupplier: `${tx.clientOrSupplierType === "CLIENT" ? `${tx.userAction?.client?.lastname || ""} ${tx.userAction?.client?.firstname || ""}` : `${tx.userAction?.supplier?.lastname || ""} ${tx.userAction?.supplier?.firstname || ""}`}`
         });
 
         row.eachCell((cell) => {

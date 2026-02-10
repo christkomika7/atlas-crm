@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
                     createdAt: data.date,
                     amount: String(data.amount),
                     paymentMode: data.paymentMode,
-                    infos: data.description,
+                    infos: data.information,
                     invoice: { connect: { id: data.documentRef } },
                 },
             });
@@ -196,8 +196,12 @@ export async function POST(req: NextRequest) {
                 amountType: data.amountType,
                 paymentType: data.paymentMode,
                 checkNumber: data.checkNumber || "",
-                description: data.description,
-                comment: data.comment,
+                infos: data.information,
+                userAction: {
+                    connect: {
+                        id: data.userAction as string
+                    }
+                },
                 category: {
                     connect: {
                         id: data.category
@@ -232,7 +236,7 @@ export async function POST(req: NextRequest) {
                 for: 'RECEIPT',
                 message: `${user.name} a réalisé un encaissement de ${formatNumber(data.amount)} ${createdReceipt.company.currency} dans le compte ${createdReceipt.source?.name}.
                 \nCommentaire : \n
-                ${data.comment}
+                ${data.information}
                 `,
                 receipt: {
                     connect: { id: createdReceipt.id }

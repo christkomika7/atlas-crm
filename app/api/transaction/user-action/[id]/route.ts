@@ -21,15 +21,21 @@ export async function GET(req: NextRequest) {
             message: "identifiant invalide.",
         }, { status: 404 });
     }
-    const allocations = await prisma.allocation.findMany({
+    const userActions = await prisma.userAction.findMany({
         where: {
             companyId: id
         },
+        include: {
+            client: true,
+            supplier: true,
+            user: true,
+            company: true
+        }
     });
 
     return NextResponse.json({
         state: "success",
-        data: allocations,
+        data: userActions,
     }, { status: 200 })
 }
 
@@ -52,9 +58,9 @@ export async function DELETE(req: NextRequest) {
         }, { status: 404 });
     }
 
-    const deletedAllocation = await prisma.allocation.delete({ where: { id } });
+    const deletedUserAction = await prisma.userAction.delete({ where: { id } });
     return NextResponse.json({
         state: "success",
-        data: deletedAllocation,
+        data: deletedUserAction,
     }, { status: 200 })
 }

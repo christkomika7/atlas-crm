@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
                     date: toUtcDateOnly(data.date),
                     amount: new Decimal(data.amount),
                     amountType: invoice.amountType,
-                    description: data.information || "",
+                    infos: data.information || "",
                     checkNumber: data.checkNumber || "",
                     paymentType: data.mode,
                     client: {
@@ -210,6 +210,26 @@ export async function POST(req: NextRequest) {
                     company: {
                         connect: {
                             id: invoice.companyId
+                        }
+                    },
+                    userAction: {
+                        create: {
+                            client: {
+                                connect: {
+                                    id: invoice.clientId as string
+                                }
+                            },
+                            type: "CLIENT",
+                            nature: {
+                                connect: {
+                                    id: nature.id
+                                }
+                            },
+                            company: {
+                                connect: {
+                                    id: invoice.companyId
+                                }
+                            }
                         }
                     }
                 }

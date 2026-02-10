@@ -61,7 +61,6 @@ export async function getRevenue({
 
         const res: RequestResponse<RevenueType> = await response.json()
 
-        console.log(res);
         if (!response.ok) {
             throw new Error(res.message);
         }

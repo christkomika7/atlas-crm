@@ -42,7 +42,6 @@ export default function RevenueModal() {
             }, {
                 onSuccess(data) {
                     if (data.data) {
-                        console.log(data.data);
                         setRevenues(data.data);
                     }
                 },

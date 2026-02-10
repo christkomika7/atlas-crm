@@ -41,8 +41,6 @@ export default function HeaderActionButton() {
     })
   }
 
-  console.log({ currentSupplierTab })
-
   const renderContent = () => {
     switch (currentSupplierTab) {
       case 0:

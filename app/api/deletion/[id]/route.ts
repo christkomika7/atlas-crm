@@ -1174,7 +1174,6 @@ export async function PUT(req: NextRequest) {
                             invoices: true,
                             projects: true,
                             receipts: true,
-                            dibursements: true,
                             contracts: true,
                             deliveryNotes: true,
                             quotes: true,
@@ -1186,7 +1185,6 @@ export async function PUT(req: NextRequest) {
                         client.invoices.length > 0 ||
                         client.projects.length > 0 ||
                         client.receipts.length > 0 ||
-                        client.dibursements.length > 0 ||
                         client.contracts.length > 0 ||
                         client.quotes.length > 0 ||
                         client.deliveryNotes.length > 0 ||
@@ -1245,7 +1243,6 @@ export async function PUT(req: NextRequest) {
                     const supplier = await prisma.supplier.delete({
                         where: { id: recordId },
                         include: {
-                            receipts: true,
                             dibursements: true,
                             contracts: true,
                             purchaseOrders: true
@@ -1253,7 +1250,6 @@ export async function PUT(req: NextRequest) {
                     });
 
                     if (
-                        supplier.receipts.length > 0 ||
                         supplier.dibursements.length > 0 ||
                         supplier.contracts.length > 0
                     ) {

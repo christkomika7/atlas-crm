@@ -1,3 +1,4 @@
+import { $Enums } from '@/lib/generated/prisma';
 import { z } from "zod";
 
 export const categorySchema = z.object({
@@ -24,15 +25,15 @@ export const sourceSchema = z.object({
     companyId: z.string({ error: "Aucune entreprise sélectionnée." }),
 });
 
-export const allocationSchema = z.object({
-    name: z.string({ error: "Le nom de l'allocation est obligatoire." }),
+export const userActionSchema = z.object({
+    type: z.enum($Enums.UserActionType),
     companyId: z.string({ error: "Aucune entreprise sélectionnée." }),
-    natureId: z.string({ error: "Aucune nature a été sélectionnée." })
-
+    natureId: z.string({ error: "Aucune nature a été sélectionnée." }),
+    clientOrSupplierId: z.string({ error: "L'id du client ou du fournisseur est obligatoire." })
 });
 
 export type CategorySchemaType = z.infer<typeof categorySchema>;
 export type NatureSchemaType = z.infer<typeof natureSchema>;
 export type SourceSchemaType = z.infer<typeof sourceSchema>;
-export type AllocationSchemaType = z.infer<typeof allocationSchema>;
+export type UserActionSchemaType = z.infer<typeof userActionSchema>;
 export type FiscalObjectSchemaType = z.infer<typeof fiscalObjectSchema>;

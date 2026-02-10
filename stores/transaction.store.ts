@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { createSelectors } from "@/lib/store";
-import { AllocationType, FiscalObjectType, SourceType, TransactionCategoryType, TransactionNatureType } from "@/types/transaction.type";
+import { FiscalObjectType, SourceType, TransactionCategoryType, TransactionNatureType, UserActionType } from "@/types/transaction.type";
 
 type TransactionStore = {
     categories: TransactionCategoryType[];
     natures: TransactionNatureType[];
     sources: SourceType[];
-    allocations: AllocationType[];
+    userActions: UserActionType[];
     fiscalObjects: FiscalObjectType[]
 
     setCategories: (categories: TransactionCategoryType[]) => void;
@@ -21,9 +21,9 @@ type TransactionStore = {
     addSource: (source: SourceType) => void;
     removeSource: (id: string) => void;
 
-    setAllocations: (allocations: AllocationType[]) => void;
-    addAllocation: (allocation: AllocationType) => void;
-    removeAllocation: (id: string) => void;
+    setUserActions: (userActions: UserActionType[]) => void;
+    addUserAction: (userAction: UserActionType) => void;
+    removeUserAction: (id: string) => void;
 
     setFiscalObjects: (data: FiscalObjectType[]) => void;
     addFiscalObjectType: (data: FiscalObjectType) => void;
@@ -35,7 +35,7 @@ const useTransactionStore = createSelectors(
         categories: [],
         natures: [],
         sources: [],
-        allocations: [],
+        userActions: [],
         fiscalObjects: [],
 
         setCategories(categories) {
@@ -77,17 +77,17 @@ const useTransactionStore = createSelectors(
             set({ sources: get().sources.filter((a) => a.id !== id) });
         },
 
-        setAllocations(allocations) {
-            set({ allocations });
+        setUserActions(userActions) {
+            set({ userActions: userActions });
         },
-        addAllocation(allocation) {
-            const exists = get().allocations.some((p) => p.id === allocation.id);
+        addUserAction(userAction) {
+            const exists = get().userActions.some((p) => p.id === userAction.id);
             if (!exists) {
-                set({ allocations: [...get().allocations, allocation] });
+                set({ userActions: [...get().userActions, userAction] });
             }
         },
-        removeAllocation(id) {
-            set({ allocations: get().allocations.filter((a) => a.id !== id) });
+        removeUserAction(id) {
+            set({ userActions: get().userActions.filter((a) => a.id !== id) });
         },
 
         setFiscalObjects(data) {

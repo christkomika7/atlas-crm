@@ -23,6 +23,11 @@ enum NotificationType {
   CONFIRM
 }
 
+enum UserActionType {
+  CLIENT
+  SUPPLIER
+}
+
 enum NotificationKindOf {
   INVOICE
   PURCHASE_ORDER
@@ -170,7 +175,6 @@ model Company {
   billboardTypes             BillboardType[]
   transactionCategories      TransactionCategory[]
   transactionNatures         TransactionNature[]
-  allocations                Allocation[]
   sources                    Source[]
   receipts                   Receipt[]
   dibursements               Dibursement[]
@@ -187,6 +191,7 @@ model Company {
   fiscalObjects              FiscalObject[]
   profiles                   Profile[]
   notifications              Notification[]
+  userActions                UserAction[]
 
   @@unique([email])
   @@map("company")
@@ -219,6 +224,7 @@ model User {
   deliveryNotes     DeliveryNote[]
   notifications     Notification[]
   notificationReads NotificationRead[]
+  userActions       UserAction[]
 
   @@map("user")
 }
@@ -256,8 +262,9 @@ model Profile {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  receipts  Receipt[]
 
   @@map("profile")
 }
@@ -293,9 +300,9 @@ model Supplier {
   updatedAt      DateTime        @updatedAt
   billboards     Billboard[]
   purchaseOrders PurchaseOrder[]
-  receipts       Receipt[]
   dibursements   Dibursement[]
   contracts      Contract[]
+  userActions    UserAction[]
 
   @@map("supplier")
 }
@@ -335,11 +342,11 @@ model Client {
   quotes        Quote[]
   deliveryNotes DeliveryNote[]
   receipts      Receipt[]
-  dibursements  Dibursement[]
   contracts     Contract[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  userActions UserAction[]
 
   @@map("client")
 }
@@ -539,7 +546,6 @@ model Invoice {
   billboards       Billboard[]
   items            Item[]
   receipts         Receipt[]
-  dibursements     Dibursement[]
   payments         Payment[]
   recurrences      Recurrence[]
   contracts        Contract[]
@@ -782,8 +788,9 @@ model Project {
   dibursements       Dibursement[]
   notifications      Notification[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  receipts  Receipt[]
 
   @@map("project")
 }
@@ -944,22 +951,27 @@ model Receipt {
   sourceId String?
   source   Source? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
 
-  description String?
-  comment     String?
+  infos String?
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
-  supplierId String?
-  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  userActionId String?
+  userAction   UserAction? @relation(fields: [userActionId], references: [id], onDelete: SetNull)
 
   paymentId String?  @unique
   payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 
   notifications Notification[]
+
+  profile   Profile? @relation(fields: [profileId], references: [id])
+  profileId String?
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
@@ -984,38 +996,27 @@ model Dibursement {
   amount     Decimal    @default(0) @db.Decimal(15, 2)
   amountType AmountType @default(HT)
 
-  periodStart DateTime?
-  periodEnd   DateTime?
+  period String @default("")
 
   paymentType String
   checkNumber String?
 
-  referenceInvoiceId String?
-  referenceInvoice   Invoice? @relation(fields: [referenceInvoiceId], references: [id], onDelete: SetNull)
-
   referencePurchaseOrderId String?
   referencePurchaseOrder   PurchaseOrder? @relation(fields: [referencePurchaseOrderId], references: [id])
-
-  allocationId String?
-  allocation   Allocation? @relation(fields: [allocationId], references: [id], onDelete: Cascade)
 
   sourceId String?
   source   Source? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
 
-  payOnBehalfOfId String?
-  payOnBehalfOf   Profile? @relation(fields: [payOnBehalfOfId], references: [id], onDelete: SetNull)
-
-  description String?
-  comment     String?
+  infos String?
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
-  clientId String?
-  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
-
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  userActionId String?
+  userAction   UserAction? @relation(fields: [userActionId], references: [id], onDelete: SetNull)
 
   suppliers      Supplier[]
   fiscalObjectId String?
@@ -1028,7 +1029,34 @@ model Dibursement {
   createdAt     DateTime       @default(now())
   notifications Notification[]
 
+  profile   Profile? @relation(fields: [profileId], references: [id])
+  profileId String?
+
   @@map("dibursement")
+}
+
+model UserAction {
+  id String @id @default(uuid())
+
+  type UserActionType
+
+  natureId String
+  nature   TransactionNature @relation(fields: [natureId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  userId       String?
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  dibursements Dibursement[]
+  receipts     Receipt[]
+
+  companyId        String
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  dibursementDatas DibursementData[]
 }
 
 model Source {
@@ -1085,27 +1113,12 @@ model TransactionNature {
 
   receipts     Receipt[]
   dibursements Dibursement[]
-  allocations  Allocation[]
 
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  companyId   String
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  userActions UserAction[]
 
   @@map("transaction_nature")
-}
-
-model Allocation {
-  id   String @id @default(ulid())
-  name String
-
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
-
-  natureId String
-  nature   TransactionNature @relation(fields: [natureId], references: [id], onDelete: Cascade)
-
-  dibursements Dibursement[]
-
-  @@map("allocation")
 }
 
 model Deletion {
@@ -1192,29 +1205,28 @@ model NotificationRead {
 }
 
 model DibursementData {
-  id          String     @id @default(uuid())
-  date        DateTime
-  category    String
-  nature      String
-  amount      Decimal    @default(0) @db.Decimal(15, 2)
-  amountType  AmountType @default(HT)
-  periodStart DateTime?
-  periodEnd   DateTime?
-  isPaid      Boolean    @default(false)
+  id         String     @id @default(uuid())
+  date       DateTime
+  category   String
+  nature     String
+  amount     Decimal    @default(0) @db.Decimal(15, 2)
+  amountType AmountType @default(HT)
+  period     String     @default("")
+
+  isPaid Boolean @default(false)
 
   paymentType   String
   checkNumber   String?
   purchaseOrder String?
 
-  allocation    String?
   source        String?
   payOnBehalfOf String?
-  description   String?
-  comment       String?
-  client        String?
-  supplier      String?
+  infos         String?
   project       String?
   fiscalObject  String?
+
+  userActionId String?
+  userAction   UserAction? @relation(fields: [userActionId], references: [id], onDelete: SetNull)
 
   notifications Notification[]
 

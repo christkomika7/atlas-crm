@@ -1015,7 +1015,6 @@ export async function filters({
                     category: true,
                     nature: true,
                     source: true,
-                    client: true,
                     suppliers: true,
                 },
                 orderBy: {
@@ -1033,11 +1032,7 @@ export async function filters({
                 }
 
                 let beneficiary = "-";
-                if (d.client) {
-                    beneficiary = d.client.companyName
-                        ? d.client.companyName
-                        : [d.client.firstname, d.client.lastname].filter(Boolean).join(" ").trim() || "-";
-                } else if (d.suppliers.length > 0) {
+                if (d.suppliers.length > 0) {
                     const supplier = d.suppliers[0];
                     beneficiary = supplier.companyName
                         ? supplier.companyName
@@ -1052,7 +1047,7 @@ export async function filters({
                     nature: d.nature?.name || "-",
                     source: d.source?.name || "-",
                     beneficiary,
-                    description: d.description || "-",
+                    description: d.infos || "-",
                     paymentType: d.paymentType || "-",
                     amount: formatDecimal(amountDecimal),
                 };
@@ -1146,7 +1141,7 @@ export async function filters({
                         delayOver91: formatDecimal(delayOver91),
                     };
                 })
-                .filter(item => parseFloat(item.totalDue) > 0); // Retirer les éléments vides
+                .filter(item => parseFloat(item.totalDue) > 0);
 
             return result;
         }

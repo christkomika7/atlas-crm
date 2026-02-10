@@ -23,25 +23,20 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn, cutText, formatNumber } from "@/lib/utils";
 import useTransactionStore from "@/stores/transaction.store";
-import { AllocationType, FiscalObjectType, SourceType, TransactionCategoryType, TransactionDocument, TransactionNatureType, TransactionType } from "@/types/transaction.type";
+import { FiscalObjectType, SourceType, TransactionCategoryType, TransactionDocument, TransactionNatureType, TransactionType, UserActionType } from "@/types/transaction.type";
 import useQueryAction from "@/hook/useQueryAction";
 import { RequestResponse } from "@/types/api.types";
-import { createDibursement, getAllocations, getAllocationsByNature, getCategories, getDocuments, getFisclaObjects, getNatures, getSources } from "@/action/transaction.action";
+import { createDibursement, getCategories, getDocuments, getFisclaObjects, getNatures, getSources, getUserActionsByNature } from "@/action/transaction.action";
 import CategoryModal from "../../../../components/modal/category-modal";
 import NatureModal from "../../../../components/modal/nature-modal";
 import { acceptPayment } from "@/lib/data";
 import SourceModal from "../../../../components/modal/source-modal";
-import AllocationModal from "../../../../components/modal/allocation-modal";
-import { getCollaborators } from "@/action/user.action";
-import { ProfileType } from "@/types/user.types";
 import { ProjectType } from "@/types/project.types";
 import { getallByCompany } from "@/action/project.action";
-import { SupplierType } from "@/types/supplier.types";
-import { all as getallPartners } from "@/action/supplier.action";
-import { ADMINISTRATION_CATEGORY, DIBURSMENT_CATEGORY, FISCAL_NATURE, FISCAL_OBJECT, TRANSACTION_CATEGORIES } from "@/config/constant";
+import { ADMINISTRATION_CATEGORY, FISCAL_NATURE, FISCAL_OBJECT } from "@/config/constant";
 import FiscalObjectModal from "@/components/modal/fiscal-object-modal";
 import { $Enums } from "@/lib/generated/prisma";
-import { MultipleSelect } from "@/components/ui/multi-select";
+import UserActionModal from "../../../../components/modal/user-action-modal";
 
 type DibursementFormProps = {
   refreshTransaction: () => void
@@ -59,13 +54,11 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const setNatures = useTransactionStore.use.setNatures();
   const sources = useTransactionStore.use.sources();
   const setSources = useTransactionStore.use.setSources();
-  const allocations = useTransactionStore.use.allocations();
-  const setAllocations = useTransactionStore.use.setAllocations();
+  const userActions = useTransactionStore.use.userActions();
+  const setUserActions = useTransactionStore.use.setUserActions();
 
   const [categoryId, setCategoryId] = useState("");
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
-  const [collaborators, setCollaborators] = useState<ProfileType[]>([]);
-  const [partners, setPartners] = useState<SupplierType[]>([]);
   const [projects, setProjects] = useState<ProjectType[]>([]);
   const [category, setCategory] = useState("");
   const [paymentMode, setPaymentMode] = useState<"cash" | "check" | "bank-transfer">();
@@ -116,12 +109,12 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   );
 
   const {
-    mutate: mutateGetAllocations,
-    isPending: isGettingAllocations,
-  } = useQueryAction<{ natureId: string }, RequestResponse<AllocationType[]>>(
-    getAllocationsByNature,
+    mutate: mutateGetUserActions,
+    isPending: isGettingUserActions,
+  } = useQueryAction<{ natureId: string }, RequestResponse<UserActionType[]>>(
+    getUserActionsByNature,
     () => { },
-    "allocations"
+    "user-actions"
   );
 
 
@@ -135,32 +128,12 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   );
 
   const {
-    mutate: mutateGetCollborators,
-    isPending: isGettingCollaborators,
-  } = useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
-    getCollaborators,
-    () => { },
-    "collaborators"
-  );
-
-
-  const {
     mutate: mutateGetProjects,
     isPending: isGettingProjects,
   } = useQueryAction<{ companyId: string, projectStatus?: "loading" | "stop" }, RequestResponse<ProjectType[]>>(
     getallByCompany,
     () => { },
     "projects"
-  );
-
-
-  const {
-    mutate: mutateGetPartners,
-    isPending: isGettingPartners,
-  } = useQueryAction<{ id: string }, RequestResponse<SupplierType[]>>(
-    getallPartners,
-    () => { },
-    "suppliers"
   );
 
 
@@ -196,14 +169,6 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
         },
       });
 
-      mutateGetPartners({ id: companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setPartners(data.data);
-          }
-        },
-      });
-
       mutateGetSources({ companyId }, {
         onSuccess(data) {
           if (data.data) {
@@ -216,14 +181,6 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
         onSuccess(data) {
           if (data.data) {
             setDocuments(data.data)
-          }
-        },
-      });
-
-      mutateGetCollborators({ id: companyId }, {
-        onSuccess(data) {
-          if (data.data) {
-            setCollaborators(data.data)
           }
         },
       });
@@ -269,14 +226,14 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
 
   useEffect(() => {
     if (!natureId) {
-      setAllocations([]);
+      setUserActions([]);
       return;
     }
 
-    mutateGetAllocations(
+    mutateGetUserActions(
       { natureId },
       {
-        onSuccess: (data) => data.data && setAllocations(data.data),
+        onSuccess: (data) => data.data && setUserActions(data.data),
       }
     );
   }, [natureId]);
@@ -325,7 +282,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <DatePicker
-                      value={field.value}
+                      value={field.value ?? ""}
                       label="Date"
                       mode="single"
                       onChange={(e) => field.onChange(e as Date)}
@@ -373,6 +330,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      disabled={!categoryId}
                       isLoading={isGettingNatures}
                       datas={natures.map(nature => ({
                         id: nature.id,
@@ -396,24 +354,26 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
             />
             <FormField
               control={form.control}
-              name="allocation"
+              name="userAction"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      required={DIBURSMENT_CATEGORY.includes(category)}
-                      isLoading={isGettingAllocations}
-                      datas={allocations.map(allocation => ({
-                        id: allocation.id,
-                        label: allocation.name,
-                        value: allocation.id
+                      isLoading={isGettingUserActions}
+                      disabled={!natureId}
+                      datas={userActions.map(userAction => ({
+                        id: userAction.id,
+                        label: `${userAction.type === "CLIENT" ? `${userAction?.client?.lastname} ${userAction?.client?.firstname}` : `${userAction?.supplier?.lastname} ${userAction?.supplier?.firstname}`}`,
+                        value: userAction.id
                       }))}
-                      value={field.value || ""}
-                      setValue={field.onChange}
-                      placeholder="Allocation"
-                      searchMessage="Rechercher une allocation"
-                      noResultsMessage="Aucune allocation trouvée."
-                      addElement={<AllocationModal natureId={natureId} />}
+                      value={field.value as string}
+                      setValue={(e) => {
+                        field.onChange(e)
+                      }}
+                      placeholder="Fournisseur / Tiers"
+                      searchMessage="Rechercher un fournisseur ou un tiers"
+                      noResultsMessage="Aucun fournisseur ou tiers trouvé."
+                      addElement={<UserActionModal natureId={natureId} type="SUPPLIER" />}
                     />
                   </FormControl>
                   <FormMessage />
@@ -471,6 +431,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               )}
             />
           </div>
+
           <div className="gap-4.5 grid grid-cols-2">
             {ADMINISTRATION_CATEGORY === category && FISCAL_NATURE === nature ?
               <FormField
@@ -673,132 +634,45 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               )}
             />
           </div>
-          <div className={cn("gap-4.5 grid grid-cols-2")}>
-            <FormField
-              control={form.control}
-              name="partner"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <MultipleSelect
-
-                      isLoading={isGettingPartners}
-                      label="Partenaire"
-                      options={partners.map(partner => ({
-                        id: partner.id,
-                        label: `${cutText(partner.firstname + " " + partner.lastname)} - ${partner.companyName}`,
-                        value: partner.id
-                      }))}
-                      value={partners.map(partner =>
-                      ({
-                        id: partner.id,
-                        label: `${cutText(partner.firstname + " " + partner.lastname)} - ${partner.companyName}`,
-                        value: partner.id
-                      }))
-                        .filter(opt => field.value?.includes(opt.value))}
-                      onChange={opts => field.onChange(opts.map(opt => opt.value))}
-                      placeholder="Rechercher un partenaire"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="payOnBehalfOf"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      className="h-11"
-                      required={false}
-                      isLoading={isGettingCollaborators}
-                      datas={collaborators.map(collaborator => ({
-                        id: collaborator.id,
-                        label: `${collaborator.firstname} ${collaborator.lastname}`,
-                        value: collaborator.id
-                      }))}
-                      value={field.value ?? ""}
-                      setValue={field.onChange}
-                      placeholder="Sélectionner un tiers payeur"
-                      searchMessage="Rechercher un tiers payeur..."
-                      noResultsMessage="Aucun tiers payeur trouvé."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          {TRANSACTION_CATEGORIES.includes(category) &&
-            <FormField
-              control={form.control}
-              name="period"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <DatePicker
-                      label="Période"
-                      mode="range"
-                      value={
-                        field.value?.from && field.value.to
-                          ? {
-                            from: new Date(field.value.from),
-                            to: new Date(field.value.to),
-                          }
-                          : undefined
-                      }
-                      onChange={(value) => {
-                        field.onChange(value)
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          }
-          <div className="gap-4.5 grid grid-cols-2">
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      type="text"
-                      design="text-area"
-                      label="Description"
-                      required={false}
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="comment"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <TextInput
-                      type="text"
-                      design="text-area"
-                      label="Commentaire"
-                      required={false}
-                      value={field.value}
-                      handleChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="period"
+            render={({ field }) => (
+              <FormItem className="-space-y-2">
+                <FormControl>
+                  <TextInput
+                    required={true}
+                    height="h-11"
+                    type="text"
+                    design="float"
+                    label="Période"
+                    value={field.value}
+                    handleChange={field.onChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="information"
+            render={({ field }) => (
+              <FormItem className="-space-y-2">
+                <FormControl>
+                  <TextInput
+                    type="text"
+                    design="text-area"
+                    label="Information"
+                    required={true}
+                    value={field.value}
+                    handleChange={field.onChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="flex justify-center pt-2">

@@ -40,9 +40,7 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
   const [categoryValue, setCategoryValue] = useState<string[]>([]);
   const [natureValue, setNatureValue] = useState<string[]>([]);
   const [sourceValue, setSourceValue] = useState<string[]>([]);
-  const [collaborators, setCollaborators] = useState<ProfileType[]>([]);
   const [paymentModeValue, setPaymentModeValue] = useState<string[]>([]);
-  const [paidForValue, setPaidForValue] = useState<string>("");
 
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -68,19 +66,12 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
       "sources"
     );
 
-  const { mutate: mutateGetCollaborators, isPending: isGettingCollaborators } =
-    useQueryAction<{ id: string }, RequestResponse<ProfileType[]>>(
-      getCollaborators,
-      () => { },
-      "collaborators"
-    );
 
   useEffect(() => {
     if (companyId) {
       mutateGetCategories({ companyId, filter: true }, { onSuccess: data => data.data && setCategories(data.data) });
       mutateGetNatures({ companyId, filter: true }, { onSuccess: data => data.data && setNatures(data.data) });
       mutateGetSources({ companyId, filter: true }, { onSuccess: data => data.data && setSources(data.data) });
-      mutateGetCollaborators({ id: companyId }, { onSuccess: data => data.data && setCollaborators(data.data) });
     }
   }, [companyId]);
 
@@ -97,7 +88,6 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
       setNatureValue([]);
       setPaymentModeValue([]);
       setSourceValue([]);
-      setPaidForValue("");
       setStartDate(undefined);
       setEndDate(undefined);
 
@@ -120,7 +110,6 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
     if (natureValue.length) params.set("nature", natureValue.join(","));
     if (paymentModeValue.length) params.set("paymentMode", paymentModeValue.join(","));
     if (sourceValue.length) params.set("source", sourceValue.join(","));
-    if (paidForValue) params.set("paidFor", paidForValue);
     if (startDate) params.set("startDate", startDate.toISOString());
     if (endDate) params.set("endDate", endDate.toISOString());
 
@@ -129,20 +118,20 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
 
     const hasActiveFilters =
       movementValue.length || categoryValue.length || natureValue.length ||
-      paymentModeValue.length || sourceValue.length || paidForValue || startDate || endDate;
+      paymentModeValue.length || sourceValue.length || startDate || endDate;
 
     setFilters(hasActiveFilters ? "filter" : "empty");
     router.replace(url);
-  }, [movementValue, categoryValue, natureValue, paymentModeValue, sourceValue, paidForValue, startDate, endDate]);
+  }, [movementValue, categoryValue, natureValue, paymentModeValue, sourceValue, startDate, endDate]);
 
   return (
     <ScrollArea className="w-full overflow-x-auto">
       <div className="flex items-center gap-x-2 w-max py-2.5 pr-2">
-        <DatePicker label="Date de début" mode="single" className="w-[200px]" value={startDate} onChange={d => setStartDate(d as Date)} />
-        <DatePicker label="Date de fin" mode="single" className="w-[200px]" value={endDate} onChange={d => setEndDate(d as Date)} />
+        <DatePicker label="Date de début" mode="single" className="w-50" value={startDate} onChange={d => setStartDate(d as Date)} />
+        <DatePicker label="Date de fin" mode="single" className="w-50" value={endDate} onChange={d => setEndDate(d as Date)} />
 
         <MultipleSelect
-          className="w-[250px]"
+          className="w-62.5"
           label="Mouvement"
           options={movements}
           value={movements.filter(opt => movementValue.includes(opt.value))}
@@ -151,7 +140,7 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
         />
 
         <MultipleSelect
-          className="w-[250px]"
+          className="w-62.5"
           isLoading={isGettingCategories}
           label="Catégorie"
           options={categories.map(c => ({ id: c.id, label: c.name, value: c.id }))}
@@ -161,7 +150,7 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
         />
 
         <MultipleSelect
-          className="w-[250px]"
+          className="w-62.5"
           isLoading={isGettingNatures}
           label="Nature"
           options={natures.map(n => ({ id: n.id, label: n.name, value: n.id }))}
@@ -171,7 +160,7 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
         />
 
         <MultipleSelect
-          className="w-[250px]"
+          className="w-62.5"
           label="Mode paiement"
           options={acceptPayment}
           value={acceptPayment.filter(opt => paymentModeValue.includes(opt.value))}
@@ -180,25 +169,13 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
         />
 
         <MultipleSelect
-          className="w-[250px]"
+          className="w-62.5"
           isLoading={isGettingSources}
           label="Source"
           options={sources.map(s => ({ id: s.id, label: s.name, value: s.id }))}
           value={sources.map(s => ({ id: s.id, label: s.name, value: s.id })).filter(opt => sourceValue.includes(opt.value))}
           onChange={opts => setSourceValue(opts.map(opt => opt.value))}
           placeholder="Recherche sources"
-        />
-
-        <Combobox
-          className="w-[250px]"
-          isLoading={isGettingCollaborators}
-          datas={collaborators.map(c => ({ id: c.id, label: `${c.firstname} ${c.lastname}`, value: c.id }))}
-          value={paidForValue}
-          setValue={setPaidForValue}
-          required={false}
-          placeholder="Payé pour le compte"
-          searchMessage="Rechercher un compte"
-          noResultsMessage="Aucun compte trouvé."
         />
       </div>
       <ScrollBar orientation="horizontal" />

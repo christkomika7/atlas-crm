@@ -1588,21 +1588,10 @@ export async function generateTransactionsWordAndPDF(
     const sentence = `${datas.length} transaction${datas.length > 1 ? "s" : ""}`;
 
     const columns = [
-        "Date",
-        "Mouvement",
-        "Catégorie",
-        "Nature",
-        "HT Montant",
-        "TTC Montant",
-        "Mode de paiement",
-        "Numéro de chèque",
-        "Référence du document",
-        "Allocation",
-        "Source",
-        "Période",
-        "Payé pour le compte de",
-        "Payeur",
-        "Commentaire",
+        "Date", "Mouvement", "Catégorie", "Nature", "Information",
+        "HT Montant", "TTC Montant", "Mode de paiement", "Numéro de chèque",
+        "Référence du document", "Source", "Période",
+        "Client | Fournisseur | Tiers"
     ];
 
     const tableData: Record<string, any>[] = datas.map(transaction => ({
@@ -1610,8 +1599,7 @@ export async function generateTransactionsWordAndPDF(
         Mouvement: transaction.movement === "INFLOWS" ? "Entrée" : "Sortie",
         Catégorie: transaction.category?.name || "-",
         Nature: transaction.nature?.name || "-",
-        Description: transaction.description || "-",
-
+        Information: transaction.infos || "-",
         "HT Montant":
             transaction.amountType === "HT"
                 ? `${formatNumber(transaction.amount)} ${currency}`
@@ -1625,21 +1613,9 @@ export async function generateTransactionsWordAndPDF(
         "Mode de paiement": getPaymentModeLabel(transaction.paymentType),
         "Numéro de chèque": transaction.checkNumber || "-",
         "Référence du document": transaction.documentReference || "-",
-        Allocation: transaction.allocation?.name || "-",
         Source: transaction.source?.name || "-",
-        Période: period(transaction.periodStart, transaction.periodEnd),
-
-        "Payé pour le compte de": transaction.payOnBehalfOf
-            ? `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`
-            : "-",
-
-        Payeur: transaction.client
-            ? `${transaction.client.lastname} ${transaction.client.firstname}`
-            : transaction.payOnBehalfOf
-                ? `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`
-                : "-",
-
-        Commentaire: transaction.comment || "-",
+        Période: transaction.period,
+        clientOrSupplier: `${transaction.clientOrSupplierType === "CLIENT" ? `${transaction.userAction?.client?.lastname || ""} ${transaction.userAction?.client?.firstname || ""}` : `${transaction.userAction?.supplier?.lastname || ""} ${transaction.userAction?.supplier?.firstname || ""}`}`
     }));
 
     tableData.push(

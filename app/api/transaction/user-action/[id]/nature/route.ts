@@ -21,15 +21,21 @@ export async function GET(req: NextRequest) {
             message: "identifiant invalide.",
         }, { status: 404 });
     }
-    const allocations = await prisma.allocation.findMany({
+    const userActions = await prisma.userAction.findMany({
         where: {
             natureId: id
         },
+        include: {
+            client: true,
+            supplier: true,
+            user: true,
+            company: true
+        }
     });
 
     return NextResponse.json({
         state: "success",
-        data: allocations,
+        data: userActions,
     }, { status: 200 })
 }
 

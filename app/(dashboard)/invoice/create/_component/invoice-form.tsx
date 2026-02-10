@@ -137,7 +137,6 @@ export default function InvoiceForm() {
   const {
     mutate: mutateProject,
     isPending: isLoadingProject,
-    data: projectData,
   } = useQueryAction<{ clientId: string }, RequestResponse<ProjectType[]>>(
     allByClient,
     () => { },
@@ -206,7 +205,13 @@ export default function InvoiceForm() {
 
   useEffect(() => {
     if (clientId) {
-      mutateProject({ clientId });
+      mutateProject({ clientId }, {
+        onSuccess(data) {
+          if (data.data) {
+            setProject(data.data)
+          }
+        },
+      });
       mutateClient(
         { id: clientId },
         {
@@ -230,13 +235,6 @@ export default function InvoiceForm() {
       setClient(clientsData.data.find((c) => c.id === clientId));
     }
   }, [clientId, clientsData]);
-
-  useEffect(() => {
-    if (projectData?.data) {
-      setProject(projectData.data);
-    }
-  }, [projectData]);
-
 
   useEffect(() => {
     if (items.length > 0) {

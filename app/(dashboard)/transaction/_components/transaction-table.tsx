@@ -59,11 +59,8 @@ type SortField =
   | "byMovement"
   | "byCategory"
   | "byNature"
-  | "byDescription"
   | "byPaymentMode"
-  | "byAllocation"
   | "bySource"
-  | "byPaidOnBehalfOf";
 
 const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
   ({ selectedTransactionIds, setSelectedTransactionIds, setTransactions, setIsPending }, ref) => {
@@ -79,7 +76,6 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const movement = searchParams.get("movement");
     const paymentMode = searchParams.get("paymentMode");
     const source = searchParams.get("source");
-    const paidFor = searchParams.get("paidFor");
 
     const [totalItems, setTotalItems] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
@@ -122,7 +118,6 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
           natureValue: nature ? nature.split(",") : [],
           paymentModeValue: paymentMode ? paymentMode.split(",") : [],
           sourceValue: source ? source.split(",") : [],
-          paidForValue: paidFor || undefined,
           skip: (page - 1) * pageSize,
           take: pageSize,
           ...buildSortParams(sortField, sortOrder),
@@ -149,7 +144,6 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
         nature,
         paymentMode,
         source,
-        paidFor,
         pageSize,
         sortField,
         sortOrder,
@@ -179,7 +173,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
 
     useEffect(() => {
       loadTransactions(currentPage);
-    }, [companyId, currentPage, sortField, sortOrder, startDate, endDate, category, movement, paymentMode, source, paidFor, loadTransactions, readAccess]);
+    }, [companyId, currentPage, sortField, sortOrder, startDate, endDate, category, movement, paymentMode, source, loadTransactions, readAccess]);
 
     const isSelected = (id: string) =>
       selectedTransactionIds.some((transac) => transac.id === id);
@@ -196,20 +190,15 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                   { label: "Mouvement", field: "byMovement" },
                   { label: "Catégorie", field: "byCategory" },
                   { label: "Nature", field: "byNature" },
-                  { label: "Description", field: null },
                   { label: "HT Montant", field: null },
                   { label: "TTC Montant", field: null },
                   { label: "Mode de paiement", field: null },
                   { label: "Numéro de chèque", field: null },
-                  { label: "Partenaire", field: null },
-                  { label: "Client", field: null },
+                  { label: "Client | Fournisseurs tiers", field: null },
                   { label: "Référence du document", field: null },
-                  { label: "Allocation", field: null },
                   { label: "Source", field: null },
                   { label: "Période", field: null },
-                  { label: "Payé pour le compte de", field: null },
-                  { label: "Payeur", field: null },
-                  { label: "Commentaire", field: null },
+                  { label: "Infos", field: null },
                 ].map((col, idx) => (
                   <TableHead key={idx} className="font-medium text-center">
                     {col.field ? (
@@ -257,7 +246,6 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                     </TableCell>
                     <TableCell className="text-center">{transaction.category.name}</TableCell>
                     <TableCell className="text-center">{transaction.nature.name}</TableCell>
-                    <TableCell className="text-center">{transaction.description || "-"}</TableCell>
                     <TableCell className="text-center">
                       {transaction.amountType === "HT" ? `${formatNumber(transaction.amount)} ${currency}` : "-"}
                     </TableCell>
@@ -267,71 +255,35 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                     <TableCell className="text-center">{getPaymentModeLabel(transaction.paymentType)}</TableCell>
                     <TableCell className="text-center">{transaction.checkNumber || "-"}</TableCell>
                     <TableCell className="text-center">
-                      {transaction.suppliers?.length ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="cursor-pointer">
-                              {cutText(
-                                transaction.suppliers
-                                  .map((s) => `${s.lastname} ${s.firstname}`)
-                                  .join(", ")
-                              )}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            {transaction.suppliers
-                              .map((s) => ` ${s.lastname} ${s.firstname}`)
-                              .join(", ")}
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {transaction.client ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="cursor-pointer">
-                              {cutText(
-                                `${transaction.client.lastname} ${transaction.client.firstname}`
-                              )}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            {`${transaction.client.lastname} ${transaction.client.firstname}`}
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        "-"
-                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-pointer">
+                            {cutText(transaction.clientOrSupplier
+                            )}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          {transaction.clientOrSupplierType === "CLIENT" ? "Client: " : "Fournisseur: "}{transaction.clientOrSupplier}
+                        </TooltipContent>
+                      </Tooltip>
                     </TableCell>
                     <TableCell className="text-center">{transaction.documentReference}</TableCell>
-                    <TableCell className="text-center">{transaction.allocation?.name || "-"}</TableCell>
                     <TableCell className="text-center">{transaction.source?.name || "-"}</TableCell>
-                    <TableCell className="text-center">{period(transaction?.periodStart, transaction?.periodEnd)}</TableCell>
                     <TableCell className="text-center">
-                      {transaction.payOnBehalfOf ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="cursor-pointer">
-                              {cutText(
-                                `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`
-                              )}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            {`${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`}
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        "-"
-                      )}
+                      {transaction.period || "-"}
                     </TableCell>
                     <TableCell className="text-center">
-                      {transaction.payOnBehalfOf ? cutText(`${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`) : "-"}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-pointer">
+                            {cutText(transaction.infos || "-", 20)}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          {transaction.infos || "-"}
+                        </TooltipContent>
+                      </Tooltip>
                     </TableCell>
-                    <TableCell className="text-center">{transaction.comment || "-"}</TableCell>
                   </TableRow>
                 ))
               ) : (
@@ -352,7 +304,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
             maxVisiblePages={DEFAULT_PAGE_SIZE}
           />
         </div>
-      </AccessContainer>
+      </AccessContainer >
     );
   }
 );

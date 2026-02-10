@@ -28,7 +28,6 @@ export async function DELETE(req: NextRequest) {
         where: { id: { in: ids } },
         include: {
             company: true,
-            receipts: true,
             dibursements: true,
             contracts: true
         }
@@ -53,7 +52,6 @@ export async function DELETE(req: NextRequest) {
 
     for (const supplier of suppliers) {
         if (
-            supplier.receipts.length > 0 ||
             supplier.dibursements.length > 0 ||
             supplier.contracts.length > 0
         ) {

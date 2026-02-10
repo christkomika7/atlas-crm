@@ -1,3 +1,4 @@
+import { $Enums } from '@/lib/generated/prisma';
 import { INVOICE_PREFIX, PURCHASE_ORDER_PREFIX, DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { checkAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
@@ -39,7 +40,6 @@ export async function GET(req: NextRequest) {
     const categoryValues = searchParams.get("categoryValue")?.split(",") || [];
     const sourceValues = searchParams.get("sourceValue")?.split(",") || [];
     const natureValues = searchParams.get("natureValue")?.split(",") || [];
-    const paidForValue = searchParams.get("paidForValue");
     const paymentModeValues = searchParams.get("paymentModeValue")?.split(",") || [];
 
     const sortKeys = [
@@ -48,11 +48,8 @@ export async function GET(req: NextRequest) {
       "byMovement",
       "byCategory",
       "byNature",
-      "byDescription",
       "byPaymentMode",
-      "byAllocation",
       "bySource",
-      "byPaidOnBehalfOf",
     ] as const;
 
     const activeSort = sortKeys.find((key) => searchParams.has(key));
@@ -80,7 +77,6 @@ export async function GET(req: NextRequest) {
     if (paymentModeValues.length) baseWhere.paymentType = { in: paymentModeValues };
 
     const disbursementWhere = { ...baseWhere };
-    if (paidForValue) disbursementWhere.payOnBehalfOfId = paidForValue;
 
     const commonSelect = {
       id: true,
@@ -90,10 +86,9 @@ export async function GET(req: NextRequest) {
       movement: true,
       amount: true,
       amountType: true,
-      description: true,
+      infos: true,
       paymentType: true,
       checkNumber: true,
-      comment: true,
       createdAt: true,
       category: { select: { id: true, name: true } },
       nature: { select: { id: true, name: true } },
@@ -106,10 +101,14 @@ export async function GET(req: NextRequest) {
       orderBy: { date: "desc" },
       select: {
         ...commonSelect,
-        supplier: true,
         client: true,
         referenceInvoiceId: true,
         referenceInvoice: { select: { id: true, invoiceNumber: true } },
+        userAction: {
+          include: {
+            client: true
+          }
+        }
       },
     });
 
@@ -118,20 +117,20 @@ export async function GET(req: NextRequest) {
       orderBy: { date: "desc" },
       select: {
         ...commonSelect,
-        periodStart: true,
-        periodEnd: true,
+        period: true,
         suppliers: true,
-        client: true,
-        allocation: { select: { id: true, name: true } },
-        payOnBehalfOf: { select: { id: true, firstname: true, lastname: true } },
         referencePurchaseOrderId: true,
         referencePurchaseOrder: { select: { id: true, purchaseOrderNumber: true } },
+        userAction: {
+          include: {
+            supplier: true
+          }
+        }
       },
     });
 
     const normalizedReceipts = allReceipts.map((receipt) => ({
       ...receipt,
-      allocation: null,
       payOnBehalfOf: null,
       documentReference: receipt.referenceInvoice?.invoiceNumber
         ? `${receipt.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(
@@ -139,18 +138,22 @@ export async function GET(req: NextRequest) {
           false
         )}`
         : "-",
-      periodStart: null,
-      periodEnd: null,
+      period: "",
       type: receipt.type.toString(),
       movement: receipt.movement.toString(),
       amountType: receipt.amountType.toString(),
+      clientOrSupplier: receipt.userAction?.client ? receipt.userAction?.client?.firstname + " " + receipt.userAction?.client?.lastname : "-",
+      clientOrSupplierType: $Enums.UserActionType.CLIENT
     }));
+
+
 
     const normalizedDisbursements = allDisbursements.map((disbursement) => ({
       ...disbursement,
       type: disbursement.type.toString(),
-      periodStart: disbursement.periodStart,
-      periodEnd: disbursement.periodEnd,
+      period: disbursement.period,
+      clientOrSupplier: disbursement.userAction?.supplier ? disbursement.userAction?.supplier?.firstname + " " + disbursement.userAction?.supplier?.lastname : "-",
+      clientOrSupplierType: $Enums.UserActionType.SUPPLIER,
       movement: disbursement.movement.toString(),
       amountType: disbursement.amountType.toString(),
       documentReference: disbursement.referencePurchaseOrder?.purchaseOrderNumber
@@ -159,17 +162,9 @@ export async function GET(req: NextRequest) {
           false
         )}`
         : "-",
-      payOnBehalfOf: disbursement.payOnBehalfOf
-        ? {
-          id: disbursement.payOnBehalfOf.id,
-          firstname: disbursement.payOnBehalfOf.firstname || "",
-          lastname: disbursement.payOnBehalfOf.lastname || "",
-        }
-        : null,
     }));
 
     let allTransactions = [...normalizedReceipts, ...normalizedDisbursements];
-
     // Tri côté application
     allTransactions.sort((a, b) => {
       if (activeSort === "byAmount") {
@@ -182,12 +177,6 @@ export async function GET(req: NextRequest) {
         const aDate = new Date(a.date).getTime();
         const bDate = new Date(b.date).getTime();
         return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
-      }
-
-      if (activeSort === "byDescription") {
-        const aDesc = a.description || "";
-        const bDesc = b.description || "";
-        return sortOrder === "asc" ? aDesc.localeCompare(bDesc) : bDesc.localeCompare(aDesc);
       }
 
       if (activeSort === "byCategory") {
@@ -206,22 +195,10 @@ export async function GET(req: NextRequest) {
         return sortOrder === "asc" ? a.movement.localeCompare(b.movement) : b.movement.localeCompare(a.movement);
       }
 
-      if (activeSort === "byAllocation") {
-        const aAllocation = a.allocation?.name || "";
-        const bAllocation = b.allocation?.name || "";
-        return sortOrder === "asc" ? aAllocation.localeCompare(bAllocation) : bAllocation.localeCompare(aAllocation);
-      }
-
       if (activeSort === "bySource") {
         const aSource = a.source?.name || "";
         const bSource = b.source?.name || "";
         return sortOrder === "asc" ? aSource.localeCompare(bSource) : bSource.localeCompare(aSource);
-      }
-
-      if (activeSort === "byPaidOnBehalfOf") {
-        const aPaid = a.payOnBehalfOf ? `${a.payOnBehalfOf.lastname} ${a.payOnBehalfOf.firstname}` : "";
-        const bPaid = b.payOnBehalfOf ? `${b.payOnBehalfOf.lastname} ${b.payOnBehalfOf.firstname}` : "";
-        return sortOrder === "asc" ? aPaid.localeCompare(bPaid) : bPaid.localeCompare(aPaid);
       }
 
       return new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -233,28 +210,14 @@ export async function GET(req: NextRequest) {
     const formattedTransactions = paginatedTransactions.map((transaction) => ({
       ...transaction,
       checkNumber: transaction.checkNumber || null,
-      comment: transaction.comment || null,
-      description: transaction.description || null,
-      payOnBehalfOf: transaction.payOnBehalfOf
-        ? {
-          ...transaction.payOnBehalfOf,
-          name: `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`.trim(),
-        }
-        : null,
+      infos: transaction.infos || null,
     }));
 
 
     const formattedAllTransactions = allTransactions.map((transaction) => ({
       ...transaction,
       checkNumber: transaction.checkNumber || null,
-      comment: transaction.comment || null,
-      description: transaction.description || null,
-      payOnBehalfOf: transaction.payOnBehalfOf
-        ? {
-          ...transaction.payOnBehalfOf,
-          name: `${transaction.payOnBehalfOf.lastname} ${transaction.payOnBehalfOf.firstname}`.trim(),
-        }
-        : null,
+      infos: transaction.infos || null,
     }));
 
     return NextResponse.json({ state: "success", data: formattedTransactions, all: formattedAllTransactions, total }, { status: 200 });

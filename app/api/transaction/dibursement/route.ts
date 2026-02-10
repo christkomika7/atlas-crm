@@ -27,16 +27,13 @@ export async function POST(req: NextRequest) {
 
     const res = await req.json();
 
+
     const data = parseData<DibursementSchemaType>(dibursementSchema, {
         ...res,
         date: new Date(res.date),
-        period: res.period
-            ? {
-                from: new Date(res.period.from),
-                to: new Date(res.period.to),
-            }
-            : undefined,
     }) as DibursementSchemaType;
+
+
 
     const companyExist = await prisma.company.findUnique({ where: { id: data.companyId } });
 
@@ -60,10 +57,10 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    if (DIBURSMENT_CATEGORY.includes(category.name) && !data.allocation) {
+    if (!data.userAction) {
         return NextResponse.json(
-            { status: "error", message: "L'allocation est obligatoire pour le règlement fournisseur" },
-            { status: 400 }
+            { status: "error", message: "La valeur du Client | Fournisseur | Tiers est requise" },
+            { status: 404 }
         );
     }
 
@@ -82,18 +79,6 @@ export async function POST(req: NextRequest) {
         });
     }
 
-    if (data.allocation) {
-        Object.assign(referenceDocument, {
-            allocation: { connect: { id: data.allocation } },
-        });
-    }
-
-    if (data.period) {
-        Object.assign(referenceDocument, {
-            periodStart: data.period.from,
-            periodEnd: data.period.to,
-        });
-    }
 
     if (data.documentRef) {
         Object.assign(referenceDocument, {
@@ -101,25 +86,10 @@ export async function POST(req: NextRequest) {
         });
     }
 
-    if (data.partner && data.partner.length > 0) {
-        Object.assign(referenceDocument, {
-            suppliers: {
-                connect: [
-                    ...(data.partner?.map(partner => ({ id: partner })) || [])
-                ]
-            },
-        });
-    }
 
     if (data.project) {
         Object.assign(referenceDocument, {
             project: { connect: { id: data.project } },
-        });
-    }
-
-    if (data.payOnBehalfOf) {
-        Object.assign(referenceDocument, {
-            payOnBehalfOf: { connect: { id: data.payOnBehalfOf } },
         });
     }
 
@@ -183,19 +153,19 @@ export async function POST(req: NextRequest) {
                         nature: data.nature,
                         amount: data.amount,
                         amountType: data.amountType,
-                        periodStart: data.period?.from,
-                        periodEnd: data.period?.to,
+                        period: data.period,
                         paymentType: data.paymentMode,
                         checkNumber: data.checkNumber,
                         purchaseOrder: data.documentRef,
-                        allocation: data.allocation,
                         source: data.source,
-                        payOnBehalfOf: data.payOnBehalfOf,
-                        supplier: JSON.stringify(data.partner),
                         project: data.project,
                         fiscalObject: data.fiscalObject,
-                        description: data.description,
-                        comment: data.comment,
+                        infos: data.information,
+                        userAction: {
+                            connect: {
+                                id: data.userAction as string
+                            }
+                        }
                     }
                 });
                 await prisma.notification.create({
@@ -204,7 +174,7 @@ export async function POST(req: NextRequest) {
                         for: 'DISBURSEMENT',
                         message: `${user.name} a initié un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} », actuellement en attente de validation.
                         \nCommentaire : \n
-                        ${data.comment}
+                        ${data.information}
                         `,
                         dibursement: {
                             connect: { id: newDibursement.id }
@@ -226,7 +196,7 @@ export async function POST(req: NextRequest) {
                     createdAt: data.date,
                     amount: String(data.amount),
                     paymentMode: data.paymentMode,
-                    infos: data.description,
+                    infos: data.information,
                     purchaseOrder: { connect: { id: purchaseOrderId } },
                 },
             });
@@ -264,19 +234,19 @@ export async function POST(req: NextRequest) {
                     nature: data.nature,
                     amount: data.amount,
                     amountType: data.amountType,
-                    periodStart: data.period?.from,
-                    periodEnd: data.period?.to,
+                    period: data.period,
                     paymentType: data.paymentMode,
                     checkNumber: data.checkNumber,
                     purchaseOrder: data.documentRef,
-                    allocation: data.allocation,
                     source: data.source,
-                    payOnBehalfOf: data.payOnBehalfOf,
-                    supplier: JSON.stringify(data.partner),
                     project: data.project,
                     fiscalObject: data.fiscalObject,
-                    description: data.description,
-                    comment: data.comment,
+                    infos: data.information,
+                    userAction: {
+                        connect: {
+                            id: data.userAction
+                        }
+                    }
                 }
             });
 
@@ -286,7 +256,7 @@ export async function POST(req: NextRequest) {
                     for: 'DISBURSEMENT',
                     message: `${user.name} a initié un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} », actuellement en attente de validation.
                     \nCommentaire : \n
-                    ${data.comment}
+                    ${data.information}
                     `,
                     dibursement: {
                         connect: { id: newDibursement.id }
@@ -319,8 +289,12 @@ export async function POST(req: NextRequest) {
                 amountType: data.amountType,
                 paymentType: data.paymentMode,
                 checkNumber: data.checkNumber,
-                description: data.description,
-                comment: data.comment,
+                infos: data.information,
+                userAction: {
+                    connect: {
+                        id: data.userAction
+                    }
+                },
                 category: { connect: { id: data.category } },
                 source: { connect: { id: data.source } },
                 nature: { connect: { id: data.nature } },
@@ -335,7 +309,7 @@ export async function POST(req: NextRequest) {
                 for: 'DISBURSEMENT',
                 message: `${user.name} a réalisé un décaissement de ${formatNumber(data.amount)} ${companyExist.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} ».
                 \nCommentaire : \n
-                ${data.comment}
+                ${data.information}
                 `,
                 paymentDibursement: {
                     connect: { id: createdDibursement.id }

@@ -36,38 +36,61 @@ export async function POST(req: NextRequest) {
     }) as PurchaseOrderPaymentSchemaType;
 
     try {
-        if (!isAdmin) {
-            const purchaseExist = await prisma.purchaseOrder.findUnique({
-                where: { id },
-                select: {
-                    id: true,
-                    amountType: true,
-                    payee: true,
-                    totalTTC: true,
-                    totalHT: true,
-                    isPaid: true,
-                    supplierId: true,
-                    projectId: true,
-                    companyId: true,
-                    company: {
-                        select: {
-                            id: true,
-                            currency: true,
-                            profiles: {
-                                include: {
-                                    user: true
-                                }
+        const purchaseExist = await prisma.purchaseOrder.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                amountType: true,
+                payee: true,
+                totalTTC: true,
+                totalHT: true,
+                isPaid: true,
+                supplierId: true,
+                projectId: true,
+                companyId: true,
+                company: {
+                    select: {
+                        id: true,
+                        currency: true,
+                        profiles: {
+                            include: {
+                                user: true
                             }
                         }
-                    },
+                    }
                 },
-            });
+            },
+        });
+
+        if (!purchaseExist) {
+            throw new Error("Identifiant de bon de commande invalide.");
+        }
+
+        let categorie = await prisma.transactionCategory.findFirst({
+            where: {
+                id: data.category,
+            }
+        });
+
+
+        if (!categorie) {
+            throw new Error("Catégorie de transaction non trouvée.");
+        }
+
+
+
+        let nature = await prisma.transactionNature.findFirst({
+            where: {
+                id: data.nature,
+            }
+        });
+
+        if (!nature) {
+            throw new Error("Nature de transaction non trouvée.");
+        }
+        if (!isAdmin) {
 
             const source = await prisma.source.findUnique({ where: { id: data.source } });
-
-            if (!purchaseExist) {
-                throw new Error("Identifiant de bon de commande invalide.");
-            }
 
             if (!purchaseExist.projectId) {
                 throw new Error("Le bon de commande doit être lié à un projet pour pouvoir enregistrer un paiement.");
@@ -105,10 +128,28 @@ export async function POST(req: NextRequest) {
                     paymentType: data.mode,
                     checkNumber: data.checkNumber,
                     purchaseOrder: purchaseExist.id,
-                    allocation: data.allocation,
                     source: data.source,
-                    supplier: purchaseExist.supplierId,
-                    description: data.information,
+                    infos: data.information,
+                    userAction: {
+                        create: {
+                            supplier: {
+                                connect: {
+                                    id: purchaseExist.supplierId as string
+                                }
+                            },
+                            type: "SUPPLIER",
+                            nature: {
+                                connect: {
+                                    id: nature.id
+                                }
+                            },
+                            company: {
+                                connect: {
+                                    id: purchaseExist.companyId
+                                }
+                            }
+                        }
+                    }
                 }
             });
 
@@ -247,7 +288,7 @@ export async function POST(req: NextRequest) {
                     amountType: purchaseOrder.amountType,
                     checkNumber: data.checkNumber || "",
                     paymentType: data.mode,
-                    description: data.information || "",
+                    infos: data.information || "",
                     suppliers: {
                         connect: {
                             id: purchaseOrder.supplierId as string
@@ -268,9 +309,24 @@ export async function POST(req: NextRequest) {
                             id: data.nature
                         }
                     },
-                    allocation: {
-                        connect: {
-                            id: data.allocation
+                    userAction: {
+                        create: {
+                            type: "SUPPLIER",
+                            supplier: {
+                                connect: {
+                                    id: purchaseOrder.supplierId as string
+                                }
+                            },
+                            nature: {
+                                connect: {
+                                    id: nature.id
+                                }
+                            },
+                            company: {
+                                connect: {
+                                    id: purchaseOrder.companyId
+                                }
+                            }
                         }
                     },
                     source: {
