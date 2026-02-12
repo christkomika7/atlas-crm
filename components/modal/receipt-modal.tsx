@@ -330,7 +330,7 @@ export default function ReceiptModal({ closeModal, refreshData }: ReceiptModalPr
                                                 disabled={!natureId}
                                                 datas={userActions.map(userAction => ({
                                                     id: userAction.id,
-                                                    label: `${userAction.type === "CLIENT" ? `${userAction?.client?.lastname} ${userAction?.client?.firstname}` : `${userAction?.supplier?.lastname} ${userAction?.supplier?.firstname}`}`,
+                                                    label: userAction.name,
                                                     value: userAction.id
                                                 }))}
                                                 value={field.value as string}

@@ -38,6 +38,18 @@ import FiscalObjectModal from "@/components/modal/fiscal-object-modal";
 import { $Enums } from "@/lib/generated/prisma";
 import UserActionModal from "../../../../components/modal/user-action-modal";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
 type DibursementFormProps = {
   refreshTransaction: () => void
   closeModal: () => void;
@@ -67,6 +79,9 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   const [fiscalObject, setFiscalObject] = useState("");
   const [currentAmountType, setCurrentAmountType] = useState<$Enums.AmountType>();
   const [maxAmount, setMaxAmount] = useState<number | undefined>(undefined);
+
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [pendingData, setPendingData] = useState<DibursementSchemaType | null>(null);
 
   const form = useForm<DibursementSchemaType>({
     resolver: zodResolver(dibursementSchema)
@@ -258,6 +273,13 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
   async function submit(dibursementData: DibursementSchemaType) {
     const { success, data } = dibursementSchema.safeParse(dibursementData);
     if (!success) return;
+
+    if (!dibursementData.period) {
+      setPendingData(data);
+      setOpenConfirm(true);
+      return;
+    }
+
     mutateCreateDibursement(
       { ...data },
       {
@@ -265,248 +287,350 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
           form.reset();
           refreshTransaction();
           closeModal();
+          setOpenConfirm(false);
+          setPendingData(null);
+        },
+      }
+    );
+
+  }
+
+  function confirmSubmit() {
+    if (!pendingData) return;
+
+    mutateCreateDibursement(
+      { ...pendingData },
+      {
+        onSuccess() {
+          form.reset();
+          refreshTransaction();
+          closeModal();
+          setOpenConfirm(false);
+          setPendingData(null);
         },
       }
     );
   }
 
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(submit)} className="space-y-4.5 m-2">
-        <div className="space-y-4.5 max-w-full">
-          <div className="gap-4.5 grid grid-cols-2">
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <DatePicker
-                      value={field.value ?? ""}
-                      label="Date"
-                      mode="single"
-                      onChange={(e) => field.onChange(e as Date)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isGettingCategories}
-                      datas={categories.map(category => ({
-                        id: category.id,
-                        label: category.name,
-                        value: category.id
-                      }))}
-                      value={field.value}
-                      setValue={(e) => {
-                        getCategoryData(String(e))
-                        field.onChange(e)
-                      }}
-                      placeholder="Catégorie"
-                      searchMessage="Rechercher une catégorie"
-                      noResultsMessage="Aucune catégorie trouvée."
-                      addElement={<CategoryModal type="dibursement" />}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="gap-4.5 grid grid-cols-2">
-            <FormField
-              control={form.control}
-              name="nature"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      disabled={!categoryId}
-                      isLoading={isGettingNatures}
-                      datas={natures.map(nature => ({
-                        id: nature.id,
-                        label: nature.name,
-                        value: nature.id
-                      }))}
-                      value={field.value}
-                      setValue={(e) => {
-                        getNatureData(String(e))
-                        field.onChange(e)
-                      }}
-                      placeholder="Nature"
-                      searchMessage="Rechercher une nature"
-                      noResultsMessage="Aucune nature trouvée."
-                      addElement={<NatureModal categoryId={categoryId} />}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="userAction"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isGettingUserActions}
-                      disabled={!natureId}
-                      datas={userActions.map(userAction => ({
-                        id: userAction.id,
-                        label: `${userAction.type === "CLIENT" ? `${userAction?.client?.lastname} ${userAction?.client?.firstname}` : `${userAction?.supplier?.lastname} ${userAction?.supplier?.firstname}`}`,
-                        value: userAction.id
-                      }))}
-                      value={field.value as string}
-                      setValue={(e) => {
-                        field.onChange(e)
-                      }}
-                      placeholder="Fournisseur / Tiers"
-                      searchMessage="Rechercher un fournisseur ou un tiers"
-                      noResultsMessage="Aucun fournisseur ou tiers trouvé."
-                      addElement={<UserActionModal natureId={natureId} type="SUPPLIER" />}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-          </div>
-          <div className="gap-4.5 grid grid-cols-2">
-            <FormField
-              control={form.control}
-              name="paymentMode"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      datas={acceptPayment}
-                      value={field.value}
-                      setValue={e => {
-                        setPaymentMode(e as "check" | "cash" | "bank-transfer");
-                        field.onChange(e);
-                      }}
-                      placeholder="Mode de paiement"
-                      searchMessage="Rechercher un mode de paiement"
-                      noResultsMessage="Aucun mode de paiement trouvé."
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="source"
-              render={({ field }) => (
-                <FormItem className="-space-y-2">
-                  <FormControl>
-                    <Combobox
-                      isLoading={isGettingSources}
-                      datas={sources.map(source => ({
-                        id: source.id,
-                        label: source.name,
-                        value: source.id
-                      }))}
-                      value={field.value}
-                      setValue={field.onChange}
-                      placeholder="Source"
-                      searchMessage="Rechercher une source"
-                      noResultsMessage="Aucune source trouvée."
-                      addElement={<SourceModal sourceType={paymentMode} />}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="gap-4.5 grid grid-cols-2">
-            {ADMINISTRATION_CATEGORY === category && FISCAL_NATURE === nature ?
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(submit)}
+          className="space-y-4.5 m-2">
+          <div className="space-y-4.5 max-w-full">
+            <div className="gap-4.5 grid grid-cols-2">
               <FormField
                 control={form.control}
-                name="fiscalObject"
+                name="date"
                 render={({ field }) => (
                   <FormItem className="-space-y-2">
                     <FormControl>
-                      <Combobox
-                        required={true}
-                        isLoading={isGettingFiscalObjects}
-                        datas={fiscalObjects.map(fiscalObject => ({
-                          id: fiscalObject.id,
-                          label: `${cutText(fiscalObject.name)}`,
-                          value: fiscalObject.id
-                        }))}
-                        value={field.value || ""}
-                        setValue={e => {
-                          field.onChange(e)
-                          getFiscalObjectName(String(e))
-                        }}
-                        placeholder="Objet du paiement"
-                        searchMessage="Rechercher un objet de paiement"
-                        noResultsMessage="Aucun objet trouvé trouvé."
-                        addElement={<FiscalObjectModal />}
-
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              /> :
-              <FormField
-                control={form.control}
-                name="project"
-                render={({ field }) => (
-                  <FormItem className="-space-y-2">
-                    <FormControl>
-                      <Combobox
-                        required={false}
-                        isLoading={isGettingProjects}
-                        datas={projects.map(project => ({
-                          id: project.id,
-                          label: `${cutText(project.client.firstname + " " + project.client.lastname)} - ${project.name}`,
-                          value: project.id
-                        }))}
-                        value={field.value || ""}
-                        setValue={e => {
-                          field.onChange(e)
-                        }}
-                        placeholder="Projet"
-                        searchMessage="Rechercher un projet"
-                        noResultsMessage="Aucun projet trouvé."
+                      <DatePicker
+                        value={field.value ?? ""}
+                        label="Date"
+                        mode="single"
+                        onChange={(e) => field.onChange(e as Date)}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            }
 
-            <div className="flex gap-x-2">
               <FormField
                 control={form.control}
-                name="amount"
+                name="category"
                 render={({ field }) => (
-                  <FormItem className="-space-y-2 w-full">
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <Combobox
+                        isLoading={isGettingCategories}
+                        datas={categories.map(category => ({
+                          id: category.id,
+                          label: category.name,
+                          value: category.id
+                        }))}
+                        value={field.value}
+                        setValue={(e) => {
+                          getCategoryData(String(e))
+                          field.onChange(e)
+                        }}
+                        placeholder="Catégorie"
+                        searchMessage="Rechercher une catégorie"
+                        noResultsMessage="Aucune catégorie trouvée."
+                        addElement={<CategoryModal type="dibursement" />}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="gap-4.5 grid grid-cols-2">
+              <FormField
+                control={form.control}
+                name="nature"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <Combobox
+                        disabled={!categoryId}
+                        isLoading={isGettingNatures}
+                        datas={natures.map(nature => ({
+                          id: nature.id,
+                          label: nature.name,
+                          value: nature.id
+                        }))}
+                        value={field.value}
+                        setValue={(e) => {
+                          getNatureData(String(e))
+                          field.onChange(e)
+                        }}
+                        placeholder="Nature"
+                        searchMessage="Rechercher une nature"
+                        noResultsMessage="Aucune nature trouvée."
+                        addElement={<NatureModal categoryId={categoryId} />}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="userAction"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <Combobox
+                        isLoading={isGettingUserActions}
+                        disabled={!natureId}
+                        datas={userActions.map(userAction => ({
+                          id: userAction.id,
+                          label: userAction.name,
+                          value: userAction.id
+                        }))}
+                        value={field.value as string}
+                        setValue={(e) => {
+                          field.onChange(e)
+                        }}
+                        placeholder="Fournisseur / Tiers"
+                        searchMessage="Rechercher un fournisseur ou un tiers"
+                        noResultsMessage="Aucun fournisseur ou tiers trouvé."
+                        addElement={<UserActionModal natureId={natureId} type="SUPPLIER" />}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+            </div>
+            <div className="gap-4.5 grid grid-cols-2">
+              <FormField
+                control={form.control}
+                name="paymentMode"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <Combobox
+                        datas={acceptPayment}
+                        value={field.value}
+                        setValue={e => {
+                          setPaymentMode(e as "check" | "cash" | "bank-transfer");
+                          field.onChange(e);
+                        }}
+                        placeholder="Mode de paiement"
+                        searchMessage="Rechercher un mode de paiement"
+                        noResultsMessage="Aucun mode de paiement trouvé."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="source"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
+                    <FormControl>
+                      <Combobox
+                        isLoading={isGettingSources}
+                        datas={sources.map(source => ({
+                          id: source.id,
+                          label: source.name,
+                          value: source.id
+                        }))}
+                        value={field.value}
+                        setValue={field.onChange}
+                        placeholder="Source"
+                        searchMessage="Rechercher une source"
+                        noResultsMessage="Aucune source trouvée."
+                        addElement={<SourceModal sourceType={paymentMode} />}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="gap-4.5 grid grid-cols-2">
+              {ADMINISTRATION_CATEGORY === category && FISCAL_NATURE === nature ?
+                <FormField
+                  control={form.control}
+                  name="fiscalObject"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <Combobox
+                          required={true}
+                          isLoading={isGettingFiscalObjects}
+                          datas={fiscalObjects.map(fiscalObject => ({
+                            id: fiscalObject.id,
+                            label: `${cutText(fiscalObject.name)}`,
+                            value: fiscalObject.id
+                          }))}
+                          value={field.value || ""}
+                          setValue={e => {
+                            field.onChange(e)
+                            getFiscalObjectName(String(e))
+                          }}
+                          placeholder="Objet du paiement"
+                          searchMessage="Rechercher un objet de paiement"
+                          noResultsMessage="Aucun objet trouvé trouvé."
+                          addElement={<FiscalObjectModal />}
+
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                /> :
+                <FormField
+                  control={form.control}
+                  name="project"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <Combobox
+                          required={false}
+                          isLoading={isGettingProjects}
+                          datas={projects.map(project => ({
+                            id: project.id,
+                            label: `${cutText(project.client.firstname + " " + project.client.lastname)} - ${project.name}`,
+                            value: project.id
+                          }))}
+                          value={field.value || ""}
+                          setValue={e => {
+                            field.onChange(e)
+                          }}
+                          placeholder="Projet"
+                          searchMessage="Rechercher un projet"
+                          noResultsMessage="Aucun projet trouvé."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              }
+
+              <div className="flex gap-x-2">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2 w-full">
+                      <FormControl>
+                        <TextInput
+                          min={0}
+                          max={maxAmount}
+                          type="number"
+                          design="float"
+                          label="Montant"
+                          className="w-full"
+                          value={field.value}
+                          handleChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="amountType"
+                  render={({ field }) => (
+                    <FormItem className="-space-y-2">
+                      <FormControl>
+                        <RadioGroup
+                          defaultValue={field.value}
+                          onValueChange={field.onChange}
+                          className="flex -space-x-2"
+                        >
+                          {(
+                            FISCAL_OBJECT === fiscalObject ||
+                            currentAmountType === undefined ||
+                            currentAmountType === "HT"
+                          ) && (
+                              <div className="flex items-center max-h-11 space-x-2">
+                                <RadioGroupItem value="HT" id="HT" className="hidden" />
+                                <Label
+                                  htmlFor="HT"
+                                  className={cn(
+                                    "flex bg-gray px-3 py-1 rounded-md h-full",
+                                    field.value === "HT" && "bg-blue text-white"
+                                  )}
+                                >
+                                  HT
+                                </Label>
+                              </div>
+                            )}
+
+                          {(
+                            FISCAL_OBJECT !== fiscalObject &&
+                            (currentAmountType === undefined ||
+                              currentAmountType === "TTC")
+                          ) && (
+                              <div className="flex items-center max-h-11 space-x-2">
+                                <RadioGroupItem value="TTC" id="TTC" className="hidden" />
+                                <Label
+                                  htmlFor="TTC"
+                                  className={cn(
+                                    "flex bg-gray px-3 py-1 rounded-md h-full",
+                                    field.value === "TTC" && "bg-blue text-white"
+                                  )}
+                                >
+                                  TTC
+                                </Label>
+                              </div>
+                            )}
+                        </RadioGroup>
+
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            <div className="gap-4.5 grid grid-cols-2">
+              <FormField
+                control={form.control}
+                name="checkNumber"
+                render={({ field }) => (
+                  <FormItem className="-space-y-2">
                     <FormControl>
                       <TextInput
-                        min={0}
-                        max={maxAmount}
-                        type="number"
+                        required={false}
+                        height="h-11"
+                        type="text"
                         design="float"
-                        label="Montant"
-                        className="w-full"
+                        label="Numéro de chèque"
                         value={field.value}
                         handleChange={field.onChange}
                       />
@@ -515,68 +639,49 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name="amountType"
+                name="documentRef"
                 render={({ field }) => (
                   <FormItem className="-space-y-2">
                     <FormControl>
-                      <RadioGroup
-                        defaultValue={field.value}
-                        onValueChange={field.onChange}
-                        className="flex -space-x-2"
-                      >
-                        {(
-                          FISCAL_OBJECT === fiscalObject ||
-                          currentAmountType === undefined ||
-                          currentAmountType === "HT"
-                        ) && (
-                            <div className="flex items-center max-h-11 space-x-2">
-                              <RadioGroupItem value="HT" id="HT" className="hidden" />
-                              <Label
-                                htmlFor="HT"
-                                className={cn(
-                                  "flex bg-gray px-3 py-1 rounded-md h-full",
-                                  field.value === "HT" && "bg-blue text-white"
-                                )}
-                              >
-                                HT
-                              </Label>
-                            </div>
-                          )}
-
-                        {(
-                          FISCAL_OBJECT !== fiscalObject &&
-                          (currentAmountType === undefined ||
-                            currentAmountType === "TTC")
-                        ) && (
-                            <div className="flex items-center max-h-11 space-x-2">
-                              <RadioGroupItem value="TTC" id="TTC" className="hidden" />
-                              <Label
-                                htmlFor="TTC"
-                                className={cn(
-                                  "flex bg-gray px-3 py-1 rounded-md h-full",
-                                  field.value === "TTC" && "bg-blue text-white"
-                                )}
-                              >
-                                TTC
-                              </Label>
-                            </div>
-                          )}
-                      </RadioGroup>
-
+                      <Combobox
+                        required={false}
+                        isLoading={isGettingDocuments}
+                        datas={documents.map(document => ({
+                          id: document.id,
+                          label: `${document.reference}`,
+                          more: {
+                            type: document.type,
+                            price: `${formatNumber(document.price)} ${document.currency}`
+                          },
+                          value: document.id
+                        }))}
+                        value={field.value as string}
+                        setValue={e => {
+                          const doc = documents.find(d => d.id === e);
+                          setCurrentAmountType(doc?.amountType);
+                          if (doc) {
+                            setMaxAmount(Number(doc.payee));
+                            form.setValue("amountType", doc.amountType);
+                          } else {
+                            setMaxAmount(undefined)
+                          }
+                          field.onChange(e)
+                        }}
+                        placeholder="Référence du document"
+                        searchMessage="Rechercher une référence"
+                        noResultsMessage="Aucune référence trouvée."
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-          </div>
-          <div className="gap-4.5 grid grid-cols-2">
             <FormField
               control={form.control}
-              name="checkNumber"
+              name="period"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
@@ -585,7 +690,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
                       height="h-11"
                       type="text"
                       design="float"
-                      label="Numéro de chèque"
+                      label="Période"
                       value={field.value}
                       handleChange={field.onChange}
                     />
@@ -596,37 +701,17 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
             />
             <FormField
               control={form.control}
-              name="documentRef"
+              name="information"
               render={({ field }) => (
                 <FormItem className="-space-y-2">
                   <FormControl>
-                    <Combobox
-                      required={false}
-                      isLoading={isGettingDocuments}
-                      datas={documents.map(document => ({
-                        id: document.id,
-                        label: `${document.reference}`,
-                        more: {
-                          type: document.type,
-                          price: `${formatNumber(document.price)} ${document.currency}`
-                        },
-                        value: document.id
-                      }))}
-                      value={field.value as string}
-                      setValue={e => {
-                        const doc = documents.find(d => d.id === e);
-                        setCurrentAmountType(doc?.amountType);
-                        if (doc) {
-                          setMaxAmount(Number(doc.payee));
-                          form.setValue("amountType", doc.amountType);
-                        } else {
-                          setMaxAmount(undefined)
-                        }
-                        field.onChange(e)
-                      }}
-                      placeholder="Référence du document"
-                      searchMessage="Rechercher une référence"
-                      noResultsMessage="Aucune référence trouvée."
+                    <TextInput
+                      type="text"
+                      design="text-area"
+                      label="Information"
+                      required={true}
+                      value={field.value}
+                      handleChange={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />
@@ -634,57 +719,41 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               )}
             />
           </div>
-          <FormField
-            control={form.control}
-            name="period"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <TextInput
-                    required={true}
-                    height="h-11"
-                    type="text"
-                    design="float"
-                    label="Période"
-                    value={field.value}
-                    handleChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="information"
-            render={({ field }) => (
-              <FormItem className="-space-y-2">
-                <FormControl>
-                  <TextInput
-                    type="text"
-                    design="text-area"
-                    label="Information"
-                    required={true}
-                    value={field.value}
-                    handleChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
 
-        <div className="flex justify-center pt-2">
-          <Button
-            type="submit"
-            variant="primary"
-            className="justify-center max-w-xs"
-          >
-            {isCreatingDibursement ? <Spinner /> : "Enregistrer"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+          <div className="flex justify-center pt-2">
+            <Button
+              type="submit"
+              variant="primary"
+              className="justify-center max-w-xs"
+            >
+              {pendingData?.period && isCreatingDibursement ? <Spinner /> : "Enregistrer"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+      <AlertDialog open={openConfirm} onOpenChange={setOpenConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Confirmation
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir enregistrer sans avoir saisie la période ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={e => {
+              e.preventDefault();
+              e.stopPropagation()
+              confirmSubmit();
+            }}>
+              {isCreatingDibursement ? <Spinner /> : "Confirmer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

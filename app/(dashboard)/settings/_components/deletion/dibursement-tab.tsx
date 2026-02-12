@@ -1,18 +1,18 @@
 'use client';
 
-import { getDeletions, updateDeletion } from '@/action/deletion.action';
-import MissingData from '@/components/notification/missing-data';
-import Spinner from '@/components/ui/spinner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import useQueryAction from '@/hook/useQueryAction';
 import { formatDateToDashModel } from '@/lib/date';
 import { $Enums } from '@/lib/generated/prisma';
-import { generateAmaId } from '@/lib/utils';
 import { useDataStore } from '@/stores/data.store';
 import { RequestResponse } from '@/types/api.types';
 import { DeletionType } from '@/types/deletion.types';
 import { ListRestartIcon, Trash2 } from 'lucide-react';
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
+import { getDeletions, updateDeletion } from '@/action/deletion.action';
+
+import Spinner from '@/components/ui/spinner';
+import MissingData from '@/components/notification/missing-data';
+import useQueryAction from '@/hook/useQueryAction';
 
 export default function DibursementTab() {
     const companyId = useDataStore.use.currentCompany();

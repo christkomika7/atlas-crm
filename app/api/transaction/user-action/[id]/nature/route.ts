@@ -25,12 +25,6 @@ export async function GET(req: NextRequest) {
         where: {
             natureId: id
         },
-        include: {
-            client: true,
-            supplier: true,
-            user: true,
-            company: true
-        }
     });
 
     return NextResponse.json({

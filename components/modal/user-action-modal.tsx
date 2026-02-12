@@ -1,5 +1,3 @@
-import { all as getAllSuppliers } from "@/action/supplier.action";
-import { all as getAllClients } from "@/action/client.action";
 import { createUserAction, deleteUserAction } from "@/action/transaction.action";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,25 +10,21 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Spinner from "@/components/ui/spinner";
-import TextInput from "@/components/ui/text-input";
 import useQueryAction from "@/hook/useQueryAction";
-import { $Enums } from "@/lib/generated/prisma";
 import { UserActionSchemaType } from "@/lib/zod/transaction.schema";
 import { useDataStore } from "@/stores/data.store";
 import useTransactionStore from "@/stores/transaction.store";
 import { RequestResponse } from "@/types/api.types";
-import { SupplierType } from "@/types/supplier.types";
 import { UserActionType } from "@/types/transaction.type";
 import { PlusCircle, XIcon } from "lucide-react";
-import { Activity, useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { ClientType } from "@/types/client.types";
-import { Combobox } from "../ui/combobox";
+import TextInput from "../ui/text-input";
 
 
 type userActionProps = {
     natureId: string;
-    type: $Enums.UserActionType;
+    type: "CLIENT" | "SUPPLIER";
 }
 
 export default function userAction({ natureId, type }: userActionProps) {
@@ -39,10 +33,8 @@ export default function userAction({ natureId, type }: userActionProps) {
     const userActions = useTransactionStore.use.userActions();
     const addUserAction = useTransactionStore.use.addUserAction();
     const removeUserAction = useTransactionStore.use.removeUserAction();
-    const [clients, setClients] = useState<ClientType[]>([]);
-    const [selectedClient, setSelectedClient] = useState<string>("");
-    const [suppliers, setSuppliers] = useState<SupplierType[]>([]);
-    const [selectedSupplier, setSelectedSupplier] = useState<string>("");
+    const [name, setName] = useState("");
+
 
     const [open, setOpen] = useState(false);
     const [currentId, setCurrentId] = useState("");
@@ -53,24 +45,6 @@ export default function userAction({ natureId, type }: userActionProps) {
     >(createUserAction, () => { }, "user-action");
 
     const {
-        mutate: mutateGetSuppliers,
-        isPending: isGettingSuppliers,
-    } = useQueryAction<{ id: string }, RequestResponse<SupplierType[]>>(
-        getAllSuppliers,
-        () => { },
-        "suppliers"
-    );
-
-    const {
-        mutate: mutateGetClients,
-        isPending: isGettingClients,
-    } = useQueryAction<{ id: string }, RequestResponse<ClientType[]>>(
-        getAllClients,
-        () => { },
-        "clients"
-    );
-
-    const {
         mutate: mutateRemoveUserAction,
         isPending: isRemovingUserAction,
     } = useQueryAction<{ userActionId: string }, RequestResponse<UserActionType>>(
@@ -78,22 +52,6 @@ export default function userAction({ natureId, type }: userActionProps) {
         () => { },
         "user-action"
     );
-
-
-    useEffect(() => {
-        mutateGetClients({ id: companyId }, {
-            onSuccess(data) {
-                setClients(data.data || []);
-            },
-        });
-
-        mutateGetSuppliers({ id: companyId }, {
-            onSuccess(data) {
-                setSuppliers(data.data || []);
-            },
-        });
-
-    }, [type, companyId])
 
     function retrieveUserAction(
         e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
@@ -110,8 +68,7 @@ export default function userAction({ natureId, type }: userActionProps) {
                 onSuccess(data) {
                     if (data.data) {
                         removeUserAction(data.data.id);
-                        setSelectedClient("");
-                        setSelectedSupplier("");
+                        setName("");
                     }
                 },
             }
@@ -123,24 +80,17 @@ export default function userAction({ natureId, type }: userActionProps) {
         e.preventDefault();
 
         if (!companyId) return toast.error("Aucune entreprise trouvée.");
-        if (!type) return toast.error("Aucun type trouvé.");
         if (!natureId) return toast.error("Aucune nature est trouvée.");
+        if (!name) return toast.error("Aucun nom trouvé.");
 
-        if (type === "CLIENT") {
-            if (!selectedClient) return toast.error("Aucun client sélectionné.");
-        }
-        if (type === "SUPPLIER") {
-            if (!selectedSupplier) return toast.error("Aucun fournisseur sélectionné.");
-        }
 
         mutateCreateUserAction(
-            { companyId, natureId, type, clientOrSupplierId: type === "CLIENT" ? selectedClient : selectedSupplier },
+            { companyId, natureId, name },
             {
                 onSuccess(data) {
                     if (data.data) {
                         addUserAction(data.data);
-                        setSelectedClient("");
-                        setSelectedSupplier("");
+                        setName("");
                     }
                 },
             }
@@ -155,7 +105,7 @@ export default function userAction({ natureId, type }: userActionProps) {
                     variant="primary"
                     className="h-9! font-medium"
                 >
-                    <PlusCircle className="fill-white stroke-blue w-6! h-6!" /> Ajouter un {type === "CLIENT" ? "client" : "fournisseur"}
+                    <PlusCircle className="fill-white stroke-blue w-6! h-6!" /> Ajouter un {type === "CLIENT" ? "client | tiers" : "fournisseur | tiers"}
                 </Button>
             </DialogTrigger>
             <DialogContent className="min-w-sm">
@@ -176,7 +126,7 @@ export default function userAction({ natureId, type }: userActionProps) {
                                         key={userAction.id}
                                         className="flex justify-between items-center gap-x-2 hover:bg-neutral-50 p-2 rounded-lg font-medium text-sm"
                                     >
-                                        {`${userAction.type === "CLIENT" ? `${userAction?.client?.lastname} ${userAction?.client?.firstname}` : `${userAction?.supplier?.lastname} ${userAction?.supplier?.firstname}`}`}
+                                        {userAction.name}
                                         <div className="flex items-center gap-x-2">
                                             <span
                                                 onClick={(e) =>
@@ -195,30 +145,12 @@ export default function userAction({ natureId, type }: userActionProps) {
                         </ul>
                     </ScrollArea>
                     <div className="items-center gap-x-2 grid grid-cols-[3fr_1fr]">
-                        <Activity mode={type === "CLIENT" ? "visible" : "hidden"}>
-                            <Combobox
-                                required={false}
-                                datas={clients.map(client => ({ id: client.id, label: `${client.lastname} ${client.firstname}`, value: client.id }))}
-                                value={selectedClient}
-                                isLoading={isGettingClients}
-                                setValue={setSelectedClient}
-                                placeholder="Client"
-                                searchMessage="Rechercher un client"
-                                noResultsMessage="Aucun client trouvé."
-                            />
-                        </Activity>
-                        <Activity mode={type === "SUPPLIER" ? "visible" : "hidden"}>
-                            <Combobox
-                                required={false}
-                                datas={suppliers.map(supplier => ({ id: supplier.id, label: `${supplier.lastname} ${supplier.firstname}`, value: supplier.id }))}
-                                value={selectedSupplier}
-                                isLoading={isGettingSuppliers}
-                                setValue={setSelectedSupplier}
-                                placeholder="Fournisseur"
-                                searchMessage="Rechercher un fournisseur"
-                                noResultsMessage="Aucun fournisseur trouvé."
-                            />
-                        </Activity>
+                        <TextInput
+                            design="float"
+                            label={`valeur du ${type === "CLIENT" ? "client | tiers" : "fournisseur | tiers"}`}
+                            value={name}
+                            handleChange={(e) => setName(e as string)}
+                        />
                         <Button
                             onClick={submit}
                             variant="primary"

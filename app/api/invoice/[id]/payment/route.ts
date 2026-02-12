@@ -214,12 +214,7 @@ export async function POST(req: NextRequest) {
                     },
                     userAction: {
                         create: {
-                            client: {
-                                connect: {
-                                    id: invoice.clientId as string
-                                }
-                            },
-                            type: "CLIENT",
+                            name: invoice.client!.companyName,
                             nature: {
                                 connect: {
                                     id: nature.id

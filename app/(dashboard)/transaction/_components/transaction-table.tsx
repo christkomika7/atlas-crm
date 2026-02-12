@@ -263,7 +263,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                           </span>
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          {transaction.clientOrSupplierType === "CLIENT" ? "Client: " : "Fournisseur: "}{transaction.clientOrSupplier}
+                          {transaction.clientOrSupplier}
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>

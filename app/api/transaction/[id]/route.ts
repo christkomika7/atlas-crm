@@ -104,11 +104,7 @@ export async function GET(req: NextRequest) {
         client: true,
         referenceInvoiceId: true,
         referenceInvoice: { select: { id: true, invoiceNumber: true } },
-        userAction: {
-          include: {
-            client: true
-          }
-        }
+        userAction: true
       },
     });
 
@@ -121,11 +117,7 @@ export async function GET(req: NextRequest) {
         suppliers: true,
         referencePurchaseOrderId: true,
         referencePurchaseOrder: { select: { id: true, purchaseOrderNumber: true } },
-        userAction: {
-          include: {
-            supplier: true
-          }
-        }
+        userAction: true
       },
     });
 
@@ -142,8 +134,7 @@ export async function GET(req: NextRequest) {
       type: receipt.type.toString(),
       movement: receipt.movement.toString(),
       amountType: receipt.amountType.toString(),
-      clientOrSupplier: receipt.userAction?.client ? receipt.userAction?.client?.firstname + " " + receipt.userAction?.client?.lastname : "-",
-      clientOrSupplierType: $Enums.UserActionType.CLIENT
+      clientOrSupplier: receipt.userAction?.name || "-",
     }));
 
 
@@ -152,8 +143,7 @@ export async function GET(req: NextRequest) {
       ...disbursement,
       type: disbursement.type.toString(),
       period: disbursement.period,
-      clientOrSupplier: disbursement.userAction?.supplier ? disbursement.userAction?.supplier?.firstname + " " + disbursement.userAction?.supplier?.lastname : "-",
-      clientOrSupplierType: $Enums.UserActionType.SUPPLIER,
+      clientOrSupplier: disbursement.userAction?.name || "-",
       movement: disbursement.movement.toString(),
       amountType: disbursement.amountType.toString(),
       documentReference: disbursement.referencePurchaseOrder?.purchaseOrderNumber

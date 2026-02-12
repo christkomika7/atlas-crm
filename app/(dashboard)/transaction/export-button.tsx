@@ -76,7 +76,7 @@ export default function ExportButton({ transactions, isLoading }: ExportButtonPr
             "Mode de paiement": getPaymentModeLabel(transaction.paymentType),
             "Numéro de chèque": transaction.checkNumber || "-",
             "Référence du document": transaction.documentReference || "-",
-            "Client / Fournisseur / Tiers": transaction.userAction?.type === "CLIENT" ? `${transaction.userAction.client.lastname} ${transaction.userAction.client.firstname}` : transaction.userAction?.type === `SUPPLIER` ? `${transaction.userAction.supplier.lastname} ${transaction.userAction.supplier.firstname}` : "-",
+            "Client / Fournisseur / Tiers": transaction.userAction?.name || "-",
             Source: transaction.source?.name || "-",
             Période: transaction.period,
         }));

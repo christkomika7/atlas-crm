@@ -1615,7 +1615,7 @@ export async function generateTransactionsWordAndPDF(
         "Référence du document": transaction.documentReference || "-",
         Source: transaction.source?.name || "-",
         Période: transaction.period,
-        clientOrSupplier: `${transaction.clientOrSupplierType === "CLIENT" ? `${transaction.userAction?.client?.lastname || ""} ${transaction.userAction?.client?.firstname || ""}` : `${transaction.userAction?.supplier?.lastname || ""} ${transaction.userAction?.supplier?.firstname || ""}`}`
+        clientOrSupplier: transaction.userAction?.name || "-",
     }));
 
     tableData.push(

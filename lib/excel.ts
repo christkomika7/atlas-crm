@@ -88,7 +88,7 @@ export async function generateTransactionsExcel(
             documentReference: tx.documentReference || "-",
             source: tx.source?.name || "-",
             period: tx.period,
-            clientOrSupplier: `${tx.clientOrSupplierType === "CLIENT" ? `${tx.userAction?.client?.lastname || ""} ${tx.userAction?.client?.firstname || ""}` : `${tx.userAction?.supplier?.lastname || ""} ${tx.userAction?.supplier?.firstname || ""}`}`
+            clientOrSupplier: tx.userAction?.name || "-",
         });
 
         row.eachCell((cell) => {

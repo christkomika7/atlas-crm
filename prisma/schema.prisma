@@ -23,11 +23,6 @@ enum NotificationType {
   CONFIRM
 }
 
-enum UserActionType {
-  CLIENT
-  SUPPLIER
-}
-
 enum NotificationKindOf {
   INVOICE
   PURCHASE_ORDER
@@ -224,7 +219,6 @@ model User {
   deliveryNotes     DeliveryNote[]
   notifications     Notification[]
   notificationReads NotificationRead[]
-  userActions       UserAction[]
 
   @@map("user")
 }
@@ -302,7 +296,6 @@ model Supplier {
   purchaseOrders PurchaseOrder[]
   dibursements   Dibursement[]
   contracts      Contract[]
-  userActions    UserAction[]
 
   @@map("supplier")
 }
@@ -344,9 +337,8 @@ model Client {
   receipts      Receipt[]
   contracts     Contract[]
 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  userActions UserAction[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("client")
 }
@@ -1038,25 +1030,17 @@ model Dibursement {
 model UserAction {
   id String @id @default(uuid())
 
-  type UserActionType
+  name String @default("")
 
   natureId String
   nature   TransactionNature @relation(fields: [natureId], references: [id], onDelete: Cascade)
 
-  clientId String?
-  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
-
-  supplierId String?
-  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-
-  userId       String?
-  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  dibursements Dibursement[]
-  receipts     Receipt[]
-
-  companyId        String
-  company          Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  dibursements     Dibursement[]
+  receipts         Receipt[]
   dibursementDatas DibursementData[]
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
 }
 
 model Source {

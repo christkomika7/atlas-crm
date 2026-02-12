@@ -26,10 +26,9 @@ export const sourceSchema = z.object({
 });
 
 export const userActionSchema = z.object({
-    type: z.enum($Enums.UserActionType),
+    name: z.string({ error: "Le nom est requis." }),
     companyId: z.string({ error: "Aucune entreprise sélectionnée." }),
     natureId: z.string({ error: "Aucune nature a été sélectionnée." }),
-    clientOrSupplierId: z.string({ error: "L'id du client ou du fournisseur est obligatoire." })
 });
 
 export type CategorySchemaType = z.infer<typeof categorySchema>;

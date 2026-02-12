@@ -7,7 +7,7 @@ export const dibursementSchema = z.object({
     nature: z.string({ error: "La nature est requise." }),
     information: z.string({ error: "Le champ information est requis." }).min(20, { error: "Minimum 20 caractères sont requis." }),
     amount: z.number({ error: "Le montant est requis." }),
-    period: z.string({ error: "La période est requise." }),
+    period: z.string().optional(),
     project: z.string().optional(),
     fiscalObject: z.string().optional(),
     amountType: z.enum(["HT", "TTC"], { message: "Le type de montant est requis." }),

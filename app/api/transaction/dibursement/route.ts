@@ -234,7 +234,7 @@ export async function POST(req: NextRequest) {
                     nature: data.nature,
                     amount: data.amount,
                     amountType: data.amountType,
-                    period: data.period,
+                    period: data.period || "-",
                     paymentType: data.paymentMode,
                     checkNumber: data.checkNumber,
                     purchaseOrder: data.documentRef,

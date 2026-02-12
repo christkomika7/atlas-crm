@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
                 supplierId: true,
                 projectId: true,
                 companyId: true,
+                supplier: true,
                 company: {
                     select: {
                         id: true,
@@ -132,12 +133,7 @@ export async function POST(req: NextRequest) {
                     infos: data.information,
                     userAction: {
                         create: {
-                            supplier: {
-                                connect: {
-                                    id: purchaseExist.supplierId as string
-                                }
-                            },
-                            type: "SUPPLIER",
+                            name: purchaseExist.supplier?.companyName || "Fournisseur inconnu",
                             nature: {
                                 connect: {
                                     id: nature.id
@@ -311,12 +307,7 @@ export async function POST(req: NextRequest) {
                     },
                     userAction: {
                         create: {
-                            type: "SUPPLIER",
-                            supplier: {
-                                connect: {
-                                    id: purchaseOrder.supplierId as string
-                                }
-                            },
+                            name: purchaseExist.supplier?.companyName || "Fournisseur inconnu",
                             nature: {
                                 connect: {
                                     id: nature.id

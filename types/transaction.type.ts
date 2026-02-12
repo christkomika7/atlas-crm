@@ -45,7 +45,7 @@ export type TransactionType = {
   payOnBehalfOf?: ClientType;
 
   clientOrSupplier: string;
-  clientOrSupplierType: $Enums.UserActionType;
+  clientOrSupplierType: UserActionType;
 
   infos?: string;
 
@@ -75,22 +75,13 @@ export type SourceType = {
 
 export type UserActionType = {
   id: string;
-  type: $Enums.UserActionType;
+  name: string;
 
   natureId: string;
   nature: TransactionNatureType;
 
-  clientId: string;
-  client: ClientType;
-
-  supplierId: string;
-  supplier: SupplierType;
-
   companyId: string;
   company: CompanyType;
-
-
-
 };
 
 export type FiscalObjectType = {
