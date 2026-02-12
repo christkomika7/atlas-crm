@@ -719,7 +719,6 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               )}
             />
           </div>
-
           <div className="flex justify-center pt-2">
             <Button
               type="submit"
@@ -749,7 +748,7 @@ export default function DibursementForm({ closeModal, refreshTransaction }: Dibu
               e.stopPropagation()
               confirmSubmit();
             }}>
-              {isCreatingDibursement ? <Spinner /> : "Confirmer"}
+              {isCreatingDibursement ? <Spinner /> : "Valider"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
