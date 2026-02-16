@@ -52,6 +52,29 @@ export async function DELETE(req: NextRequest) {
         }, { status: 404 });
     }
 
+    const action = await prisma.userAction.findUnique({
+        where: { id },
+        include: {
+            receipts: true,
+            dibursements: true,
+        }
+    })
+
+    if (action?.receipts && action.receipts.length > 0) {
+        return NextResponse.json({
+            state: "error",
+            message: "Impossible de supprimer ce client | fournisseur | tier car des encaissements sont liés à ce client | fournisseur | tier.",
+        }, { status: 409 });
+    }
+
+    if (action?.dibursements && action.dibursements.length > 0) {
+        return NextResponse.json({
+            state: "error",
+            message: "Impossible de supprimer ce client | fournisseur | tier car des décaissements sont liés à ce client | fournisseur | tier.",
+        }, { status: 409 });
+
+    }
+
     const deletedUserAction = await prisma.userAction.delete({ where: { id } });
     return NextResponse.json({
         state: "success",

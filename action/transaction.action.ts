@@ -540,6 +540,7 @@ export async function createReceipt(data: ReceiptSchemaType) {
 }
 
 export async function createDibursement(data: DibursementSchemaType) {
+
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/dibursement`,

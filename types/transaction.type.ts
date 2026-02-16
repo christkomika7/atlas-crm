@@ -39,6 +39,8 @@ export type TransactionType = {
   sourceId?: string;
   source?: SourceType;
 
+  hasDelete: boolean;
+
   period: string | null;
 
   payOnBehalfOfId?: string;

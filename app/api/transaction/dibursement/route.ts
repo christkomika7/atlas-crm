@@ -1,11 +1,12 @@
-import { DIBURSMENT_CATEGORY, FISCAL_NATURE } from "@/config/constant";
-import { checkAccess, sessionAccess } from "@/lib/access"
-import { parseData } from "@/lib/parse";
-import prisma from "@/lib/prisma";
+import { FISCAL_NATURE } from "@/config/constant";
 import { formatNumber } from "@/lib/utils";
 import { dibursementSchema, DibursementSchemaType } from "@/lib/zod/dibursement.schema";
-import Decimal from "decimal.js";
 import { type NextRequest, NextResponse } from "next/server"
+import { checkAccess, sessionAccess } from "@/lib/access"
+import { parseData } from "@/lib/parse";
+
+import prisma from "@/lib/prisma";
+import Decimal from "decimal.js";
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess("TRANSACTION", ["CREATE"]);
@@ -286,6 +287,7 @@ export async function POST(req: NextRequest) {
                 date: data.date,
                 movement: "OUTFLOWS",
                 amount: String(data.amount),
+                period: data.period,
                 amountType: data.amountType,
                 paymentType: data.paymentMode,
                 checkNumber: data.checkNumber,

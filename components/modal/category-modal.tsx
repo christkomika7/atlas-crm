@@ -97,9 +97,9 @@ export default function CategoryModal({ type }: CategoryModalProps) {
                 <Button
                     onClick={() => setOpen(!open)}
                     variant="primary"
-                    className="!h-9 font-medium"
+                    className="h-9! font-medium"
                 >
-                    <PlusCircle className="fill-white stroke-blue !w-6 !h-6" /> Ajouter un
+                    <PlusCircle className="fill-white stroke-blue w-6! h-6!" /> Ajouter un
                     Catégorie
                 </Button>
             </DialogTrigger>
@@ -109,7 +109,7 @@ export default function CategoryModal({ type }: CategoryModalProps) {
                     <DialogDescription></DialogDescription>
                 </DialogHeader>
                 <div className="">
-                    <ScrollArea className="h-[200px]">
+                    <ScrollArea className="h-50">
                         <ul>
                             {categories.length === 0 ? (
                                 <li className="bg-neutral-50 p-3 rounded-lg text-sm text-center">
@@ -129,7 +129,7 @@ export default function CategoryModal({ type }: CategoryModalProps) {
                                                 }
                                                 className="flex justify-center items-center bg-red/10 rounded-full w-5 h-5 text-red cursor-pointer"
                                             >
-                                                <XIcon className="w-[13px] h-[13px]" />
+                                                <XIcon className="w-3.25 h-3.25" />
                                             </span>{" "}
                                             {currentId === category.id &&
                                                 isRemovingCategory && <Spinner size={10} />}

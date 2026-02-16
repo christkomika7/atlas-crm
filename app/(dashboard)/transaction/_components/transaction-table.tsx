@@ -32,8 +32,8 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
 } from "lucide-react";
-import { formatDateToDashModel, period } from "@/lib/date";
-import { cutText, formatNumber, getPaymentModeLabel } from "@/lib/utils";
+import { formatDateToDashModel } from "@/lib/date";
+import { cn, cutText, formatNumber, getPaymentModeLabel } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
 import { $Enums } from "@/lib/generated/prisma";
 import Paginations from "@/components/paginations";
@@ -178,6 +178,8 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const isSelected = (id: string) =>
       selectedTransactionIds.some((transac) => transac.id === id);
 
+    console.log({ datas })
+
     return (
       <AccessContainer hasAccess={readAccess} resource="TRANSACTION" loading={loading} >
         <div className="border border-neutral-200 rounded-xl flex flex-col justify-between h-full">
@@ -229,9 +231,13 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                 datas.map((transaction) => (
                   <TableRow
                     key={transaction.id}
-                    className={`h-16 transition-colors ${isSelected(transaction.id) ? "bg-neutral-100" : ""}`}
+                    className={cn("h-16 transition-colors", {
+                      "bg-neutral-100": isSelected(transaction.id),
+                      "bg-red/20! cursor-not-allowed": transaction.hasDelete
+                    })}
                   ><TableCell className="text-center">
                       <Checkbox
+                        disabled={transaction.hasDelete}
                         checked={isSelected(transaction.id)}
                         onCheckedChange={(checked) =>
                           toggleSelection(transaction.id, !!checked, transaction.type)

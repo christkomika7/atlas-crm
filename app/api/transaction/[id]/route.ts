@@ -1,4 +1,3 @@
-import { $Enums } from '@/lib/generated/prisma';
 import { INVOICE_PREFIX, PURCHASE_ORDER_PREFIX, DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { checkAccess } from "@/lib/access";
 import prisma from "@/lib/prisma";
@@ -82,6 +81,7 @@ export async function GET(req: NextRequest) {
       id: true,
       type: true,
       reference: true,
+      hasDelete: true,
       date: true,
       movement: true,
       amount: true,

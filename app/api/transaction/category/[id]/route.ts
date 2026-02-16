@@ -93,9 +93,26 @@ export async function DELETE(req: NextRequest) {
     const category = await prisma.transactionCategory.findUnique({
         where: { id },
         include: {
-            natures: true
+            natures: true,
+            receipts: true,
+            dibursements: true
         }
     });
+
+    if (category?.receipts && category.receipts.length > 0) {
+        return NextResponse.json({
+            state: "error",
+            message: "Impossible de supprimer cette catégorie car des encaissements sont liés à cette catégorie.",
+        }, { status: 409 });
+    }
+
+    if (category?.dibursements && category.dibursements.length > 0) {
+        return NextResponse.json({
+            state: "error",
+            message: "Impossible de supprimer cette catégorie car des décaissements sont liés à cette catégorie.",
+        }, { status: 409 });
+
+    }
 
     if (category && category.natures.length > 0) {
         return NextResponse.json({
