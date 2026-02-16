@@ -281,7 +281,7 @@ export default function ReceiptModal({ closeModal, refreshData }: ReceiptModalPr
                                                 placeholder="Catégorie"
                                                 searchMessage="Rechercher une catégorie"
                                                 noResultsMessage="Aucune catégorie trouvée."
-                                                addElement={<CategoryModal type="dibursement" />}
+                                                addElement={<CategoryModal type="receipt" />}
                                             />
                                         </FormControl>
                                         <FormMessage />

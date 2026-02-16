@@ -211,12 +211,10 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
   }, [natureId]);
 
   function getCategoryData(id: string) {
-    const current = categories.find(c => c.id === id);
     setCategoryId(id);
   }
 
   function getNatureData(id: string) {
-    const current = natures.find(n => n.id === id);
     setNatureId(id);
   }
 
@@ -279,7 +277,7 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                       placeholder="Catégorie"
                       searchMessage="Rechercher une catégorie"
                       noResultsMessage="Aucune catégorie trouvée."
-                      addElement={<CategoryModal type="dibursement" />}
+                      addElement={<CategoryModal type="receipt" />}
                     />
                   </FormControl>
                   <FormMessage />
