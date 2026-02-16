@@ -61,7 +61,6 @@ export async function GET(req: NextRequest) {
             receipts: filter ? true : undefined,
             dibursements: filter ? true : undefined,
         },
-        orderBy: { createdAt: "desc" }
     });
 
     return NextResponse.json({

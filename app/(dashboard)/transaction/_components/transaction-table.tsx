@@ -178,8 +178,6 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const isSelected = (id: string) =>
       selectedTransactionIds.some((transac) => transac.id === id);
 
-    console.log({ datas })
-
     return (
       <AccessContainer hasAccess={readAccess} resource="TRANSACTION" loading={loading} >
         <div className="border border-neutral-200 rounded-xl flex flex-col justify-between h-full">
