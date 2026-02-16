@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import useQueryAction from '@/hook/useQueryAction';
 import { formatDateToDashModel } from '@/lib/date';
 import { $Enums } from '@/lib/generated/prisma';
-import { generateAmaId } from '@/lib/utils';
 import { useDataStore } from '@/stores/data.store';
 import { RequestResponse } from '@/types/api.types';
 import { DeletionType } from '@/types/deletion.types';
