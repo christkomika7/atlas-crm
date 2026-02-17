@@ -31,7 +31,7 @@ export default function HeaderMenu({ refreshTransaction }: HeaderMenuProps) {
           <ChevronDownIcon className="w-4 h-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="p-0 w-[220px]">
+      <PopoverContent align="end" className="p-0 w-55">
         <ul className="p-2">
           <li>
             <ModalContainer
@@ -39,7 +39,7 @@ export default function HeaderMenu({ refreshTransaction }: HeaderMenuProps) {
               action={
                 <Button
                   variant="primary"
-                  className="bg-white justify-start hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                  className="bg-white justify-start hover:bg-blue shadow-none h-9! text-black hover:text-white transition-[color,background-color,box-shadow]"
                 >
                   Ajouter un encaissement
                 </Button>
@@ -64,7 +64,7 @@ export default function HeaderMenu({ refreshTransaction }: HeaderMenuProps) {
               action={
                 <Button
                   variant="primary"
-                  className="bg-white justify-start hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                  className="bg-white justify-start hover:bg-blue shadow-none h-9! text-black hover:text-white transition-[color,background-color,box-shadow]"
                 >
                   Ajouter  un décaissement
                 </Button>
@@ -89,7 +89,7 @@ export default function HeaderMenu({ refreshTransaction }: HeaderMenuProps) {
               action={
                 <Button
                   variant="primary"
-                  className="bg-white justify-start hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                  className="bg-white justify-start hover:bg-blue shadow-none h-9! text-black hover:text-white transition-[color,background-color,box-shadow]"
                 >
                   Réaliser un transfert
                 </Button>

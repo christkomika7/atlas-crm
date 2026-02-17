@@ -17,6 +17,7 @@ import {
   useImperativeHandle,
   useState,
   forwardRef,
+  Activity,
 } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { useDataStore } from "@/stores/data.store";
@@ -31,6 +32,7 @@ import {
   ChevronsUpDownIcon,
   ChevronUpIcon,
   ChevronDownIcon,
+  EditIcon,
 } from "lucide-react";
 import { formatDateToDashModel } from "@/lib/date";
 import { cn, cutText, formatNumber, getPaymentModeLabel } from "@/lib/utils";
@@ -41,6 +43,16 @@ import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import EditDibursementForm from "./edit-dibursement-form";
+import EditReceiptForm from "./edit-receipt-form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 type TransactionTableProps = {
   selectedTransactionIds: DeletedTransactions[];
@@ -69,6 +81,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const companyId = useDataStore.use.currentCompany();
     const [datas, setDatas] = useState<TransactionType[]>([])
 
+
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const category = searchParams.get("category");
@@ -83,6 +96,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
     const [sortField, setSortField] = useState<SortField>("byDate");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
     const [isLoading, setIsLoading] = useState(false);
+    const [open, setOpen] = useState(false);
 
     const { access: readAccess, loading } = useAccess("TRANSACTION", "READ");
 
@@ -151,6 +165,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
         readAccess,
       ]
     );
+
     const handleSort = useCallback(
       (field: SortField) => {
         let newOrder: "asc" | "desc" = "asc";
@@ -199,6 +214,7 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                   { label: "Source", field: null },
                   { label: "Période", field: null },
                   { label: "Infos", field: null },
+                  { label: "Action", field: null }
                 ].map((col, idx) => (
                   <TableHead key={idx} className="font-medium text-center">
                     {col.field ? (
@@ -287,6 +303,30 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                           {transaction.infos || "-"}
                         </TooltipContent>
                       </Tooltip>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Dialog open={open} onOpenChange={(open) => setOpen(open)}>
+                        <DialogTrigger className="cursor-pointer"><EditIcon className="w-4 h-4 text-amber-500" /></DialogTrigger>
+                        <DialogContent className="max-w-4xl!">
+                          <DialogHeader>
+                            <DialogTitle className="mb-4">{transaction.type === "RECEIPT" ? "Modifier l'encaissement" : "Modifier le décaissement"}</DialogTitle>
+                          </DialogHeader>
+                          <Activity mode={transaction.type === "DISBURSEMENT" ? "visible" : "hidden"} >
+                            <EditDibursementForm
+                              transaction={transaction}
+                              refreshTransaction={() => loadTransactions(currentPage)}
+                              closeModal={() => setOpen(false)}
+                            />
+                          </Activity>
+                          <Activity mode={transaction.type === "RECEIPT" ? "visible" : "hidden"} >
+                            <EditReceiptForm
+                              transaction={transaction}
+                              refreshTransaction={() => loadTransactions(currentPage)}
+                              closeModal={() => setOpen(false)}
+                            />
+                          </Activity>
+                        </DialogContent>
+                      </Dialog>
                     </TableCell>
                   </TableRow>
                 ))

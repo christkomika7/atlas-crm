@@ -101,6 +101,8 @@ export async function GET(req: NextRequest) {
       orderBy: { date: "desc" },
       select: {
         ...commonSelect,
+        projectId: true,
+        project: true,
         client: true,
         referenceInvoiceId: true,
         referenceInvoice: { select: { id: true, invoiceNumber: true } },
@@ -114,6 +116,9 @@ export async function GET(req: NextRequest) {
       select: {
         ...commonSelect,
         period: true,
+        projectId: true,
+        project: true,
+        fiscalObjectId: true,
         suppliers: true,
         referencePurchaseOrderId: true,
         referencePurchaseOrder: { select: { id: true, purchaseOrderNumber: true } },

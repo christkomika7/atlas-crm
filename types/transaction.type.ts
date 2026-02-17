@@ -2,9 +2,9 @@ import { $Enums } from "@/lib/generated/prisma";
 import { InvoiceType } from "./invoice.types";
 import { ClientType } from "./client.types";
 import { CompanyType } from "./company.types";
-import { SupplierType } from "./supplier.types";
 import { PurchaseOrderType } from "./purchase-order.types";
 import Decimal from "decimal.js";
+import { ProjectType } from "./project.types";
 
 export type TransactionType = {
   id: string;
@@ -29,6 +29,10 @@ export type TransactionType = {
 
   referenceInvoiceId?: string;
   referenceInvoice?: InvoiceType;
+
+  projectId?: string;
+  project?: ProjectType
+  fiscalObjectId?: string;
 
   referencePurchaseOrderId?: string;
   referencePurchaseOrder?: PurchaseOrderType;

@@ -170,12 +170,12 @@ export default function TableActionButton({
   return (
     <Popover>
       <PopoverTrigger asChild disabled={!hasAnyAccess}>
-        <Button variant="primary" className="p-0 rounded-lg !w-9 !h-9">
+        <Button variant="primary" className="p-0 rounded-lg w-9! h-9!">
           <ChevronDownIcon className="text-white" />
         </Button>
       </PopoverTrigger>
       {hasAnyAccess && (
-        <PopoverContent align="end" className="p-0 w-[180px]">
+        <PopoverContent align="end" className="p-0 w-45">
           <ul>
             {isGettingItemLocations ? <Spinner /> :
               <>

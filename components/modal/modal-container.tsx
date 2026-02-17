@@ -53,13 +53,13 @@ export default function ModalContainer({
       )}
       <DialogContent
         className={cn(
-          size === "sm" && "!max-w-[512px]",
-          size === "md" && "!max-w-[672px]",
-          size === "lg" && "!max-w-[768px]",
-          size === "xl" && "!max-w-[896px]",
-          size === "2xl" && "!max-w-[1024px]",
-          size === "3xl" && "!max-w-[1444px]",
-          size === "4xl" && "!max-w-[1824px]",
+          size === "sm" && "max-w-lg!",
+          size === "md" && "max-w-2xl!",
+          size === "lg" && "max-w-3xl!",
+          size === "xl" && "max-w-4xl!",
+          size === "2xl" && "max-w-5xl!",
+          size === "3xl" && "max-w-361!",
+          size === "4xl" && "max-w-456!",
         )}
       >
         <DialogHeader>

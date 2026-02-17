@@ -96,7 +96,7 @@ const QuoteTable = forwardRef<QuoteTableRef, QuoteTableProps>(
           <Table>
             <TableHeader>
               <TableRow className="h-14">
-                <TableHead className="min-w-[50px] font-medium" />
+                <TableHead className="min-w-12.5 font-medium" />
                 <TableHead className="font-medium text-center">N°</TableHead>
                 <TableHead className="font-medium text-center">Client</TableHead>
                 <TableHead className="font-medium text-center">Date</TableHead>

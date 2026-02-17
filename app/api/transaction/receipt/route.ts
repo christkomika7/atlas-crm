@@ -68,6 +68,16 @@ export async function POST(req: NextRequest) {
             })
         }
 
+        if (data.project) {
+            Object.assign(referenceDocument, {
+                project: {
+                    connect: {
+                        id: data.project
+                    }
+                }
+            })
+        }
+
 
         let paymentId = "";
         let clientId = "";

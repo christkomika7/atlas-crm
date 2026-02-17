@@ -539,6 +539,35 @@ export async function createReceipt(data: ReceiptSchemaType) {
   }
 }
 
+export async function updateReceipt(data: ReceiptSchemaType & { id: string }) {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/receipt/${data.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      },
+    );
+
+    const res: RequestResponse<TransactionType> = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        res.message || "Erreur lors de la création de l'encaissement",
+      );
+    }
+
+    return res;
+  } catch (error) {
+    console.error("Erreur dans la fonction create:", error);
+    throw error;
+  }
+}
+
+
 export async function createDibursement(data: DibursementSchemaType) {
 
   try {
@@ -567,6 +596,36 @@ export async function createDibursement(data: DibursementSchemaType) {
     throw error;
   }
 }
+
+export async function updateDibursement(data: DibursementSchemaType & { id: string }) {
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/dibursement/${data.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      },
+    );
+
+    const res: RequestResponse<TransactionType> = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        res.message || "Erreur lors de la création de décaissement",
+      );
+    }
+
+    return res;
+  } catch (error) {
+    console.error("Erreur dans la fonction create:", error);
+    throw error;
+  }
+}
+
 
 export async function createTransfer(data: TransferSchemaType) {
   try {
