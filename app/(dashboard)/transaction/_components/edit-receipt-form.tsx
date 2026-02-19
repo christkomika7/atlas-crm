@@ -34,12 +34,10 @@ import { getallByCompany } from "@/action/project.action";
 import UserActionModal from "@/components/modal/user-action-modal";
 
 type ReceiptFormProps = {
-    closeModal: () => void;
-    refreshTransaction: () => void,
     transaction?: TransactionType;
 };
 
-export default function EditReceiptForm({ closeModal, refreshTransaction, transaction }: ReceiptFormProps) {
+export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
     const companyId = useDataStore.use.currentCompany();
 
     const categories = useTransactionStore.use.categories();
@@ -130,11 +128,11 @@ export default function EditReceiptForm({ closeModal, refreshTransaction, transa
         form.reset({
             companyId: transaction.companyId || companyId || "",
             date: new Date(transaction.date),
-            source: transaction.source?.id || "",
+            source: transaction.sourceId || "",
             category: transaction.category.id || "",
             nature: transaction.nature.id || "",
-            userAction: transaction.userAction?.id || "",
-            project: transaction.project?.id || "",
+            userAction: transaction.userActionId || "",
+            project: transaction.projectId || "",
             paymentMode: transaction.paymentType || undefined,
             amount: Number(transaction.amount) || 0,
             amountType: transaction.amountType || "HT",
@@ -170,8 +168,8 @@ export default function EditReceiptForm({ closeModal, refreshTransaction, transa
             {
                 onSuccess: (data) => {
                     if (data.data) {
+                        form.setValue("userAction", transaction.userActionId || "");
                         setUserActions(data.data);
-                        form.setValue("userAction", transaction.userAction?.id || "");
                     }
                 },
             }
@@ -181,7 +179,7 @@ export default function EditReceiptForm({ closeModal, refreshTransaction, transa
             onSuccess(data) {
                 if (data.data) {
                     setSources(data.data)
-                    form.setValue("source", transaction.source?.id || "");
+                    form.setValue("source", transaction.sourceId || "");
                 };
             },
         });
@@ -190,7 +188,7 @@ export default function EditReceiptForm({ closeModal, refreshTransaction, transa
             onSuccess(data) {
                 console.log({ transaction })
                 if (data.data) setProjects(data.data);
-                form.setValue("project", transaction.project?.id || "");
+                form.setValue("project", transaction.projectId || "");
             },
         });
 
@@ -273,8 +271,6 @@ export default function EditReceiptForm({ closeModal, refreshTransaction, transa
             {
                 onSuccess() {
                     form.reset();
-                    refreshTransaction();
-                    closeModal();
                 },
             }
         );

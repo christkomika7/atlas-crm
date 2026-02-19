@@ -17,7 +17,6 @@ import {
   useImperativeHandle,
   useState,
   forwardRef,
-  Activity,
 } from "react";
 import useQueryAction from "@/hook/useQueryAction";
 import { useDataStore } from "@/stores/data.store";
@@ -43,16 +42,7 @@ import { DEFAULT_PAGE_SIZE } from "@/config/constant";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import EditDibursementForm from "./edit-dibursement-form";
-import EditReceiptForm from "./edit-receipt-form";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import Link from "next/link";
 
 type TransactionTableProps = {
   selectedTransactionIds: DeletedTransactions[];
@@ -305,28 +295,9 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                       </Tooltip>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Dialog open={open} onOpenChange={(open) => setOpen(open)}>
-                        <DialogTrigger className="cursor-pointer"><EditIcon className="w-4 h-4 text-amber-500" /></DialogTrigger>
-                        <DialogContent className="max-w-4xl!">
-                          <DialogHeader>
-                            <DialogTitle className="mb-4">{transaction.type === "RECEIPT" ? "Modifier l'encaissement" : "Modifier le décaissement"}</DialogTitle>
-                          </DialogHeader>
-                          <Activity mode={transaction.type === "DISBURSEMENT" ? "visible" : "hidden"} >
-                            <EditDibursementForm
-                              transaction={transaction}
-                              refreshTransaction={() => loadTransactions(currentPage)}
-                              closeModal={() => setOpen(false)}
-                            />
-                          </Activity>
-                          <Activity mode={transaction.type === "RECEIPT" ? "visible" : "hidden"} >
-                            <EditReceiptForm
-                              transaction={transaction}
-                              refreshTransaction={() => loadTransactions(currentPage)}
-                              closeModal={() => setOpen(false)}
-                            />
-                          </Activity>
-                        </DialogContent>
-                      </Dialog>
+                      <Link href={`/transaction/${transaction.id}?type=${transaction.type}`} className="mr-2">
+                        <EditIcon className="w-4 h-4 text-amber-500 cursor-pointer" />
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))

@@ -48,15 +48,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { set } from "zod";
+import { useRouter } from "next/navigation";
 
 type DibursementFormProps = {
-    refreshTransaction: () => void
-    closeModal: () => void;
     transaction?: TransactionType;
 };
 
-export default function EditDibursementForm({ closeModal, refreshTransaction, transaction }: DibursementFormProps) {
+export default function EditDibursementForm({ transaction }: DibursementFormProps) {
+    const router = useRouter();
     const companyId = useDataStore.use.currentCompany();
 
     const fiscalObjects = useTransactionStore.use.fiscalObjects();
@@ -157,24 +156,22 @@ export default function EditDibursementForm({ closeModal, refreshTransaction, tr
     >(updateDibursement, () => { }, "dibursement");
 
     useEffect(() => {
-        if (!transaction) return;
+        if (!transaction) return
 
-        form.reset({
-            companyId: transaction.companyId || companyId || "",
-            source: transaction.source?.id || "",
-            category: transaction.category.id || "",
-            nature: transaction.nature.id || "",
-            userAction: transaction.userAction?.id || "",
-            fiscalObject: transaction.fiscalObjectId || "",
-            project: transaction.project?.id || "",
-            date: new Date(transaction.date),
-            paymentMode: transaction.paymentType || undefined,
-            period: transaction.period || "",
-            amount: Number(transaction.amount) || 0,
-            amountType: transaction.amountType || "HT",
-            checkNumber: transaction.checkNumber || "",
-            information: transaction.infos || "",
-        });
+        form.setValue("companyId", transaction.companyId || companyId || "");
+        form.setValue("category", transaction.category.id || "");
+        form.setValue("nature", transaction.nature.id || "");
+        form.setValue("userAction", transaction.userActionId || "");
+        form.setValue("fiscalObject", transaction.fiscalObjectId || "");
+        form.setValue("project", transaction.projectId || "");
+        form.setValue("date", new Date(transaction.date));
+        form.setValue("paymentMode", transaction.paymentType || "");
+        form.setValue("source", transaction.sourceId || "");
+        form.setValue("period", transaction.period || "");
+        form.setValue("amount", Number(transaction.amount) || 0);
+        form.setValue("amountType", transaction.amountType || "HT");
+        form.setValue("checkNumber", transaction.checkNumber || "");
+        form.setValue("information", transaction.infos || "");
 
         mutateGetCategories({ companyId, type: "dibursement" }, {
             onSuccess(data) {
@@ -201,13 +198,14 @@ export default function EditDibursementForm({ closeModal, refreshTransaction, tr
             }
         );
 
+
         mutateGetUserActions(
             { natureId: transaction.nature.id },
             {
                 onSuccess: (data) => {
                     if (data.data) {
                         setUserActions(data.data);
-                        form.setValue("userAction", transaction.userAction?.id || "");
+                        form.setValue("userAction", transaction.userActionId || "");
                     }
                 },
             }
@@ -217,7 +215,7 @@ export default function EditDibursementForm({ closeModal, refreshTransaction, tr
             onSuccess(data) {
                 if (data.data) {
                     setSources(data.data)
-                    form.setValue("source", transaction.source?.id || "");
+                    form.setValue("source", transaction.sourceId || "");
                 };
             },
         });
@@ -225,7 +223,7 @@ export default function EditDibursementForm({ closeModal, refreshTransaction, tr
         mutateGetProjects({ companyId, projectStatus: "loading" }, {
             onSuccess(data) {
                 if (data.data) setProjects(data.data);
-                form.setValue("project", transaction.project?.id || "");
+                form.setValue("project", transaction.projectId || "");
             },
         });
 
@@ -336,10 +334,9 @@ export default function EditDibursementForm({ closeModal, refreshTransaction, tr
                 {
                     onSuccess() {
                         form.reset();
-                        refreshTransaction();
-                        closeModal();
                         setOpenConfirm(false);
                         setPendingData(null);
+                        router.push(`/transaction`);
                     },
                 }
             );
@@ -354,10 +351,9 @@ export default function EditDibursementForm({ closeModal, refreshTransaction, tr
             {
                 onSuccess() {
                     form.reset();
-                    refreshTransaction();
-                    closeModal();
                     setOpenConfirm(false);
                     setPendingData(null);
+                    router.push(`/transaction`);
                 },
             }
         );

@@ -139,6 +139,35 @@ export async function getTransactions(params: GetTransactionsParams) {
   }
 }
 
+export async function getUniqueTransaction({ id, type }: { id: string, type?: "receipt" | "dibursement" }) {
+  const params = new URLSearchParams();
+  if (type) params.append("type", type);
+
+  const queryString = params.toString();
+  const url = `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/${id}/unique${queryString ? `?${queryString}` : ""
+    }`;
+
+  try {
+    const response = await fetch(
+      url,
+      {
+        method: "GET",
+        cache: "no-store"
+      },
+    );
+
+    const res: RequestResponse<TransactionType> =
+      await response.json();
+    if (!response.ok) {
+      throw new Error(res.message);
+    }
+    return res;
+  } catch (error) {
+    throw error;
+  }
+}
+
+
 export async function getCategories({ companyId, type, filter = false }: { companyId: string, type?: "receipt" | "dibursement", filter?: boolean }) {
   const params = new URLSearchParams();
   if (type) params.append("type", type);

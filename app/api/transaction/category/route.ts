@@ -22,7 +22,11 @@ export async function POST(req: NextRequest) {
 
 
     const categoryExist = await prisma.transactionCategory.findFirst({
-        where: { name: data.name, companyId: data.companyId }
+        where: {
+            name: data.name,
+            type: data.type === "receipt" ? $Enums.TransactionType.RECEIPT : $Enums.TransactionType.DISBURSEMENT,
+            companyId: data.companyId
+        }
     });
 
     if (categoryExist) {
