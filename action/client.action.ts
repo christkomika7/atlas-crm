@@ -95,7 +95,7 @@ export async function create(data: ClientSchemaType & { id: string }) {
         formData.append("companyName", data.companyName);
         formData.append("lastname", data.lastname);
         formData.append("firstname", data.firstname);
-        formData.append("email", data.email);
+        formData.append("email", data.email || "");
         formData.append("phone", data.phone);
         formData.append("website", data.website ?? "");
         formData.append("address", data.address);
@@ -141,7 +141,7 @@ export async function update(data: EditClientSchemaType) {
         formData.append("companyName", data.companyName);
         formData.append("lastname", data.lastname);
         formData.append("firstname", data.firstname);
-        formData.append("email", data.email);
+        formData.append("email", data.email || "");
         formData.append("phone", data.phone);
         formData.append("website", data.website ?? "");
         formData.append("address", data.address);
