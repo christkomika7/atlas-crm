@@ -10,11 +10,7 @@ export const supplierSchema = z.object({
     firstname: z.string().min(1, {
         message: "Le prénom est obligatoire."
     }),
-    email: z.string().trim().min(1, {
-        message: "L'adresse mail est obligatoire."
-    }).email({
-        message: "Cette adresse mail est invalide."
-    }),
+    email: z.string().optional(),
     phone: z.string().min(1, {
         message: "Le numéro de téléphone est obligatoire."
     }),
@@ -62,11 +58,7 @@ export const editSupplierSchema = z.object({
     firstname: z.string().min(1, {
         message: "Le prénom est obligatoire."
     }),
-    email: z.string().trim().min(1, {
-        message: "L'adresse mail est obligatoire."
-    }).email({
-        message: "Cette adresse mail est invalide."
-    }),
+    email: z.string().optional(),
     phone: z.string().min(1, {
         message: "Le numéro de téléphone est obligatoire."
     }),

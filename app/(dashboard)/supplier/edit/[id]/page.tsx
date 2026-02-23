@@ -9,7 +9,7 @@ import {
 import { RequestResponse } from "@/types/api.types";
 import { SupplierType } from "@/types/supplier.types";
 import { useParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -253,6 +253,7 @@ export default function EditSupplierPage() {
                       <FormControl>
                         <TextInput
                           type="email"
+                          required={false}
                           design="float"
                           label="Adresse mail"
                           value={field.value}

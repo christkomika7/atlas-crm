@@ -270,7 +270,7 @@ model Supplier {
   hasDelete                  Boolean  @default(false)
   lastname                   String
   phone                      String
-  email                      String
+  email                      String?
   businessSector             String
   website                    String?
   paidAmount                 Decimal  @default(0) @db.Decimal(15, 2)
@@ -306,7 +306,7 @@ model Client {
   lastname                   String
   hasDelete                  Boolean  @default(false)
   firstname                  String
-  email                      String
+  email                      String?
   phone                      String
   website                    String?
   address                    String

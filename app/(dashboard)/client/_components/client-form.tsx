@@ -193,6 +193,7 @@ export default function ClientForm({
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <TextInput
+                      required={false}
                       type="email"
                       design="float"
                       label="Adresse mail"

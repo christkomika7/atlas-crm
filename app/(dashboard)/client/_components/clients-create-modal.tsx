@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PlusCircle } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import ClientForm from "./client-form";
 
 type ClientsCreateModalProps = {
@@ -27,7 +27,7 @@ export default function ClientsCreateModal({
           variant="primary"
           className="w-fit font-medium"
         >
-          <PlusCircle className="fill-white stroke-blue !w-6 !h-6" /> Ajouter un
+          <PlusCircle className="fill-white stroke-blue w-6! h-6!" /> Ajouter un
           client
         </Button>
       </DialogTrigger>

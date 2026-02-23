@@ -9,7 +9,7 @@ import {
 import { RequestResponse } from "@/types/api.types";
 import { ClientType } from "@/types/client.types";
 import { useParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -233,6 +233,7 @@ export default function EditClientPage() {
                     <FormItem className="-space-y-2">
                       <FormControl>
                         <TextInput
+                          required={false}
                           type="email"
                           design="float"
                           label="Adresse mail"

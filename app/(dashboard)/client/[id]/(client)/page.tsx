@@ -35,7 +35,7 @@ export default function ClientDetails() {
   if (isPending) return <Spinner />;
   return (
     <div className="flex flex-col h-full w-full">
-      <h2 className="flex-shrink-0 pl-14 font-semibold text-xl py-4">
+      <h2 className="shrink-0 pl-14 font-semibold text-xl py-4">
         {data?.data?.companyName}
       </h2>
       <div className="flex-1 min-h-0 w-full">
