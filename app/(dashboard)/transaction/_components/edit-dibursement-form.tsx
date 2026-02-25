@@ -620,18 +620,19 @@ export default function EditDibursementForm({ transaction }: DibursementFormProp
                                                     <FormControl>
                                                         <RadioGroup
                                                             defaultValue={field.value}
-                                                            onValueChange={field.onChange}
                                                             className="flex -space-x-2"
                                                         >
-                                                            {(
-                                                                FISCAL_OBJECT === fiscalObject ||
-                                                                currentAmountType === undefined ||
-                                                                currentAmountType === "HT"
-                                                            ) && (
+                                                            {
+                                                                FISCAL_OBJECT === fiscalObject
+                                                                && (
                                                                     <div className="flex items-center max-h-11 space-x-2">
                                                                         <RadioGroupItem value="HT" id="HT" className="hidden" />
                                                                         <Label
                                                                             htmlFor="HT"
+                                                                            onClick={() => {
+                                                                                setCurrentAmountType("HT");
+                                                                                field.onChange("HT");
+                                                                            }}
                                                                             className={cn(
                                                                                 "flex bg-gray px-3 py-1 rounded-md h-full",
                                                                                 field.value === "HT" && "bg-blue text-white"
@@ -643,14 +644,16 @@ export default function EditDibursementForm({ transaction }: DibursementFormProp
                                                                 )}
 
                                                             {(
-                                                                FISCAL_OBJECT !== fiscalObject &&
-                                                                (currentAmountType === undefined ||
-                                                                    currentAmountType === "TTC")
+                                                                FISCAL_OBJECT !== fiscalObject
                                                             ) && (
                                                                     <div className="flex items-center max-h-11 space-x-2">
                                                                         <RadioGroupItem value="TTC" id="TTC" className="hidden" />
                                                                         <Label
                                                                             htmlFor="TTC"
+                                                                            onClick={() => {
+                                                                                setCurrentAmountType("TTC");
+                                                                                field.onChange("TTC");
+                                                                            }}
                                                                             className={cn(
                                                                                 "flex bg-gray px-3 py-1 rounded-md h-full",
                                                                                 field.value === "TTC" && "bg-blue text-white"

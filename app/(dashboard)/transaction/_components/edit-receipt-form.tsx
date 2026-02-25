@@ -502,44 +502,41 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
                                                 <FormControl>
                                                     <RadioGroup
                                                         defaultValue={field.value}
-                                                        onValueChange={field.onChange}
                                                         className="flex -space-x-2"
                                                     >
-                                                        {(
-                                                            currentAmountType === undefined ||
-                                                            currentAmountType === "HT"
-                                                        ) && (
-                                                                <div className="flex items-center max-h-11 space-x-2">
-                                                                    <RadioGroupItem value="HT" id="HT" className="hidden" />
-                                                                    <Label
-                                                                        htmlFor="HT"
-                                                                        className={cn(
-                                                                            "flex bg-gray px-3 py-1 rounded-md h-full",
-                                                                            field.value === "HT" && "bg-blue text-white"
-                                                                        )}
-                                                                    >
-                                                                        HT
-                                                                    </Label>
-                                                                </div>
-                                                            )}
+                                                        <div className="flex items-center max-h-11">
+                                                            <RadioGroupItem value="HT" id="HT" className="hidden" />
+                                                            <Label
+                                                                onClick={() => {
+                                                                    setCurrentAmountType("HT");
+                                                                    field.onChange("HT");
+                                                                }}
+                                                                htmlFor="HT"
+                                                                className={cn(
+                                                                    "flex bg-gray cursor-pointer px-3 py-1 rounded-md h-full",
+                                                                    field.value === "HT" && "bg-blue text-white"
+                                                                )}
+                                                            >
+                                                                HT
+                                                            </Label>
+                                                        </div>
 
-                                                        {(
-                                                            currentAmountType === undefined ||
-                                                            currentAmountType === "TTC"
-                                                        ) && (
-                                                                <div className="flex items-center max-h-11 space-x-2">
-                                                                    <RadioGroupItem value="TTC" id="TTC" className="hidden" />
-                                                                    <Label
-                                                                        htmlFor="TTC"
-                                                                        className={cn(
-                                                                            "flex bg-gray px-3 py-1 rounded-md h-full",
-                                                                            field.value === "TTC" && "bg-blue text-white"
-                                                                        )}
-                                                                    >
-                                                                        TTC
-                                                                    </Label>
-                                                                </div>
-                                                            )}
+                                                        <div className="flex items-center max-h-11">
+                                                            <RadioGroupItem value="TTC" id="TTC" className="hidden" />
+                                                            <Label
+                                                                onClick={() => {
+                                                                    setCurrentAmountType("TTC");
+                                                                    field.onChange("TTC");
+                                                                }}
+                                                                htmlFor="TTC"
+                                                                className={cn(
+                                                                    "flex bg-gray px-3 py-1 cursor-pointer rounded-md h-full",
+                                                                    field.value === "TTC" && "bg-blue text-white"
+                                                                )}
+                                                            >
+                                                                TTC
+                                                            </Label>
+                                                        </div>
                                                     </RadioGroup>
                                                 </FormControl>
                                                 <FormMessage />
