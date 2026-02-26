@@ -186,7 +186,6 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
 
         mutateGetProjects({ companyId, projectStatus: "loading" }, {
             onSuccess(data) {
-                console.log({ transaction })
                 if (data.data) setProjects(data.data);
                 form.setValue("project", transaction.projectId || "");
             },

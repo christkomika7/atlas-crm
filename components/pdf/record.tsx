@@ -238,7 +238,7 @@ export default function RecordDocument({
             </div>
             <div className="w-full text-sm">
                 {/* HEADER */}
-                <div className="grid grid-cols-[1fr_80px_160px_180px] border-y border-[#bfbfbf] h-12 items-center font-bold">
+                <div className="grid grid-cols-[1fr_80px_160px_240px] border-y border-[#bfbfbf] h-12 items-center font-bold">
                     <div className="pl-[27px]">Article</div>
                     <div className="text-right">Qté</div>
                     <div className="text-right">Prix unitaire</div>
@@ -249,11 +249,12 @@ export default function RecordDocument({
                 {record?.items.map((item) => (
                     <div
                         key={item.id}
-                        className="grid grid-cols-[1fr_80px_160px_180px] py-2"
+                        className="grid grid-cols-[1fr_80px_160px_240px] py-2"
                     >
                         {/* ARTICLE */}
                         <div className="px-[27px]">
-                            <p className="mb-[3px]">
+                            <p className="font-bold">{item.reference}</p>
+                            <p className="mb-[3px] font-semibold">
                                 {item.name} {!item.hasTax && <span className="text-blue">*</span>}
                             </p>
 
@@ -329,7 +330,7 @@ export default function RecordDocument({
                 {moreInfos && (
                     <div className="mt-6 space-y-2">
                         {/* Sous-total */}
-                        <div className="grid grid-cols-[1fr_180px]">
+                        <div className="grid grid-cols-[1fr_240px]">
                             <div className="text-right pr-4">Sous-total</div>
                             <div className="pr-[27px] text-right">
                                 {formatNumber(
@@ -348,7 +349,7 @@ export default function RecordDocument({
                         </div>
 
                         {/* Remise */}
-                        <div className="grid grid-cols-[1fr_180px]">
+                        <div className="grid grid-cols-[1fr_240px]">
                             <div className="text-right pr-4">
                                 Remise (
                                 {record?.discountType === "money"
@@ -372,9 +373,75 @@ export default function RecordDocument({
                             </div>
                         </div>
 
+                        {/* Sous-total */}
+                        <div className="grid grid-cols-[1fr_240px]">
+                            <div className="text-right pr-4">Sous-total</div>
+                            <div className="pr-[27px] text-right">
+                                {formatNumber(
+                                    calculate({
+                                        items: record ? parseItems(record.items) : [],
+                                        taxes: record?.company?.vatRates ?? [],
+                                        amountType: record?.amountType || "TTC",
+                                        discount: [
+                                            Number(record?.discount || 0),
+                                            record?.discountType as "money" | "purcent",
+                                        ],
+                                    }).subTotal
+                                )}{" "}
+                                {record?.company.currency}
+                            </div>
+                        </div>
+                        {/* Taxes */}
+                        {record?.amountType === "TTC" &&
+                            calculate({
+                                items: record ? parseItems(record.items) : [],
+                                taxes: record?.company?.vatRates ?? [],
+                                amountType: record?.amountType || "TTC",
+                                discount: [
+                                    Number(record?.discount || 0),
+                                    record?.discountType as "money" | "purcent",
+                                ],
+                            }).taxes.map((tax) => (
+                                <div key={tax.taxName} className="grid grid-cols-[1fr_240px]">
+                                    <div className="text-right pr-4">
+                                        {tax.taxName}
+                                    </div>
+                                    <div className="pr-[27px] text-right">
+                                        {formatNumber(tax.totalTax)} {record?.company?.currency}
+                                    </div>
+                                </div>
+                            ))
+                        }
+
+                        {/* Total TTC */}
+                        {record?.amountType === "TTC" && (
+                            <div className="grid grid-cols-[1fr_240px]">
+                                <div className="text-right pr-4">
+                                    Total TTC
+                                </div>
+                                <div className="pr-[27px] text-right">
+                                    {formatNumber(record!.totalTTC)} {record?.company.currency}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="h-2"></div>
+
+                        {/* Payé */}
+                        {payee && (
+                            <div className="grid grid-cols-[1fr_240px]">
+                                <div className="text-right pr-4">
+                                    Payé
+                                </div>
+                                <div className="pr-[27px] text-right">
+                                    {formatNumber(payee)} {record?.company.currency}
+                                </div>
+                            </div>
+                        )}
+
                         {/* TOTAL */}
                         <div
-                            className="grid grid-cols-[1fr_180px] py-3 text-2xl font-black"
+                            className="grid grid-cols-[1fr_240px] py-3 text-2xl font-black"
                             style={{ backgroundColor: secondColor }}
                         >
                             <div className="text-right pr-4">Net à payer</div>
