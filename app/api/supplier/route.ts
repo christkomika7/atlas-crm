@@ -50,32 +50,9 @@ export async function DELETE(req: NextRequest) {
         }, { status: 200 })
     }
 
-    for (const supplier of suppliers) {
-        if (
-            supplier.dibursements.length > 0 ||
-            supplier.contracts.length > 0
-        ) {
-            return NextResponse.json({
-                state: "error",
-                message: "Supprimez d'abord les transactions, bon de commandes et contrats associés à ce fournisseur.",
-            }, { status: 409 });
-        }
-
-    }
-
-    await prisma.supplier.deleteMany({
-        where: {
-            id: { in: ids }
-        },
-    })
-
-    for (const supplier of suppliers) {
-        await removePath(supplier.uploadDocuments)
-    }
-
     return NextResponse.json({
-        state: "success",
-        message: "Tous les fournisseurs sélectionnés ont été supprimés avec succès.",
-    }, { status: 200 })
+        state: "error",
+        message: "Une erreur est survenue lors de la suppression de ce fournisseur.",
+    }, { status: 500 })
 
 }

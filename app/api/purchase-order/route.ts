@@ -262,6 +262,15 @@ export async function DELETE(req: NextRequest) {
         state: "error",
     }, { status: 400 });
 
+    for (const purchaseOrder of purchaseOrders) {
+        if (purchaseOrder.dibursements.length > 0 || purchaseOrder.payments.length > 0) {
+            return NextResponse.json({
+                state: "error",
+                message: "Supprimez d'abord les transactions et paiements associés à ce bon de commande.",
+            }, { status: 409 });
+        }
+    }
+
     const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.PURCHASE_ORDERS, ids, companyId)
 
     if (hasAccessDeletion) {
@@ -271,57 +280,9 @@ export async function DELETE(req: NextRequest) {
         }, { status: 200 })
     }
 
-    for (const purchaseOrder of purchaseOrders) {
-
-        if (purchaseOrder.dibursements.length > 0 || purchaseOrder.payments.length > 0) {
-            return NextResponse.json({
-                state: "error",
-                message: "Supprimez d'abord les transactions et paiements associés à ce bon de commande.",
-            }, { status: 409 });
-        }
-
-        if (purchaseOrder.items && purchaseOrder.items.length > 0) {
-            await rollbackPurchaseOrder(purchaseOrder as unknown as PurchaseOrderType)
-        }
-        await prisma.$transaction([
-            prisma.supplier.update({
-                where: { id: purchaseOrder.supplierId as string },
-                data: {
-                    purchaseOrders: {
-                        disconnect: {
-                            id: purchaseOrder.id
-                        }
-                    },
-                    due: {
-                        decrement: purchaseOrder.amountType === "TTC" ? purchaseOrder.totalTTC : purchaseOrder.totalHT
-                    },
-                    paidAmount: {
-                        decrement: purchaseOrder.payee
-                    }
-                }
-            }),
-            prisma.project.update({
-                where: { id: purchaseOrder.projectId as string },
-                data: {
-                    purchaseOrders: {
-                        disconnect: {
-                            id: purchaseOrder.id
-                        }
-                    },
-                }
-            }),
-            prisma.purchaseOrder.delete({ where: { id: purchaseOrder.id } }),
-            prisma.payment.deleteMany({ where: { purchaseOrderId: purchaseOrder.id } }),
-            prisma.dibursement.deleteMany({ where: { referencePurchaseOrderId: purchaseOrder.id } })
-        ]);
-    }
-
-    const pathFiles = purchaseOrders.map(p => p.pathFiles);
-    await removePath([...pathFiles]);
-
     return NextResponse.json({
-        state: "success",
-        message: "Tous les bons de commande sélectionnés ont été supprimés avec succès.",
-    }, { status: 200 })
+        state: "error",
+        message: "Une erreur est survenue lors de la suppression de ce bon de commande.",
+    }, { status: 500 })
 
 }

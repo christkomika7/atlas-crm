@@ -35,7 +35,9 @@ export async function GET(req: NextRequest) {
             billboardId: true,
             invoiceId: true
         }
-    })
+    });
+
+    console.log({ items })
 
 
     const transformedItems = items.filter(item => item.locationStart && item.locationEnd).map(item => ({
@@ -44,7 +46,9 @@ export async function GET(req: NextRequest) {
         isNew: false,
         billboardReference: item.billboardId,
         locationDate: [item.locationStart, item.locationEnd]
-    }))
+    }));
+
+    console.log({ transformedItems })
 
     return NextResponse.json({
         state: "success",

@@ -32,7 +32,6 @@ type TransferFormProps = {
 export default function TransferForm({ refreshTransaction, closeModal }: TransferFormProps) {
     const companyId = useDataStore.use.currentCompany();
 
-
     const sources = useTransactionStore.use.sources();
     const setSources = useTransactionStore.use.setSources();
 
@@ -198,47 +197,25 @@ export default function TransferForm({ refreshTransaction, closeModal }: Transfe
                             </div>
                         </div>
                     </div>
-
-                    <div className="gap-4.5 grid grid-cols-2">
-                        <FormField
-                            control={form.control}
-                            name="description"
-                            render={({ field }) => (
-                                <FormItem className="-space-y-2">
-                                    <FormControl>
-                                        <TextInput
-                                            type="text"
-                                            design="text-area"
-                                            label="Description"
-                                            required={false}
-                                            value={field.value}
-                                            handleChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="information"
-                            render={({ field }) => (
-                                <FormItem className="-space-y-2">
-                                    <FormControl>
-                                        <TextInput
-                                            type="text"
-                                            design="text-area"
-                                            label="Information"
-                                            required={false}
-                                            value={field.value}
-                                            handleChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
+                    <FormField
+                        control={form.control}
+                        name="information"
+                        render={({ field }) => (
+                            <FormItem className="-space-y-2">
+                                <FormControl>
+                                    <TextInput
+                                        type="text"
+                                        design="text-area"
+                                        label="Information"
+                                        required={false}
+                                        value={field.value}
+                                        handleChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                 </div>
 
                 <div className="flex justify-center pt-2">

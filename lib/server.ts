@@ -43,18 +43,16 @@ export async function rollbackInvoice(
     const productsServices = invoiceExist.productsServices || [];
     const billboards = invoiceExist.billboards || [];
 
-    // Regrouper les quantités à réincrémenter pour chaque productService
     const productServiceItems = invoiceExist.items
         .filter(
             (it: any) => it.itemType !== "billboard" && it.productServiceId
         )
         .reduce<Record<string, number>>((acc, it) => {
-            const key = String(it.productServiceId); // toujours en string
+            const key = String(it.productServiceId);
             acc[key] = (acc[key] || 0) + it.quantity;
             return acc;
         }, {});
 
-    // 🔎 Logs de debug
     console.log("🔎 Quantités à rollback:", productServiceItems);
     console.log(
         "🔎 IDs attendus:",
@@ -73,10 +71,8 @@ export async function rollbackInvoice(
     );
 
     await prisma.$transaction([
-        // supprimer les items liés à la facture
         prisma.item.deleteMany({ where: { invoiceId: invoiceExist.id } }),
 
-        // déconnecter les relations avec la facture
         prisma.invoice.update({
             where: { id: invoiceExist.id },
             data: {
@@ -89,7 +85,6 @@ export async function rollbackInvoice(
             },
         }),
 
-        // mettre à jour les stocks
         ...productServiceUpdates,
     ]);
 }
@@ -355,8 +350,7 @@ export async function checkBillboardConflicts(
 }
 
 export async function checkAccessDeletion(type: $Enums.DeletionType, ids: string[], companyId: string) {
-    const session = await getSession();
-    if (session?.user.role !== "ADMIN") {
+    try {
         for (const id of ids) {
             const exist = await prisma.deletion.findFirst({
                 where: { recordId: id }
@@ -481,9 +475,10 @@ export async function checkAccessDeletion(type: $Enums.DeletionType, ids: string
             }
         }
         return true
+    } catch (error) {
+        return false
     }
 
-    return false
 }
 
 

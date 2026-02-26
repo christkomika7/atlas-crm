@@ -18,13 +18,11 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        // Récupération des données du formulaire
         const formData = await req.formData();
 
         const file = formData.get('profil') as File;
         const folder = formData.get('path') as string;
 
-        // Validation des champs
         if (!file || !folder) {
             return NextResponse.json(
                 { message: 'Fichier ou chemin manquant.' },
@@ -32,11 +30,9 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Lecture du fichier
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Création du nom du dossier
         const folderName = folder.trim().replace(/\s+/g, '_').toLowerCase();
         const uploadDir = path.join(process.cwd(), 'uploads', folderName);
 
@@ -44,15 +40,12 @@ export async function POST(req: NextRequest) {
             await mkdir(uploadDir, { recursive: true });
         }
 
-        // Générer un nom de fichier unique en gardant l'extension
         const ext = path.extname(file.name); // ex: ".jpg", ".png"
         const uniqueName = `${crypto.randomUUID()}${ext}`;
         const filePath = path.join(uploadDir, uniqueName);
 
-        // Écriture sur le disque
         await writeFile(filePath, buffer);
 
-        // Chemin public relatif
         const publicPath = `${folderName}/${uniqueName}`;
 
         return NextResponse.json({

@@ -6,7 +6,6 @@ export const transferSchema = z.object({
     amount: z.number({ error: "Le montant est requis." }),
     origin: z.string({ error: "La source est requise." }),
     destination: z.string({ error: "La source est requise." }),
-    description: z.string().optional(),
     information: z.string({ error: "Le champ information est requis." }).min(20, { error: "Minimum 20 caractères sont requis." }),
 });
 

@@ -615,14 +615,11 @@ export async function DELETE(req: NextRequest) {
             state: "success",
             message: "Suppression en attente de validation.",
         }, { status: 200 })
+    } else {
+        return NextResponse.json({
+            state: "error",
+            message: "Une erreur est survenue lors de la suppression de ce panneau.",
+        }, { status: 500 })
     }
 
-    await prisma.billboard.delete({ where: { id } });
-    await removePath(billboard.photos)
-    await removePath(billboard.brochures)
-    return NextResponse.json({
-        state: "success",
-        message: "Panneau publicitaire supprimé avec succès.",
-    }, { status: 200 }
-    )
 }

@@ -115,15 +115,10 @@ export async function DELETE(req: NextRequest) {
         }, { status: 200 })
     }
 
-    await prisma.productService.deleteMany({
-        where: {
-            id: { in: ids }
-        },
-    })
 
     return NextResponse.json({
-        state: "success",
-        message: "Tous les éléments sélectionnés ont été supprimés avec succès.",
-    }, { status: 200 })
+        state: "error",
+        message: "Une erreur est survenue lors de la suppression de ce produit/service.",
+    }, { status: 500 })
 
 }

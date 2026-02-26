@@ -252,21 +252,9 @@ export async function DELETE(req: NextRequest) {
     }, { status: 200 })
   }
 
-  if (
-    supplier.dibursements.length > 0 ||
-    supplier.contracts.length > 0
-  ) {
-    return NextResponse.json({
-      state: "error",
-      message: "Supprimez d'abord les transactions, bon de commandes et contrats associés à ce fournisseur.",
-    }, { status: 409 });
-  }
-
-  await prisma.supplier.delete({ where: { id } });
-  await removePath(supplier.uploadDocuments);
   return NextResponse.json({
-    state: "success",
-    message: "Fournisseur supprimé avec succès.",
-  }, { status: 200 }
+    state: "error",
+    message: "Une erreur est survenue lors de la suppression de ce fournisseur.",
+  }, { status: 500 }
   )
 }

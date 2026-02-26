@@ -309,20 +309,18 @@ export async function DELETE(req: NextRequest) {
         }, { status: 400 })
     }
 
-    const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.PRODUCT_SERVICES, [id], appointment.company.id);
+    const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.APPOINTMENTS, [id], appointment.company.id);
 
     if (hasAccessDeletion) {
         return NextResponse.json({
             state: "success",
             message: "Suppression en attente de validation.",
         }, { status: 200 })
+    } else {
+        return NextResponse.json({
+            state: "error",
+            message: "Une erreur est survenue lors de la suppression de ce rendez-vous.",
+        }, { status: 500 })
     }
 
-    await prisma.appointment.delete({ where: { id } });
-    await removePath(appointment.documents);
-    return NextResponse.json({
-        state: "success",
-        message: "Rendez-vous supprimé avec succès.",
-    }, { status: 200 }
-    )
 }

@@ -257,19 +257,9 @@ export async function DELETE(req: NextRequest) {
         }, { status: 200 })
     }
 
-    await prisma.billboard.deleteMany({
-        where: {
-            id: { in: ids }
-        },
-    })
-
-    billboards.map(async billboard => {
-        await removePath(billboard.photos)
-        await removePath(billboard.brochures)
-    })
     return NextResponse.json({
-        state: "success",
-        message: "Tous les panneaux sélectionnés ont été supprimés avec succès.",
-    }, { status: 200 })
+        state: "error",
+        message: "Une erreur est survenue lors de la suppression de ce panneau.",
+    }, { status: 500 })
 
 }

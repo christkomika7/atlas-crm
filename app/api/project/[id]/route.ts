@@ -187,28 +187,9 @@ export async function DELETE(req: NextRequest) {
         }, { status: 200 })
     }
 
-    if (
-        project.invoices.length > 0 ||
-        project.purchaseOrders.length > 0 ||
-        project.dibursements.length > 0 ||
-        project.tasks.length > 0
-    ) {
-        return NextResponse.json({
-            state: "error",
-            message: "Supprimez d'abord les transactions, factures, devis, bon de livraisons, bon de commandes et tâches associés à ce projet.",
-        }, { status: 409 });
-    }
-
-    const deletedProject = await prisma.project.delete({ where: { id } });
-
-    const paths = project.tasks
-        .map(p => p.path)
-        .filter(Boolean);
-    await removePath([...project.files, ...paths]);
     return NextResponse.json({
-        state: "success",
-        data: deletedProject,
-        message: "Projet supprimé avec succès.",
-    }, { status: 200 }
+        state: "error",
+        message: "Une erreur est survenue lors de la suppression de ce projet.",
+    }, { status: 500 }
     )
 }

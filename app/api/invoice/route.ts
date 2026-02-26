@@ -338,6 +338,15 @@ export async function DELETE(req: NextRequest) {
     }, { status: 400 });
 
 
+    for (const invoice of invoices) {
+        if (invoice.receipts.length > 0 || invoice.payments.length > 0) {
+            return NextResponse.json({
+                state: "error",
+                message: "Supprimez d'abord les transactions et paiements associés à cette facture.",
+            }, { status: 409 });
+        }
+    }
+
     const hasAccessDeletion = await checkAccessDeletion($Enums.DeletionType.INVOICES, ids, companyId);
 
     if (hasAccessDeletion) {
@@ -347,58 +356,9 @@ export async function DELETE(req: NextRequest) {
         }, { status: 200 })
     }
 
-    for (const invoice of invoices) {
-        if (invoice.receipts.length > 0 || invoice.payments.length > 0) {
-            return NextResponse.json({
-                state: "error",
-                message: "Supprimez d'abord les transactions et paiements associés à cette facture.",
-            }, { status: 409 });
-        }
-        if (invoice.items && invoice.items.length > 0) {
-            await rollbackInvoice(invoice as unknown as InvoiceType)
-        }
-        await prisma.$transaction([
-            prisma.client.update({
-                where: { id: invoice.clientId as string },
-                data: {
-                    invoices: {
-                        disconnect: {
-                            id: invoice.id
-                        }
-                    },
-                    due: {
-                        decrement: invoice.amountType === "TTC" ? invoice.totalTTC : invoice.totalHT
-                    },
-                    paidAmount: {
-                        decrement: invoice.payee
-                    }
-                }
-            }),
-            prisma.project.update({
-                where: { id: invoice.projectId as string },
-                data: {
-                    invoices: {
-                        disconnect: {
-                            id: invoice.id
-                        }
-                    },
-                    status: "BLOCKED",
-                    amount: new Decimal(0),
-                    balance: new Decimal(0)
-                }
-            }),
-            prisma.invoice.delete({ where: { id: invoice.id } }),
-            prisma.payment.deleteMany({ where: { invoiceId: invoice.id } }),
-            prisma.receipt.deleteMany({ where: { referenceInvoiceId: invoice.id } }),
-        ]);
-    }
-
-    invoices.map(async invoice => {
-        await removePath([...invoice.pathFiles])
-    })
     return NextResponse.json({
-        state: "success",
-        message: "Tous les factures sélectionnées ont été supprimées avec succès.",
-    }, { status: 200 })
+        state: "error",
+        message: "Une erreur est survenue lors de la suppression de cette facture.",
+    }, { status: 500 })
 
 }

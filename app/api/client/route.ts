@@ -55,36 +55,9 @@ export async function DELETE(req: NextRequest) {
         }, { status: 200 })
     }
 
-    for (const client of clients) {
-        if (
-            client.invoices.length > 0 ||
-            client.projects.length > 0 ||
-            client.receipts.length > 0 ||
-            client.contracts.length > 0 ||
-            client.quotes.length > 0 ||
-            client.deliveryNotes.length > 0 ||
-            client.appointments.length > 0
-        ) {
-            return NextResponse.json({
-                state: "error",
-                message: "Supprimez d'abord les transactions, factures, devis, bon de livraisons, contrats, projets et rendez-vous associés à ce client.",
-            }, { status: 409 });
-        }
-    }
-
-    await prisma.client.deleteMany({
-        where: {
-            id: { in: ids }
-        },
-    })
-
-
-    clients.map(async client => {
-        await removePath(client.uploadDocuments)
-    })
     return NextResponse.json({
-        state: "success",
-        message: "Tous les clients sélectionnés ont été supprimés avec succès.",
-    }, { status: 200 })
+        state: "error",
+        message: "Une erreur est survenue lors de la suppression de ce client.",
+    }, { status: 500 })
 
 }

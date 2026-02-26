@@ -202,10 +202,9 @@ export async function DELETE(req: NextRequest) {
         }, { status: 200 })
     }
 
-    const deletedProductService = await prisma.productService.delete({ where: { id } });
     return NextResponse.json({
-        state: "success",
-        message: `Le ${deletedProductService.type === "PRODUCT" ? "produit" : "service"} à été supprimé avec succès.`,
-    }, { status: 200 }
+        state: "error",
+        message: `Erreur lors de la suppression du ${productService.type === "PRODUCT" ? "produit" : "service"}.`,
+    }, { status: 500 }
     )
 }

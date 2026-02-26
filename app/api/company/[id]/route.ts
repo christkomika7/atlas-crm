@@ -153,10 +153,10 @@ export async function DELETE(req: NextRequest) {
 
     const session = await getSession();
 
-    if (!session) {
+    if (!session || session.user.role !== "ADMIN") {
         return NextResponse.json({
             state: "error",
-            message: "Session invalide.",
+            message: "Acces refuse.",
         }, { status: 403 });
     }
 
@@ -190,7 +190,6 @@ export async function DELETE(req: NextRequest) {
         }, { status: 400 });
     }
 
-    // Vérifier les relations importantes (toutes celles en onDelete: Restrict)
     const hasRelations =
         company.clients.length > 0 ||
         company.suppliers.length > 0 ||
@@ -222,10 +221,8 @@ export async function DELETE(req: NextRequest) {
         }, { status: 403 });
     }
 
-    // Supprimer la company
     await prisma.company.delete({ where: { id: company.id } });
 
-    // Supprimer les fichiers associés
     const folder = createFolder([company.companyName]);
     await removePath(folder);
 

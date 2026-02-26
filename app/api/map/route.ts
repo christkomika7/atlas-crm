@@ -8,7 +8,6 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // Suivre les redirections pour obtenir l'URL complète
         const response = await fetch(url, {
             redirect: 'follow',
             headers: {
@@ -18,7 +17,6 @@ export async function GET(req: NextRequest) {
 
         const finalUrl = response.url;
 
-        // Format 1: @-4.7714934,11.8631453
         let coordMatch = finalUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
 
         if (coordMatch) {
@@ -28,7 +26,6 @@ export async function GET(req: NextRequest) {
             });
         }
 
-        // Format 2: /place/-4.7714934,11.8631453
         let placeMatch = finalUrl.match(/place\/(-?\d+\.\d+),(-?\d+\.\d+)/);
 
         if (placeMatch) {
@@ -38,7 +35,6 @@ export async function GET(req: NextRequest) {
             });
         }
 
-        // Format 3: /search/-4.797733,+11.848130 (TON CAS)
         let searchMatch = finalUrl.match(/search\/(-?\d+\.\d+),\s*\+?(-?\d+\.\d+)/);
 
         if (searchMatch) {
@@ -48,7 +44,6 @@ export async function GET(req: NextRequest) {
             });
         }
 
-        // Format 4: query parameters ?q=lat,lng
         const urlObj = new URL(finalUrl);
         const qParam = urlObj.searchParams.get('q');
 

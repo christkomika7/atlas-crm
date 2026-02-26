@@ -46,16 +46,9 @@ export async function DELETE(req: NextRequest) {
             message: "Suppression en attente de validation.",
         }, { status: 200 })
     }
-
-    await prisma.contract.deleteMany({
-        where: {
-            id: { in: ids }
-        },
-    })
-
     return NextResponse.json({
-        state: "success",
-        message: "Tous les contrats sélectionnés ont été supprimés avec succès.",
-    }, { status: 200 })
+        state: "error",
+        message: "Une erreur est survenue lors de la suppression de ce contrat.",
+    }, { status: 500 })
 
 }

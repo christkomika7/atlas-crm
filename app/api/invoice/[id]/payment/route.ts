@@ -114,7 +114,6 @@ export async function POST(req: NextRequest) {
             return { invoice, payment };
         });
 
-
         const natureName = invoice.client!.companyName;
         let categoryId: string = '';
         let natureId: string = '';
@@ -248,6 +247,19 @@ export async function POST(req: NextRequest) {
             })
         ]);
 
+        if (hasCompletedPayment) {
+            await prisma.item.updateMany({
+                where: {
+                    invoiceId: invoice.id
+                },
+                data: {
+                    locationEnd: undefined,
+                    locationStart: undefined,
+                    state: "IGNORE"
+                }
+            })
+        }
+
         await prisma.notification.create({
             data: {
                 type: 'ALERT',
@@ -263,6 +275,8 @@ export async function POST(req: NextRequest) {
                 }
             }
         });
+
+
 
         return NextResponse.json(
             { state: "success", message: "Le paiement a été effectué avec succès." },

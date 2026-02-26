@@ -278,31 +278,9 @@ export async function DELETE(req: NextRequest) {
         }, { status: 200 })
     }
 
-    for (const quote of quotes) {
-        if (quote.items && quote.items.length > 0) {
-            await rollbackQuote(quote as unknown as QuoteType)
-        }
-        await prisma.$transaction([
-            prisma.client.update({
-                where: { id: quote.clientId as string },
-                data: {
-                    quotes: {
-                        disconnect: {
-                            id: quote.id
-                        }
-                    }
-                }
-            }),
-            prisma.quote.delete({ where: { id: quote.id } })
-        ]);
-    }
-
-    quotes.map(async quote => {
-        await removePath([...quote.pathFiles])
-    })
     return NextResponse.json({
-        state: "success",
-        message: "Tous les devis sélectionnés ont été supprimés avec succès.",
-    }, { status: 200 })
+        state: "error",
+        message: "Une erreur est survenue lors de la suppression de ce devis.",
+    }, { status: 500 })
 
 }

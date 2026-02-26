@@ -257,10 +257,9 @@ export async function DELETE(req: NextRequest) {
     }, { status: 200 })
   }
 
-  await prisma.contract.delete({ where: { id } });
   return NextResponse.json({
-    state: "success",
-    message: "Contrat supprimé avec succès.",
-  }, { status: 200 }
+    state: "error",
+    message: "Une erreur est survenue lors de la suppression de ce contrat.",
+  }, { status: 500 }
   )
 }

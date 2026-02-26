@@ -385,29 +385,11 @@ export async function DELETE(req: NextRequest) {
     }, { status: 200 })
   }
 
-  if (deliveryNote?.items && deliveryNote?.items.length > 0) {
-    await rollbackDeliveryNote(deliveryNote as unknown as DeliveryNoteType)
-  }
 
-  await prisma.$transaction([
-    prisma.client.update({
-      where: { id: deliveryNote.clientId as string },
-      data: {
-        deliveryNotes: {
-          disconnect: {
-            id: deliveryNote.id
-          }
-        }
-      }
-    }),
-    prisma.deliveryNote.delete({ where: { id } })
-  ]);
-
-  await removePath([...deliveryNote.pathFiles]);
   return NextResponse.json({
-    state: "success",
-    message: "Bon de livraison supprimée avec succès.",
-  }, { status: 200 }
+    state: "error",
+    message: "Une erreur est survenue lors de la suppression de ce bon de livraison.",
+  }, { status: 500 }
   )
 }
 
