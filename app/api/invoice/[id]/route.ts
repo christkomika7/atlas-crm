@@ -167,7 +167,7 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  if (!projectExist) {
+  if (data.projectId && !projectExist) {
     return NextResponse.json(
       { status: "error", message: "Projet introuvable." },
       { status: 404 }
@@ -255,33 +255,36 @@ export async function PUT(req: NextRequest) {
       ])
     }
 
-    if (invoiceExist.projectId !== data.projectId) {
-      await prisma.$transaction([
-        prisma.invoice.update({
-          where: { id: invoiceExist.id },
-          data: {
-            project: {
-              disconnect: {
-                id: invoiceExist.projectId as string
-              }
-            }
-          }
-        }),
-        prisma.project.update({
-          where: { id: invoiceExist.projectId as string },
-          data: {
-            status: "BLOCKED",
-            amount: 0
-          }
-        }),
-        prisma.project.update({
-          where: {
-            id: projectExist.id
-          },
-          data: { status: "TODO", amount: data.amountType === "TTC" ? data.totalTTC : data.totalHT }
-        }),
-      ]
-      )
+    if (data.projectId) {
+      if (invoiceExist.projectId && invoiceExist.projectId !== data.projectId) {
+        await prisma.$transaction([
+          prisma.invoice.update({
+            where: { id: invoiceExist.id },
+            data: { project: { disconnect: { id: invoiceExist.projectId } } }
+          }),
+          prisma.project.update({
+            where: { id: invoiceExist.projectId },
+            data: { status: "BLOCKED", amount: 0 }
+          }),
+          prisma.project.update({
+            where: { id: data.projectId },
+            data: { status: "TODO", amount: data.amountType === "TTC" ? data.totalTTC : data.totalHT }
+          }),
+        ]);
+      }
+    } else {
+      if (invoiceExist.projectId) {
+        await prisma.$transaction([
+          prisma.invoice.update({
+            where: { id: invoiceExist.id },
+            data: { project: { disconnect: { id: invoiceExist.projectId } } }
+          }),
+          prisma.project.update({
+            where: { id: invoiceExist.projectId },
+            data: { status: "BLOCKED", amount: 0 }
+          }),
+        ]);
+      }
     }
   }
 
@@ -374,12 +377,12 @@ export async function PUT(req: NextRequest) {
           items: {
             create: itemForCreate
           },
-          project: {
-            connect: {
-              id: data.projectId
-            },
+          ...(data.projectId
+            ? { project: { connect: { id: data.projectId } } }
+            : invoiceExist.projectId
+              ? { project: { disconnect: { id: invoiceExist.projectId } } }
+              : {}),
 
-          },
           client: {
             connect: {
               id: data.clientId

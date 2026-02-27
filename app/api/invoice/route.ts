@@ -2,11 +2,10 @@ import { checkAccess, sessionAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { checkAccessDeletion, checkBillboardConflicts, rollbackInvoice } from "@/lib/server";
+import { checkAccessDeletion, checkBillboardConflicts } from "@/lib/server";
 import { generateId, getFirstValidCompanyId } from "@/lib/utils";
 import { invoiceSchema, InvoiceSchemaType } from "@/lib/zod/invoice.schema";
 import { NextResponse, type NextRequest } from "next/server";
-import { InvoiceType } from "@/types/invoice.types";
 import Decimal from "decimal.js";
 import { toUtcDateOnly } from "@/lib/date";
 import { $Enums } from "@/lib/generated/prisma";
@@ -104,7 +103,7 @@ export async function POST(req: NextRequest) {
             message: "L'identifiant du client est introuvable.",
         }, { status: 404 });
     }
-    if (!projectExist) {
+    if (data.projectId && !projectExist) {
         return NextResponse.json({
             status: "error",
             message: "L'identifiant du projet est introuvable.",
@@ -185,7 +184,7 @@ export async function POST(req: NextRequest) {
                 price: productService.price,
                 updatedPrice: productService.updatedPrice,
                 locationStart: new Date(),
-                locationEnd: projectExist.deadline,
+                locationEnd: projectExist?.deadline || new Date(),
                 discount: productService.discount ?? "0",
                 discountType: productService.discountType as string,
                 currency: productService.currency!,
@@ -198,8 +197,8 @@ export async function POST(req: NextRequest) {
             })) ?? []
         ];
 
-        const [createdInvoice] = await prisma.$transaction([
-            prisma.invoice.create({
+        const [createdInvoice] = await prisma.$transaction(async (tx) => {
+            const createdInvoice = await tx.invoice.create({
                 data: {
                     totalHT: data.totalHT,
                     discount: data.discount!,
@@ -217,12 +216,13 @@ export async function POST(req: NextRequest) {
                     items: {
                         create: itemForCreate
                     },
-                    project: {
-                        connect: {
-                            id: data.projectId
+                    ...(data.projectId && projectExist ? {
+                        project: {
+                            connect: {
+                                id: data.projectId
+                            },
                         },
-
-                    },
+                    } : {}),
                     client: {
                         connect: {
                             id: data.clientId
@@ -244,14 +244,18 @@ export async function POST(req: NextRequest) {
                         })) ?? []
                     },
                 },
-            }),
-            prisma.project.update({
-                where: {
-                    id: projectExist.id
-                },
-                data: { status: "TODO", amount }
-            }),
-            prisma.client.update({
+            });
+
+            if (data.projectId && projectExist) {
+                await tx.project.update({
+                    where: {
+                        id: projectExist.id
+                    },
+                    data: { status: "TODO", amount }
+                })
+            }
+
+            await tx.client.update({
                 where: { id: data.clientId },
                 data: {
                     due: {
@@ -265,9 +269,10 @@ export async function POST(req: NextRequest) {
                         ]
                     }
                 }
-            }),
-            ...(data.item.productServices?.map(productService => (
-                prisma.productService.update({
+            });
+
+            for (const productService of data.item.productServices ?? []) {
+                await tx.productService.update({
                     where: {
                         id: productService.productServiceId
                     },
@@ -277,8 +282,11 @@ export async function POST(req: NextRequest) {
                         },
                     }
                 })
-            )) ?? [])
-        ])
+            }
+
+            return [createdInvoice]
+
+        })
 
         return NextResponse.json({
             status: "success",

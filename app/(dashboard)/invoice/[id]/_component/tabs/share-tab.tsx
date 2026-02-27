@@ -161,152 +161,148 @@ export default function ShareTab() {
   if (loading) return <Spinner />
 
   return (
-    <>
-      {!invoice?.projectId ? <NoAccess type={NoAccessResource.NO_PROJECT} /> :
-        <AccessContainer hasAccess={readAccess} resource="INVOICES">
-          <ScrollArea className="pr-4 h-full">
-            {isGettingInvoice || !invoice ? <Spinner /> :
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(submit)}
+    <AccessContainer hasAccess={readAccess} resource="INVOICES">
+      <ScrollArea className="pr-4 h-full">
+        {isGettingInvoice || !invoice ? <Spinner /> :
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(submit)}
 
-                >
-                  <div className="gap-8 grid grid-cols-[1.5fr_1fr] pt-4 h-full">
-                    <div className="space-y-4">
+            >
+              <div className="gap-8 grid grid-cols-[1.5fr_1fr] pt-4 h-full">
+                <div className="space-y-4">
 
-                      <div className="space-y-4.5 m-2 max-w-xl">
-                        <FormField
-                          control={form.control}
-                          name="emails"
-                          render={({ field }) => (
-                            <FormItem className="-space-y-2">
-                              <FormControl>
-                                <MultipleSelector
-                                  disabled={!modifyAccess}
-                                  value={
-                                    field?.value?.map((v) => ({ label: v, value: v })) ??
-                                    []
-                                  }
-                                  placeholder="Destinataires"
-                                  onChange={(options) =>
-                                    field.onChange(options.map((opt) => opt.value))
-                                  }
-                                  creatable
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="subject"
-                          render={({ field }) => (
-                            <FormItem className="-space-y-2">
-                              <FormControl>
-                                <TextInput
-                                  disabled={!modifyAccess}
-                                  required={false}
-                                  design="float"
-                                  label="Objet"
-                                  value={field.value}
-                                  handleChange={field.onChange}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="message"
-                          render={({ field }) => (
-                            <FormItem className="-space-y-2">
-                              <FormControl>
-                                <TextInput
-                                  disabled={!modifyAccess}
-                                  required={false}
-                                  design="text-area"
-                                  label="Message (optionnel)"
-                                  value={field.value}
-                                  handleChange={field.onChange}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="file"
-                          render={({ field }) => (
-                            <FormItem className="-space-y-2">
-                              <FormControl>
-                                <TextInput
-                                  type="file"
-                                  design="float"
-                                  required={false}
-                                  disabled={!modifyAccess}
-                                  label="Pièces jointes supplémentaires"
-                                  value={field.value}
-                                  multiple={true}
-                                  handleChange={field.onChange}
-                                  showFileData={true}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                    </div>
-                    <div className="space-y-2">
-                      <div className="space-y-2 py-4 border-neutral-200 border-b">
-                        <h2 className="font-semibold">Facture</h2>
-                        <p className="flex justify-between items-center gap-x-2 text-sm">
-                          <span>Date</span>
-                          <span>{formatDateToDashModel(invoice.createdAt)}</span>
-                        </p>
-                        <p className="flex justify-between items-center gap-x-2 text-sm">
-                          <span>Client</span>
-                          <span>{invoice.client.firstname} {invoice.client.lastname}</span>
-                        </p>
-                      </div>
-                      <div className="space-y-2 py-4 border-neutral-200 border-b">
-                        <p className="flex justify-between items-center gap-x-2 text-sm">
-                          <span className="font-semibold">Total TTC</span>
-                          <span>{formatNumber(invoice.totalTTC)} {currency}</span>
-                        </p>
-                        <p className="flex justify-between items-center gap-x-2 text-sm">
-                          <span>Montant facturé</span>
-                          <span>{formatNumber(invoice.totalTTC)} {currency}</span>
-                        </p>
-                        <p className="flex justify-between items-center gap-x-2 text-sm">
-                          <span>Payer</span>
-                          <span>{formatNumber(invoice.payee)} {currency}</span>
-                        </p>
-                      </div>
-                      {new Decimal(invoice.payee).eq(0) && !invoice.isPaid &&
-                        <Badge variant="BLOCKED" className="rounded-sm h-6">En attente</Badge>
-                      }
-                      {new Decimal(invoice.payee).gt(0) && !invoice.isPaid &&
-                        <Badge variant="IN_PROGRESS" className="rounded-sm h-6">En cours</Badge>
-                      }
-                      {new Decimal(invoice.payee).gt(0) && invoice.isPaid &&
-                        <Badge variant="DONE" className="rounded-sm h-6">Payé</Badge>
-                      }
-                      {modifyAccess &&
-                        <Button variant="primary">{isSharingInvoice ? <Spinner /> : "Partger"}</Button>
-                      }
-                    </div>
+                  <div className="space-y-4.5 m-2 max-w-xl">
+                    <FormField
+                      control={form.control}
+                      name="emails"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <MultipleSelector
+                              disabled={!modifyAccess}
+                              value={
+                                field?.value?.map((v) => ({ label: v, value: v })) ??
+                                []
+                              }
+                              placeholder="Destinataires"
+                              onChange={(options) =>
+                                field.onChange(options.map((opt) => opt.value))
+                              }
+                              creatable
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="subject"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <TextInput
+                              disabled={!modifyAccess}
+                              required={false}
+                              design="float"
+                              label="Objet"
+                              value={field.value}
+                              handleChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="message"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <TextInput
+                              disabled={!modifyAccess}
+                              required={false}
+                              design="text-area"
+                              label="Message (optionnel)"
+                              value={field.value}
+                              handleChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="file"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <TextInput
+                              type="file"
+                              design="float"
+                              required={false}
+                              disabled={!modifyAccess}
+                              label="Pièces jointes supplémentaires"
+                              value={field.value}
+                              multiple={true}
+                              handleChange={field.onChange}
+                              showFileData={true}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                </form>
-              </Form>
-            }
-          </ScrollArea>
-        </AccessContainer>
-      }
-    </>
+
+                </div>
+                <div className="space-y-2">
+                  <div className="space-y-2 py-4 border-neutral-200 border-b">
+                    <h2 className="font-semibold">Facture</h2>
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span>Date</span>
+                      <span>{formatDateToDashModel(invoice.createdAt)}</span>
+                    </p>
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span>Client</span>
+                      <span>{invoice.client.firstname} {invoice.client.lastname}</span>
+                    </p>
+                  </div>
+                  <div className="space-y-2 py-4 border-neutral-200 border-b">
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span className="font-semibold">Total TTC</span>
+                      <span>{formatNumber(invoice.totalTTC)} {currency}</span>
+                    </p>
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span>Montant facturé</span>
+                      <span>{formatNumber(invoice.totalTTC)} {currency}</span>
+                    </p>
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span>Payer</span>
+                      <span>{formatNumber(invoice.payee)} {currency}</span>
+                    </p>
+                  </div>
+                  {new Decimal(invoice.payee).eq(0) && !invoice.isPaid &&
+                    <Badge variant="BLOCKED" className="rounded-sm h-6">En attente</Badge>
+                  }
+                  {new Decimal(invoice.payee).gt(0) && !invoice.isPaid &&
+                    <Badge variant="IN_PROGRESS" className="rounded-sm h-6">En cours</Badge>
+                  }
+                  {new Decimal(invoice.payee).gt(0) && invoice.isPaid &&
+                    <Badge variant="DONE" className="rounded-sm h-6">Payé</Badge>
+                  }
+                  {modifyAccess &&
+                    <Button variant="primary">{isSharingInvoice ? <Spinner /> : "Partger"}</Button>
+                  }
+                </div>
+              </div>
+            </form>
+          </Form>
+        }
+      </ScrollArea>
+    </AccessContainer>
   );
 }

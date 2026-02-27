@@ -111,12 +111,12 @@ export function MultipleSelect({
               {label}
             </label>
             {selected.length > 0 ? (
-              <ScrollArea className="flex gap-1 max-w-[calc(100%-24px)] overflow-x-auto">
-                {selected.map((item) => (
+              <div className="flex items-center gap-1 max-w-[calc(100%-32px)] overflow-hidden">
+                {selected.slice(0, 2).map((item) => (
                   <Badge
                     key={item.value}
                     variant="secondary"
-                    className={cn("bg-slate-200 mr-1", badgeClassName)}
+                    className={cn("bg-slate-200 shrink-0", badgeClassName)}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleUnselect(item);
@@ -126,7 +126,12 @@ export function MultipleSelect({
                     <X className="ml-1 w-2.5 h-2.5 cursor-pointer" />
                   </Badge>
                 ))}
-              </ScrollArea>
+                {selected.length > 2 && (
+                  <Badge variant="secondary" className="bg-slate-200 shrink-0">
+                    +{selected.length - 2}
+                  </Badge>
+                )}
+              </div>
             ) : (
               placeholder
             )}

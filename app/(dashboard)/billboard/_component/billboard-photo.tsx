@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { initialName, resolveImageSrc, urlToFile } from '@/lib/utils';
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type BillboardPhotoProps = {
     path?: string;

@@ -26,7 +26,6 @@ import useItemStore, { LocationBillboardDateType } from "@/stores/item.store";
 import useProjectStore from "@/stores/project.store";
 import useClientIdStore from "@/stores/client-id.store";
 
-
 import { ModelDocumentType } from "@/types/document.types";
 import { useParams } from "next/navigation";
 import { InvoiceType } from "@/types/invoice.types";
@@ -671,6 +670,7 @@ export default function InvoiceTab() {
                   <FormItem className="-space-y-2">
                     <FormControl>
                       <Combobox
+                        required={false}
                         isLoading={isGettingProject}
                         disabled={amountPaid.gt(0) || !modifyAccess}
                         datas={projects.map(({ id, name, status }) => ({

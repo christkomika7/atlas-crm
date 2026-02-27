@@ -47,6 +47,7 @@ export default function TableActionButton({
   const setItems = useItemStore.use.setItems();
   const clear = useItemStore.use.clearItem();
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
+  const locationBillboard = useItemStore.use.locationBillboardDate();
 
   const currency = useDataStore.use.currency();
   const companyId = useDataStore.use.currentCompany();

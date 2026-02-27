@@ -104,7 +104,7 @@ export async function create(data: InvoiceSchemaType) {
         }));
 
         formData.append("clientId", data.clientId);
-        formData.append("projectId", data.projectId);
+        formData.append("projectId", data.projectId || "");
         formData.append("companyId", data.companyId);
         formData.append("totalHT", data.totalHT.toString());
         formData.append("invoiceNumber", JSON.stringify(data.invoiceNumber));
@@ -201,7 +201,7 @@ export async function update(data: InvoiceUpdateSchemaType) {
 
         formData.append("id", data.id);
         formData.append("clientId", data.clientId);
-        formData.append("projectId", data.projectId);
+        formData.append("projectId", data.projectId || "");
         formData.append("companyId", data.companyId);
         formData.append("totalHT", data.totalHT.toString());
         formData.append("amountType", data.amountType);

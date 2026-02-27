@@ -118,57 +118,57 @@ export async function POST(req: NextRequest) {
         let categoryId: string = '';
         let natureId: string = '';
 
-        let category = await prisma.transactionCategory.findFirst({
-            where: {
-                name: "Règlement client",
-                companyId: invoice.companyId
-            }
-        });
+        await prisma.$transaction(async (tx) => {
 
-        if (!category) {
-            category = await prisma.transactionCategory.create({
-                data: {
-                    company: {
-                        connect: {
-                            id: invoice.companyId
-                        }
-                    },
-                    type: $Enums.TransactionType.RECEIPT,
+            let category = await tx.transactionCategory.findFirst({
+                where: {
                     name: "Règlement client",
-                },
+                    companyId: invoice.companyId
+                }
             });
-        }
-        categoryId = category.id;
-
-        let nature = await prisma.transactionNature.findFirst({
-            where: {
-                name: natureName,
-                companyId: invoice.companyId,
-                categoryId: category.id
+            if (!category) {
+                category = await tx.transactionCategory.create({
+                    data: {
+                        company: {
+                            connect: {
+                                id: invoice.companyId
+                            }
+                        },
+                        type: $Enums.TransactionType.RECEIPT,
+                        name: "Règlement client",
+                    },
+                });
             }
-        });
+            categoryId = category.id;
 
-        if (!nature) {
-            nature = await prisma.transactionNature.create({
-                data: {
-                    category: {
-                        connect: {
-                            id: category.id
-                        }
-                    },
-                    company: {
-                        connect: {
-                            id: invoice.companyId
-                        }
-                    },
+            let nature = await tx.transactionNature.findFirst({
+                where: {
                     name: natureName,
-                },
+                    companyId: invoice.companyId,
+                    categoryId: category.id
+                }
             });
-        }
-        natureId = nature.id;
 
-        await prisma.$transaction([
-            prisma.receipt.create({
+            if (!nature) {
+                nature = await tx.transactionNature.create({
+                    data: {
+                        category: {
+                            connect: {
+                                id: category.id
+                            }
+                        },
+                        company: {
+                            connect: {
+                                id: invoice.companyId
+                            }
+                        },
+                        name: natureName,
+                    },
+                });
+            }
+            natureId = nature.id;
+
+            await tx.receipt.create({
                 data: {
                     date: toUtcDateOnly(data.date),
                     amount: new Decimal(data.amount),
@@ -228,55 +228,60 @@ export async function POST(req: NextRequest) {
                     }
                 }
             }),
-            prisma.client.update({
-                where: { id: invoice.clientId as string },
-                data: {
-                    due: {
-                        decrement: data.amount
+                await tx.client.update({
+                    where: { id: invoice.clientId as string },
+                    data: {
+                        due: {
+                            decrement: data.amount
+                        },
+                        paidAmount: {
+                            increment: data.amount
+                        }
+                    }
+                }),
+                await tx.project.update({
+                    where: { id: invoice.projectId as string },
+                    data: {
+                        balance: { increment: data.amount }
+                    }
+                })
+
+
+            if (hasCompletedPayment) {
+                await tx.item.updateMany({
+                    where: {
+                        invoiceId: invoice.id
                     },
-                    paidAmount: {
-                        increment: data.amount
+                    data: {
+                        state: "IGNORE"
+                    }
+                })
+            } else {
+                await tx.item.updateMany({
+                    where: {
+                        invoiceId: invoice.id
+                    },
+                    data: {
+                        state: "APPROVED"
+                    }
+                })
+            }
+            await tx.notification.create({
+                data: {
+                    type: 'ALERT',
+                    for: 'INVOICE',
+                    message: hasCompletedPayment ?
+                        `${user.name} a réglé la facture n° ${invoice.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}.` :
+                        `${user.name} a réalisé un accompte de ${formatNumber(data.amount)} ${invoice.company.currency} pour la facture n° ${invoice.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}.`,
+                    invoice: {
+                        connect: { id: invoice.id }
+                    },
+                    company: {
+                        connect: { id: invoice.companyId }
                     }
                 }
-            }),
-            prisma.project.update({
-                where: { id: invoice.projectId as string },
-                data: {
-                    balance: { increment: data.amount }
-                }
-            })
-        ]);
-
-        if (hasCompletedPayment) {
-            await prisma.item.updateMany({
-                where: {
-                    invoiceId: invoice.id
-                },
-                data: {
-                    locationEnd: undefined,
-                    locationStart: undefined,
-                    state: "IGNORE"
-                }
-            })
-        }
-
-        await prisma.notification.create({
-            data: {
-                type: 'ALERT',
-                for: 'INVOICE',
-                message: hasCompletedPayment ?
-                    `${user.name} a réglé la facture n° ${invoice.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}.` :
-                    `${user.name} a réalisé un accompte de ${formatNumber(data.amount)} ${invoice.company.currency} pour la facture n° ${invoice.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(invoice.invoiceNumber, false)}.`,
-                invoice: {
-                    connect: { id: invoice.id }
-                },
-                company: {
-                    connect: { id: invoice.companyId }
-                }
-            }
+            });
         });
-
-
 
         return NextResponse.json(
             { state: "success", message: "Le paiement a été effectué avec succès." },

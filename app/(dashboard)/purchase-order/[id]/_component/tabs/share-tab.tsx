@@ -165,152 +165,148 @@ export default function ShareTab() {
   if (loading) return <Spinner />
 
   return (
-    <>
-      {!purchaseOrder?.projectId ? <NoAccess type={NoAccessResource.NO_PROJECT} /> :
-        <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER">
-          <ScrollArea className="pr-4 h-full">
-            {isGettingPurchaseOrder || !purchaseOrder ? <Spinner /> :
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(submit)}
+    <AccessContainer hasAccess={readAccess} resource="PURCHASE_ORDER">
+      <ScrollArea className="pr-4 h-full">
+        {isGettingPurchaseOrder || !purchaseOrder ? <Spinner /> :
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(submit)}
 
-                >
-                  <div className="gap-8 grid grid-cols-[1.5fr_1fr] pt-4 h-full">
-                    <div className="space-y-4">
+            >
+              <div className="gap-8 grid grid-cols-[1.5fr_1fr] pt-4 h-full">
+                <div className="space-y-4">
 
-                      <div className="space-y-4.5 m-2 max-w-xl">
-                        <FormField
-                          control={form.control}
-                          name="emails"
-                          render={({ field }) => (
-                            <FormItem className="-space-y-2">
-                              <FormControl>
-                                <MultipleSelector
-                                  value={
-                                    field?.value?.map((v) => ({ label: v, value: v })) ??
-                                    []
-                                  }
-                                  disabled={!modifyAccess}
-                                  placeholder="Destinataires"
-                                  onChange={(options) =>
-                                    field.onChange(options.map((opt) => opt.value))
-                                  }
-                                  creatable
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="subject"
-                          render={({ field }) => (
-                            <FormItem className="-space-y-2">
-                              <FormControl>
-                                <TextInput
-                                  required={false}
-                                  disabled={!modifyAccess}
-                                  design="float"
-                                  label="Objet"
-                                  value={field.value}
-                                  handleChange={field.onChange}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="message"
-                          render={({ field }) => (
-                            <FormItem className="-space-y-2">
-                              <FormControl>
-                                <TextInput
-                                  required={false}
-                                  disabled={!modifyAccess}
-                                  design="text-area"
-                                  label="Message (optionnel)"
-                                  value={field.value}
-                                  handleChange={field.onChange}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="file"
-                          render={({ field }) => (
-                            <FormItem className="-space-y-2">
-                              <FormControl>
-                                <TextInput
-                                  type="file"
-                                  design="float"
-                                  required={false}
-                                  disabled={!modifyAccess}
-                                  label="Pièces jointes supplémentaires"
-                                  value={field.value}
-                                  multiple={true}
-                                  handleChange={field.onChange}
-                                  showFileData={true}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                    </div>
-                    <div className="space-y-2">
-                      <div className="space-y-2 py-4 border-neutral-200 border-b">
-                        <h2 className="font-semibold">Bon de commande</h2>
-                        <p className="flex justify-between items-center gap-x-2 text-sm">
-                          <span>Date</span>
-                          <span>{formatDateToDashModel(purchaseOrder.createdAt)}</span>
-                        </p>
-                        <p className="flex justify-between items-center gap-x-2 text-sm">
-                          <span>Fournisseur</span>
-                          <span>{purchaseOrder.supplier.firstname} {purchaseOrder.supplier.lastname}</span>
-                        </p>
-                      </div>
-                      <div className="space-y-2 py-4 border-neutral-200 border-b">
-                        <p className="flex justify-between items-center gap-x-2 text-sm">
-                          <span className="font-semibold">Total TTC</span>
-                          <span>{formatNumber(purchaseOrder.totalTTC)} {currency}</span>
-                        </p>
-                        <p className="flex justify-between items-center gap-x-2 text-sm">
-                          <span>Montant facturé</span>
-                          <span>{formatNumber(purchaseOrder.totalTTC)} {currency}</span>
-                        </p>
-                        <p className="flex justify-between items-center gap-x-2 text-sm">
-                          <span>Payer</span>
-                          <span>{formatNumber(purchaseOrder.payee)} {currency}</span>
-                        </p>
-                      </div>
-                      {new Decimal(purchaseOrder.payee).eq(0) && !purchaseOrder.isPaid &&
-                        <Badge variant="BLOCKED" className="rounded-sm h-6">En attente</Badge>
-                      }
-                      {new Decimal(purchaseOrder.payee).gt(0) && !purchaseOrder.isPaid &&
-                        <Badge variant="IN_PROGRESS" className="rounded-sm h-6">En cours</Badge>
-                      }
-                      {new Decimal(purchaseOrder.payee).gt(0) && purchaseOrder.isPaid &&
-                        <Badge variant="DONE" className="rounded-sm h-6">Payé</Badge>
-                      }
-                      {modifyAccess &&
-                        <Button variant="primary" disabled={isSharingPurchaseOrder}>{isSharingPurchaseOrder ? <Spinner /> : "Partger"}</Button>
-                      }
-                    </div>
+                  <div className="space-y-4.5 m-2 max-w-xl">
+                    <FormField
+                      control={form.control}
+                      name="emails"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <MultipleSelector
+                              value={
+                                field?.value?.map((v) => ({ label: v, value: v })) ??
+                                []
+                              }
+                              disabled={!modifyAccess}
+                              placeholder="Destinataires"
+                              onChange={(options) =>
+                                field.onChange(options.map((opt) => opt.value))
+                              }
+                              creatable
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="subject"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <TextInput
+                              required={false}
+                              disabled={!modifyAccess}
+                              design="float"
+                              label="Objet"
+                              value={field.value}
+                              handleChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="message"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <TextInput
+                              required={false}
+                              disabled={!modifyAccess}
+                              design="text-area"
+                              label="Message (optionnel)"
+                              value={field.value}
+                              handleChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="file"
+                      render={({ field }) => (
+                        <FormItem className="-space-y-2">
+                          <FormControl>
+                            <TextInput
+                              type="file"
+                              design="float"
+                              required={false}
+                              disabled={!modifyAccess}
+                              label="Pièces jointes supplémentaires"
+                              value={field.value}
+                              multiple={true}
+                              handleChange={field.onChange}
+                              showFileData={true}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                </form>
-              </Form>
-            }
-          </ScrollArea>
-        </AccessContainer>
-      }
-    </>
+
+                </div>
+                <div className="space-y-2">
+                  <div className="space-y-2 py-4 border-neutral-200 border-b">
+                    <h2 className="font-semibold">Bon de commande</h2>
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span>Date</span>
+                      <span>{formatDateToDashModel(purchaseOrder.createdAt)}</span>
+                    </p>
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span>Fournisseur</span>
+                      <span>{purchaseOrder.supplier.firstname} {purchaseOrder.supplier.lastname}</span>
+                    </p>
+                  </div>
+                  <div className="space-y-2 py-4 border-neutral-200 border-b">
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span className="font-semibold">Total TTC</span>
+                      <span>{formatNumber(purchaseOrder.totalTTC)} {currency}</span>
+                    </p>
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span>Montant facturé</span>
+                      <span>{formatNumber(purchaseOrder.totalTTC)} {currency}</span>
+                    </p>
+                    <p className="flex justify-between items-center gap-x-2 text-sm">
+                      <span>Payer</span>
+                      <span>{formatNumber(purchaseOrder.payee)} {currency}</span>
+                    </p>
+                  </div>
+                  {new Decimal(purchaseOrder.payee).eq(0) && !purchaseOrder.isPaid &&
+                    <Badge variant="BLOCKED" className="rounded-sm h-6">En attente</Badge>
+                  }
+                  {new Decimal(purchaseOrder.payee).gt(0) && !purchaseOrder.isPaid &&
+                    <Badge variant="IN_PROGRESS" className="rounded-sm h-6">En cours</Badge>
+                  }
+                  {new Decimal(purchaseOrder.payee).gt(0) && purchaseOrder.isPaid &&
+                    <Badge variant="DONE" className="rounded-sm h-6">Payé</Badge>
+                  }
+                  {modifyAccess &&
+                    <Button variant="primary" disabled={isSharingPurchaseOrder}>{isSharingPurchaseOrder ? <Spinner /> : "Partger"}</Button>
+                  }
+                </div>
+              </div>
+            </form>
+          </Form>
+        }
+      </ScrollArea>
+    </AccessContainer>
   );
 }

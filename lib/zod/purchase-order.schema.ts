@@ -5,7 +5,7 @@ import { itemPurchaseOrderSchema } from "./item.schema";
 export const purchaseOrderSchema = z
     .object({
         supplierId: z.string({ error: "Le fournisseur est requis" }),
-        projectId: z.string({ error: "Le projet est requis" }),
+        projectId: z.string().optional(),
         companyId: z.string({ error: "L'entreprise est requise" }),
         purchaseOrderNumber: z.number({ error: "Le numéro de la facture est obligatoire." }),
         item: z.object({
@@ -38,7 +38,7 @@ export const purchaseOrderUpdateSchema = z
     .object({
         id: z.string({ error: "L'identifiant est requis" }),
         supplierId: z.string({ error: "Le fournisseur est requis" }),
-        projectId: z.string({ error: "Le projet est requis" }),
+        projectId: z.string().optional(),
         companyId: z.string({ error: "L'entreprise est requise" }),
         purchaseOrderNumber: z.number({ error: "Le numéro de facture est requis." }),
         item: z.object({

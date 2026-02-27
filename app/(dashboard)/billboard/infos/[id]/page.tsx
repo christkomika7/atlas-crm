@@ -2,7 +2,6 @@
 import Header from "@/components/header/header";
 import { Tabs } from "@/components/ui/tabs";
 import { tab } from "../_component/tabs/tab";
-import DownloadContractButton from "../_component/download-contract-button";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import useQueryAction from "@/hook/useQueryAction";
@@ -26,9 +25,7 @@ export default function BillboardInfoPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <Header back={1} title="Détails du panneaux publicitaires">
-        <DownloadContractButton />
-      </Header>
+      <Header back={1} title="Détails du panneaux publicitaires" />
 
       <div className="flex flex-col flex-1 min-h-0">
         <h2 className="flex items-center gap-x-2 mb-4 pl-20 font-medium">

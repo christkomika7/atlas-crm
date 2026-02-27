@@ -469,6 +469,7 @@ export default function InvoiceForm() {
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
+                      required={false}
                       isLoading={isLoadingProject}
                       datas={projects.map(({ id, name, status }) => ({
                         id: id,

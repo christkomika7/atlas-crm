@@ -5,7 +5,7 @@ import { itemSchema } from "./item.schema";
 export const invoiceSchema = z
     .object({
         clientId: z.string({ error: "Le client est requis" }),
-        projectId: z.string({ error: "Le projet est requis" }),
+        projectId: z.string().optional(),
         companyId: z.string({ error: "L'entreprise est requise" }),
         invoiceNumber: z.number({ error: "Le numéro de la facture est obligatoire." }),
         item: z.object({
@@ -58,7 +58,7 @@ export const invoiceUpdateSchema = z
     .object({
         id: z.string({ error: "L'identifiant est requis" }),
         clientId: z.string({ error: "Le client est requis" }),
-        projectId: z.string({ error: "Le projet est requis" }),
+        projectId: z.string().optional(),
         companyId: z.string({ error: "L'entreprise est requise" }),
         invoiceNumber: z.number({ error: "Le numéro de facture est requis." }),
         item: z.object({

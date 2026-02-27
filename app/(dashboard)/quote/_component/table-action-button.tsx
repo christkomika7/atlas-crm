@@ -49,6 +49,7 @@ export default function TableActionButton({
     convert: false
   });
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
+  const locationBillboard = useItemStore.use.locationBillboardDate();
   const companyId = useDataStore.use.currentCompany();
   const currency = useDataStore.use.currency();
 
@@ -97,11 +98,20 @@ export default function TableActionButton({
       case "convert":
         const hasBillboard = data.items.some((item) => item.itemType === "billboard");
 
-        if (hasBillboard) {
+
+
+        if (hasBillboard && locationBillboard.length > 0) {
           handleSetItems()
           return setOpen({ ...open, convert: true })
         }
-        mutateConvertedQuote({ id }, {
+        mutateConvertedQuote({
+          id, items: data.items.map((item) => ({
+            ...item,
+            discountType: item.discountType as "purcent" | "money",
+            itemType: item.itemType as "billboard" | "product" | "service",
+
+          }))
+        }, {
           onSuccess(data) {
             if (data.data) {
               return router.push(`/invoice/${data.data}`);

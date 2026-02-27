@@ -751,11 +751,19 @@ export async function PUT(req: NextRequest) {
                         }
                     });
 
+
                     if (!invoice) {
                         return NextResponse.json({
                             message: "Facture introuvable.",
                             state: "error",
                         }, { status: 400 })
+                    }
+
+                    if (!invoice.clientId) {
+                        return NextResponse.json({
+                            message: "Cette facture n'est pas associée à un client.",
+                            state: "error",
+                        }, { status: 400 });
                     }
 
                     if (invoice.receipts.length > 0 || invoice.payments.length > 0) {
@@ -769,8 +777,8 @@ export async function PUT(req: NextRequest) {
                         await rollbackInvoice(invoice as unknown as InvoiceType)
                     }
 
-                    await prisma.$transaction([
-                        prisma.client.update({
+                    await prisma.$transaction(async (tx) => {
+                        await tx.client.update({
                             where: { id: invoice.clientId as string },
                             data: {
                                 invoices: {
@@ -785,22 +793,26 @@ export async function PUT(req: NextRequest) {
                                     decrement: invoice.payee
                                 }
                             }
-                        }),
-                        prisma.project.update({
-                            where: { id: invoice.projectId as string },
-                            data: {
-                                invoices: {
-                                    disconnect: {
-                                        id: invoice.id
-                                    }
-                                },
-                                status: "BLOCKED",
-                                amount: new Decimal(0),
-                                balance: new Decimal(0)
-                            }
-                        }),
-                        prisma.invoice.delete({ where: { id: recordId } })
-                    ]);
+                        })
+
+                        if (invoice.projectId) {
+                            await tx.project.update({
+                                where: { id: invoice.projectId as string },
+                                data: {
+                                    invoices: {
+                                        disconnect: {
+                                            id: invoice.id
+                                        }
+                                    },
+                                    status: "BLOCKED",
+                                    amount: new Decimal(0),
+                                    balance: new Decimal(0)
+                                }
+                            })
+                        }
+
+                        await tx.invoice.delete({ where: { id: recordId } })
+                    });
 
                     await removePath([...invoice.pathFiles]);
                     await prisma.$transaction([

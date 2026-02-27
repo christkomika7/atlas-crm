@@ -139,7 +139,7 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  if (!projectExist) {
+  if (data.projectId && !projectExist) {
     return NextResponse.json(
       { status: "error", message: "Projet introuvable." },
       { status: 404 }
@@ -199,21 +199,46 @@ export async function PUT(req: NextRequest) {
       ])
     }
 
-    if (purchaseOrderExist.projectId !== data.projectId) {
-      await prisma.$transaction([
-        prisma.purchaseOrder.update({
-          where: { id: purchaseOrderExist.id },
-          data: {
-            project: {
-              disconnect: {
-                id: purchaseOrderExist.projectId as string
+    if (data.projectId) {
+      if (purchaseOrderExist.projectId && purchaseOrderExist.projectId !== data.projectId) {
+        await prisma.$transaction([
+          prisma.purchaseOrder.update({
+            where: { id: purchaseOrderExist.id },
+            data: {
+              project: {
+                disconnect: {
+                  id: purchaseOrderExist.projectId as string
+                }
               }
             }
-          }
-        })
-      ]
-      )
+          }),
+          prisma.project.update({
+            where: { id: purchaseOrderExist.projectId },
+            data: { status: "BLOCKED", amount: 0 }
+          }),
+          prisma.project.update({
+            where: { id: data.projectId },
+            data: { status: "TODO", amount: data.amountType === "TTC" ? data.totalTTC : data.totalHT }
+          }),
+        ]
+        )
+      }
+
+    } else {
+      if (purchaseOrderExist.projectId) {
+        await prisma.$transaction([
+          prisma.purchaseOrder.update({
+            where: { id: purchaseOrderExist.id },
+            data: { project: { disconnect: { id: purchaseOrderExist.projectId } } }
+          }),
+          prisma.project.update({
+            where: { id: purchaseOrderExist.projectId },
+            data: { status: "BLOCKED", amount: 0 }
+          }),
+        ]);
+      }
     }
+
   }
 
   // Update file
@@ -252,7 +277,7 @@ export async function PUT(req: NextRequest) {
       price: productService.price,
       updatedPrice: productService.updatedPrice,
       locationStart: new Date(),
-      locationEnd: projectExist.deadline,
+      locationEnd: projectExist?.deadline || new Date(),
       discount: productService.discount ?? "0",
       discountType: productService.discountType as string,
       currency: productService.currency!,
@@ -283,12 +308,11 @@ export async function PUT(req: NextRequest) {
           items: {
             create: itemForCreate
           },
-          project: {
-            connect: {
-              id: data.projectId
-            },
-
-          },
+          ...(data.projectId
+            ? { project: { connect: { id: data.projectId } } }
+            : purchaseOrderExist.projectId
+              ? { project: { disconnect: { id: purchaseOrderExist.projectId } } }
+              : {}),
           supplier: {
             connect: {
               id: data.supplierId

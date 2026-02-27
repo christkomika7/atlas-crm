@@ -2,13 +2,12 @@ import { checkAccess, sessionAccess } from "@/lib/access";
 import { createFile, createFolder, removePath } from "@/lib/file";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
-import { checkAccessDeletion, rollbackPurchaseOrder } from "@/lib/server";
+import { checkAccessDeletion } from "@/lib/server";
 import { generateId, getFirstValidCompanyId } from "@/lib/utils";
 import { NextResponse, type NextRequest } from "next/server";
 import Decimal from "decimal.js";
 import { purchaseOrderSchema, PurchaseOrderSchemaType } from "@/lib/zod/purchase-order.schema";
 import { PURCHASE_ORDER_PREFIX } from "@/config/constant";
-import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { ItemPurchaseOrderSchemaType } from "@/lib/zod/item.schema";
 import { $Enums } from "@/lib/generated/prisma";
 
@@ -86,7 +85,7 @@ export async function POST(req: NextRequest) {
             message: "L'identifiant du fournisseur est introuvable.",
         }, { status: 404 });
     }
-    if (!projectExist) {
+    if (data.projectId && !projectExist) {
         return NextResponse.json({
             status: "error",
             message: "L'identifiant du projet est introuvable.",
@@ -122,7 +121,7 @@ export async function POST(req: NextRequest) {
             price: productService.price,
             updatedPrice: productService.updatedPrice,
             locationStart: new Date(),
-            locationEnd: projectExist.deadline,
+            locationEnd: projectExist?.deadline || new Date(),
             discount: productService.discount ?? "0",
             discountType: productService.discountType as string,
             currency: productService.currency!,
@@ -143,8 +142,8 @@ export async function POST(req: NextRequest) {
 
         const amount = data.amountType === "TTC" ? data.totalTTC : data.totalHT;
 
-        const [createdPurchaseOrder] = await prisma.$transaction([
-            prisma.purchaseOrder.create({
+        const [createdPurchaseOrder] = await prisma.$transaction(async (tx) => {
+            const createdPurchaseOrder = await tx.purchaseOrder.create({
                 data: {
                     totalHT: data.totalHT,
                     discount: data.discount!,
@@ -162,12 +161,13 @@ export async function POST(req: NextRequest) {
                     items: {
                         create: itemForCreate
                     },
-                    project: {
-                        connect: {
-                            id: data.projectId
+                    ...(data.projectId && projectExist ? {
+                        project: {
+                            connect: {
+                                id: data.projectId
+                            },
                         },
-
-                    },
+                    } : {}),
                     supplier: {
                         connect: {
                             id: data.supplierId
@@ -184,28 +184,44 @@ export async function POST(req: NextRequest) {
                         })) ?? []
                     },
                 },
-            }),
-            prisma.supplier.update({
+            });
+
+            if (data.projectId && projectExist) {
+                await tx.project.update({
+                    where: {
+                        id: projectExist.id
+                    },
+                    data: { status: "TODO", amount }
+                })
+            }
+
+            await tx.supplier.update({
                 where: { id: data.supplierId },
                 data: {
                     due: {
                         increment: amount
                     }
                 }
-            }),
-            ...(data.item.productServices?.map(productService => (
-                prisma.productService.update({
-                    where: {
-                        id: productService.productServiceId
-                    },
-                    data: {
-                        quantity: {
-                            increment: productService.selectedQuantity
+            });
+
+            if (data.item.productServices && data.item.productServices?.length > 0) {
+                for (const productService of data.item.productServices) {
+                    await tx.productService.update({
+                        where: {
+                            id: productService.productServiceId
                         },
-                    }
-                })
-            )) ?? [])
-        ])
+                        data: {
+                            quantity: {
+                                increment: productService.selectedQuantity
+                            },
+                        }
+                    })
+
+                }
+            }
+
+            return [createdPurchaseOrder]
+        })
 
         return NextResponse.json({
             status: "success",
