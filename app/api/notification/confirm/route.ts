@@ -705,56 +705,56 @@ async function handleCancelAction({
     notification: any;
     user: any;
 }) {
-    const source = notification.dibursement?.source
-        ? await prisma.source.findUnique({
-            where: { id: notification.dibursement.source },
-        })
-        : null;
+    try {
+        const source = notification.dibursement?.source
+            ? await prisma.source.findUnique({
+                where: { id: notification.dibursement.source },
+            })
+            : null;
 
-    await prisma.$transaction(async (tx) => {
-        // 1️⃣ DÉTACHER la relation (clé importante)
-        await tx.notification.update({
-            where: { id: notification.id },
-            data: {
-                active: false,
-                dibursementId: null, // 🔥 CLÉ DE LA SOLUTION
-            },
-        });
+        await prisma.$transaction(async (tx) => {
+            await tx.notification.update({
+                where: { id: notification.id },
+                data: {
+                    active: false,
+                    dibursementId: null,
+                },
+            });
 
-        // 2️⃣ Marquer comme lue
-        await tx.notificationRead.upsert({
-            where: {
-                notificationId_userId: {
+            await tx.notificationRead.upsert({
+                where: {
+                    notificationId_userId: {
+                        notificationId: notification.id,
+                        userId: user.id,
+                    },
+                },
+                create: {
                     notificationId: notification.id,
                     userId: user.id,
                 },
-            },
-            create: {
-                notificationId: notification.id,
-                userId: user.id,
-            },
-            update: {
-                readAt: new Date(),
-            },
-        });
-
-        // 3️⃣ Supprimer la donnée temporaire (maintenant safe)
-        if (notification.dibursementId) {
-            await tx.dibursementData.delete({
-                where: { id: notification.dibursementId },
+                update: {
+                    readAt: new Date(),
+                },
             });
-        }
 
-        // 4️⃣ Notification d’alerte
-        await tx.notification.create({
-            data: {
-                type: "ALERT",
-                for: "DISBURSEMENT",
-                message: `${user.name} a annulé un décaissement de ${formatNumber(
-                    notification.dibursement?.amount.toString() || "0"
-                )} ${notification.company.currency} dans le compte ${source?.name ?? "-"}.`,
-                company: { connect: { id: notification.companyId } },
-            },
+            if (notification.dibursementId) {
+                await tx.dibursementData.delete({
+                    where: { id: notification.dibursementId },
+                });
+            }
+
+            await tx.notification.create({
+                data: {
+                    type: "ALERT",
+                    for: "DISBURSEMENT",
+                    message: `${user.name} a annulé un décaissement de ${formatNumber(
+                        notification.dibursement?.amount.toString() || "0"
+                    )} ${notification.company.currency} dans le compte ${source?.name ?? "-"}.`,
+                    company: { connect: { id: notification.companyId } },
+                },
+            });
         });
-    });
+    } catch (error) {
+        console.error("Error handling cancel action:", error);
+    }
 }

@@ -43,21 +43,12 @@ export default function ExportButton({ transactions, isLoading }: ExportButtonPr
         setIsloadingCsv(true);
 
         const columns = [
-            "Date",
-            "Mouvement",
-            "Catégorie",
-            "Nature",
-            "Information",
-            "HT Montant",
-            "TTC Montant",
-            "Mode de paiement",
-            "Numéro de chèque",
-            "Référence du document",
-            "Client / Fournisseur / Tiers",
-            "Source",
-            "Période",
-
+            "Date", "Mouvement", "Catégorie", "Nature", "Information",
+            "HT Montant", "TTC Montant", "Mode de paiement", "Numéro de chèque",
+            "Référence du document", "Source", "Période",
+            "Client | Fournisseur | Tiers"
         ];
+
 
         const csvData = transactions.map((transaction) => ({
             Date: formatDateToDashModel(new Date(transaction.date)),
@@ -76,9 +67,9 @@ export default function ExportButton({ transactions, isLoading }: ExportButtonPr
             "Mode de paiement": getPaymentModeLabel(transaction.paymentType),
             "Numéro de chèque": transaction.checkNumber || "-",
             "Référence du document": transaction.documentReference || "-",
-            "Client / Fournisseur / Tiers": transaction.userAction?.name || "-",
             Source: transaction.source?.name || "-",
             Période: transaction.period,
+            "Client / Fournisseur / Tiers": transaction.userAction?.name || "-",
         }));
 
         const csv = Papa.unparse({

@@ -15,27 +15,24 @@ export async function generateTransactionsExcel(
         pageSetup: { orientation: "landscape", paperSize: 9 }
     });
 
-    // ✅ DÉFINIR UNIQUEMENT LES LARGEURS (pas les headers)
     const columns = [
         { key: "date", width: 15 },
         { key: "movement", width: 10 },
         { key: "category", width: 20 },
         { key: "nature", width: 20 },
-        { key: "description", width: 30 },
+        { key: "infos", width: 30 },
         { key: "htAmount", width: 15 },
         { key: "ttcAmount", width: 15 },
         { key: "paymentType", width: 20 },
         { key: "checkNumber", width: 20 },
         { key: "documentReference", width: 25 },
-        { key: "clientOrSupplier", width: 50 },
         { key: "source", width: 20 },
         { key: "period", width: 20 },
-        { key: "infos", width: 30 },
+        { key: "clientOrSupplier", width: 50 },
     ];
 
     sheet.columns = columns;
 
-    // ✅ AJOUTER LES EN-TÊTES PERSONNALISÉS
     const companyRow = sheet.addRow([companyName]);
     companyRow.font = { name: "Helvetica", bold: true, size: 16 };
     companyRow.alignment = { vertical: "middle", horizontal: "center" };
@@ -53,7 +50,6 @@ export async function generateTransactionsExcel(
 
     sheet.addRow([]);
 
-    // ✅ AJOUTER LA LIGNE D'EN-TÊTE DES COLONNES
     const headerLabels = [
         "Date", "Mouvement", "Catégorie", "Nature", "Information",
         "HT Montant", "TTC Montant", "Mode de paiement", "Numéro de chèque",
