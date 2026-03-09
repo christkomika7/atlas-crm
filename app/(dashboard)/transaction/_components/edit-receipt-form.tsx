@@ -28,10 +28,10 @@ import NatureModal from "../../../../components/modal/nature-modal";
 import { acceptPayment } from "@/lib/data";
 import SourceModal from "../../../../components/modal/source-modal";
 import Spinner from "@/components/ui/spinner";
-import { $Enums } from "@/lib/generated/prisma";
 import { ProjectType } from "@/types/project.types";
 import { getallByCompany } from "@/action/project.action";
-import UserActionModal from "@/components/modal/user-action-modal";
+import { ClientType, ClientUserAction } from "@/types/client.types";
+import { all } from "@/action/client.action";
 
 type ReceiptFormProps = {
     transaction?: TransactionType;
@@ -39,6 +39,7 @@ type ReceiptFormProps = {
 
 export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
     const companyId = useDataStore.use.currentCompany();
+    const isInitialLoad = useRef(true);
 
     const categories = useTransactionStore.use.categories();
     const setCategories = useTransactionStore.use.setCategories();
@@ -46,17 +47,17 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
     const setNatures = useTransactionStore.use.setNatures();
     const sources = useTransactionStore.use.sources();
     const setSources = useTransactionStore.use.setSources();
-    const userActions = useTransactionStore.use.userActions();
-    const setUserActions = useTransactionStore.use.setUserActions();
 
     const [categoryId, setCategoryId] = useState(transaction?.categoryId || "");
     const [documents, setDocuments] = useState<TransactionDocument[]>([]);
     const [projects, setProjects] = useState<ProjectType[]>([]);
+    const [clients, setClients] = useState<ClientUserAction[]>([]);
+    const [userActions, setUserActions] = useState<ClientUserAction[]>([]);
+
     const [paymentMode, setPaymentMode] = useState<"cash" | "check" | "bank-transfer" | undefined>(
         transaction?.paymentType as unknown as "cash" | "check" | "bank-transfer" | undefined
     );
     const [natureId, setNatureId] = useState(transaction?.natureId || "");
-    const [currentAmountType, setCurrentAmountType] = useState<$Enums.AmountType | undefined>(transaction?.amountType);
     const [maxAmount, setMaxAmount] = useState<number | undefined>(undefined);
 
 
@@ -82,6 +83,12 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
         "natures"
     );
 
+    const { mutate, isPending: isGettingClients } = useQueryAction<
+        { id: string, skip?: number; take?: number },
+        RequestResponse<ClientType[]>
+    >(all, () => { }, "clients");
+
+
     const {
         mutate: mutateGetSources,
         isPending: isGettingSources,
@@ -89,15 +96,6 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
         getSources,
         () => { },
         "sources"
-    );
-
-    const {
-        mutate: mutateGetUserActions,
-        isPending: isGettingUserActions,
-    } = useQueryAction<{ natureId: string }, RequestResponse<UserActionType[]>>(
-        getUserActionsByNature,
-        () => { },
-        "user-actions"
     );
 
     const {
@@ -118,6 +116,16 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
         "projects"
     );
 
+    const {
+        mutate: mutateGetUserActions,
+        isPending: isGettingUserActions,
+    } = useQueryAction<{ natureId: string }, RequestResponse<UserActionType[]>>(
+        getUserActionsByNature,
+        () => { },
+        "user-actions"
+    );
+
+
     const { mutate: mutateUpdateReceipt, isPending: isCreatingReceipt } = useQueryAction<
         ReceiptSchemaType & { id: string },
         RequestResponse<TransactionType>
@@ -125,19 +133,47 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
 
     useEffect(() => {
         if (!transaction) return;
+        isInitialLoad.current = true;
+
         form.reset({
             companyId: transaction.companyId || companyId || "",
             date: new Date(transaction.date),
             source: transaction.sourceId || "",
             category: transaction.category.id || "",
             nature: transaction.nature.id || "",
-            userAction: transaction.userActionId || "",
+            userAction: transaction.userAction?.clientId || transaction.userAction?.name || "",
             project: transaction.projectId || "",
             paymentMode: transaction.paymentType || undefined,
             amount: Number(transaction.amount) || 0,
             amountType: transaction.amountType || "HT",
             checkNumber: transaction.checkNumber || "",
             information: transaction.infos || "",
+
+        });
+
+
+        mutateGetUserActions(
+            { natureId: transaction.nature.id },
+            {
+                onSuccess: (data) => {
+                    if (data.data) {
+                        const userActionClients = data.data.map(client => ({
+                            id: client.clientId || client.name,
+                            name: client.name
+                        }))
+                        setUserActions(userActionClients)
+                    }
+                },
+            }
+        )
+
+        mutate({ id: companyId }, {
+            onSuccess(data) {
+                if (data.data) {
+                    const clients = data.data.map(client => ({ id: client.id, name: `${client.firstname} ${client.lastname}` }))
+                    setClients(clients)
+                }
+            },
         });
 
         mutateGetCategories({ companyId, type: "receipt" }, {
@@ -158,18 +194,6 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
                         setNatures(data.data);
                         form.setValue("nature", transaction.nature.id || "");
                         setNatureId(transaction.nature.id);
-                    }
-                },
-            }
-        );
-
-        mutateGetUserActions(
-            { natureId: transaction.nature.id },
-            {
-                onSuccess: (data) => {
-                    if (data.data) {
-                        form.setValue("userAction", transaction.userActionId || "");
-                        setUserActions(data.data);
                     }
                 },
             }
@@ -204,7 +228,11 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
             },
         });
 
+
+
     }, [transaction]);
+
+    console.log([...clients, ...userActions])
 
 
     useEffect(() => {
@@ -240,12 +268,22 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
 
     useEffect(() => {
         if (!natureId) return;
+
+        if (isInitialLoad.current) {
+            isInitialLoad.current = false;
+            return;
+        }
+
         mutateGetUserActions(
             { natureId },
             {
                 onSuccess: (data) => {
                     if (data.data) {
-                        setUserActions(data.data);
+                        const userActionClients = data.data.map(client => ({
+                            id: client.clientId || client.name,
+                            name: client.name
+                        }))
+                        setUserActions(userActionClients)
                     }
                 },
             }
@@ -270,6 +308,7 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
             {
                 onSuccess() {
                     form.reset();
+                    window.location.reload();
                 },
             }
         );
@@ -277,7 +316,7 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
 
     return (
         <>
-            {isGettingCategories && isGettingNatures && isGettingSources && isGettingUserActions && isGettingDocuments && isGettingProjects ? (
+            {isGettingCategories && isGettingNatures && isGettingSources && isGettingDocuments && isGettingProjects ? (
                 <div className="flex flex-col gap-3 items-center justify-center h-48">
                     Chargement des données du formulaire... <Spinner />
                 </div>
@@ -370,21 +409,24 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
                                         <FormItem className="-space-y-2">
                                             <FormControl>
                                                 <Combobox
-                                                    isLoading={isGettingUserActions}
+                                                    isLoading={isGettingClients || isGettingUserActions}
                                                     disabled={!natureId}
-                                                    datas={userActions.map(userAction => ({
-                                                        id: userAction.id,
-                                                        label: userAction.name,
-                                                        value: userAction.id
-                                                    }))}
+                                                    datas={[...clients, ...userActions]
+                                                        .filter((item, index, self) =>
+                                                            index === self.findIndex(t => t.id === item.id)
+                                                        )
+                                                        .map(client => ({
+                                                            id: client.id,
+                                                            label: client.name,
+                                                            value: client.id
+                                                        }))}
                                                     value={field.value as string}
                                                     setValue={(e) => {
                                                         field.onChange(e)
                                                     }}
-                                                    placeholder="Fournisseur / Tiers"
-                                                    searchMessage="Rechercher un fournisseur ou un tiers"
-                                                    noResultsMessage="Aucun fournisseur ou tiers trouvé."
-                                                    addElement={<UserActionModal natureId={natureId} type="CLIENT" />}
+                                                    placeholder="Clients / Tiers"
+                                                    searchMessage="Rechercher un client ou un tiers"
+                                                    noResultsMessage="Aucun client ou tiers trouvé."
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -507,7 +549,6 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
                                                             <RadioGroupItem value="HT" id="HT" className="hidden" />
                                                             <Label
                                                                 onClick={() => {
-                                                                    setCurrentAmountType("HT");
                                                                     field.onChange("HT");
                                                                 }}
                                                                 htmlFor="HT"
@@ -524,7 +565,6 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
                                                             <RadioGroupItem value="TTC" id="TTC" className="hidden" />
                                                             <Label
                                                                 onClick={() => {
-                                                                    setCurrentAmountType("TTC");
                                                                     field.onChange("TTC");
                                                                 }}
                                                                 htmlFor="TTC"
@@ -586,7 +626,6 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
                                                     value={field.value as string}
                                                     setValue={e => {
                                                         const doc = documents.find(d => d.id === e);
-                                                        setCurrentAmountType(doc?.amountType);
                                                         if (doc) {
                                                             setMaxAmount(Number(doc.payee));
                                                             form.setValue("amountType", doc.amountType);
@@ -632,7 +671,7 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
                                 variant="primary"
                                 className="justify-center max-w-xs"
                             >
-                                {isCreatingReceipt ? <Spinner /> : "Enregistrer"}
+                                {isCreatingReceipt ? <Spinner /> : "Modifier"}
                             </Button>
                         </div>
                     </form>

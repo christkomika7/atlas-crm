@@ -30,9 +30,10 @@ export async function GET(req: NextRequest) {
                 include: {
                     category: true,
                     nature: true,
+                    userAction: true,
+                    company: true
                 }
             });
-
 
             if (!receipt) {
                 return NextResponse.json({
@@ -40,10 +41,25 @@ export async function GET(req: NextRequest) {
                     message: "Transaction non trouvée.",
                 }, { status: 404 });
             }
+            const companyId = receipt.companyId;
+
+            const clients = await prisma.client.findMany({
+                where: { companyId }
+            });
+
+            const userActions = await prisma.userAction.findMany({
+                where: { companyId }
+            });
+
+            const userClients = [
+                ...clients.map(client => ({ id: client.id, name: `${client.firstname} ${client.lastname}` })),
+                ...userActions.map(userAction => ({ id: userAction.id, name: userAction.name }))
+            ];
+
 
             return NextResponse.json({
                 status: "success",
-                data: receipt,
+                data: { ...receipt, userClients },
             }, { status: 200 });
 
         case "dibursement":
@@ -52,6 +68,7 @@ export async function GET(req: NextRequest) {
                 include: {
                     category: true,
                     nature: true,
+                    userAction: true
                 }
             });
 

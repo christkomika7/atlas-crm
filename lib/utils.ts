@@ -30,6 +30,16 @@ export async function decompressString(value: string) {
   return await decompressFromUTF16(value)
 }
 
+export function cleanExcelValue(value: any): string {
+  if (value === undefined || value === null) return "";
+
+  return String(value)
+    .replace(/\r?\n|\r/g, " ")
+    .replace(/\t/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function formatList(items: string[]) {
   if (!items || items.length === 0) return "";
   if (items.length === 1) return items[0];

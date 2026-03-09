@@ -1,5 +1,10 @@
 import { CompanyType } from "./company.types";
 
+export type ClientUserAction = {
+    id: string;
+    name: string;
+}
+
 export type ClientType = {
     id: string;
     companyName: string;

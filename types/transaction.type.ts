@@ -51,6 +51,7 @@ export type TransactionType = {
   payOnBehalfOf?: ClientType;
 
   clientOrSupplier: string;
+  clientOrSupplierId: string;
   clientOrSupplierType: UserActionType;
 
   infos?: string;
@@ -61,6 +62,22 @@ export type TransactionType = {
   updatedAt: Date;
   createdAt: Date;
 };
+
+export type TransactionImportType = {
+  Date: string
+  Mouvement: string
+  Catégorie: string
+  Nature: string
+  "HT Montant": string
+  "TTC Montant": string
+  "Mode de paiement": string
+  "Numéro de chèque": string
+  "Référence du document": string
+  Source: string
+  Période: string
+  "Client | Fournisseur | Tiers": string
+  Commentaire: string
+}
 
 export type TransactionCategoryType = {
   id: string;
@@ -82,7 +99,7 @@ export type SourceType = {
 export type UserActionType = {
   id: string;
   name: string;
-
+  clientId: string;
   natureId: string;
   nature: TransactionNatureType;
 

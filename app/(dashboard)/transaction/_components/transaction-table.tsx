@@ -295,9 +295,11 @@ const TransactionTable = forwardRef<TransactionTableRef, TransactionTableProps>(
                       </Tooltip>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Link href={`/transaction/${transaction.id}?type=${transaction.type}`} className="mr-2">
-                        <EditIcon className="w-4 h-4 text-amber-500 cursor-pointer" />
-                      </Link>
+                      <div className="flex justify-center items-center">
+                        <Link href={`/transaction/${transaction.id}?type=${transaction.type}`} className="mr-2">
+                          <EditIcon className="w-4 h-4 text-amber-500 cursor-pointer" />
+                        </Link>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

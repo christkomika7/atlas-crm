@@ -94,7 +94,6 @@ export default function ExportButton({ transactions, isLoading }: ExportButtonPr
 
 
     function toDoc(e: React.MouseEvent<HTMLButtonElement, MouseEvent>, doc: "excel" | "word") {
-
         e.preventDefault()
         setDoc(doc)
         mutate({ datas: transactions, companyId, doc }, {

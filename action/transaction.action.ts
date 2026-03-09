@@ -17,6 +17,7 @@ import {
   SourceType,
   TransactionCategoryType,
   TransactionDocument,
+  TransactionImportType,
   TransactionNatureType,
   TransactionType,
   UserActionType,
@@ -79,7 +80,6 @@ export async function exportToDocument({
     throw error;
   }
 }
-
 
 export async function getTransactions(params: GetTransactionsParams) {
   try {
@@ -166,7 +166,6 @@ export async function getUniqueTransaction({ id, type }: { id: string, type?: "r
     throw error;
   }
 }
-
 
 export async function getCategories({ companyId, type, filter = false }: { companyId: string, type?: "receipt" | "dibursement", filter?: boolean }) {
   const params = new URLSearchParams();
@@ -347,7 +346,6 @@ export async function getNaturesByCompanyId({ companyId, filter, categories }: {
     throw error;
   }
 }
-
 
 export async function getNatures({ categoryId }: { categoryId: string }) {
   try {
@@ -622,6 +620,35 @@ export async function createDibursement(data: DibursementSchemaType) {
     return res;
   } catch (error) {
     console.error("Erreur dans la fonction create:", error);
+    throw error;
+  }
+}
+
+export async function importTransaction({ data, companyId }: { data: TransactionImportType[], companyId: string }) {
+  console.log("Hello")
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/import`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data, companyId }),
+      },
+    );
+
+    const res: RequestResponse<TransactionType> = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        res.message || "Erreur lors de l'import des transactions",
+      );
+    }
+
+    return res;
+  } catch (error) {
+    console.error("Erreur dans la fonction import:", error);
     throw error;
   }
 }

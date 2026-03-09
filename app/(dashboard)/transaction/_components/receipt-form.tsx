@@ -31,7 +31,8 @@ import Spinner from "@/components/ui/spinner";
 import { $Enums } from "@/lib/generated/prisma";
 import { ProjectType } from "@/types/project.types";
 import { getallByCompany } from "@/action/project.action";
-import UserActionModal from "@/components/modal/user-action-modal";
+import { ClientType, ClientUserAction } from "@/types/client.types";
+import { all } from "@/action/client.action";
 
 type ReceiptFormProps = {
   closeModal: () => void;
@@ -47,12 +48,12 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
   const setNatures = useTransactionStore.use.setNatures();
   const sources = useTransactionStore.use.sources();
   const setSources = useTransactionStore.use.setSources();
-  const userActions = useTransactionStore.use.userActions();
-  const setUserActions = useTransactionStore.use.setUserActions();
 
   const [categoryId, setCategoryId] = useState("");
   const [documents, setDocuments] = useState<TransactionDocument[]>([]);
   const [projects, setProjects] = useState<ProjectType[]>([]);
+  const [clients, setClients] = useState<ClientUserAction[]>([]);
+  const [userActions, setUserActions] = useState<ClientUserAction[]>([]);
   const [paymentMode, setPaymentMode] = useState<"cash" | "check" | "bank-transfer">();
   const [natureId, setNatureId] = useState("");
   const [currentAmountType, setCurrentAmountType] = useState<$Enums.AmountType>();
@@ -71,6 +72,14 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
     "categories"
   );
 
+  const {
+    mutate: mutateGetUserActions,
+    isPending: isGettingUserActions,
+  } = useQueryAction<{ natureId: string }, RequestResponse<UserActionType[]>>(
+    getUserActionsByNature,
+    () => { },
+    "user-actions"
+  );
 
   const {
     mutate: mutateGetNature,
@@ -90,15 +99,10 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
     "sources"
   );
 
-  const {
-    mutate: mutateGetUserActions,
-    isPending: isGettingUserActions,
-  } = useQueryAction<{ natureId: string }, RequestResponse<UserActionType[]>>(
-    getUserActionsByNature,
-    () => { },
-    "user-actions"
-  );
-
+  const { mutate, isPending: isGettingClients } = useQueryAction<
+    { id: string, skip?: number; take?: number },
+    RequestResponse<ClientType[]>
+  >(all, () => { }, "clients");
 
   const {
     mutate: mutateGetDocuments,
@@ -150,13 +154,23 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
         },
       });
 
-      mutateGetDocuments({ companyId, type: "dibursement" }, {
+      mutateGetDocuments({ companyId, type: 'receipt' }, {
         onSuccess(data) {
           if (data.data) {
             setDocuments(data.data)
           }
         },
       });
+
+      mutate({ id: companyId }, {
+        onSuccess(data) {
+          if (data.data) {
+            const clients = data.data.map(client => ({ id: client.id, name: `${client.firstname} ${client.lastname}` }))
+            setClients(clients);
+          }
+        },
+      });
+
 
       form.reset({
         companyId,
@@ -180,6 +194,24 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
     );
   }, [categoryId]);
 
+  useEffect(() => {
+    if (!natureId) return;
+    mutateGetUserActions(
+      { natureId },
+      {
+        onSuccess(data) {
+          if (data.data) {
+            const userActionClients = data.data.map(client => ({
+              id: client.clientId || client.name,
+              name: client.name
+            }))
+            setUserActions(userActionClients)
+          }
+        },
+      }
+    )
+  }, [natureId])
+
 
   useEffect(() => {
     if (!companyId) return;
@@ -194,21 +226,6 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
     );
   }, [paymentMode, companyId]);
 
-
-
-  useEffect(() => {
-    if (!natureId) {
-      setUserActions([]);
-      return;
-    }
-
-    mutateGetUserActions(
-      { natureId },
-      {
-        onSuccess: (data) => data.data && setUserActions(data.data),
-      }
-    );
-  }, [natureId]);
 
   function getCategoryData(id: string) {
     setCategoryId(id);
@@ -322,21 +339,24 @@ export default function ReceiptForm({ closeModal, refreshTransaction }: ReceiptF
                 <FormItem className="-space-y-2">
                   <FormControl>
                     <Combobox
-                      isLoading={isGettingUserActions}
+                      isLoading={isGettingClients || isGettingUserActions}
                       disabled={!natureId}
-                      datas={userActions.map(userAction => ({
-                        id: userAction.id,
-                        label: userAction.name,
-                        value: userAction.id
-                      }))}
+                      datas={[...clients, ...userActions]
+                        .filter((item, index, self) =>
+                          index === self.findIndex(t => t.id === item.id)
+                        )
+                        .map(client => ({
+                          id: client.id,
+                          label: client.name,
+                          value: client.id
+                        }))}
                       value={field.value as string}
                       setValue={(e) => {
                         field.onChange(e)
                       }}
-                      placeholder="Fournisseur / Tiers"
-                      searchMessage="Rechercher un fournisseur ou un tiers"
-                      noResultsMessage="Aucun fournisseur ou tiers trouvé."
-                      addElement={<UserActionModal natureId={natureId} type="CLIENT" />}
+                      placeholder="Clients / Tiers"
+                      searchMessage="Rechercher un client ou un tiers"
+                      noResultsMessage="Aucun client ou tiers trouvé."
                     />
                   </FormControl>
                   <FormMessage />

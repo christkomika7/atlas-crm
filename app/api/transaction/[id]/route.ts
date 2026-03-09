@@ -140,6 +140,7 @@ export async function GET(req: NextRequest) {
       movement: receipt.movement.toString(),
       amountType: receipt.amountType.toString(),
       clientOrSupplier: receipt.userAction?.name || "-",
+      clientOrSupplierId: receipt.userAction?.clientId || ""
     }));
 
 
@@ -149,6 +150,7 @@ export async function GET(req: NextRequest) {
       type: disbursement.type.toString(),
       period: disbursement.period,
       clientOrSupplier: disbursement.userAction?.name || "-",
+      clientOrSupplierId: "",
       movement: disbursement.movement.toString(),
       amountType: disbursement.amountType.toString(),
       documentReference: disbursement.referencePurchaseOrder?.purchaseOrderNumber
@@ -157,10 +159,11 @@ export async function GET(req: NextRequest) {
           false
         )}`
         : "-",
+
     }));
 
     let allTransactions = [...normalizedReceipts, ...normalizedDisbursements];
-    // Tri côté application
+
     allTransactions.sort((a, b) => {
       if (activeSort === "byAmount") {
         const aAmount = parseFloat(a.amount?.toString() || "0");

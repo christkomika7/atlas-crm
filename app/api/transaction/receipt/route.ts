@@ -1,5 +1,6 @@
 import { RECEIPT_CATEGORY } from "@/config/constant";
 import { checkAccess, sessionAccess } from "@/lib/access"
+import { UserAction } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { formatNumber } from "@/lib/utils";
@@ -40,7 +41,52 @@ export async function POST(req: NextRequest) {
 
     try {
 
-        const category = await prisma.transactionCategory.findUnique({ where: { id: data.category } });
+        const { category, client } = await prisma.$transaction(async (tx) => {
+            const category = await tx.transactionCategory.findUnique({ where: { id: data.category } });
+            const client = await tx.client.findUnique({ where: { id: data.userAction } });
+            return { category, client }
+        })
+
+
+        let userAction: UserAction | null = null;
+
+        if (!client) {
+            userAction = await prisma.userAction.findFirst({
+                where: {
+                    name: data.userAction,
+                    natureId: data.nature,
+                    companyId: data.companyId
+                }
+            });
+
+            if (!userAction) {
+                return NextResponse.json({
+                    status: "error",
+                    message: "La valeur de client | tiers est invalide.",
+                }, { status: 404 });
+            }
+
+        } else {
+            const clientName = `${client.firstname} ${client.lastname}`;
+            userAction = await prisma.userAction.findFirst({
+                where: {
+                    name: clientName,
+                    natureId: data.nature,
+                    companyId: companyExist.id
+                }
+            });
+
+            if (!userAction) {
+                userAction = await prisma.userAction.create({
+                    data: {
+                        name: clientName,
+                        natureId: data.nature,
+                        clientId: client.id,
+                        companyId: companyExist.id
+                    }
+                });
+            }
+        }
 
         if (!category) {
             return NextResponse.json({
@@ -197,6 +243,8 @@ export async function POST(req: NextRequest) {
             })
         }
 
+
+
         const createdReceipt = await prisma.receipt.create({
             data: {
                 type: "RECEIPT",
@@ -209,7 +257,7 @@ export async function POST(req: NextRequest) {
                 infos: data.information,
                 userAction: {
                     connect: {
-                        id: data.userAction as string
+                        id: userAction.id
                     }
                 },
                 category: {

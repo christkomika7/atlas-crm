@@ -1,5 +1,6 @@
 import { RECEIPT_CATEGORY } from "@/config/constant";
 import { checkAccess, sessionAccess } from "@/lib/access"
+import { UserAction } from "@/lib/generated/prisma";
 import { parseData } from "@/lib/parse";
 import prisma from "@/lib/prisma";
 import { formatNumber } from "@/lib/utils";
@@ -27,7 +28,6 @@ export async function PUT(req: NextRequest) {
 
     const res = await req.json();
 
-    // Validation de l'ID de l'encaissement
     if (!res.id) {
         return NextResponse.json({
             state: "error",
@@ -40,7 +40,6 @@ export async function PUT(req: NextRequest) {
         date: new Date(res.date)
     }) as ReceiptSchemaType;
 
-    // Vérifier si l'encaissement existe
     const existingReceipt = await prisma.receipt.findUnique({
         where: { id: res.id },
         include: {
@@ -65,7 +64,51 @@ export async function PUT(req: NextRequest) {
     }, { status: 404 });
 
     try {
-        const category = await prisma.transactionCategory.findUnique({ where: { id: data.category } });
+        const { category, client } = await prisma.$transaction(async (tx) => {
+            const category = await tx.transactionCategory.findUnique({ where: { id: data.category } });
+            const client = await tx.client.findUnique({ where: { id: data.userAction } });
+            return { category, client }
+        })
+
+        let userAction: UserAction | null = null;
+
+        if (!client) {
+            userAction = await prisma.userAction.findFirst({
+                where: {
+                    name: data.userAction,
+                    natureId: data.nature,
+                    companyId: data.companyId
+                }
+            });
+
+            if (!userAction) {
+                return NextResponse.json({
+                    status: "error",
+                    message: "La valeur de client | tiers est invalide.",
+                }, { status: 404 });
+            }
+
+        } else {
+            const clientName = `${client.firstname} ${client.lastname}`;
+            userAction = await prisma.userAction.findFirst({
+                where: {
+                    name: clientName,
+                    natureId: data.nature,
+                    companyId: companyExist.id
+                }
+            });
+
+            if (!userAction) {
+                userAction = await prisma.userAction.create({
+                    data: {
+                        name: clientName,
+                        natureId: data.nature,
+                        clientId: client.id,
+                        companyId: companyExist.id
+                    }
+                });
+            }
+        }
 
         if (!category) {
             return NextResponse.json({
@@ -200,7 +243,6 @@ export async function PUT(req: NextRequest) {
 
             const hasCompletedPayment = currentPayee.add(newAmount.valueOf()).gte(total.minus(0.01));
 
-            // Mettre à jour ou créer le paiement
             if (existingReceipt.paymentId) {
                 await prisma.payment.update({
                     where: { id: existingReceipt.paymentId },
@@ -259,7 +301,6 @@ export async function PUT(req: NextRequest) {
                 });
             }
         } else if (existingReceipt.referenceInvoiceId) {
-            // Si on enlève la référence à la facture, restaurer l'ancien montant
             const oldInvoice = await prisma.invoice.findUnique({
                 where: { id: existingReceipt.referenceInvoiceId },
                 include: { client: true, project: true }
@@ -296,7 +337,6 @@ export async function PUT(req: NextRequest) {
                 }
             }
 
-            // Supprimer le paiement associé
             if (existingReceipt.paymentId) {
                 await prisma.payment.delete({
                     where: { id: existingReceipt.paymentId }
@@ -342,7 +382,7 @@ export async function PUT(req: NextRequest) {
                 infos: data.information,
                 userAction: {
                     connect: {
-                        id: data.userAction as string
+                        id: userAction.id as string
                     }
                 },
                 category: {

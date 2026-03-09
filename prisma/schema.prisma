@@ -336,6 +336,7 @@ model Client {
   deliveryNotes DeliveryNote[]
   receipts      Receipt[]
   contracts     Contract[]
+  userActions   UserAction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1031,6 +1032,9 @@ model UserAction {
   id String @id @default(uuid())
 
   name String @default("")
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   natureId String
   nature   TransactionNature @relation(fields: [natureId], references: [id], onDelete: Cascade)

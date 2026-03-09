@@ -18,6 +18,7 @@ import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import ExportButton from "./export-button";
+import ImportButton from "./import-button";
 
 export default function TransactionPage() {
   const [transactions, setTransactions] = useState<TransactionType[]>([]);
@@ -71,7 +72,12 @@ export default function TransactionPage() {
               <FilterXIcon className="w-4 h-4" />
             </Button>
           )}
-          <div className="grid grid-cols-[120px_120px_140px] gap-x-2">
+          <div className="grid grid-cols-[120px_120px_120px_140px] gap-x-2">
+            {loadingCreateAccess ? <Skeleton className="w-35 h-12" /> : <>
+              {createAccess &&
+                <ImportButton refreshTransaction={handleTransactionAdded} />
+              }
+            </>}
             {loadingReadAccess ? <Skeleton className="w-30 h-12" /> : <>
               {readAccess &&
                 <ExportButton transactions={transactions} isLoading={isPending || isLoading} />
