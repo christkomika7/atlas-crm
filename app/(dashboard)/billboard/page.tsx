@@ -27,7 +27,7 @@ export default function BillboardPage() {
     RequestResponse<BillboardType[]>
   >(removeMany, () => { }, "billboards");
 
-  const handleAppointmentAdded = () => {
+  const handleBillboardAdded = () => {
     billboardTableRef.current?.refreshBillboard();
   };
 
@@ -38,7 +38,7 @@ export default function BillboardPage() {
         {
           onSuccess() {
             setSelectedBillboardIds([]);
-            handleAppointmentAdded();
+            handleBillboardAdded();
           },
         }
       );
@@ -49,7 +49,7 @@ export default function BillboardPage() {
   return (
     <div className="space-y-9">
       <Header title="Panneau publicitaire">
-        <div className="gap-x-2 grid grid-cols-[120px_100px]">
+        <div className="gap-x-2 grid grid-cols-[120px_240px]">
           {modifyAccess &&
             <Button
               variant="primary"
@@ -68,7 +68,7 @@ export default function BillboardPage() {
             </Button>
           }
           {createAccess &&
-            <HeaderMenu />
+            <HeaderMenu refreshBillboard={handleBillboardAdded} />
           }
         </div>
       </Header>

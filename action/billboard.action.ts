@@ -5,7 +5,7 @@ import { ContractSchemaType } from "@/lib/zod/contract.schema";
 import { EmailSchemaType } from "@/lib/zod/email.schema";
 import { RequestResponse } from "@/types/api.types";
 import { BaseType } from "@/types/base.types";
-import { BillboardType } from "@/types/billboard.types";
+import { BillboardImportType, BillboardType } from "@/types/billboard.types";
 
 export async function all({ companyId, search, lessor, lessorType, skip = 0, take = DEFAULT_PAGE_SIZE }: { companyId: string, search?: string, limit?: number, lessor?: string, lessorType?: string, skip?: number, take?: number }) {
     const params = new URLSearchParams();
@@ -56,6 +56,37 @@ export async function filter(data: ContractSchemaType) {
         throw error;
     }
 }
+
+
+export async function importBillboard({ data, companyId }: { data: BillboardImportType[], companyId: string }) {
+    console.log("Hello")
+    try {
+        const response = await fetch(
+            `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard/import`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ data, companyId }),
+            },
+        );
+
+        const res: RequestResponse<BillboardType> = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                res.message || "Erreur lors de l'import des panneaux d'affichage",
+            );
+        }
+
+        return res;
+    } catch (error) {
+        console.error("Erreur dans la fonction import:", error);
+        throw error;
+    }
+}
+
 
 export async function email(data: EmailSchemaType) {
     try {

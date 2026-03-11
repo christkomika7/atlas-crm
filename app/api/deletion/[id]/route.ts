@@ -254,7 +254,7 @@ export async function GET(req: NextRequest) {
                     reference: `${receipt.company.documentModel?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(receipt.referenceInvoice?.invoiceNumber || 0, false)}`,
                     date: deletion.createdAt,
                     actionBy: deletion.user?.name || "Inconnu",
-                    forUser: `${receipt.client?.companyName}`,
+                    forUser: receipt.client?.companyName || "-",
                     amount: `${formatNumber(new Decimal(receipt.amount.toString()))} ${receipt.company.currency}`
                 }];
 

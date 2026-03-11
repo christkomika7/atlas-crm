@@ -108,6 +108,62 @@ export type BillboardType = {
     updatedAt: Date;
 };
 
+export type BillboardImportType = {
+    "Référence": string
+    "Article taxable": boolean
+    "Type de panneau publicitaire": string
+    "Nom du panneau publicitaire": string
+    "Lieu": string
+    "Ville (Panneau)": string
+    "Quartier": string
+    "Repère visuel": string
+    "Support d'affichage": string
+    "Orientation": string
+    "Lien Google Maps": string
+
+    "Prix de location": number
+    "Coût d'installation": number
+    "Coût d'entretien": number
+
+    "Largeur": number
+    "Hauteur": number
+    "Surface": number
+
+    "Éclairage": string
+    "Type de structure": string
+    "État du panneau": string
+
+    "Éléments décoratifs": string
+    "Fondations et visserie": string
+    "Électricité et éclairage": string
+    "Structure et châssis": string
+    "Aspect général": string
+
+    "Type d'espace": string
+    "Type de bailleur": string
+
+    "Prix du panneau loué": number
+    "Prix du panneau non loué": number
+
+    "Nom du bailleur": string
+    "Adresse complète du bailleur": string
+    "Ville (Bailleur)": string
+    "Téléphone": string
+    "Email": string
+
+    "Nom de la banque": string
+    "RIB": string
+    "IBAN": string
+    "BIC/SWIFT": string
+
+    "Date début location": string
+    "Durée du contrat": string
+    "Mode de paiement": string
+    "Fréquence de paiement": string
+    "Fourniture du courant": string
+    "Conditions particulières": string
+}
+
 export type BillboardItem = {
     name: string;
     quantity: number;

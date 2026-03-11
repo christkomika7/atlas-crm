@@ -92,8 +92,6 @@ export const rentalDurations = [
     { id: 4, value: "5_years", label: "5 ans" },
 ]
 
-
-
 export const paymentTerms = [
     { id: 1, value: "paiement_7_jours", label: "Paiement sous 7 jours", data: 7 },
     { id: 2, value: "paiement_15_jours", label: "Paiement sous 15 jours", data: 15 },
@@ -103,7 +101,6 @@ export const paymentTerms = [
     { id: 6, value: "paiement_90_jours", label: "Paiement sous 90 jours", data: 90 },
     { id: 7, value: "paiement_120_jours", label: "Paiement sous 120 jours", data: 120 },
 ];
-
 
 export const colors = [
     { id: 1, color: "#3366FF" }, { id: 2, color: "#33CC66" }, { id: 3, color: "#FF9933" }, { id: 4, color: "#FF4C4C" },
@@ -120,7 +117,6 @@ export const colors = [
     { id: 45, color: "#99B3FF" }, { id: 46, color: "#99FFCC" }, { id: 47, color: "#FFE6B3" }, { id: 48, color: "#FF4C4C" },
     { id: 49, color: "#6699FF" }, { id: 50, color: "#66CC99" },
 ];
-
 
 export const priority = [
     {
@@ -155,8 +151,6 @@ export const transactions = [
         value: "DISBURSEMENT"
     },
 ];
-
-
 
 export const status = [
     {

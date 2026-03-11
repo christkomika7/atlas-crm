@@ -45,7 +45,6 @@ export async function POST(req: NextRequest) {
 
                 if (!transaction.Catégorie || transaction.Catégorie === "-") throw new Error("Catégorie manquante.");
                 if (!transaction.Nature || transaction.Nature === "-") throw new Error("Nature manquante.");
-                if (!transaction["Client | Fournisseur | Tiers"] || transaction["Client | Fournisseur | Tiers"] === "-") throw new Error("Client | Fournisseur | Tiers manquant.");
                 if (!transaction.Source || transaction.Source === "-") throw new Error("Source manquante.");
                 if (!transaction.Mouvement || transaction.Mouvement === "-") throw new Error("Mouvement manquant.");
 
@@ -97,15 +96,17 @@ export async function POST(req: NextRequest) {
                     source = await tx.source.create({ data: { name: transaction.Source, companyId, sourceType: paymentType as $Enums.SourceType } });
                 }
                 sourceId = source.id;
+
                 let clientOrSupplierId: string | null = null;
-                if (transaction["Client | Fournisseur | Tiers"]) {
+                const tierValue = transaction["Client | Fournisseur | Tiers"];
+                if (tierValue && tierValue !== "-") {
                     let clientOrSupplier = await tx.userAction.findFirst({
-                        where: { companyId, name: transaction["Client | Fournisseur | Tiers"] }
+                        where: { companyId, name: tierValue }
                     });
                     if (!clientOrSupplier) {
                         clientOrSupplier = await tx.userAction.create({
                             data: {
-                                name: transaction["Client | Fournisseur | Tiers"],
+                                name: tierValue,
                                 companyId,
                                 natureId: nature.id
                             }
