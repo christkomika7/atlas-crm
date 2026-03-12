@@ -37,6 +37,18 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ state: "error", message: "Entreprise introuvable." }, { status: 404 });
         }
 
+        const [existingCategories, existingNatures, existingSources, existingUserActions] = await Promise.all([
+            prisma.transactionCategory.findMany({ where: { companyId }, include: { company: true } }),
+            prisma.transactionNature.findMany({ where: { companyId } }),
+            prisma.source.findMany({ where: { companyId } }),
+            prisma.userAction.findMany({ where: { companyId } }),
+        ]);
+
+        const categoryMap = new Map(existingCategories.map(c => [c.name, c]));
+        const natureMap = new Map(existingNatures.map(n => [`${n.name}-${n.categoryId}`, n]));
+        const sourceMap = new Map(existingSources.map(s => [s.name, s]));
+        const userActionMap = new Map(existingUserActions.map(u => [u.name, u]));
+
         let earlyReturnResponse: { status: string; message: string } | null = null;
 
         await prisma.$transaction(async (tx) => {
@@ -58,16 +70,13 @@ export async function POST(req: NextRequest) {
                 const amountType = transaction["HT Montant"] && transaction["HT Montant"] !== "-" ? "HT" : "TTC";
                 const rawAmount = amountType === "HT" ? transaction["HT Montant"] : transaction["TTC Montant"];
                 const amount = new Decimal((rawAmount?.replace("XAF", "").trim() || "0").replaceAll(" ", ""));
-                const paymentType = acceptPayment.find((payment) => payment.label === transaction["Mode de paiement"])?.value || "cash";
+                const paymentBruteType = acceptPayment.find((payment) => payment.label === transaction["Mode de paiement"])?.value || "cash";
+                const paymentType = paymentBruteType === "cash" ? $Enums.SourceType.CASH : $Enums.SourceType.BANK;
                 const period = transaction.Période;
                 const checkNumber = String(transaction["Numéro de chèque"]);
                 const comment = transaction.Commentaire;
 
-                let category = await tx.transactionCategory.findFirst({
-                    where: { companyId, name: transaction.Catégorie },
-                    include: { company: true }
-                });
-
+                let category = categoryMap.get(transaction.Catégorie) ?? null;
                 if (!category) {
                     category = await tx.transactionCategory.create({
                         data: {
@@ -77,42 +86,38 @@ export async function POST(req: NextRequest) {
                         },
                         include: { company: true }
                     });
+                    categoryMap.set(category.name, category);
                 }
 
-                let nature = await tx.transactionNature.findFirst({
-                    where: { companyId, name: transaction.Nature, categoryId: category.id }
-                });
+                let nature = natureMap.get(`${transaction.Nature}-${category.id}`) ?? null;
                 if (!nature) {
                     nature = await tx.transactionNature.create({
                         data: { name: transaction.Nature, categoryId: category.id, companyId }
                     });
+                    natureMap.set(`${nature.name}-${nature.categoryId}`, nature);
                 }
 
                 let sourceId: string | null = null;
-                let source = null;
-                source = await tx.source.findFirst({ where: { companyId, name: transaction.Source } });
-
+                let source = sourceMap.get(transaction.Source) ?? null;
                 if (!source) {
-                    source = await tx.source.create({ data: { name: transaction.Source, companyId, sourceType: paymentType as $Enums.SourceType } });
+                    source = await tx.source.create({
+                        data: { name: transaction.Source, companyId, sourceType: paymentType as $Enums.SourceType }
+                    });
+                    sourceMap.set(source.name, source);
                 }
                 sourceId = source.id;
 
                 let clientOrSupplierId: string | null = null;
                 const tierValue = transaction["Client | Fournisseur | Tiers"];
                 if (tierValue && tierValue !== "-") {
-                    let clientOrSupplier = await tx.userAction.findFirst({
-                        where: { companyId, name: tierValue }
-                    });
-                    if (!clientOrSupplier) {
-                        clientOrSupplier = await tx.userAction.create({
-                            data: {
-                                name: tierValue,
-                                companyId,
-                                natureId: nature.id
-                            }
+                    let userAction = userActionMap.get(tierValue) ?? null;
+                    if (!userAction) {
+                        userAction = await tx.userAction.create({
+                            data: { name: tierValue, companyId, natureId: nature.id }
                         });
+                        userActionMap.set(userAction.name, userAction);
                     }
-                    clientOrSupplierId = clientOrSupplier.id;
+                    clientOrSupplierId = userAction.id;
                 }
 
                 if (transaction["Référence du document"] && transaction["Référence du document"] !== "-") {
@@ -221,7 +226,9 @@ export async function POST(req: NextRequest) {
                                         purchaseOrder: purchaseOrder.id,
                                         project: projectId,
                                         infos: comment || "",
-                                        userAction: { connect: { id: clientOrSupplierId as string } }
+                                        ...(clientOrSupplierId && {
+                                            userAction: { connect: { id: clientOrSupplierId } }
+                                        })
                                     }
                                 });
 
@@ -274,8 +281,6 @@ export async function POST(req: NextRequest) {
                     if (paymentId) Object.assign(referenceDocument, { payment: { connect: { id: paymentId } } });
                     if (clientId) Object.assign(referenceDocument, { client: { connect: { id: clientId } } });
 
-                    console.log({ clientId, sourceId })
-
                     const createdReceipt = await tx.receipt.create({
                         data: {
                             date,
@@ -322,7 +327,9 @@ export async function POST(req: NextRequest) {
                                 purchaseOrder: purchaseOrderId,
                                 project: projectId,
                                 infos: comment || "",
-                                userAction: { connect: { id: clientOrSupplierId as string } }
+                                ...(clientOrSupplierId && {
+                                    userAction: { connect: { id: clientOrSupplierId } }
+                                })
                             }
                         });
 
@@ -373,6 +380,9 @@ export async function POST(req: NextRequest) {
                     });
                 }
             }
+        }, {
+            timeout: 30000,
+            maxWait: 10000,
         });
 
         if (earlyReturnResponse) {
