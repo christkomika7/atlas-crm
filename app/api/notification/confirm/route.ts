@@ -29,57 +29,13 @@ export async function PUT(req: NextRequest) {
         include: {
             dibursement: true,
             company: true,
-            readBy: {
-                include: {
-                    user: true
-                }
-            },
-            invoice: {
-                include: {
-                    company: {
-                        include: {
-                            documentModel: true
-                        }
-                    }
-                }
-            },
-            purchaseOrder: {
-                include: {
-                    company: {
-                        include: {
-                            documentModel: true
-                        }
-                    }
-                }
-            },
-            quote: {
-                include: {
-                    company: {
-                        include: {
-                            documentModel: true
-                        }
-                    }
-                }
-            },
-            deliveryNote: {
-                include: {
-                    company: {
-                        include: {
-                            documentModel: true
-                        }
-                    }
-                }
-            },
-            appointment: {
-                include: {
-                    client: true
-                }
-            },
-            task: {
-                include: {
-                    project: true
-                }
-            },
+            readBy: { include: { user: true } },
+            invoice: { include: { company: { include: { documentModel: true } } } },
+            purchaseOrder: { include: { company: { include: { documentModel: true } } } },
+            quote: { include: { company: { include: { documentModel: true } } } },
+            deliveryNote: { include: { company: { include: { documentModel: true } } } },
+            appointment: { include: { client: true } },
+            task: { include: { project: true } },
         }
     });
 
@@ -94,57 +50,13 @@ export async function PUT(req: NextRequest) {
             include: {
                 dibursement: true,
                 company: true,
-                readBy: {
-                    include: {
-                        user: true
-                    }
-                },
-                invoice: {
-                    include: {
-                        company: {
-                            include: {
-                                documentModel: true
-                            }
-                        }
-                    }
-                },
-                purchaseOrder: {
-                    include: {
-                        company: {
-                            include: {
-                                documentModel: true
-                            }
-                        }
-                    }
-                },
-                quote: {
-                    include: {
-                        company: {
-                            include: {
-                                documentModel: true
-                            }
-                        }
-                    }
-                },
-                deliveryNote: {
-                    include: {
-                        company: {
-                            include: {
-                                documentModel: true
-                            }
-                        }
-                    }
-                },
-                appointment: {
-                    include: {
-                        client: true
-                    }
-                },
-                task: {
-                    include: {
-                        project: true
-                    }
-                },
+                readBy: { include: { user: true } },
+                invoice: { include: { company: { include: { documentModel: true } } } },
+                purchaseOrder: { include: { company: { include: { documentModel: true } } } },
+                quote: { include: { company: { include: { documentModel: true } } } },
+                deliveryNote: { include: { company: { include: { documentModel: true } } } },
+                appointment: { include: { client: true } },
+                task: { include: { project: true } },
             }
         });
         return NextResponse.json({
@@ -161,21 +73,17 @@ export async function PUT(req: NextRequest) {
 
                 const referenceDocument: Record<string, any> = {};
 
-
                 if (data.fiscalObject) {
                     Object.assign(referenceDocument, {
                         fiscalObject: { connect: { id: data.fiscalObject } },
                     });
                 }
 
-
-
                 if (data.purchaseOrder) {
                     Object.assign(referenceDocument, {
                         referencePurchaseOrder: { connect: { id: data.purchaseOrder } },
                     });
                 }
-
 
                 if (data.project) {
                     Object.assign(referenceDocument, {
@@ -190,13 +98,11 @@ export async function PUT(req: NextRequest) {
                 }
 
                 try {
-
                     let paymentId = "";
                     const [source, category, nature] = await prisma.$transaction([
                         prisma.source.findUnique({ where: { id: notification.dibursement?.source as string } }),
                         prisma.transactionCategory.findUnique({ where: { id: notification.dibursement?.category as string } }),
                         prisma.transactionNature.findUnique({ where: { id: notification.dibursement?.nature as string } })
-
                     ]);
 
                     if (data.purchaseOrder) {
@@ -229,10 +135,9 @@ export async function PUT(req: NextRequest) {
                             }, { status: 400 });
                         }
 
-                        const total =
-                            purchaseExist.amountType === "HT"
-                                ? purchaseExist.totalHT
-                                : purchaseExist.totalTTC;
+                        const total = purchaseExist.amountType === "HT"
+                            ? purchaseExist.totalHT
+                            : purchaseExist.totalTTC;
 
                         const payee = purchaseExist.payee;
                         const remaining = total.minus(payee);
@@ -241,9 +146,7 @@ export async function PUT(req: NextRequest) {
                         if (newAmount.gt(remaining.valueOf())) {
                             return NextResponse.json({
                                 status: "error",
-                                message: `Le montant saisi dépasse le solde restant à payer (${formatNumber(
-                                    remaining.toString()
-                                )} ${purchaseExist.company.currency}).`,
+                                message: `Le montant saisi dépasse le solde restant à payer (${formatNumber(remaining.toString())} ${purchaseExist.company.currency}).`,
                             }, { status: 400 });
                         }
 
@@ -267,10 +170,7 @@ export async function PUT(req: NextRequest) {
                                 isPaid: hasCompletedPayment,
                                 payee: payee.add(newAmount.valueOf()),
                             },
-                            include: {
-                                supplier: true
-                            }
-
+                            include: { supplier: true }
                         });
 
                         if (purchaseOrder.supplierId) {
@@ -280,7 +180,7 @@ export async function PUT(req: NextRequest) {
                                     due: { decrement: data.amount },
                                     paidAmount: { increment: data.amount }
                                 }
-                            })
+                            });
                         }
                     }
 
@@ -305,11 +205,10 @@ export async function PUT(req: NextRequest) {
                             source: { connect: { id: data.source as string } },
                             nature: { connect: { id: data.nature } },
                             company: { connect: { id: notification.companyId } },
-                            userAction: {
-                                connect: {
-                                    id: data.userActionId as string
-                                }
-                            },
+                            // ✅ conditionnel
+                            ...(data.userActionId && {
+                                userAction: { connect: { id: data.userActionId } }
+                            }),
                             ...referenceDocument,
                         },
                     });
@@ -318,16 +217,9 @@ export async function PUT(req: NextRequest) {
                         data: {
                             type: 'ALERT',
                             for: 'DISBURSEMENT',
-                            message: `${user.name} a réalisé un décaissement de ${formatNumber(data.amount.toString())} ${notification.company.currency}, au titre de la catégorie « ${category?.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} ».
-                            \nCommentaire : \n
-                            ${data.infos}
-                            `,
-                            paymentDibursement: {
-                                connect: { id: createdDibursement.id }
-                            },
-                            company: {
-                                connect: { id: createdDibursement.companyId }
-                            }
+                            message: `${user.name} a réalisé un décaissement de ${formatNumber(data.amount.toString())} ${notification.company.currency}, au titre de la catégorie « ${category?.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} ».\n\nCommentaire :\n${data.infos}`,
+                            paymentDibursement: { connect: { id: createdDibursement.id } },
+                            company: { connect: { id: createdDibursement.companyId } }
                         }
                     });
 
@@ -336,16 +228,10 @@ export async function PUT(req: NextRequest) {
                     const isClientError = error instanceof Error && (
                         /Identifiant|dépasse|déjà réglé|obligatoire/i.test(error.message)
                     );
-
                     const status = isClientError ? 400 : 500;
                     const message = error instanceof Error ? error.message : "Erreur lors de la création de décaissement.";
-
-                    return NextResponse.json(
-                        { status: "error", message },
-                        { status }
-                    );
+                    return NextResponse.json({ status: "error", message }, { status });
                 }
-
             }
             break;
 
@@ -367,11 +253,7 @@ export async function PUT(req: NextRequest) {
                                 select: {
                                     id: true,
                                     currency: true,
-                                    profiles: {
-                                        include: {
-                                            user: true
-                                        }
-                                    }
+                                    profiles: { include: { user: true } }
                                 }
                             },
                         },
@@ -379,33 +261,22 @@ export async function PUT(req: NextRequest) {
 
                     const data = notification.dibursement!;
 
-                    if (!purchaseExist) {
-                        throw new Error("Identifiant de bon de commande invalide.");
-                    }
+                    if (!purchaseExist) throw new Error("Identifiant de bon de commande invalide.");
+                    if (purchaseExist.isPaid) throw new Error("Ce bon de commande est déjà réglé et ne peut pas recevoir de nouveau paiement.");
 
-                    if (purchaseExist.isPaid) {
-                        throw new Error("Ce bon de commande est déjà réglé et ne peut pas recevoir de nouveau paiement.");
-                    }
-
-                    const total =
-                        purchaseExist.amountType === "HT"
-                            ? purchaseExist.totalHT
-                            : purchaseExist.totalTTC;
+                    const total = purchaseExist.amountType === "HT"
+                        ? purchaseExist.totalHT
+                        : purchaseExist.totalTTC;
 
                     const payee = purchaseExist.payee;
                     const remaining = total.minus(payee);
                     const newAmount = new Decimal(data?.amount?.toString() || 0);
 
                     if (!data?.isPaid && newAmount.gt(remaining.valueOf())) {
-                        throw new Error(
-                            `Le montant saisi dépasse le solde restant à payer (${formatNumber(
-                                remaining.toString()
-                            )} ${purchaseExist.company.currency}).`
-                        );
+                        throw new Error(`Le montant saisi dépasse le solde restant à payer (${formatNumber(remaining.toString())} ${purchaseExist.company.currency}).`);
                     }
 
-                    const hasCompletedPayment =
-                        data?.isPaid || payee.add(newAmount.valueOf()).gte(total.minus(0.01));
+                    const hasCompletedPayment = data?.isPaid || payee.add(newAmount.valueOf()).gte(total.minus(0.01));
 
                     const payment = await tx.payment.create({
                         data: {
@@ -427,11 +298,7 @@ export async function PUT(req: NextRequest) {
                             company: {
                                 include: {
                                     documentModel: true,
-                                    profiles: {
-                                        include: {
-                                            user: true
-                                        }
-                                    }
+                                    profiles: { include: { user: true } }
                                 }
                             },
                             supplier: true,
@@ -445,12 +312,8 @@ export async function PUT(req: NextRequest) {
                             message: hasCompletedPayment
                                 ? `${user.name} a réglé le bon de commande n° ${purchaseOrder.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrder.purchaseOrderNumber, false)}.`
                                 : `${user.name} a réalisé un accompte de ${formatNumber(data.amount.toString())} ${purchaseOrder.company.currency} pour le bon de commande n° ${purchaseOrder.company.documentModel?.purchaseOrderPrefix || PURCHASE_ORDER_PREFIX}-${generateAmaId(purchaseOrder.purchaseOrderNumber, false)}.`,
-                            purchaseOrder: {
-                                connect: { id: purchaseOrder.id }
-                            },
-                            company: {
-                                connect: { id: purchaseOrder.companyId }
-                            }
+                            purchaseOrder: { connect: { id: purchaseOrder.id } },
+                            company: { connect: { id: purchaseOrder.companyId } }
                         }
                     });
 
@@ -466,61 +329,29 @@ export async function PUT(req: NextRequest) {
                             checkNumber: notification.dibursement!.checkNumber || "",
                             paymentType: notification.dibursement!.paymentType,
                             infos: notification.dibursement!.infos || "",
-                            suppliers: {
-                                connect: {
-                                    id: purchaseOrder.supplierId as string
-                                }
-                            },
-                            referencePurchaseOrder: {
-                                connect: {
-                                    id: purchaseOrder.id
-                                }
-                            },
-                            category: {
-                                connect: {
-                                    id: notification.dibursement!.category
-                                }
-                            },
-                            nature: {
-                                connect: {
-                                    id: notification.dibursement!.nature
-                                }
-                            },
-                            userAction: {
-                                connect: {
-                                    id: notification.dibursement?.userActionId as string
-                                }
-                            },
-                            source: {
-                                connect: {
-                                    id: notification.dibursement!.source as string
-                                }
-                            },
-                            payment: {
-                                connect: {
-                                    id: payment.id
-                                }
-                            },
-                            company: {
-                                connect: {
-                                    id: purchaseOrder.companyId
-                                }
-                            }
+                            suppliers: { connect: { id: purchaseOrder.supplierId as string } },
+                            referencePurchaseOrder: { connect: { id: purchaseOrder.id } },
+                            category: { connect: { id: notification.dibursement!.category } },
+                            nature: { connect: { id: notification.dibursement!.nature } },
+                            // ✅ conditionnel
+                            ...(notification.dibursement?.userActionId && {
+                                userAction: { connect: { id: notification.dibursement.userActionId } }
+                            }),
+                            source: { connect: { id: notification.dibursement!.source as string } },
+                            payment: { connect: { id: payment.id } },
+                            company: { connect: { id: purchaseOrder.companyId } }
                         }
                     }),
                     prisma.supplier.update({
                         where: { id: purchaseOrder.supplierId as string },
                         data: {
-                            due: {
-                                decrement: notification.dibursement!.amount
-                            },
-                            paidAmount: {
-                                increment: notification.dibursement!.amount
-                            }
+                            due: { decrement: notification.dibursement!.amount },
+                            paidAmount: { increment: notification.dibursement!.amount }
                         }
                     })
                 ]);
-            } break;
+            }
+            break;
 
         case "TRANSFER":
             if (notification.type === "CONFIRM") {
@@ -542,23 +373,14 @@ export async function PUT(req: NextRequest) {
                         amountType: "HT",
                         paymentType: "withdrawal",
                         infos: data.infos || `Transfert vers ${sourceB?.name}`,
-                        category: {
-                            connect: { id: data.category }
-                        },
-                        nature: {
-                            connect: { id: disbursementNature }
-                        },
-                        source: {
-                            connect: { id: origin }
-                        },
-                        company: {
-                            connect: { id: notification.companyId }
-                        },
-                        userAction: {
-                            connect: {
-                                id: data.userActionId as string
-                            }
-                        },
+                        category: { connect: { id: data.category } },
+                        nature: { connect: { id: disbursementNature } },
+                        source: { connect: { id: origin } },
+                        company: { connect: { id: notification.companyId } },
+                        // ✅ conditionnel
+                        ...(data.userActionId && {
+                            userAction: { connect: { id: data.userActionId } }
+                        }),
                     }
                 });
 
@@ -571,23 +393,14 @@ export async function PUT(req: NextRequest) {
                         amountType: "HT",
                         paymentType: "withdrawal",
                         infos: data.infos || `Transfert depuis ${sourceA?.name}`,
-                        category: {
-                            connect: { id: data.category }
-                        },
-                        nature: {
-                            connect: { id: receiptNature }
-                        },
-                        source: {
-                            connect: { id: destination }
-                        },
-                        company: {
-                            connect: { id: notification.companyId }
-                        },
-                        userAction: {
-                            connect: {
-                                id: data.userActionId as string
-                            }
-                        },
+                        category: { connect: { id: data.category } },
+                        nature: { connect: { id: receiptNature } },
+                        source: { connect: { id: destination } },
+                        company: { connect: { id: notification.companyId } },
+                        // ✅ conditionnel
+                        ...(data.userActionId && {
+                            userAction: { connect: { id: data.userActionId } }
+                        }),
                     }
                 });
 
@@ -595,16 +408,10 @@ export async function PUT(req: NextRequest) {
                     data: {
                         type: 'ALERT',
                         for: 'TRANSFER',
-                        message: `${user.name} a réalisé un transfert  de ${formatNumber(data.amount.toString())} ${notification.company.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.
-                        \nCommentaire : \n
-                        ${data.infos}
-                        `,
-                        company: {
-                            connect: { id: notification.companyId }
-                        }
+                        message: `${user.name} a réalisé un transfert de ${formatNumber(data.amount.toString())} ${notification.company.currency} du compte ${sourceA?.name} vers le compte ${sourceB?.name}.\n\nCommentaire :\n${data.infos}`,
+                        company: { connect: { id: notification.companyId } }
                     }
                 });
-
             }
             break;
     }
@@ -616,57 +423,13 @@ export async function PUT(req: NextRequest) {
         include: {
             dibursement: true,
             company: true,
-            readBy: {
-                include: {
-                    user: true
-                }
-            },
-            invoice: {
-                include: {
-                    company: {
-                        include: {
-                            documentModel: true
-                        }
-                    }
-                }
-            },
-            purchaseOrder: {
-                include: {
-                    company: {
-                        include: {
-                            documentModel: true
-                        }
-                    }
-                }
-            },
-            quote: {
-                include: {
-                    company: {
-                        include: {
-                            documentModel: true
-                        }
-                    }
-                }
-            },
-            deliveryNote: {
-                include: {
-                    company: {
-                        include: {
-                            documentModel: true
-                        }
-                    }
-                }
-            },
-            appointment: {
-                include: {
-                    client: true
-                }
-            },
-            task: {
-                include: {
-                    project: true
-                }
-            },
+            readBy: { include: { user: true } },
+            invoice: { include: { company: { include: { documentModel: true } } } },
+            purchaseOrder: { include: { company: { include: { documentModel: true } } } },
+            quote: { include: { company: { include: { documentModel: true } } } },
+            deliveryNote: { include: { company: { include: { documentModel: true } } } },
+            appointment: { include: { client: true } },
+            task: { include: { project: true } },
         }
     });
 
@@ -684,9 +447,7 @@ async function markNotificationAsReadAndInactive(
 ) {
     await prisma.$transaction([
         prisma.notificationRead.upsert({
-            where: {
-                notificationId_userId: { notificationId, userId },
-            },
+            where: { notificationId_userId: { notificationId, userId } },
             create: { notificationId, userId },
             update: { readAt: new Date() },
         }),
@@ -728,13 +489,8 @@ async function handleCancelAction({
                         userId: user.id,
                     },
                 },
-                create: {
-                    notificationId: notification.id,
-                    userId: user.id,
-                },
-                update: {
-                    readAt: new Date(),
-                },
+                create: { notificationId: notification.id, userId: user.id },
+                update: { readAt: new Date() },
             });
 
             if (notification.dibursementId) {
