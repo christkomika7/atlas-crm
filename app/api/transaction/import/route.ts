@@ -7,6 +7,7 @@ import Decimal from "decimal.js";
 import { formatNumber } from "@/lib/utils";
 import { acceptPayment } from "@/lib/data";
 import { $Enums } from "@/lib/generated/prisma";
+import { format, parse } from "date-fns";
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess(["TRANSACTION"], "CREATE");
@@ -66,7 +67,14 @@ export async function POST(req: NextRequest) {
                 let paymentId: string | null = null;
                 let clientId: string | null = null;
 
-                const date = new Date(transaction.Date);
+                const parsed = parse(transaction.Date, "dd/MM/yyyy", new Date());
+                const finalDate = new Date(Date.UTC(
+                    parsed.getFullYear(),
+                    parsed.getMonth(),
+                    parsed.getDate()
+                ));
+
+                const date = finalDate;
                 const amountType = transaction["HT Montant"] && transaction["HT Montant"] !== "-" ? "HT" : "TTC";
                 const rawAmount = amountType === "HT" ? transaction["HT Montant"] : transaction["TTC Montant"];
                 const amount = new Decimal((rawAmount?.replace("XAF", "").trim() || "0").replaceAll(" ", ""));
