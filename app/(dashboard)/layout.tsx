@@ -38,7 +38,7 @@ export default async function DashboardLayout({
   return (
     <div className="relative grid grid-cols-[260px_1fr] bg-dark w-screen h-screen">
       <div className="flex flex-col space-y-6 p-6 h-full overflow-y-auto">
-        <div className="flex flex-shrink-0 justify-center">
+        <div className="flex shrink-0 justify-center">
           <Logo width={200} height={55} />
         </div>
         <div className="flex-1 overflow-hidden">
