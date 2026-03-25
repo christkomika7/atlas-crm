@@ -60,7 +60,6 @@ export async function DELETE(req: NextRequest) {
         include: {
             receipts: true,
             dibursements: true,
-            userActions: true
         }
     });
 
@@ -79,20 +78,30 @@ export async function DELETE(req: NextRequest) {
 
     }
 
-    if (nature?.userActions && nature.userActions.length > 0) {
-        return NextResponse.json({
-            state: "error",
-            message: "Impossible de supprimer cette nature car des client | fournisseurs | tiers sont liés à cette nature.",
-        }, { status: 409 });
-
-    }
-
-
-    await prisma.transactionNature.findUnique({
-        where: { id },
+    const userActionsToDetach = await prisma.userAction.findMany({
+        where: { natureId: id },
+        select: { id: true },
     });
 
+    await prisma.userAction.updateMany({
+        where: { natureId: id },
+        data: { natureId: undefined },
+    });
+
+    if (userActionsToDetach.length > 0) {
+        const detachedIds = userActionsToDetach.map((ua) => ua.id);
+
+        await prisma.userAction.deleteMany({
+            where: {
+                id: { in: detachedIds },
+                natureId: undefined,
+            },
+        });
+    }
+
     const deletedNature = await prisma.transactionNature.delete({ where: { id } });
+
+
     return NextResponse.json({
         state: "success",
         data: deletedNature,
