@@ -31,7 +31,7 @@ export default function HeaderMenu({ refreshBillboard }: HeaderMenuProps) {
               <Button
                 onClick={() => router.push("/billboard/create")}
                 variant="primary"
-                className="bg-white hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                className="bg-white hover:bg-blue shadow-none h-9! text-black hover:text-white transition-[color,background-color,box-shadow]"
               >
                 Nouveau panneau
               </Button>
@@ -41,7 +41,7 @@ export default function HeaderMenu({ refreshBillboard }: HeaderMenuProps) {
               <BillboardBrochureModal>
                 <Button
                   variant="primary"
-                  className="bg-white hover:bg-blue shadow-none !h-9 text-black hover:text-white transition-[color,background-color,box-shadow]"
+                  className="bg-white hover:bg-blue shadow-none h-9! text-black hover:text-white transition-[color,background-color,box-shadow]"
                 >
                   Brochure
                 </Button>

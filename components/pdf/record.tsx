@@ -146,7 +146,7 @@ export default function RecordDocument({
                             className="w-full h-full object-contain"
                         />
                     ) : (
-                        <h2 className="font-bold !text-4xl">LOGO</h2>
+                        <h2 className="font-bold text-4xl!">LOGO</h2>
                     )}
                 </div>
             </div>
@@ -200,34 +200,34 @@ export default function RecordDocument({
                 </div>
 
                 <div >
-                    <h2 className="font-black !text-[1.275rem] mb-[12px] text-right">
+                    <h2 className="font-black text-[1.275rem]! mb-[12px] text-right">
                         {title}
                     </h2>
                     <div className="">
-                        <p className="text-right mb-[1px]">
+                        <p className="text-right mb-px">
                             {record?.company.registeredAddress}
                         </p>
-                        <p className="mb-[1px] text-right">
+                        <p className="mb-px text-right">
                             BP: {record?.company.codePostal}
                         </p>
-                        <p className="mb-[1px] text-right">
+                        <p className="mb-px text-right">
                             {record?.company.city},{" "}
                             {getCountryFrenchName(record?.company.country as string)}
                         </p>
-                        <p className="mb-[1px] text-right">
+                        <p className="mb-px text-right">
                             {record?.company.email}
                         </p>
                         {record?.company.website && (
-                            <p className="mb-[1px] text-right">
+                            <p className="mb-px text-right">
                                 <Link href={record?.company.website}>
                                     {record?.company.website}
                                 </Link>
                             </p>
                         )}
-                        <p className="mb-[1px] text-right">
+                        <p className="mb-px text-right">
                             {record?.company.phoneNumber}
                         </p>
-                        <p className="mb-[1px] text-right">
+                        <p className="mb-px text-right">
                             RCCM: {record?.company.businessRegistrationNumber}
                         </p>
                         <p className="text-right">
@@ -239,10 +239,10 @@ export default function RecordDocument({
             <div className="w-full text-sm">
                 {/* HEADER */}
                 <div className="grid grid-cols-[1fr_80px_160px_240px] border-y border-[#bfbfbf] h-12 items-center font-bold">
-                    <div className="pl-[27px]">Article</div>
+                    <div className="pl-6.75">Article</div>
                     <div className="text-right">Qté</div>
                     <div className="text-right">Prix unitaire</div>
-                    <div className="pr-[27px] text-right">Prix total</div>
+                    <div className="pr-6.75 text-right">Prix total</div>
                 </div>
 
                 {/* BODY */}
@@ -252,13 +252,13 @@ export default function RecordDocument({
                         className="grid grid-cols-[1fr_80px_160px_240px] py-2"
                     >
                         {/* ARTICLE */}
-                        <div className="px-[27px]">
+                        <div className="px-6.75">
                             <p className="font-bold">{item.reference}</p>
-                            <p className="mb-[3px] font-semibold">
+                            <p className="mb-0.75 font-semibold">
                                 {item.name} {!item.hasTax && <span className="text-blue">*</span>}
                             </p>
 
-                            <p className="whitespace-pre-wrap mb-[8px] leading-snug">
+                            <p className="whitespace-pre-wrap mb-2 leading-snug">
                                 {item.description}
                             </p>
 
@@ -296,14 +296,9 @@ export default function RecordDocument({
                         <div className="text-right">
                             {moreInfos &&
                                 <>
-                                    {formatNumber(
-                                        calculate({
-                                            items: [parseItem(item)],
-                                            taxes: record.company?.vatRates ?? [],
-                                            amountType: record.amountType,
-                                        }).totalWithoutTaxes
-                                    )}{" "}
+                                    {item.price}{" "}
                                     {item.currency}
+                                    {/* // voir les espaces a la fin du pdf */}
                                 </>
                             }
                         </div>
@@ -317,7 +312,7 @@ export default function RecordDocument({
                                             items: [parseItem(item)],
                                             taxes: record.company?.vatRates ?? [],
                                             amountType: record.amountType,
-                                        }).totalWithoutTaxes
+                                        }).subTotal
                                     )}{" "}
                                     {item.currency}
                                 </>
