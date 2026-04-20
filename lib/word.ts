@@ -1609,8 +1609,7 @@ export async function generateTransactionsWordAndPDF(
             transaction.amountType === "TTC"
                 ? `${formatNumber(transaction.amount)}`
                 : "",
-
-        "Mode de paiement": getPaymentModeLabel(transaction.paymentType),
+        "Mode de paiement": transaction.paymentType ? getPaymentModeLabel(transaction.paymentType) : transaction.source?.name === "Caisse" ? 'Espéce' : "-",
         "Numéro de chèque": transaction.checkNumber || "-",
         "Référence du document": transaction.documentReference || "-",
         Source: transaction.source?.name || "-",
