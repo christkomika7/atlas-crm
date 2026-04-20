@@ -26,7 +26,6 @@ import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
 import { formatDateToDashModel } from "@/lib/date";
 import { toast } from "sonner";
-import NoAccess, { NoAccessResource } from "@/components/errors/no-access";
 
 export default function PreviewTab() {
   const param = useParams();

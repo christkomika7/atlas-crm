@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
+
         const yearLabel = getTransactionsYearRange(transactions);
 
         const [wordBuffer, excelBuffer] = await Promise.all([

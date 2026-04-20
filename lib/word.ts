@@ -1602,12 +1602,12 @@ export async function generateTransactionsWordAndPDF(
         Information: transaction.infos || "-",
         "HT Montant":
             transaction.amountType === "HT"
-                ? `${formatNumber(transaction.amount)} ${currency}`
+                ? `${formatNumber(transaction.amount)}`
                 : "",
 
         "TTC Montant":
             transaction.amountType === "TTC"
-                ? `${formatNumber(transaction.amount)} ${currency}`
+                ? `${formatNumber(transaction.amount)}`
                 : "",
 
         "Mode de paiement": getPaymentModeLabel(transaction.paymentType),
@@ -1712,7 +1712,7 @@ export async function generateTransactionsWordAndPDF(
                 properties: {
                     page: {
                         size: {
-                            orientation: PageOrientation.LANDSCAPE,
+                            orientation: PageOrientation.PORTRAIT,
                         },
                         margin: {
                             top: 720,

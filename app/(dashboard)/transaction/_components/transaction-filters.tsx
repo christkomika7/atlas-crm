@@ -66,12 +66,15 @@ export default function TransactionFilters({ filters, setFilters }: TransactionF
       "sources"
     );
 
-
   useEffect(() => {
     if (companyId) {
       mutateGetCategories({ companyId, filter: true }, { onSuccess: data => data.data && setCategories(data.data) });
       mutateGetNatures({ companyId, filter: true }, { onSuccess: data => data.data && setNatures(data.data) });
-      mutateGetSources({ companyId, filter: true }, { onSuccess: data => data.data && setSources(data.data) });
+      mutateGetSources({ companyId, filter: true }, {
+        onSuccess: data => {
+          data.data && setSources(data.data)
+        }
+      });
     }
   }, [companyId]);
 
