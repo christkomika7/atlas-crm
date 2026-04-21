@@ -188,7 +188,7 @@ export function addTotalRow(
 
 export const getPaymentModeLabel = (value: string) => {
   if (value.toLowerCase() === "withdrawal") return "Retrait";
-  return acceptPayment.find((accept) => accept.value === value)?.label || "-";
+  return acceptPayment.find((accept) => accept.value === value)?.label;
 }
 
 

@@ -244,7 +244,7 @@ export default function DocumentTab() {
                   />
                 </div>
                 <div className="space-y-0.5">
-                  <label className="font-medium text-xs" htmlFor="documents">Documents (5 PDF obligatoires)</label>
+                  <label className="font-medium text-xs" htmlFor="documents">Documents</label>
                   <TextInput
                     inputId="documents"
                     label="Documents (5 PDF obligatoires)"
@@ -258,7 +258,7 @@ export default function DocumentTab() {
                       setRecordFile(file as File[])
                     }
                   />
-                  {files && files.length === 5 ? <p className="text-xs text-green-500"><Check className="size-3.5 inline mr-1" /> 5 documents PDF sélectionnés</p> : <p className="text-xs text-red-500 flex gap-x-0.5 items-center"> <XIcon className="size-3.5" /> Veuillez sélectionner 5 documents PDF</p>}
+                  {files && files.length > 1 ? <p className="text-xs text-green-500"><Check className="size-3.5 inline mr-1" /> documents PDF sélectionnés</p> : <p className="text-xs text-red-500 flex gap-x-0.5 items-center"> <XIcon className="size-3.5" /> Veuillez sélectionner au moins un document PDF</p>}
                 </div>
               </div>
               <Combobox
@@ -298,7 +298,7 @@ export default function DocumentTab() {
                   <input
                     disabled={!modifyAccess}
                     type="color"
-                    className="bg-white p-0.5 !border w-full text-sm text-center"
+                    className="bg-white p-0.5 border! w-full text-sm text-center"
                     value={colors.primary}
                     onChange={(e) =>
                       setColors({
@@ -313,7 +313,7 @@ export default function DocumentTab() {
                   <input
                     disabled={!modifyAccess}
                     type="color"
-                    className="bg-white p-0.5 !border w-full text-sm text-center"
+                    className="bg-white p-0.5 border! w-full text-sm text-center"
                     value={colors.secondary}
                     onChange={(e) =>
                       setColors({

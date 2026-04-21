@@ -92,7 +92,7 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
             <TableRow className="h-14">
               <TableHead className="min-w-[50px] font-medium" />
               <TableHead className="font-medium text-center">
-                Produit / Services
+                Référence
               </TableHead>
               <TableHead className="font-medium text-center">
                 Description
@@ -138,7 +138,7 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
                       </div>
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
-                      {productService.type === "PRODUCT" ? "Produit" : "Service"}
+                      {productService.reference}
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
                       {cutText(productService.designation)} {!productService.hasTax && <span className="text-blue">*</span>}

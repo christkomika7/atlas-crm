@@ -164,7 +164,7 @@ const ProductServiceTable = forwardRef<
                       {item.company.currency}
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
-                      {item.quantity}
+                      {formatNumber(item.quantity)}
                     </TableCell>
                     <TableCell className="text-center">
                       <TableActionButton

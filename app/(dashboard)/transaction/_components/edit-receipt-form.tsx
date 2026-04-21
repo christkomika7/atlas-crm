@@ -170,7 +170,7 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
         mutate({ id: companyId }, {
             onSuccess(data) {
                 if (data.data) {
-                    const clients = data.data.map(client => ({ id: client.id, name: `${client.firstname} ${client.lastname}` }))
+                    const clients = data.data.map(client => ({ id: client.id, name: `${client.company}` }))
                     setClients(clients)
                 }
             },
@@ -231,8 +231,6 @@ export default function EditReceiptForm({ transaction }: ReceiptFormProps) {
 
 
     }, [transaction]);
-
-    console.log([...clients, ...userActions])
 
 
     useEffect(() => {

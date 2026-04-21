@@ -84,16 +84,6 @@ export async function PUT(req: NextRequest) {
     documents: (formData.getAll("documents") as File[]).filter(Boolean),
   };
 
-  if (Array.isArray(data.documents) && data.documents.length > 0 && data.documents.length !== 5) {
-    return NextResponse.json(
-      {
-        status: "error",
-        message: "Vous devez obligatoirement soumettre exactement 5 fichiers PDF.",
-      },
-      { status: 400 },
-    );
-  }
-
   const [companyExist, documentExist] = await prisma.$transaction([
     prisma.company.findUnique({ where: { id: data.companyId } }),
     prisma.documentModel.findUnique({ where: { id } }),

@@ -42,13 +42,11 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
   }
 
   function toggleSelection(check: boolean, productService: ProductServiceType) {
-    // Vérifier d'abord si un client est sélectionné
     if (!clientId) {
       return toast.error("Veuillez sélectionner un client en premier.");
     }
 
-    // Obtenir les données du client ou utiliser des valeurs par défaut
-    const defaultDiscount = "0"; // Valeur par défaut si pas encore de données client
+    const defaultDiscount = "0";
     const randomUUID = crypto.randomUUID()
 
     if (check) {
@@ -92,7 +90,7 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
             <TableRow className="h-14">
               <TableHead className="min-w-[50px] font-medium" />
               <TableHead className="font-medium text-center">
-                Produit / Services
+                Référence
               </TableHead>
               <TableHead className="font-medium text-center">
                 Désignation
@@ -138,7 +136,7 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
                       </div>
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
-                      {productService.type === "PRODUCT" ? "Produit" : "Service"}
+                      {productService.reference}
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
                       {cutText(productService.designation)} {!productService.hasTax && <span className="text-blue">*</span>}

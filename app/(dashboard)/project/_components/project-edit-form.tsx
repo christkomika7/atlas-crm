@@ -187,7 +187,7 @@ export default function ProjectEditForm({
                         datas={
                           clients.map((client) => ({
                             id: client.id,
-                            label: `${client.firstname} ${client.lastname}`,
+                            label: `${client.companyName}`,
                             value: client.id,
                           })) ?? []
                         }

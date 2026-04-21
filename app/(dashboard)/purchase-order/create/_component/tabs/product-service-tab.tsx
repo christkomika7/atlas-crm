@@ -41,17 +41,14 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
 
   function toggleSelection(check: boolean, productService: ProductServiceType) {
 
-    // Vérifier si l'item existe déjà
     const existingItem = items.find(
       (item) => item.productServiceId === productService.id
     );
 
     if (check) {
       if (existingItem) {
-        // Si déjà coché, on décoche et réinitialise
         removeItem(productService.id);
       } else {
-        // Ajouter un nouvel item avec quantité sélectionnée = 1
         const randomUUID = crypto.randomUUID();
         addItem({
           id: randomUUID,
@@ -71,7 +68,6 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
         });
       }
     } else {
-      // Décocher : supprimer l'item
       if (existingItem) {
         removeItem(productService.id);
       }
@@ -100,7 +96,7 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
             <TableRow className="h-14">
               <TableHead className="min-w-[50px] font-medium" />
               <TableHead className="font-medium text-center">
-                Produit / Services
+                Référence
               </TableHead>
               <TableHead className="font-medium text-center">
                 Description
@@ -147,7 +143,7 @@ export default function ProductServiceTab({ productServices, isGettingProductSer
                       </div>
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
-                      {productService.type === "PRODUCT" ? "Produit" : "Service"}
+                      {productService.reference}
                     </TableCell>
                     <TableCell className="text-neutral-600 text-center">
                       {cutText(productService.designation)} {!productService.hasTax && <span className="text-blue">*</span>}
