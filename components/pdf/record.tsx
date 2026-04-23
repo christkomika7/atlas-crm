@@ -323,7 +323,7 @@ export default function RecordDocument({
 
                 {/* FOOTER */}
                 {moreInfos && (
-                    <div className="mt-6 space-y-2">
+                    <div className="mt-6 space-y-0.5">
                         {/* Sous-total */}
                         <div className="grid grid-cols-[1fr_240px]">
                             <div className="text-right pr-4">Sous-total</div>
@@ -436,7 +436,7 @@ export default function RecordDocument({
 
                         {/* TOTAL */}
                         <div
-                            className="grid grid-cols-[1fr_240px] py-3 text-2xl font-black"
+                            className="grid grid-cols-[1fr_240px] py-3 mt-3 text-2xl font-black"
                             style={{ backgroundColor: secondColor }}
                         >
                             <div className="text-right pr-4">Net à payer</div>
@@ -461,47 +461,42 @@ export default function RecordDocument({
 
 
             <div className="px-[27px] mt-[65px]" >
-                <h3 style={{ marginBottom: "7px", fontWeight: 600, }}>
+                <pre
+                    style={{
+                        maxWidth: 400,
+                        lineHeight: 1.5,
+                        fontFamily: araboto.style?.fontFamily || "sans-serif",
+                        fontSize: "0.75rem",
+                        color: "#464646",
+                        whiteSpace: "pre-wrap",
+                        wordWrap: "break-word",
+                        overflowWrap: "break-word",
+                        marginBottom: 4
+                    }}
+                >
+                    {record?.note}
+                </pre>
+                <h3 style={{ marginBottom: "2px", fontWeight: 600, }}>
                     Message / remarques
                 </h3>
 
-                <p style={{ marginBottom: "3px", }}>
+                <p style={{ marginBottom: "2px", }}>
                     Campagne : {record?.company.companyName}
                 </p>
-
-                <h3 style={{ marginBottom: "3px" }}>NB :</h3>
-                {record?.note ? (
-                    <pre
-                        style={{
-                            maxWidth: 400,
-                            lineHeight: 1.5,
-                            fontFamily: araboto.style?.fontFamily || "sans-serif",
-                            fontSize: "0.75rem",
-                            color: "#464646",
-                            whiteSpace: "pre-wrap",
-                            wordWrap: "break-word",
-                            overflowWrap: "break-word"
-                        }}
-                    >
-                        {record?.note}
-                    </pre>
-                ) : note ? (
-                    <pre
-                        style={{
-                            maxWidth: 400,
-                            lineHeight: 1.5,
-                            fontFamily: araboto.style?.fontFamily || "sans-serif",
-                            fontSize: "0.75rem",
-                            color: "#464646",
-                            whiteSpace: "pre-wrap",
-                            wordWrap: "break-word",
-                            overflowWrap: "break-word"
-                        }}
-                    >
-                        {note}
-                    </pre>
-
-                ) : null}
+                <pre
+                    style={{
+                        maxWidth: 400,
+                        lineHeight: 1.5,
+                        fontFamily: araboto.style?.fontFamily || "sans-serif",
+                        fontSize: "0.75rem",
+                        color: "#464646",
+                        whiteSpace: "pre-wrap",
+                        wordWrap: "break-word",
+                        overflowWrap: "break-word"
+                    }}
+                >
+                    {note}
+                </pre>
             </div>
         </div>
     );
