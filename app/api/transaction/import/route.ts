@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
 
         await prisma.$transaction(async (tx) => {
             for (const transaction of transactions) {
+
                 if (transaction.Catégorie === "Transfert CaC") continue;
 
                 if (!transaction.Catégorie || transaction.Catégorie === "-") throw new Error("Catégorie manquante.");
@@ -402,7 +403,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur import Excel:", error);
         return NextResponse.json(
-            { state: "error", message: error.message || "Erreur lors de l'import Excel." },
+            { state: "error", message: "Erreur lors de l'import Excel." },
             { status: 500 }
         );
     }

@@ -34,7 +34,7 @@ export default function ImportButton({ refreshTransaction }: ImportButtonProps) 
 
     function parseTransactionRow(row: any): TransactionImportType {
         return {
-            Date: cleanExcelValue(row["Date"]),
+            Date: cleanExcelValue(row["Date"]).replaceAll("-", "/"),
             Mouvement: cleanExcelValue(row["Mouvement"]),
             Catégorie: cleanExcelValue(row["Catégorie"]),
             Nature: cleanExcelValue(row["Nature"]),
@@ -75,7 +75,9 @@ export default function ImportButton({ refreshTransaction }: ImportButtonProps) 
         const sheetName = workbook.SheetNames[0]
         const sheet = workbook.Sheets[sheetName]
 
-        const raw: TransactionImportType[] = XLSX.utils.sheet_to_json(sheet)
+        const raw: TransactionImportType[] = XLSX.utils.sheet_to_json(sheet, {
+            raw: false
+        })
 
         const json: TransactionImportType[] = raw.map((row) =>
             parseTransactionRow(row)
