@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
         await prisma.$transaction(async (tx) => {
             for (const transaction of transactions) {
 
+                console.log(transaction)
                 if (transaction.Catégorie === "Transfert CaC") continue;
 
                 if (!transaction.Catégorie || transaction.Catégorie === "-") throw new Error("Catégorie manquante.");
@@ -69,6 +70,12 @@ export async function POST(req: NextRequest) {
                 let clientId: string | null = null;
 
                 const parsed = parse(transaction.Date, "dd/MM/yyyy", new Date());
+
+                console.log({
+                    name: transaction.Catégorie,
+                    date: transaction.Date,
+                    parsed: parsed
+                })
                 const finalDate = new Date(Date.UTC(
                     parsed.getFullYear(),
                     parsed.getMonth(),

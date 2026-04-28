@@ -7,6 +7,7 @@ import Spinner from "@/components/ui/spinner"
 import { cleanExcelValue } from "@/lib/utils"
 import { BillboardImportType } from "@/types/billboard.types"
 import { importBillboard } from "@/action/billboard.action"
+import { toast } from "sonner"
 
 type ImportButtonProps = {
     refreshBillboard: () => void;
@@ -30,11 +31,20 @@ export default function ImportButton({ refreshBillboard }: ImportButtonProps) {
             {}
         >(importBillboard, () => { }, "billboards");
 
+    function toBoolean(value: string): boolean {
+        if (value.toLowerCase() === "oui") return true
+        if (value.toLowerCase() === "non") return false
+        return false
+    }
+
+    function toNumeric(value: string): string {
+        return cleanExcelValue(value).replaceAll(",", "")
+    }
 
     function parseBillboardRow(row: any): BillboardImportType {
         return {
             "Référence": cleanExcelValue(row["Référence"]),
-            "Article taxable": Boolean(row["Article taxable"]),
+            "Article taxable": toBoolean(cleanExcelValue(row["Article taxable"])),
 
             "Type de panneau publicitaire": cleanExcelValue(row["Type de panneau publicitaire"]),
             "Nom du panneau publicitaire": cleanExcelValue(row["Nom du panneau publicitaire"]),
@@ -46,13 +56,13 @@ export default function ImportButton({ refreshBillboard }: ImportButtonProps) {
             "Orientation": cleanExcelValue(row["Orientation"]),
             "Lien Google Maps": cleanExcelValue(row["Lien Google Maps"]),
 
-            "Prix de location": Number(row["Prix de location"]) || 0,
-            "Coût d'installation": Number(row["Coût d'installation"]) || 0,
-            "Coût d'entretien": Number(row["Coût d'entretien"]) || 0,
+            "Prix de location": toNumeric(row["Prix de location"]),
+            "Coût d'installation": toNumeric(row["Coût d'installation"]),
+            "Coût d'entretien": toNumeric(row["Coût d'entretien"]),
 
-            "Largeur": Number(row["Largeur"]) || 0,
-            "Hauteur": Number(row["Hauteur"]) || 0,
-            "Surface": Number(row["Surface"]) || 0,
+            "Largeur": toNumeric(row["Largeur"]),
+            "Hauteur": toNumeric(row["Hauteur"]),
+            "Surface": toNumeric(row["Surface"]),
 
             "Éclairage": cleanExcelValue(row["Éclairage"]),
             "Type de structure": cleanExcelValue(row["Type de structure"]),
@@ -67,8 +77,8 @@ export default function ImportButton({ refreshBillboard }: ImportButtonProps) {
             "Type d'espace": cleanExcelValue(row["Type d'espace"]),
             "Type de bailleur": cleanExcelValue(row["Type de bailleur"]),
 
-            "Prix du panneau loué": Number(row["Prix du panneau loué"]) || 0,
-            "Prix du panneau non loué": Number(row["Prix du panneau non loué"]) || 0,
+            "Prix du panneau loué": toNumeric(row["Prix du panneau loué"]),
+            "Prix du panneau non loué": toNumeric(row["Prix du panneau non loué"]),
 
             "Nom du bailleur": cleanExcelValue(row["Nom du bailleur"]),
             "Adresse complète du bailleur": cleanExcelValue(row["Adresse complète du bailleur"]),
@@ -94,7 +104,10 @@ export default function ImportButton({ refreshBillboard }: ImportButtonProps) {
         setIsLoading(true)
         const file = e.target.files?.[0]
 
-        if (!file) return
+        if (!file) {
+            setIsLoading(false)
+            return
+        }
 
         const allowedTypes = [
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -102,9 +115,11 @@ export default function ImportButton({ refreshBillboard }: ImportButtonProps) {
         ]
 
         if (!allowedTypes.includes(file.type)) {
-            alert("Seuls les fichiers Excel sont autorisés")
+            toast.error("Seuls les fichiers Excel sont autorisés");
+            setIsLoading(false)
             return
         }
+
 
         const data = await file.arrayBuffer()
 
@@ -113,13 +128,18 @@ export default function ImportButton({ refreshBillboard }: ImportButtonProps) {
         const sheetName = workbook.SheetNames[0]
         const sheet = workbook.Sheets[sheetName]
 
-        const raw = XLSX.utils.sheet_to_json(sheet)
+        const raw = XLSX.utils.sheet_to_json(sheet, {
+            raw: false,
+        })
 
-        console.log({ raw })
 
         const json: BillboardImportType[] = raw.map((row) =>
             parseBillboardRow(row)
         );
+
+
+        return console.log({ json })
+
 
         mutate({ data: json, companyId }, {
             onSuccess() {

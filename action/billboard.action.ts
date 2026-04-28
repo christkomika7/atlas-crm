@@ -59,7 +59,6 @@ export async function filter(data: ContractSchemaType) {
 
 
 export async function importBillboard({ data, companyId }: { data: BillboardImportType[], companyId: string }) {
-    console.log("Hello")
     try {
         const response = await fetch(
             `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/billboard/import`,

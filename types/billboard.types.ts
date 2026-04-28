@@ -121,13 +121,13 @@ export type BillboardImportType = {
     "Orientation": string
     "Lien Google Maps": string
 
-    "Prix de location": number
-    "Coût d'installation": number
-    "Coût d'entretien": number
+    "Prix de location": string
+    "Coût d'installation": string
+    "Coût d'entretien": string
 
-    "Largeur": number
-    "Hauteur": number
-    "Surface": number
+    "Largeur": string
+    "Hauteur": string
+    "Surface": string
 
     "Éclairage": string
     "Type de structure": string
@@ -142,8 +142,8 @@ export type BillboardImportType = {
     "Type d'espace": string
     "Type de bailleur": string
 
-    "Prix du panneau loué": number
-    "Prix du panneau non loué": number
+    "Prix du panneau loué": string
+    "Prix du panneau non loué": string
 
     "Nom du bailleur": string
     "Adresse complète du bailleur": string

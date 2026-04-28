@@ -6,7 +6,6 @@ import { TransactionImportType } from "@/types/transaction.type"
 import { importTransaction } from "@/action/transaction.action"
 import { useDataStore } from "@/stores/data.store"
 import Spinner from "@/components/ui/spinner"
-import { fa } from "zod/v4/locales"
 import { cleanExcelValue } from "@/lib/utils"
 
 type ImportButtonProps = {
@@ -34,7 +33,7 @@ export default function ImportButton({ refreshTransaction }: ImportButtonProps) 
 
     function parseTransactionRow(row: any): TransactionImportType {
         return {
-            Date: cleanExcelValue(row["Date"]).replaceAll("-", "/"),
+            Date: cleanExcelValue(row["Date"]),
             Mouvement: cleanExcelValue(row["Mouvement"]),
             Catégorie: cleanExcelValue(row["Catégorie"]),
             Nature: cleanExcelValue(row["Nature"]),
@@ -74,10 +73,10 @@ export default function ImportButton({ refreshTransaction }: ImportButtonProps) 
 
         const sheetName = workbook.SheetNames[0]
         const sheet = workbook.Sheets[sheetName]
-
         const raw: TransactionImportType[] = XLSX.utils.sheet_to_json(sheet, {
-            raw: false
+            raw: false,
         })
+
 
         const json: TransactionImportType[] = raw.map((row) =>
             parseTransactionRow(row)
