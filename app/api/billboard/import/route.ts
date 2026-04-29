@@ -41,9 +41,26 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ state: "error", message: "Entreprise introuvable." }, { status: 404 });
         }
 
+        const created: string[] = [];
+        const skipped: string[] = [];
+
         await prisma.$transaction(async (tx) => {
+            const existingRefs = await tx.billboard.findMany({
+                where: { companyId },
+                select: { reference: true }
+            });
+            const existingRefSet = new Set(existingRefs.map(b => b.reference));
+
             for (const billboard of billboards) {
                 const reference = getValue(billboard["Référence"]);
+
+                if (!reference) continue;
+
+                if (existingRefSet.has(reference)) {
+                    skipped.push(reference);
+                    continue;
+                }
+
                 const hasTax = billboard["Article taxable"] ?? false;
                 const type = getValue(billboard["Type de panneau publicitaire"]);
                 const name = getValue(billboard["Nom du panneau publicitaire"]);
@@ -97,8 +114,6 @@ export async function POST(req: NextRequest) {
                 const paymentFrequency = getValue(billboard["Fréquence de paiement"]);
                 const electricitySupply = getValue(billboard["Fourniture du courant"]);
                 const specificCondition = getValue(billboard["Conditions particulières"]);
-
-                if (!reference) continue
 
                 let typeRecord = await tx.billboardType.findFirst({ where: { name: type, companyId } });
                 if (!typeRecord) typeRecord = await tx.billboardType.create({ data: { name: type, companyId } });
@@ -195,10 +210,17 @@ export async function POST(req: NextRequest) {
                         specificCondition: lessorSpaceTypeValue === "private" ? specificCondition : undefined,
                     }
                 });
+
+                existingRefSet.add(reference);
+                created.push(reference);
             }
         });
 
-        return NextResponse.json({ state: "success", message: "Import Excel effectué avec succès." }, { status: 200 });
+        return NextResponse.json({
+            state: "success",
+            message: `Import terminé : ${created.length} créé(s), ${skipped.length} ignoré(s).`,
+            skipped,
+        }, { status: 200 });
 
     } catch (error: any) {
         console.error("Erreur import Excel:", error);

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useRef, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import * as XLSX from "xlsx"
 import useQueryAction from "@/hook/useQueryAction"
@@ -13,151 +13,148 @@ type ImportButtonProps = {
     refreshBillboard: () => void;
 }
 
+const toBoolean = (value: string): boolean =>
+    value?.toLowerCase() === "oui"
+
+const toNumeric = (value: string): string =>
+    cleanExcelValue(value).replaceAll(",", "")
+
+const FIELD_MAP: Record<keyof BillboardImportType, { parse: (v: string) => any }> = {
+    "Référence": { parse: cleanExcelValue },
+    "Article taxable": { parse: toBoolean },
+    "Type de panneau publicitaire": { parse: cleanExcelValue },
+    "Nom du panneau publicitaire": { parse: cleanExcelValue },
+    "Lieu": { parse: cleanExcelValue },
+    "Ville (Panneau)": { parse: cleanExcelValue },
+    "Quartier": { parse: cleanExcelValue },
+    "Repère visuel": { parse: cleanExcelValue },
+    "Support d'affichage": { parse: cleanExcelValue },
+    "Orientation": { parse: cleanExcelValue },
+    "Lien Google Maps": { parse: cleanExcelValue },
+    "Prix de location": { parse: toNumeric },
+    "Coût d'installation": { parse: toNumeric },
+    "Coût d'entretien": { parse: toNumeric },
+    "Largeur": { parse: toNumeric },
+    "Hauteur": { parse: toNumeric },
+    "Surface": { parse: toNumeric },
+    "Éclairage": { parse: cleanExcelValue },
+    "Type de structure": { parse: cleanExcelValue },
+    "État du panneau": { parse: cleanExcelValue },
+    "Éléments décoratifs": { parse: cleanExcelValue },
+    "Fondations et visserie": { parse: cleanExcelValue },
+    "Électricité et éclairage": { parse: cleanExcelValue },
+    "Structure et châssis": { parse: cleanExcelValue },
+    "Aspect général": { parse: cleanExcelValue },
+    "Type d'espace": { parse: cleanExcelValue },
+    "Type de bailleur": { parse: cleanExcelValue },
+    "Prix du panneau loué": { parse: toNumeric },
+    "Prix du panneau non loué": { parse: toNumeric },
+    "Nom du bailleur": { parse: cleanExcelValue },
+    "Adresse complète du bailleur": { parse: cleanExcelValue },
+    "Ville (Bailleur)": { parse: cleanExcelValue },
+    "Téléphone": { parse: cleanExcelValue },
+    "Email": { parse: cleanExcelValue },
+    "Nom de la banque": { parse: cleanExcelValue },
+    "RIB": { parse: cleanExcelValue },
+    "IBAN": { parse: cleanExcelValue },
+    "BIC/SWIFT": { parse: cleanExcelValue },
+    "Date début location": { parse: cleanExcelValue },
+    "Durée du contrat": { parse: cleanExcelValue },
+    "Mode de paiement": { parse: cleanExcelValue },
+    "Fréquence de paiement": { parse: cleanExcelValue },
+    "Fourniture du courant": { parse: cleanExcelValue },
+    "Conditions particulières": { parse: cleanExcelValue },
+}
+
+const parseBillboardRow = (row: any): BillboardImportType =>
+    Object.fromEntries(
+        Object.entries(FIELD_MAP).map(([key, { parse }]) => [key, parse(row[key] ?? "")])
+    ) as BillboardImportType
+
+const parseRowsAsync = (
+    rows: any[],
+    chunkSize = 200
+): Promise<BillboardImportType[]> =>
+    new Promise((resolve) => {
+        const result: BillboardImportType[] = []
+        let index = 0
+
+        const processChunk = () => {
+            const end = Math.min(index + chunkSize, rows.length)
+            for (; index < end; index++) {
+                result.push(parseBillboardRow(rows[index]))
+            }
+            if (index < rows.length) {
+                setTimeout(processChunk, 0)
+            } else {
+                resolve(result)
+            }
+        }
+
+        processChunk()
+    })
+
+const ALLOWED_TYPES = new Set([
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel",
+])
+
+
 export default function ImportButton({ refreshBillboard }: ImportButtonProps) {
     const inputRef = useRef<HTMLInputElement>(null)
-    const companyId = useDataStore.use.currentCompany();
-    const [isLoading, setIsLoading] = useState(false);
+    const companyId = useDataStore.use.currentCompany()
+    const [isLoading, setIsLoading] = useState(false)
 
-    const handleClick = () => {
-        inputRef.current?.click()
+    const { mutate, isPending } = useQueryAction<
+        { data: BillboardImportType[]; companyId: string },
+        {}
+    >(importBillboard, () => { }, "billboards")
+
+    const resetInput = () => {
+        if (inputRef.current) inputRef.current.value = ""
     }
 
-    const { mutate: mutate, isPending } =
-        useQueryAction<
-            {
-                data: BillboardImportType[]
-                companyId: string;
-            },
-            {}
-        >(importBillboard, () => { }, "billboards");
-
-    function toBoolean(value: string): boolean {
-        if (value.toLowerCase() === "oui") return true
-        if (value.toLowerCase() === "non") return false
-        return false
-    }
-
-    function toNumeric(value: string): string {
-        return cleanExcelValue(value).replaceAll(",", "")
-    }
-
-    function parseBillboardRow(row: any): BillboardImportType {
-        return {
-            "Référence": cleanExcelValue(row["Référence"]),
-            "Article taxable": toBoolean(cleanExcelValue(row["Article taxable"])),
-
-            "Type de panneau publicitaire": cleanExcelValue(row["Type de panneau publicitaire"]),
-            "Nom du panneau publicitaire": cleanExcelValue(row["Nom du panneau publicitaire"]),
-            "Lieu": cleanExcelValue(row["Lieu"]),
-            "Ville (Panneau)": cleanExcelValue(row["Ville (Panneau)"]),
-            "Quartier": cleanExcelValue(row["Quartier"]),
-            "Repère visuel": cleanExcelValue(row["Repère visuel"]),
-            "Support d'affichage": cleanExcelValue(row["Support d'affichage"]),
-            "Orientation": cleanExcelValue(row["Orientation"]),
-            "Lien Google Maps": cleanExcelValue(row["Lien Google Maps"]),
-
-            "Prix de location": toNumeric(row["Prix de location"]),
-            "Coût d'installation": toNumeric(row["Coût d'installation"]),
-            "Coût d'entretien": toNumeric(row["Coût d'entretien"]),
-
-            "Largeur": toNumeric(row["Largeur"]),
-            "Hauteur": toNumeric(row["Hauteur"]),
-            "Surface": toNumeric(row["Surface"]),
-
-            "Éclairage": cleanExcelValue(row["Éclairage"]),
-            "Type de structure": cleanExcelValue(row["Type de structure"]),
-            "État du panneau": cleanExcelValue(row["État du panneau"]),
-
-            "Éléments décoratifs": cleanExcelValue(row["Éléments décoratifs"]),
-            "Fondations et visserie": cleanExcelValue(row["Fondations et visserie"]),
-            "Électricité et éclairage": cleanExcelValue(row["Électricité et éclairage"]),
-            "Structure et châssis": cleanExcelValue(row["Structure et châssis"]),
-            "Aspect général": cleanExcelValue(row["Aspect général"]),
-
-            "Type d'espace": cleanExcelValue(row["Type d'espace"]),
-            "Type de bailleur": cleanExcelValue(row["Type de bailleur"]),
-
-            "Prix du panneau loué": toNumeric(row["Prix du panneau loué"]),
-            "Prix du panneau non loué": toNumeric(row["Prix du panneau non loué"]),
-
-            "Nom du bailleur": cleanExcelValue(row["Nom du bailleur"]),
-            "Adresse complète du bailleur": cleanExcelValue(row["Adresse complète du bailleur"]),
-            "Ville (Bailleur)": cleanExcelValue(row["Ville (Bailleur)"]),
-            "Téléphone": cleanExcelValue(row["Téléphone"]),
-            "Email": cleanExcelValue(row["Email"]),
-
-            "Nom de la banque": cleanExcelValue(row["Nom de la banque"]),
-            "RIB": cleanExcelValue(row["RIB"]),
-            "IBAN": cleanExcelValue(row["IBAN"]),
-            "BIC/SWIFT": cleanExcelValue(row["BIC/SWIFT"]),
-
-            "Date début location": cleanExcelValue(row["Date début location"]),
-            "Durée du contrat": cleanExcelValue(row["Durée du contrat"]),
-            "Mode de paiement": cleanExcelValue(row["Mode de paiement"]),
-            "Fréquence de paiement": cleanExcelValue(row["Fréquence de paiement"]),
-            "Fourniture du courant": cleanExcelValue(row["Fourniture du courant"]),
-            "Conditions particulières": cleanExcelValue(row["Conditions particulières"])
-        }
-    }
-
-    const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        setIsLoading(true)
+    const handleFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
+        if (!file) return
 
-        if (!file) {
-            setIsLoading(false)
+        if (!ALLOWED_TYPES.has(file.type)) {
+            toast.error("Seuls les fichiers Excel sont autorisés")
+            resetInput()
             return
         }
 
-        const allowedTypes = [
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.ms-excel"
-        ]
+        setIsLoading(true)
 
-        if (!allowedTypes.includes(file.type)) {
-            toast.error("Seuls les fichiers Excel sont autorisés");
+        try {
+            const buffer = await file.arrayBuffer()
+
+            // dense: true → tableau indexé, plus rapide que les objets nommés
+            const workbook = XLSX.read(buffer, { dense: true })
+            const sheet = workbook.Sheets[workbook.SheetNames[0]]
+
+            const raw = XLSX.utils.sheet_to_json(sheet, { raw: false })
+
+            // Parsing asynchrone par chunks → ne bloque pas l'UI
+            const data = await parseRowsAsync(raw)
+
+            mutate({ data, companyId }, {
+                onSuccess() {
+                    resetInput()
+                    refreshBillboard()
+                    setIsLoading(false)
+                },
+                onError() {
+                    resetInput()
+                    setIsLoading(false)
+                },
+            })
+        } catch {
+            toast.error("Erreur lors de la lecture du fichier")
+            resetInput()
             setIsLoading(false)
-            return
         }
-
-
-        const data = await file.arrayBuffer()
-
-        const workbook = XLSX.read(data)
-
-        const sheetName = workbook.SheetNames[0]
-        const sheet = workbook.Sheets[sheetName]
-
-        const raw = XLSX.utils.sheet_to_json(sheet, {
-            raw: false,
-        })
-
-
-        const json: BillboardImportType[] = raw.map((row) =>
-            parseBillboardRow(row)
-        );
-
-
-        return console.log({ json })
-
-
-        mutate({ data: json, companyId }, {
-            onSuccess() {
-                if (inputRef.current) {
-                    inputRef.current.value = ""
-                }
-                refreshBillboard()
-                setIsLoading(false)
-
-            },
-            onError() {
-                if (inputRef.current) {
-                    inputRef.current.value = ""
-                }
-                setIsLoading(false)
-            },
-        })
-    }
+    }, [companyId, mutate, refreshBillboard])
 
     return (
         <>
@@ -168,13 +165,12 @@ export default function ImportButton({ refreshBillboard }: ImportButtonProps) {
                 className="hidden"
                 onChange={handleFile}
             />
-
             <Button
                 variant="inset-primary"
                 className="border-emerald-500 text-emerald-500"
-                onClick={handleClick}
+                onClick={() => inputRef.current?.click()}
             >
-                {(isPending || isLoading) ? <Spinner size={14} /> : "Importer Excel"}
+                {isPending || isLoading ? <Spinner size={14} /> : "Importer Excel"}
             </Button>
         </>
     )

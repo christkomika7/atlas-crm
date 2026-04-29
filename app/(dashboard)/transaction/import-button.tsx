@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useRef, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import * as XLSX from "xlsx"
 import useQueryAction from "@/hook/useQueryAction"
@@ -7,98 +7,114 @@ import { importTransaction } from "@/action/transaction.action"
 import { useDataStore } from "@/stores/data.store"
 import Spinner from "@/components/ui/spinner"
 import { cleanExcelValue } from "@/lib/utils"
+import { toast } from "sonner"
 
 type ImportButtonProps = {
     refreshTransaction: () => void;
 }
 
+const ALLOWED_TYPES = new Set([
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel",
+])
+
+const TRANSACTION_FIELDS: (keyof TransactionImportType)[] = [
+    "Date",
+    "Mouvement",
+    "Catégorie",
+    "Nature",
+    "HT Montant",
+    "TTC Montant",
+    "Mode de paiement",
+    "Numéro de chèque",
+    "Référence du document",
+    "Source",
+    "Période",
+    "Client | Fournisseur | Tiers",
+    "Commentaire",
+]
+
+const parseTransactionRow = (row: any): TransactionImportType =>
+    Object.fromEntries(
+        TRANSACTION_FIELDS.map((key) => [key, cleanExcelValue(row[key] ?? "")])
+    ) as TransactionImportType
+
+const parseRowsAsync = (
+    rows: any[],
+    chunkSize = 200
+): Promise<TransactionImportType[]> =>
+    new Promise((resolve) => {
+        const result: TransactionImportType[] = []
+        let index = 0
+
+        const processChunk = () => {
+            const end = Math.min(index + chunkSize, rows.length)
+            for (; index < end; index++) {
+                result.push(parseTransactionRow(rows[index]))
+            }
+            if (index < rows.length) {
+                setTimeout(processChunk, 0)
+            } else {
+                resolve(result)
+            }
+        }
+
+        processChunk()
+    })
+
+
 export default function ImportButton({ refreshTransaction }: ImportButtonProps) {
     const inputRef = useRef<HTMLInputElement>(null)
-    const companyId = useDataStore.use.currentCompany();
-    const [isLoading, setIsLoading] = useState(false);
+    const companyId = useDataStore.use.currentCompany()
+    const [isLoading, setIsLoading] = useState(false)
 
-    const handleClick = () => {
-        inputRef.current?.click()
+    const { mutate, isPending } = useQueryAction<
+        { data: TransactionImportType[]; companyId: string },
+        {}
+    >(importTransaction, () => { }, "transaction")
+
+    const resetInput = () => {
+        if (inputRef.current) inputRef.current.value = ""
     }
 
-    const { mutate: mutate, isPending } =
-        useQueryAction<
-            {
-                data: TransactionImportType[]
-                companyId: string;
-            },
-            {}
-        >(importTransaction, () => { }, "transaction");
-
-
-    function parseTransactionRow(row: any): TransactionImportType {
-        return {
-            Date: cleanExcelValue(row["Date"]),
-            Mouvement: cleanExcelValue(row["Mouvement"]),
-            Catégorie: cleanExcelValue(row["Catégorie"]),
-            Nature: cleanExcelValue(row["Nature"]),
-            "HT Montant": cleanExcelValue(row["HT Montant"]),
-            "TTC Montant": cleanExcelValue(row["TTC Montant"]),
-            "Mode de paiement": cleanExcelValue(row["Mode de paiement"]),
-            "Numéro de chèque": cleanExcelValue(row["Numéro de chèque"]),
-            "Référence du document": cleanExcelValue(row["Référence du document"]),
-            Source: cleanExcelValue(row["Source"]),
-            Période: cleanExcelValue(row["Période"]),
-            "Client | Fournisseur | Tiers": cleanExcelValue(
-                row["Client | Fournisseur | Tiers"]
-            ),
-            Commentaire: cleanExcelValue(row["Commentaire"]),
-        };
-    }
-
-    const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        setIsLoading(true)
+    const handleFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
-
         if (!file) return
 
-        const allowedTypes = [
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.ms-excel"
-        ]
-
-        if (!allowedTypes.includes(file.type)) {
-            alert("Seuls les fichiers Excel sont autorisés")
+        if (!ALLOWED_TYPES.has(file.type)) {
+            toast.error("Seuls les fichiers Excel sont autorisés")
+            resetInput()
             return
         }
 
-        const data = await file.arrayBuffer()
+        setIsLoading(true)
 
-        const workbook = XLSX.read(data)
+        try {
+            const buffer = await file.arrayBuffer()
 
-        const sheetName = workbook.SheetNames[0]
-        const sheet = workbook.Sheets[sheetName]
-        const raw: TransactionImportType[] = XLSX.utils.sheet_to_json(sheet, {
-            raw: false,
-        })
+            const workbook = XLSX.read(buffer, { dense: true })
+            const sheet = workbook.Sheets[workbook.SheetNames[0]]
+            const raw = XLSX.utils.sheet_to_json(sheet, { raw: false })
 
+            const data = await parseRowsAsync(raw)
 
-        const json: TransactionImportType[] = raw.map((row) =>
-            parseTransactionRow(row)
-        );
-
-        mutate({ data: json, companyId }, {
-            onSuccess() {
-                if (inputRef.current) {
-                    inputRef.current.value = ""
-                }
-                refreshTransaction()
-                setIsLoading(false)
-
-            },
-            onError() {
-                if (inputRef.current) {
-                    inputRef.current.value = ""
-                }
-                setIsLoading(false)
-            },
-        })
-    }
+            mutate({ data, companyId }, {
+                onSuccess() {
+                    resetInput()
+                    refreshTransaction()
+                    setIsLoading(false)
+                },
+                onError() {
+                    resetInput()
+                    setIsLoading(false)
+                },
+            })
+        } catch {
+            toast.error("Erreur lors de la lecture du fichier")
+            resetInput()
+            setIsLoading(false)
+        }
+    }, [companyId, mutate, refreshTransaction])
 
     return (
         <>
@@ -109,13 +125,12 @@ export default function ImportButton({ refreshTransaction }: ImportButtonProps) 
                 className="hidden"
                 onChange={handleFile}
             />
-
             <Button
                 variant="inset-primary"
                 className="border-emerald-500 text-emerald-500"
-                onClick={handleClick}
+                onClick={() => inputRef.current?.click()}
             >
-                {(isPending || isLoading) ? <Spinner size={14} /> : "Importer Excel"}
+                {isPending || isLoading ? <Spinner size={14} /> : "Importer Excel"}
             </Button>
         </>
     )
