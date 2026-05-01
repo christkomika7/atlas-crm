@@ -566,33 +566,33 @@ export async function PUT(req: NextRequest) {
             },
         });
 
-        const [unpaidInvoiceIds] = await prisma.$transaction([
-            prisma.invoice.findMany({
-                where: {
-                    billboards: { some: { id: data.billboard.id } },
-                    payee: { equals: new Decimal(0) },
-                },
-                select: { id: true },
-            }),
-        ]);
+        // const [unpaidInvoiceIds] = await prisma.$transaction([
+        //     prisma.invoice.findMany({
+        //         where: {
+        //             billboards: { some: { id: data.billboard.id } },
+        //             payee: { equals: new Decimal(0) },
+        //         },
+        //         select: { id: true },
+        //     }),
+        // ]);
 
-        await prisma.item.updateMany({
-            where: {
-                billboardId: data.billboard.id,
-                OR: [
-                    { quoteId: { not: null } },
-                    { deliveryNoteId: { not: null } },
-                    {
-                        invoiceId: {
-                            in: unpaidInvoiceIds.map(i => i.id),
-                        },
-                    },
-                ],
-            },
-            data: {
-                hasTax: data.billboard.hasTax,
-            },
-        })
+        // await prisma.item.updateMany({
+        //     where: {
+        //         billboardId: data.billboard.id,
+        //         OR: [
+        //             { quoteId: { not: null } },
+        //             { deliveryNoteId: { not: null } },
+        //             {
+        //                 invoiceId: {
+        //                     in: unpaidInvoiceIds.map(i => i.id),
+        //                 },
+        //             },
+        //         ],
+        //     },
+        //     data: {
+        //         hasTax: data.billboard.hasTax,
+        //     },
+        // })
 
         return NextResponse.json({
             status: "success",

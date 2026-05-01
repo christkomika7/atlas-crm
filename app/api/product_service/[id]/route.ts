@@ -152,38 +152,38 @@ export async function PUT(req: NextRequest) {
             },
         });
 
-        const [unpaidInvoiceIds, unpaidPurchaseOrderIds] = await prisma.$transaction([
-            prisma.invoice.findMany({
-                where: {
-                    items: { some: { productServiceId: data.id } },
-                    payee: { equals: new Decimal(0) },
-                },
-                select: { id: true },
-            }),
-            prisma.purchaseOrder.findMany({
-                where: {
-                    items: { some: { productServiceId: data.id } },
-                    payee: { equals: new Decimal(0) },
-                },
-                select: { id: true },
-            }),
-        ]);
+        // const [unpaidInvoiceIds, unpaidPurchaseOrderIds] = await prisma.$transaction([
+        //     prisma.invoice.findMany({
+        //         where: {
+        //             items: { some: { productServiceId: data.id } },
+        //             payee: { equals: new Decimal(0) },
+        //         },
+        //         select: { id: true },
+        //     }),
+        //     prisma.purchaseOrder.findMany({
+        //         where: {
+        //             items: { some: { productServiceId: data.id } },
+        //             payee: { equals: new Decimal(0) },
+        //         },
+        //         select: { id: true },
+        //     }),
+        // ]);
 
-        await prisma.item.updateMany({
-            where: {
-                productServiceId: data.id,
-                OR: [
-                    { quoteId: { not: null } },
-                    { deliveryNoteId: { not: null } },
-                    { invoiceId: { in: unpaidInvoiceIds.map(i => i.id) } },
-                    { purchaseOrderId: { in: unpaidPurchaseOrderIds.map(p => p.id) } },
-                ],
-            },
-            data: {
-                hasTax: data.hasTax,
-                price: data.unitPrice,
-            },
-        });
+        // await prisma.item.updateMany({
+        //     where: {
+        //         productServiceId: data.id,
+        //         OR: [
+        //             { quoteId: { not: null } },
+        //             { deliveryNoteId: { not: null } },
+        //             { invoiceId: { in: unpaidInvoiceIds.map(i => i.id) } },
+        //             { purchaseOrderId: { in: unpaidPurchaseOrderIds.map(p => p.id) } },
+        //         ],
+        //     },
+        //     data: {
+        //         hasTax: data.hasTax,
+        //         price: data.unitPrice,
+        //     },
+        // });
 
         return NextResponse.json({
             status: "success",
