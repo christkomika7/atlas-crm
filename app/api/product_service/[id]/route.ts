@@ -7,6 +7,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { editProductServiceSchema, EditProductServiceSchemaType } from "@/lib/zod/product-service.schema";
 import { checkAccessDeletion } from "@/lib/server";
 import prisma from "@/lib/prisma";
+import Decimal from "decimal.js";
 
 export async function GET(req: NextRequest) {
     await checkAccess(["PRODUCT_SERVICES"], "READ");
@@ -143,23 +144,53 @@ export async function PUT(req: NextRequest) {
     };
 
     try {
-        const updatedProducyService = await prisma.productService.update({
+        const updatedProductService = await prisma.productService.update({
             where: { id: data.id },
             data: {
                 ...updateData,
-                company: {
-                    connect: {
-                        id: data.companyId
-                    }
+                company: { connect: { id: data.companyId } },
+            },
+        });
+
+        const [unpaidInvoiceIds, unpaidPurchaseOrderIds] = await prisma.$transaction([
+            prisma.invoice.findMany({
+                where: {
+                    items: { some: { productServiceId: data.id } },
+                    payee: { equals: new Decimal(0) },
                 },
+                select: { id: true },
+            }),
+            prisma.purchaseOrder.findMany({
+                where: {
+                    items: { some: { productServiceId: data.id } },
+                    payee: { equals: new Decimal(0) },
+                },
+                select: { id: true },
+            }),
+        ]);
+
+        await prisma.item.updateMany({
+            where: {
+                productServiceId: data.id,
+                OR: [
+                    { quoteId: { not: null } },
+                    { deliveryNoteId: { not: null } },
+                    { invoiceId: { in: unpaidInvoiceIds.map(i => i.id) } },
+                    { purchaseOrderId: { in: unpaidPurchaseOrderIds.map(p => p.id) } },
+                ],
+            },
+            data: {
+                hasTax: data.hasTax,
+                price: data.unitPrice,
             },
         });
 
         return NextResponse.json({
             status: "success",
             message: `Le ${data.itemType === "PRODUCT" ? "produit" : "service"} a été modifié avec succès.`,
-            data: updatedProducyService,
+            data: updatedProductService,
         });
+
     } catch (error) {
         console.error({ error });
         return NextResponse.json({

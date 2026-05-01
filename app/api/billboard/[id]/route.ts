@@ -306,7 +306,6 @@ export async function PUT(req: NextRequest) {
     const filesMap: Record<string, File[]> = {};
     const rawData: Record<string, any> = {};
 
-    // Récupération données & fichiers
     formData.forEach((value, key) => {
         if (value instanceof File) {
             if (!filesMap[key]) filesMap[key] = [];
@@ -352,11 +351,9 @@ export async function PUT(req: NextRequest) {
     }
 
 
-    // Fichiers uploadés
     billboardData.photos = filesMap["photos"] ?? [];
     billboardData.brochures = filesMap["brochures"] ?? [];
 
-    // Conversion des anciens fichiers en tableau
     const dataToValidate = {
         billboard: {
             ...(billboardData as EditBillboardSchemaType),
@@ -568,6 +565,34 @@ export async function PUT(req: NextRequest) {
                 company: { connect: { id: data.billboard.companyId } },
             },
         });
+
+        const [unpaidInvoiceIds] = await prisma.$transaction([
+            prisma.invoice.findMany({
+                where: {
+                    billboards: { some: { id: data.billboard.id } },
+                    payee: { equals: new Decimal(0) },
+                },
+                select: { id: true },
+            }),
+        ]);
+
+        await prisma.item.updateMany({
+            where: {
+                billboardId: data.billboard.id,
+                OR: [
+                    { quoteId: { not: null } },
+                    { deliveryNoteId: { not: null } },
+                    {
+                        invoiceId: {
+                            in: unpaidInvoiceIds.map(i => i.id),
+                        },
+                    },
+                ],
+            },
+            data: {
+                hasTax: data.billboard.hasTax,
+            },
+        })
 
         return NextResponse.json({
             status: "success",

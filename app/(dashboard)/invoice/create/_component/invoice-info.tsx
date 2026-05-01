@@ -44,6 +44,7 @@ type InvoiceInfoProps = {
 }
 
 export default function InvoiceInfo({ isGettingDocument, disabled, isGettingInvoiceNumber, reference, calculate, items, taxes, currency, discount, setDiscount, paymentLimit, TTCPrice, setPaymentLimit, isPaid, amountPaid, amountType, HTPrice, amountDue, payee }: InvoiceInfoProps) {
+    console.log(taxes)
     return (
         <>
             <div className="space-y-2">
@@ -150,7 +151,7 @@ export default function InvoiceInfo({ isGettingDocument, disabled, isGettingInvo
                                     : 0
                             }
                             max={discount.discountType === "purcent" ? 100 : Infinity}
-                            className="!rounded-lg h-8"
+                            className="rounded-lg! h-8"
                             handleChange={(e) => {
                                 setDiscount({
                                     ...discount,
