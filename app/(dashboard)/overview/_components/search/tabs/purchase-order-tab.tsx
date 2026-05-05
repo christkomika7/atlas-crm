@@ -13,8 +13,7 @@ import {
 } from "@/components/ui/table";
 import { DEFAULT_PAGE_SIZE, PURCHASE_ORDER_PREFIX } from "@/config/constant";
 import { cutText, formatNumber, generateAmaId } from "@/lib/utils";
-import { addDays } from "date-fns";
-import { checkDeadline, dueDate, formatDateToDashModel } from "@/lib/date";
+import { dueDate, formatDateToDashModel } from "@/lib/date";
 import { useEffect, useState } from "react";
 import { PurchaseOrderType } from "@/types/purchase-order.types";
 import { useDataStore } from "@/stores/data.store";
@@ -129,7 +128,7 @@ export default function PurchaseOrderTab() {
                   <TableCell className="text-center">
                     <TableActionButton
                       menus={dropdownMenu}
-                      id={purchaseOrder.id}
+                      data={purchaseOrder}
                       refreshPurchaseOrder={refreshPurchaseOrder}
                       deleteTitle="Confirmer la suppression du bon de commande"
                       deleteMessage={
