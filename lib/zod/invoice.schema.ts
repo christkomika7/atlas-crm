@@ -58,7 +58,7 @@ export const invoiceUpdateSchema = z
     .object({
         id: z.string({ error: "L'identifiant est requis" }),
         clientId: z.string({ error: "Le client est requis" }),
-        projectId: z.string().optional(),
+        projectId: z.string().nullable().optional(),
         companyId: z.string({ error: "L'entreprise est requise" }),
         invoiceNumber: z.number({ error: "Le numéro de facture est requis." }),
         item: z.object({

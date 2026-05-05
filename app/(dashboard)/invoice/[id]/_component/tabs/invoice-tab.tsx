@@ -222,7 +222,6 @@ export default function InvoiceTab() {
                 isFirstLoadingDiscount.current = false;
                 return;
               }
-              // updateDiscount(data.data.discount);
             }
           },
         }
@@ -467,6 +466,12 @@ export default function InvoiceTab() {
       },
     })
   }
+
+  useEffect(() => {
+    form.watch(() => {
+      console.log({ data: form.getValues() })
+    })
+  }, [form.watch])
 
   function removeLastUpload(name: string) {
     setLastUploadFiles((prev) => prev.filter((d) => d !== name));

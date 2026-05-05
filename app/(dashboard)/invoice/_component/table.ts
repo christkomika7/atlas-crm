@@ -1,7 +1,13 @@
 import { TableActionButtonType } from "@/types/table.types";
-import { EditIcon, FilesIcon, PlusIcon, ScanEyeIcon, SendHorizonalIcon, Trash2Icon } from "lucide-react";
+import { Download, EditIcon, FilesIcon, PlusIcon, ScanEyeIcon, SendHorizonalIcon, Trash2Icon } from "lucide-react";
 
 export const dropdownMenu: TableActionButtonType[] = [
+    {
+        id: 0,
+        icon: Download,
+        title: "Télécharger",
+        action: "download"
+    },
     {
         id: 1,
         icon: SendHorizonalIcon,

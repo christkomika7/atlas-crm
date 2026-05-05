@@ -88,6 +88,7 @@ export async function PUT(req: NextRequest) {
     prisma.company.findUnique({ where: { id: data.companyId } }),
     prisma.documentModel.findUnique({ where: { id } }),
   ]);
+
   if (!companyExist || !documentExist) {
     return NextResponse.json(
       {
@@ -103,19 +104,21 @@ export async function PUT(req: NextRequest) {
     data,
   ) as DocumentSchemaType;
 
-
   const folder = createFolder([companyExist.companyName, "logo"]);
 
-  let savedPath = "";
-
-  await removePath(documentExist.logo);
-  await removePath(documentExist.recordFiles);
+  let savedPath: string | null = documentExist.logo;
+  let documentFilesPaths: string[] = documentExist.recordFiles;
 
   try {
-    savedPath = await createFile(parsedData.logo, folder, "logo");
-    const documentFilesPaths: string[] = [];
+    if (parsedData.logo) {
+      await removePath(documentExist.logo);
+      savedPath = await createFile(parsedData.logo, folder, "logo");
+    }
 
     if (parsedData.documents && parsedData.documents.length > 0) {
+      await removePath(documentExist.recordFiles);
+      documentFilesPaths = [];
+
       for (let i = 0; i < parsedData.documents.length; i++) {
         const documentFile = parsedData.documents[i];
         const documentFilePath = await createFile(
@@ -126,6 +129,7 @@ export async function PUT(req: NextRequest) {
         documentFilesPaths.push(documentFilePath);
       }
     }
+
     const updateDocument = await prisma.documentModel.update({
       where: { id },
       data: {
@@ -162,8 +166,7 @@ export async function PUT(req: NextRequest) {
       data: updateDocument,
     });
   } catch (error) {
-    await removePath(savedPath);
-    console.log({ error });
+    if (parsedData.logo) await removePath(savedPath);
 
     return NextResponse.json(
       {

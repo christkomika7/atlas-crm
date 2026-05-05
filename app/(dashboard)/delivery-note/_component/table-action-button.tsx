@@ -23,6 +23,11 @@ import { useDataStore } from "@/stores/data.store";
 import { getBillboardItemLocations } from "@/action/invoice.action";
 import { useAccess } from "@/hook/useAccess";
 import Decimal from "decimal.js";
+import { DELIVERY_NOTE_PREFIX } from "@/config/constant";
+import { generateAmaId } from "@/lib/utils";
+import { renderComponentToPDF } from "@/lib/pdf";
+import RecordDocument from "@/components/pdf/record";
+import { formatDateToDashModel } from "@/lib/date";
 
 type TableActionButtonProps = {
   data: DeliveryNoteType;
@@ -48,6 +53,8 @@ export default function TableActionButton({
   const currency = useDataStore.use.currency();
   const setItems = useItemStore.use.setItems();
   const clear = useItemStore.use.clearItem();
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const [open, setOpen] = useState({
     duplicate: false,
@@ -96,8 +103,11 @@ export default function TableActionButton({
 
   }, [companyId])
 
-  function goTo(id: string, action: "update" | "infos" | "send" | "complete" | "convert") {
+  function goTo(id: string, action: "update" | "infos" | "send" | "complete" | "convert" | "download") {
     switch (action) {
+      case "download":
+        handleDownload();
+        break;
       case "update":
         setTab("action-delivery-note-tab", 0);
         router.push(`/delivery-note/${id}`);
@@ -141,6 +151,48 @@ export default function TableActionButton({
         router.push(`/delivery-note/${id}`);
         break;
     }
+  }
+
+
+  async function handleDownload() {
+    setIsLoading(true);
+    const recordDocument = data.company?.documentModel;
+    const filename = `Bon de livraison  ${recordDocument?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}-${generateAmaId(data.deliveryNoteNumber ?? 1, false)}`;
+
+    const pdfData = await renderComponentToPDF(
+      <RecordDocument
+        title="Bon de livraison"
+        type="Bon de livraison"
+        id="delivery-note-bc"
+        firstColor={recordDocument?.primaryColor || "#fbbf24"}
+        secondColor={recordDocument?.secondaryColor || "#fef3c7"}
+        logo={recordDocument?.logo}
+        logoSize={recordDocument?.size || "Medium"}
+        logoPosition={recordDocument?.position || "Center"}
+        orderValue={recordDocument?.deliveryNotesPrefix || DELIVERY_NOTE_PREFIX}
+        orderNote={recordDocument?.deliveryNotesInfo || ""}
+        record={data}
+        recordNumber={`${generateAmaId(data.deliveryNoteNumber ?? 1, false)}`}
+        isLoading={false}
+        note={recordDocument?.deliveryNotesInfo}
+      />,
+      {
+        padding: 0,
+        margin: 0,
+        quality: 0.98,
+        scale: 4,
+        headerText: `- ${filename} - ${formatDateToDashModel(new Date(data.createdAt || new Date()))}`,
+      }
+    );
+
+    const blob = new Blob([pdfData], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${filename}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setIsLoading(false);
   }
 
   function handleDelete() {
@@ -191,7 +243,7 @@ export default function TableActionButton({
   return (
     <Popover>
       <PopoverTrigger asChild disabled={!hasAnyAccess}>
-        <Button variant="primary" className="p-0 rounded-lg !w-9 !h-9">
+        <Button variant="primary" className="p-0 rounded-lg size-9!">
           <ChevronDownIcon className="text-white" />
         </Button>
       </PopoverTrigger>
@@ -202,7 +254,7 @@ export default function TableActionButton({
               <>
                 {menus.map((menu) => {
                   if (
-                    (["send", "update", "delete", "complete"].includes(menu.action as string) && !modifyAccess) ||
+                    (["send", "update", "delete", "complete", "download"].includes(menu.action as string) && !modifyAccess) ||
                     (["duplicate", "convert"].includes(menu.action as string) && !createAccess) ||
                     (menu.action === "infos" && !readAccess)
                   ) return null;
@@ -260,8 +312,9 @@ export default function TableActionButton({
                               {menu.title}
 
                               <span>
-                                {menu.action === "complete" && isCompletedDeliveryNote && <Spinner size={15} />}
-                                {menu.action === "convert" && isConvertingDeliveryNote && <Spinner size={15} />}
+                                {menu.action === "complete" && isCompletedDeliveryNote && <Spinner size={16} />}
+                                {menu.action === "convert" && isConvertingDeliveryNote && <Spinner size={16} />}
+                                {menu.action === "download" && isLoading && <Spinner size={16} />}
                               </span>
 
                             </span>

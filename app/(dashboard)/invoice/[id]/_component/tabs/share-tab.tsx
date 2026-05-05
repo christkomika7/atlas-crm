@@ -32,7 +32,6 @@ import RecordDocument from "@/components/pdf/record";
 import { recordEmailSchema, RecordEmailSchemaType } from "@/lib/zod/record-email.schema";
 import { useAccess } from "@/hook/useAccess";
 import AccessContainer from "@/components/errors/access-container";
-import NoAccess, { NoAccessResource } from "@/components/errors/no-access";
 
 export default function ShareTab() {
   const companyId = useDataStore.use.currentCompany();

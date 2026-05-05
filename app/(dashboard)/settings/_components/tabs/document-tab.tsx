@@ -258,8 +258,12 @@ export default function DocumentTab() {
                       setRecordFile(file as File[])
                     }
                   />
-                  {files && files.length > 1 ? <p className="text-xs text-green-500"><Check className="size-3.5 inline mr-1" /> documents PDF sélectionnés</p> : <p className="text-xs text-red-500 flex gap-x-0.5 items-center"> <XIcon className="size-3.5" /> Veuillez sélectionner au moins un document PDF</p>}
-                </div>
+                  {(recordFile.length > 0 || files.length > 0) && (
+                    <p className="text-xs text-green-500">
+                      <Check className="size-3.5 inline mr-1" />
+                      {recordFile.length > 0 ? recordFile.length : files.length} document(s) PDF sélectionné(s)
+                    </p>
+                  )}                </div>
               </div>
               <Combobox
                 className="w-full"

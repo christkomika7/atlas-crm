@@ -22,6 +22,11 @@ import Decimal from "decimal.js";
 import { useDataStore } from "@/stores/data.store";
 import Spinner from "@/components/ui/spinner";
 import { useAccess } from "@/hook/useAccess";
+import { renderComponentToPDF } from "@/lib/pdf";
+import { INVOICE_PREFIX } from "@/config/constant";
+import { generateAmaId } from "@/lib/utils";
+import RecordDocument from "@/components/pdf/record";
+import { formatDateToDashModel } from "@/lib/date";
 
 type TableActionButtonProps = {
   data: InvoiceType;
@@ -39,6 +44,7 @@ export default function TableActionButton({
   data,
 }: TableActionButtonProps) {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [openDuplicate, setOpenDuplicate] = useState(false);
@@ -47,7 +53,6 @@ export default function TableActionButton({
   const setItems = useItemStore.use.setItems();
   const clear = useItemStore.use.clearItem();
   const setLocationBillboard = useItemStore.use.setLocationBillboard();
-  const locationBillboard = useItemStore.use.locationBillboardDate();
 
   const currency = useDataStore.use.currency();
   const companyId = useDataStore.use.currentCompany();
@@ -82,8 +87,11 @@ export default function TableActionButton({
     }
   }, [companyId]);
 
-  function goTo(invoiceId: string, action: "update" | "infos" | "send") {
+  function goTo(invoiceId: string, action: "update" | "infos" | "send" | "download") {
     switch (action) {
+      case "download":
+        handleDownload();
+        break;
       case "update":
         setTab("action-invoice-tab", 0);
         router.push(`/invoice/${invoiceId}`);
@@ -97,6 +105,49 @@ export default function TableActionButton({
         router.push(`/invoice/${invoiceId}`);
         break;
     }
+  }
+
+
+  async function handleDownload() {
+    setIsLoading(true);
+    const recordDocument = data.company?.documentModel;
+    const filename = `Facture ${recordDocument?.invoicesPrefix || INVOICE_PREFIX}-${generateAmaId(data.invoiceNumber ?? 1, false)}`;
+
+    const pdfData = await renderComponentToPDF(
+      <RecordDocument
+        title="Facture"
+        type="Facture"
+        id="invoice-bc"
+        firstColor={recordDocument?.primaryColor || "#fbbf24"}
+        secondColor={recordDocument?.secondaryColor || "#fef3c7"}
+        logo={recordDocument?.logo}
+        logoSize={recordDocument?.size || "Medium"}
+        logoPosition={recordDocument?.position || "Center"}
+        orderValue={recordDocument?.invoicesPrefix || INVOICE_PREFIX}
+        orderNote={recordDocument?.invoicesInfo || ""}
+        record={data}
+        payee={data.payee}
+        recordNumber={`${generateAmaId(data.invoiceNumber ?? 1, false)}`}
+        isLoading={false}
+        note={recordDocument?.invoicesInfo}
+      />,
+      {
+        padding: 0,
+        margin: 0,
+        quality: 0.98,
+        scale: 4,
+        headerText: `- ${filename} - ${formatDateToDashModel(new Date(data.createdAt || new Date()))}`,
+      }
+    );
+
+    const blob = new Blob([pdfData], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${filename}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setIsLoading(false);
   }
 
   function handleDelete() {
@@ -144,7 +195,7 @@ export default function TableActionButton({
       <PopoverTrigger asChild>
         <Button
           variant="primary"
-          className="p-0 rounded-lg !w-9 !h-9"
+          className="p-0 rounded-lg size-9!"
           disabled={isFullyRestricted}
         >
           <ChevronDownIcon className="text-white" />
@@ -168,7 +219,7 @@ export default function TableActionButton({
                   if (menu.action === "duplicate" && !createAccess)
                     return null;
 
-                  if (menu.action === "infos" && !readAccess)
+                  if (['infos', 'download'].includes(menu.action as string) && !readAccess)
                     return null;
 
                   switch (menu.action) {
@@ -242,11 +293,12 @@ export default function TableActionButton({
                           <button
                             className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
                             onClick={() =>
-                              goTo(data.id, menu.action as "update" | "infos" | "send")
+                              goTo(data.id, menu.action as "update" | "infos" | "send" | "download")
                             }
                           >
                             <menu.icon className="w-4 h-4" />
                             {menu.title}
+                            {isLoading && menu.action === "download" && <Spinner size={16} />}
                           </button>
                         </li>
                       );

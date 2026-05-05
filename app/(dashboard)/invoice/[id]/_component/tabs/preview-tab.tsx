@@ -124,7 +124,6 @@ export default function PreviewTab() {
                 <div className="flex justify-end">
                   <Button variant="primary" className="max-w-xs"
                     onClick={() => {
-                      if (!invoice?.projectId) return toast.error("Impossible de télécharger la facture sans projet associé.");
                       downloadComponentAsPDF("invoice-bc", filename, {
                         padding: 0,
                         margin: 0,
@@ -187,7 +186,8 @@ export default function PreviewTab() {
                       onClose={() => setOpen({ ...open, recurrence: false })}
                     >
                       <RecurrenceForm closeModal={() => setOpen({ ...open, recurrence: false })} invoiceId={invoice.id as string} />
-                    </ModalContainer>     </ModalContainer>
+                    </ModalContainer>
+                  </ModalContainer>
                 }
                 <div className="flex justify-between items-center mt-2">
                   <h2 className="font-semibold">Facture</h2>

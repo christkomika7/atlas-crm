@@ -32,6 +32,11 @@ type TableActionButtonProps = {
 };
 
 import { useAccess } from "@/hook/useAccess";
+import { QUOTE_PREFIX } from "@/config/constant";
+import { generateAmaId } from "@/lib/utils";
+import { renderComponentToPDF } from "@/lib/pdf";
+import RecordDocument from "@/components/pdf/record";
+import { formatDateToDashModel } from "@/lib/date";
 
 export default function TableActionButton({
   menus,
@@ -52,6 +57,8 @@ export default function TableActionButton({
   const locationBillboard = useItemStore.use.locationBillboardDate();
   const companyId = useDataStore.use.currentCompany();
   const currency = useDataStore.use.currency();
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const { access: modifyAccess } = useAccess("QUOTES", "MODIFY");
   const { access: createAccess } = useAccess("QUOTES", "CREATE");
@@ -89,8 +96,52 @@ export default function TableActionButton({
     }
   }, [companyId])
 
-  function goTo(id: string, action: "update" | "infos" | "send" | "convert") {
+  async function handleDownload() {
+    setIsLoading(true);
+    const recordDocument = data.company?.documentModel;
+    const filename = `Devis ${recordDocument?.quotesPrefix || QUOTE_PREFIX}-${generateAmaId(data.quoteNumber ?? 1, false)}`;
+
+    const pdfData = await renderComponentToPDF(
+      <RecordDocument
+        title="Devis"
+        type="Devis"
+        id="quote-doc"
+        firstColor={recordDocument?.primaryColor || "#fbbf24"}
+        secondColor={recordDocument?.secondaryColor || "#fef3c7"}
+        logo={recordDocument?.logo}
+        logoSize={recordDocument?.size || "Medium"}
+        logoPosition={recordDocument?.position || "Center"}
+        orderValue={recordDocument?.quotesPrefix || QUOTE_PREFIX}
+        orderNote={recordDocument?.quotesInfo || ""}
+        record={data}
+        recordNumber={`${generateAmaId(data.quoteNumber ?? 1, false)}`}
+        isLoading={false}
+        note={recordDocument?.quotesInfo}
+      />,
+      {
+        padding: 0,
+        margin: 0,
+        quality: 0.98,
+        scale: 4,
+        headerText: `- ${filename} - ${formatDateToDashModel(new Date(data.createdAt || new Date()))}`,
+      }
+    );
+
+    const blob = new Blob([pdfData], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${filename}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setIsLoading(false);
+  }
+
+  function goTo(id: string, action: "update" | "infos" | "send" | "convert" | "download") {
     switch (action) {
+      case "download":
+        handleDownload();
+        break;
       case "update":
         setTab("action-quote-tab", 0);
         router.push(`/quote/${id}`);
@@ -191,7 +242,7 @@ export default function TableActionButton({
               <>
                 {menus.map((menu) => {
                   if (
-                    (["send", "update", "delete"].includes(menu.action as string) && !modifyAccess) ||
+                    (["download", "send", "update", "delete"].includes(menu.action as string) && !modifyAccess) ||
                     (["duplicate", "convert"].includes(menu.action as string) && !createAccess) ||
                     (menu.action === "infos" && !readAccess)
                   ) return null;
@@ -240,7 +291,7 @@ export default function TableActionButton({
                           <button
                             className="flex items-center gap-x-2 hover:bg-neutral-50 px-4 py-3 w-full font-medium text-sm cursor-pointer"
                             onClick={() =>
-                              goTo(data.id, menu.action as "update" | "infos" | "send" | "convert")
+                              goTo(data.id, menu.action as "update" | "infos" | "send" | "convert" | "download")
                             }
                           >
                             <menu.icon className="w-4 h-4" />
@@ -248,9 +299,11 @@ export default function TableActionButton({
                               {menu.title}
 
                               <span>
-                                {menu.action === "convert" && isConvertingQuote && <Spinner size={15} />}
+                                {menu.action === "convert" && isConvertingQuote && <Spinner size={16} />}
                               </span>
-
+                              <span>
+                                {menu.action === "download" && isLoading && <Spinner size={16} />}
+                              </span>
                             </span>
                           </button>
                         </li>

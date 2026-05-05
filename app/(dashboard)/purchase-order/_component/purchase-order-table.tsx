@@ -57,7 +57,7 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
 
     const { access: readAccess, loading } = useAccess("PURCHASE_ORDER", "READ");
 
-    const { mutate, isPending, data } = useQueryAction<
+    const { mutate, isPending } = useQueryAction<
       { companyId: string; filter: "unpaid" | "paid", skip?: number; take?: number },
       RequestResponse<PurchaseOrderType[]>
     >(all, () => { }, "purchase-order");
@@ -161,7 +161,7 @@ const PurchaseOrderTable = forwardRef<PurchaseOrderTableRef, PurchaseOrderTableP
                     <TableCell className="text-center">
                       <TableActionButton
                         menus={dropdownMenu}
-                        id={purchaseOrder.id}
+                        data={purchaseOrder}
                         refreshPurchaseOrder={refreshPurchaseOrder}
                         deleteTitle="Confirmer la suppression du bon de commande"
                         deleteMessage={
