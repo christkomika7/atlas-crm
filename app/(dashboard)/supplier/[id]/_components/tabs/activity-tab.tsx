@@ -138,7 +138,7 @@ export default function ActivityTab() {
                   <TableCell className="text-center">
                     <TableActionButton
                       menus={dropdownMenu}
-                      id={purchaseOrder.id}
+                      data={purchaseOrder}
                       refreshPurchaseOrder={refreshPurchaseOrder}
                       deleteTitle="Confirmer la suppression du bon de commande"
                       deleteMessage={
