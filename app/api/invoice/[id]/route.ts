@@ -130,7 +130,7 @@ export async function PUT(req: NextRequest) {
     invoiceNumber: parseInt(rawData.invoiceNumber)
   }) as InvoiceUpdateSchemaType;
 
-  const [invoiceExist, companyExist, clientExist, projectExist] =
+  const [invoiceExist, companyExist, clientExist] =
     await prisma.$transaction([
       prisma.invoice.findUnique({
         where: { id }, include: {
@@ -143,8 +143,14 @@ export async function PUT(req: NextRequest) {
       }),
       prisma.company.findUnique({ where: { id: data.companyId }, include: { documentModel: true } }),
       prisma.client.findUnique({ where: { id: data.clientId } }),
-      prisma.project.findUnique({ where: { id: data.projectId } }),
     ]);
+
+  let projectExist = null;
+
+  if (data.projectId) {
+    projectExist = await prisma.project.findUnique({ where: { id: data.projectId } });
+  }
+
 
   if (!invoiceExist) {
     return NextResponse.json(
