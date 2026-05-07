@@ -68,8 +68,8 @@ export type TransactionImportType = {
   Mouvement: string
   Catégorie: string
   Nature: string
-  "HT Montant": string
-  "TTC Montant": string
+  "HT Montant": number
+  "TTC Montant": number
   "Mode de paiement": string
   "Numéro de chèque": string
   "Référence du document": string

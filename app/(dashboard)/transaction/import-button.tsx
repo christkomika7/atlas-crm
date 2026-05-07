@@ -18,25 +18,31 @@ const ALLOWED_TYPES = new Set([
     "application/vnd.ms-excel",
 ])
 
-const TRANSACTION_FIELDS: (keyof TransactionImportType)[] = [
-    "Date",
-    "Mouvement",
-    "Catégorie",
-    "Nature",
-    "HT Montant",
-    "TTC Montant",
-    "Mode de paiement",
-    "Numéro de chèque",
-    "Référence du document",
-    "Source",
-    "Période",
-    "Client | Fournisseur | Tiers",
-    "Commentaire",
-]
+const toNumeric = (value: string): number => {
+    const cleaned = cleanExcelValue(value).replaceAll(",", "")
+    const num = Number(cleaned)
+    return isNaN(num) ? 0 : num
+}
+
+const FIELD_MAP: Record<keyof TransactionImportType, { parse: (v: string) => any }> = {
+    "Date": { parse: cleanExcelValue },
+    "Mouvement": { parse: cleanExcelValue },
+    "Catégorie": { parse: cleanExcelValue },
+    "Nature": { parse: cleanExcelValue },
+    "HT Montant": { parse: toNumeric },
+    "TTC Montant": { parse: toNumeric },
+    "Mode de paiement": { parse: cleanExcelValue },
+    "Numéro de chèque": { parse: cleanExcelValue },
+    "Référence du document": { parse: cleanExcelValue },
+    "Source": { parse: cleanExcelValue },
+    "Période": { parse: cleanExcelValue },
+    "Client | Fournisseur | Tiers": { parse: cleanExcelValue },
+    "Commentaire": { parse: cleanExcelValue },
+}
 
 const parseTransactionRow = (row: any): TransactionImportType =>
     Object.fromEntries(
-        TRANSACTION_FIELDS.map((key) => [key, cleanExcelValue(row[key] ?? "")])
+        Object.entries(FIELD_MAP).map(([key, { parse }]) => [key, parse(row[key] ?? "")])
     ) as TransactionImportType
 
 const parseRowsAsync = (
@@ -61,7 +67,6 @@ const parseRowsAsync = (
 
         processChunk()
     })
-
 
 export default function ImportButton({ refreshTransaction }: ImportButtonProps) {
     const inputRef = useRef<HTMLInputElement>(null)
@@ -91,7 +96,6 @@ export default function ImportButton({ refreshTransaction }: ImportButtonProps) 
 
         try {
             const buffer = await file.arrayBuffer()
-
             const workbook = XLSX.read(buffer, { dense: true })
             const sheet = workbook.Sheets[workbook.SheetNames[0]]
             const raw = XLSX.utils.sheet_to_json(sheet, { raw: false })

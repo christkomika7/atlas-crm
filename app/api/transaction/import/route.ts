@@ -83,9 +83,9 @@ export async function POST(req: NextRequest) {
                 ));
 
                 const date = finalDate;
-                const amountType = transaction["HT Montant"] && transaction["HT Montant"] !== "-" ? "HT" : "TTC";
+                const amountType = transaction["HT Montant"] ? "HT" : "TTC";
                 const rawAmount = amountType === "HT" ? transaction["HT Montant"] : transaction["TTC Montant"];
-                const amount = new Decimal((rawAmount?.replace("XAF", "").trim() || "0").replaceAll(" ", ""));
+                const amount = new Decimal(rawAmount || "0");
                 const paymentBruteType = acceptPayment.find((payment) => payment.label === transaction["Mode de paiement"])?.value || "cash";
                 const paymentType = paymentBruteType === "cash" ? $Enums.SourceType.CASH : $Enums.SourceType.BANK;
                 const period = transaction.Période;
