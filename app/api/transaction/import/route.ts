@@ -7,7 +7,7 @@ import Decimal from "decimal.js";
 import { formatNumber } from "@/lib/utils";
 import { acceptPayment } from "@/lib/data";
 import { $Enums } from "@/lib/generated/prisma";
-import { format, parse } from "date-fns";
+import { parse } from "date-fns";
 
 export async function POST(req: NextRequest) {
     const result = await checkAccess(["TRANSACTION"], "CREATE");
@@ -38,6 +38,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ state: "error", message: "Entreprise introuvable." }, { status: 404 });
         }
 
+        for (const transaction of transactions) {
+            if (transaction.Catégorie === "Transfert CaC") continue;
+            if (!transaction.Catégorie || transaction.Catégorie === "-") throw new Error("Catégorie manquante.");
+            if (!transaction.Nature || transaction.Nature === "-") throw new Error("Nature manquante.");
+            if (!transaction.Source || transaction.Source === "-") throw new Error("Source manquante.");
+            if (!transaction.Mouvement || transaction.Mouvement === "-") throw new Error("Mouvement manquant.");
+        }
+
         const [existingCategories, existingNatures, existingSources, existingUserActions] = await Promise.all([
             prisma.transactionCategory.findMany({ where: { companyId }, include: { company: true } }),
             prisma.transactionNature.findMany({ where: { companyId } }),
@@ -50,91 +58,93 @@ export async function POST(req: NextRequest) {
         const sourceMap = new Map(existingSources.map(s => [s.name, s]));
         const userActionMap = new Map(existingUserActions.map(u => [u.name, u]));
 
+        for (const transaction of transactions) {
+            if (transaction.Catégorie === "Transfert CaC") continue;
+
+            const paymentBruteType = acceptPayment.find(p => p.label === transaction["Mode de paiement"])?.value || "cash";
+            const paymentType = paymentBruteType === "cash" ? $Enums.SourceType.CASH : $Enums.SourceType.BANK;
+
+            // Catégorie
+            let category = categoryMap.get(transaction.Catégorie) ?? null;
+            if (!category) {
+                category = await prisma.transactionCategory.create({
+                    data: {
+                        name: transaction.Catégorie,
+                        type: transaction.Mouvement === "Entrée" ? "RECEIPT" : "DISBURSEMENT",
+                        companyId
+                    },
+                    include: { company: true }
+                });
+                categoryMap.set(category.name, category);
+            }
+
+            // Nature
+            let nature = natureMap.get(`${transaction.Nature}-${category.id}`) ?? null;
+            if (!nature) {
+                nature = await prisma.transactionNature.create({
+                    data: { name: transaction.Nature, categoryId: category.id, companyId }
+                });
+                natureMap.set(`${nature.name}-${nature.categoryId}`, nature);
+            }
+
+            // Source
+            let source = sourceMap.get(transaction.Source) ?? null;
+            if (!source) {
+                source = await prisma.source.create({
+                    data: { name: transaction.Source, companyId, sourceType: paymentType }
+                });
+                sourceMap.set(source.name, source);
+            }
+
+            // UserAction / Tiers
+            const tierValue = transaction["Client | Fournisseur | Tiers"];
+            if (tierValue && tierValue !== "-") {
+                let userAction = userActionMap.get(tierValue) ?? null;
+                if (!userAction) {
+                    userAction = await prisma.userAction.create({
+                        data: { name: tierValue, companyId, natureId: nature.id }
+                    });
+                    userActionMap.set(userAction.name, userAction);
+                }
+            }
+        }
+
         let earlyReturnResponse: { status: string; message: string } | null = null;
 
         await prisma.$transaction(async (tx) => {
             for (const transaction of transactions) {
-
-                console.log(transaction)
                 if (transaction.Catégorie === "Transfert CaC") continue;
 
-                if (!transaction.Catégorie || transaction.Catégorie === "-") throw new Error("Catégorie manquante.");
-                if (!transaction.Nature || transaction.Nature === "-") throw new Error("Nature manquante.");
-                if (!transaction.Source || transaction.Source === "-") throw new Error("Source manquante.");
-                if (!transaction.Mouvement || transaction.Mouvement === "-") throw new Error("Mouvement manquant.");
+                const parsed = parse(transaction.Date, "dd/MM/yyyy", new Date());
+                const date = new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()));
+
+                const amountType = transaction["HT Montant"] ? "HT" : "TTC";
+                const rawAmount = amountType === "HT" ? transaction["HT Montant"] : transaction["TTC Montant"];
+                const amount = new Decimal(rawAmount || "0");
+
+                const paymentBruteType = acceptPayment.find(p => p.label === transaction["Mode de paiement"])?.value || "cash";
+                const paymentType = paymentBruteType === "cash" ? $Enums.SourceType.CASH : $Enums.SourceType.BANK;
+
+                const period = transaction.Période;
+                const checkNumber = String(transaction["Numéro de chèque"]);
+                const comment = transaction.Commentaire;
+
+                // Récupération depuis les maps (déjà créées hors transaction)
+                const category = categoryMap.get(transaction.Catégorie)!;
+                const nature = natureMap.get(`${transaction.Nature}-${category.id}`)!;
+                const source = sourceMap.get(transaction.Source)!;
+                const sourceId = source.id;
+
+                const tierValue = transaction["Client | Fournisseur | Tiers"];
+                const clientOrSupplierId = (tierValue && tierValue !== "-")
+                    ? (userActionMap.get(tierValue)?.id ?? null)
+                    : null;
 
                 let invoiceId: string | null = null;
                 let purchaseOrderId: string | null = null;
                 let projectId: string | null = null;
                 let paymentId: string | null = null;
                 let clientId: string | null = null;
-
-                const parsed = parse(transaction.Date, "dd/MM/yyyy", new Date());
-
-                console.log({
-                    name: transaction.Catégorie,
-                    date: transaction.Date,
-                    parsed: parsed
-                })
-                const finalDate = new Date(Date.UTC(
-                    parsed.getFullYear(),
-                    parsed.getMonth(),
-                    parsed.getDate()
-                ));
-
-                const date = finalDate;
-                const amountType = transaction["HT Montant"] ? "HT" : "TTC";
-                const rawAmount = amountType === "HT" ? transaction["HT Montant"] : transaction["TTC Montant"];
-                const amount = new Decimal(rawAmount || "0");
-                const paymentBruteType = acceptPayment.find((payment) => payment.label === transaction["Mode de paiement"])?.value || "cash";
-                const paymentType = paymentBruteType === "cash" ? $Enums.SourceType.CASH : $Enums.SourceType.BANK;
-                const period = transaction.Période;
-                const checkNumber = String(transaction["Numéro de chèque"]);
-                const comment = transaction.Commentaire;
-
-                let category = categoryMap.get(transaction.Catégorie) ?? null;
-                if (!category) {
-                    category = await tx.transactionCategory.create({
-                        data: {
-                            name: transaction.Catégorie,
-                            type: transaction.Mouvement === "Entrée" ? "RECEIPT" : "DISBURSEMENT",
-                            companyId
-                        },
-                        include: { company: true }
-                    });
-                    categoryMap.set(category.name, category);
-                }
-
-                let nature = natureMap.get(`${transaction.Nature}-${category.id}`) ?? null;
-                if (!nature) {
-                    nature = await tx.transactionNature.create({
-                        data: { name: transaction.Nature, categoryId: category.id, companyId }
-                    });
-                    natureMap.set(`${nature.name}-${nature.categoryId}`, nature);
-                }
-
-                let sourceId: string | null = null;
-                let source = sourceMap.get(transaction.Source) ?? null;
-                if (!source) {
-                    source = await tx.source.create({
-                        data: { name: transaction.Source, companyId, sourceType: paymentType as $Enums.SourceType }
-                    });
-                    sourceMap.set(source.name, source);
-                }
-                sourceId = source.id;
-
-                let clientOrSupplierId: string | null = null;
-                const tierValue = transaction["Client | Fournisseur | Tiers"];
-                if (tierValue && tierValue !== "-") {
-                    let userAction = userActionMap.get(tierValue) ?? null;
-                    if (!userAction) {
-                        userAction = await tx.userAction.create({
-                            data: { name: tierValue, companyId, natureId: nature.id }
-                        });
-                        userActionMap.set(userAction.name, userAction);
-                    }
-                    clientOrSupplierId = userAction.id;
-                }
 
                 if (transaction["Référence du document"] && transaction["Référence du document"] !== "-") {
                     const recordType = transaction.Mouvement === "Entrée" ? "invoice" : "purchaseOrder";
@@ -230,28 +240,21 @@ export async function POST(req: NextRequest) {
                             if (!isAdmin) {
                                 const newDibursement = await tx.dibursementData.create({
                                     data: {
-                                        date,
-                                        amount,
-                                        amountType,
+                                        date, amount, amountType,
                                         category: category.id,
                                         nature: nature.id,
                                         source: sourceId,
-                                        paymentType,
-                                        checkNumber,
-                                        period,
+                                        paymentType, checkNumber, period,
                                         purchaseOrder: purchaseOrder.id,
                                         project: projectId,
                                         infos: comment || "",
-                                        ...(clientOrSupplierId && {
-                                            userAction: { connect: { id: clientOrSupplierId } }
-                                        })
+                                        ...(clientOrSupplierId && { userAction: { connect: { id: clientOrSupplierId } } })
                                     }
                                 });
 
                                 await tx.notification.create({
                                     data: {
-                                        type: 'CONFIRM',
-                                        for: 'DISBURSEMENT',
+                                        type: 'CONFIRM', for: 'DISBURSEMENT',
                                         message: `${user.name} a initié un décaissement de ${formatNumber(amount)} ${purchaseOrder.company.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} », actuellement en attente de validation.\n\nCommentaire :\n${comment}`,
                                         dibursement: { connect: { id: newDibursement.id } },
                                         company: { connect: { id: companyId } }
@@ -299,15 +302,12 @@ export async function POST(req: NextRequest) {
 
                     const createdReceipt = await tx.receipt.create({
                         data: {
-                            date,
-                            amount,
-                            amountType,
+                            date, amount, amountType,
                             categoryId: category.id,
                             natureId: nature.id,
                             sourceId,
                             userActionId: clientOrSupplierId,
-                            paymentType,
-                            checkNumber,
+                            paymentType, checkNumber,
                             infos: comment || "",
                             companyId,
                             ...(invoiceId && { referenceInvoiceId: invoiceId, projectId }),
@@ -318,8 +318,7 @@ export async function POST(req: NextRequest) {
 
                     await tx.notification.create({
                         data: {
-                            type: 'ALERT',
-                            for: 'RECEIPT',
+                            type: 'ALERT', for: 'RECEIPT',
                             message: `${user.name} a réalisé un encaissement de ${formatNumber(amount)} ${createdReceipt.company.currency} dans le compte ${createdReceipt.source?.name}.\n\nCommentaire :\n${comment}`,
                             receipt: { connect: { id: createdReceipt.id } },
                             company: { connect: { id: createdReceipt.companyId } }
@@ -331,28 +330,21 @@ export async function POST(req: NextRequest) {
                     if (!isAdmin) {
                         const newDibursement = await tx.dibursementData.create({
                             data: {
-                                date,
-                                amount,
-                                amountType,
+                                date, amount, amountType,
                                 category: category.id,
                                 nature: nature.id,
                                 source: sourceId,
-                                paymentType,
-                                checkNumber,
-                                period,
+                                paymentType, checkNumber, period,
                                 purchaseOrder: purchaseOrderId,
                                 project: projectId,
                                 infos: comment || "",
-                                ...(clientOrSupplierId && {
-                                    userAction: { connect: { id: clientOrSupplierId } }
-                                })
+                                ...(clientOrSupplierId && { userAction: { connect: { id: clientOrSupplierId } } })
                             }
                         });
 
                         await tx.notification.create({
                             data: {
-                                type: 'CONFIRM',
-                                for: 'DISBURSEMENT',
+                                type: 'CONFIRM', for: 'DISBURSEMENT',
                                 message: `${user.name} a initié un décaissement de ${formatNumber(amount)} ${category.company.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} », actuellement en attente de validation.\n\nCommentaire :\n${comment}`,
                                 dibursement: { connect: { id: newDibursement.id } },
                                 company: { connect: { id: category.companyId } }
@@ -368,16 +360,12 @@ export async function POST(req: NextRequest) {
 
                     const createdDibursement = await tx.dibursement.create({
                         data: {
-                            date,
-                            amount,
-                            amountType,
+                            date, amount, amountType,
                             categoryId: category.id,
                             natureId: nature.id,
                             sourceId,
                             userActionId: clientOrSupplierId,
-                            paymentType,
-                            checkNumber,
-                            period,
+                            paymentType, checkNumber, period,
                             infos: comment || "",
                             companyId,
                             ...(purchaseOrderId && { referencePurchaseOrderId: purchaseOrderId, projectId }),
@@ -387,8 +375,7 @@ export async function POST(req: NextRequest) {
 
                     await tx.notification.create({
                         data: {
-                            type: 'ALERT',
-                            for: 'DISBURSEMENT',
+                            type: 'ALERT', for: 'DISBURSEMENT',
                             message: `${user.name} a réalisé un décaissement de ${formatNumber(amount)} ${category.company.currency}, au titre de la catégorie « ${category.name} » (motif : ${nature?.name}), depuis le compte « ${source?.name} ».\n\nCommentaire :\n${comment}`,
                             paymentDibursement: { connect: { id: createdDibursement.id } },
                             company: { connect: { id: createdDibursement.companyId } }
@@ -397,8 +384,8 @@ export async function POST(req: NextRequest) {
                 }
             }
         }, {
-            timeout: 30000,
-            maxWait: 10000,
+            timeout: 60000,  // augmenté à 60s par sécurité
+            maxWait: 15000,
         });
 
         if (earlyReturnResponse) {
@@ -410,7 +397,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur import Excel:", error);
         return NextResponse.json(
-            { state: "error", message: "Erreur lors de l'import Excel." },
+            { state: "error", message: error.message || "Erreur lors de l'import Excel." },
             { status: 500 }
         );
     }

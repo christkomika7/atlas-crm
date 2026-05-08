@@ -625,7 +625,6 @@ export async function createDibursement(data: DibursementSchemaType) {
 }
 
 export async function importTransaction({ data, companyId }: { data: TransactionImportType[], companyId: string }) {
-  console.log("Hello")
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_AUTH_URL!}/api/transaction/import`,
